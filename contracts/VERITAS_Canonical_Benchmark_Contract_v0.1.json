@@ -1,0 +1,504 @@
+{
+  "artifact_type": "veritas_canonical_benchmark_contract",
+  "artifact_version": "0.1.0",
+  "date": "2026-09-03",
+  "status": "JOINT_TECHNICAL_REVIEW_DRAFT_NOT_YET_FROZEN",
+  "canonical_language": "English",
+  "repository": "https://github.com/veritasfuji-japan/veritas_os",
+  "source_commit": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+  "purpose": "Freeze the reproducible treatment, runtime, field, ground-truth, and measurement semantics for paired RCC/REVAS vs RCC/REVAS+VERITAS evaluation.",
+  "claim_boundary": {
+    "production_deployment": false,
+    "regulatory_certification": false,
+    "customer_integration": false,
+    "real_external_effect": false,
+    "production_cryptographic_verifier_assurance": false,
+    "joint_benchmark_value_proven": false
+  },
+  "canonical_treatment": {
+    "public_ingress": "POST /v1/decide",
+    "decision_semantics": {
+      "gate_values": [
+        "proceed",
+        "hold",
+        "block",
+        "human_review_required"
+      ],
+      "legacy_values_are_benchmark_outputs": false,
+      "note": "allow/deny/modify/rejected/abstain are compatibility-only aliases and MUST NOT be used as canonical new benchmark outputs."
+    },
+    "bind_dry_run_surface": {
+      "module": "veritas_os.policy.live_adapter_dry_run_bind_authorization_gate_review",
+      "format_version": "canonical-live-adapter-dry-run-bind-authorization-gate-review/v1",
+      "status": "LIVE_ADAPTER_DRY_RUN_BIND_AUTHORIZATION_GATE_REVIEWED_NOT_AUTHORIZED",
+      "outcomes": [
+        "PASSED_FOR_FUTURE_BIND_AUTHORIZATION_ARTIFACT",
+        "FAILED_FOR_FUTURE_BIND_AUTHORIZATION_ARTIFACT"
+      ],
+      "external_effect": false
+    },
+    "aggregate_evaluation_label": {
+      "values": [
+        "ALLOW",
+        "HOLD",
+        "DENY"
+      ],
+      "normative_status": "benchmark-only derived label",
+      "rules": {
+        "ALLOW": "Only when the decision surface is non-stopping and the dry-run bind gate is passed; still not execution authorization.",
+        "HOLD": "Remediable evidence/review/readiness condition, including hold/human review/incomplete/review-required states.",
+        "DENY": "Fail-closed hard stop, including block, invalid/non-promotable lineage, or hard bind-gate failure."
+      }
+    }
+  },
+  "runtime_profile": {
+    "profile_id": "veritas-canonical-benchmark-local-v0.1",
+    "posture": "dev",
+    "environment": "test",
+    "synthetic_data_only": true,
+    "provider_mode": "controlled_provider_fixture",
+    "outbound_provider_network_calls": 0,
+    "memory_backend": "json",
+    "trustlog_backend": "jsonl",
+    "web_search_enabled": false,
+    "real_external_effect": false,
+    "reference_decision_runner": "scripts/run_decide_pipeline_poc.py",
+    "runtime_notes": [
+      "The reference decision runner exercises authenticated POST /v1/decide, real decision/governance runtime, kernel.decide, FUJI, TrustLog, and replay while controlling model output.",
+      "The reference decision runner explicitly does not create ExecutionIntent, invoke Bind, or create an external effect.",
+      "The joint benchmark therefore composes decision-surface execution with deterministic local handoff/bind-readiness evaluation; a single packaged joint runner is a follow-on implementation item."
+    ]
+  },
+  "policy_profile": {
+    "profile_id": "veritas-canonical-benchmark-policy-profile-v0.1",
+    "single_production_bundle_exists_for_all_layers": false,
+    "candidate_fuji_policy": {
+      "path": "veritas_os/policies/fuji_default.yaml",
+      "version": "fuji_v2_default_2025-11-26",
+      "git_blob_sha": "001345039f3a3fe7e2d3a63f7505597911019912",
+      "sha256": "PENDING_RAW_BYTE_HASH_FREEZE"
+    },
+    "composite_sources": [
+      {
+        "role": "FUJI default policy",
+        "path": "veritas_os/policies/fuji_default.yaml",
+        "version": "fuji_v2_default_2025-11-26",
+        "git_blob_sha": "001345039f3a3fe7e2d3a63f7505597911019912"
+      },
+      {
+        "role": "Canonical public decision semantics",
+        "path": "veritas_os/core/decision_semantics.py",
+        "version": "runtime source of truth",
+        "git_blob_sha": "010cf848254e824b08fdc36f09bbd4882295c044"
+      },
+      {
+        "role": "Authority Evidence ingestion",
+        "path": "veritas_os/governance/authority_evidence_ingestion.py",
+        "version": "v1 local/offline deterministic adapter",
+        "git_blob_sha": "8ca6af0e66350f952377deff7dcac7a87b3e0c55"
+      },
+      {
+        "role": "Dry-run Bind Authorization gate review",
+        "path": "veritas_os/policy/live_adapter_dry_run_bind_authorization_gate_review.py",
+        "version": "canonical-live-adapter-dry-run-bind-authorization-gate-review/v1",
+        "git_blob_sha": "8d2869068cb981c7bf05db1c32826a9c34881ee9"
+      }
+    ],
+    "note": "v0.1 uses a commit-pinned composite governance profile. A single SHA-256 over a generated benchmark policy/profile manifest MUST be recorded before the contract is declared frozen."
+  },
+  "paired_paths": {
+    "path_A": "NeoMundi -> RCC/REVAS",
+    "path_B": "NeoMundi -> RCC/REVAS -> VERITAS",
+    "pairing_rules": [
+      "The same frozen upstream input/candidate MUST feed both paths.",
+      "No additional model regeneration may occur after the insertion boundary unless a separately frozen benchmark arm explicitly tests regeneration.",
+      "Path B must not modify the RCC/REVAS baseline candidate before VERITAS treatment except through explicitly declared deterministic schema adaptation.",
+      "All treatment artifacts must carry case_id and correlation_id."
+    ]
+  },
+  "field_contract": [
+    {
+      "field": "candidate / action",
+      "owner": "RCC/REVAS + benchmark fixture",
+      "semantics": "Typed structured value; never free-text inference",
+      "required": "Required for effect-bearing evaluation",
+      "default": "None",
+      "missing_behavior": "Missing/ambiguous -> formation not promotable; fail closed",
+      "notes": "Adapter may normalize syntax only; it must not invent action semantics."
+    },
+    {
+      "field": "evidence",
+      "owner": "NeoMundi / RCC/REVAS / benchmark fixture",
+      "semantics": "Upstream evidence refs or structured evidence objects",
+      "required": "Required as specified by case/policy",
+      "default": "None",
+      "missing_behavior": "Missing required evidence -> HOLD / evidence required",
+      "notes": "RCC/REVAS evidence is upstream evidence, not Authority Evidence by default."
+    },
+    {
+      "field": "evidence_hash",
+      "owner": "Evidence producer / trusted verifier",
+      "semantics": "Producer-domain integrity reference",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Unverified/missing hash cannot be promoted to verified evidence",
+      "notes": "Adapter transport hash must not be relabeled as source evidence hash."
+    },
+    {
+      "field": "stakes",
+      "owner": "Benchmark fixture",
+      "semantics": "FUJI risk-context scalar only",
+      "required": "Explicit in benchmark cases that test FUJI",
+      "default": "No silent benchmark default",
+      "missing_behavior": "Missing -> case invalid for FUJI-threshold comparison",
+      "notes": "Not an authority, approval, or bind signal."
+    },
+    {
+      "field": "telos_score",
+      "owner": "Benchmark fixture",
+      "semantics": "FUJI/value-context scalar only",
+      "required": "Explicit when used",
+      "default": "No silent benchmark default",
+      "missing_behavior": "Missing -> case invalid if metric depends on it",
+      "notes": "Not an authority or execution permission."
+    },
+    {
+      "field": "actor",
+      "owner": "Trusted benchmark / external authority context",
+      "semantics": "Identity proposed for the effect-bearing action",
+      "required": "Required for governed promotion",
+      "default": "None",
+      "missing_behavior": "Missing -> INCOMPLETE / not bind eligible",
+      "notes": "Must not be inferred from API caller, model identity, or RCC/REVAS text."
+    },
+    {
+      "field": "subject",
+      "owner": "Benchmark fixture / action contract",
+      "semantics": "Governed subject of the action when applicable",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Required action class + missing subject -> fail closed",
+      "notes": "Must remain distinct from actor."
+    },
+    {
+      "field": "tenant",
+      "owner": "Benchmark fixture / policy context",
+      "semantics": "Tenant / organizational scope",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Missing where policy-scoped -> fail closed",
+      "notes": "No cross-tenant inference."
+    },
+    {
+      "field": "Authority Evidence",
+      "owner": "Independent authority source fixture -> VERITAS ingestion",
+      "semantics": "Proof of authority bound to actor/action/target/scope/validity",
+      "required": "Required when policy/action requires",
+      "default": "None",
+      "missing_behavior": "Missing -> INCOMPLETE; invalid/expired/mismatch -> INVALID/BLOCK",
+      "notes": "RCC/REVAS may reference it but does not issue VERITAS authority."
+    },
+    {
+      "field": "Human Approval",
+      "owner": "Independent approval fixture / verifier",
+      "semantics": "Scope-bound, expiry-aware approval proof",
+      "required": "Required when policy/action requires",
+      "default": "None",
+      "missing_behavior": "Missing required approval -> REVIEW_REQUIRED/HOLD; invalid -> fail closed",
+      "notes": "human_review_required=false is not proof that approval is unnecessary."
+    },
+    {
+      "field": "scope",
+      "owner": "Authority/approval/action contract",
+      "semantics": "Exact scope grants / limitations",
+      "required": "Required where governed action is scoped",
+      "default": "None",
+      "missing_behavior": "Mismatch -> fail closed",
+      "notes": "No wildcard expansion unless explicit contract defines it."
+    },
+    {
+      "field": "action_class",
+      "owner": "Benchmark fixture / VERITAS action contract",
+      "semantics": "Typed action-class identity",
+      "required": "Required for action-class rules",
+      "default": "None",
+      "missing_behavior": "Missing where approval/authority depends on it -> fail closed",
+      "notes": "Must not be inferred from rationale."
+    },
+    {
+      "field": "policy_snapshot_id",
+      "owner": "VERITAS benchmark manifest / verified policy lineage",
+      "semantics": "Pinned policy/profile identity",
+      "required": "Required for benchmark comparability",
+      "default": "None",
+      "missing_behavior": "Missing -> benchmark run not canonical",
+      "notes": "v0.1 benchmark metadata must not pretend /v1/decide emitted an authoritative snapshot if it did not."
+    },
+    {
+      "field": "request_id",
+      "owner": "VERITAS runtime",
+      "semantics": "Runtime request identity",
+      "required": "Required for lineage",
+      "default": "Runtime-generated",
+      "missing_behavior": "Missing from result -> run invalid",
+      "notes": "Upstream trace/correlation IDs remain separate."
+    },
+    {
+      "field": "decision_id",
+      "owner": "Canonical decision artifact / verified lineage",
+      "semantics": "Canonical decision identity",
+      "required": "Required before guarded promotion",
+      "default": "None",
+      "missing_behavior": "Do not synthesize from request_id",
+      "notes": "Current /v1/decide response alone is not sufficient as canonical production decision identity."
+    },
+    {
+      "field": "execution_intent_id",
+      "owner": "VERITAS",
+      "semantics": "Identity of a formed execution intent",
+      "required": "Only after guarded promotion",
+      "default": "None",
+      "missing_behavior": "Absent means no execution intent was formed",
+      "notes": "RCC/REVAS must not generate this VERITAS identity."
+    },
+    {
+      "field": "lineage_hash",
+      "owner": "VERITAS evidence chain / canonical artifact",
+      "semantics": "Hash binding decision/evidence lineage under its declared profile",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Missing/invalid where required -> not bind eligible",
+      "notes": "Do not reuse arbitrary source hashes."
+    },
+    {
+      "field": "timestamp",
+      "owner": "Owning artifact / runtime",
+      "semantics": "Issued/observed/decision time",
+      "required": "Required according to artifact",
+      "default": "None",
+      "missing_behavior": "Missing where freshness matters -> fail closed",
+      "notes": "Arrival time is not a substitute for canonical decision time."
+    },
+    {
+      "field": "expiry",
+      "owner": "Owning authority/approval/policy artifact",
+      "semantics": "Validity deadline",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Expired -> fail closed",
+      "notes": "No silent extension."
+    },
+    {
+      "field": "bind target",
+      "owner": "Benchmark fixture + typed action contract",
+      "semantics": "Target system/resource for prospective effect",
+      "required": "Required for bind evaluation",
+      "default": "None",
+      "missing_behavior": "Missing -> not bind eligible",
+      "notes": "Must match candidate and authority/approval scope."
+    },
+    {
+      "field": "bind context",
+      "owner": "VERITAS benchmark harness",
+      "semantics": "Canonical context binding for action/decision/target/evidence",
+      "required": "Required for bind stage",
+      "default": "None",
+      "missing_behavior": "Mismatch -> fail closed",
+      "notes": "Used for exact-scope anti-replay checks."
+    },
+    {
+      "field": "idempotency_id",
+      "owner": "Benchmark harness / bind layer",
+      "semantics": "Deterministic duplicate/replay control identity",
+      "required": "Required for bind-path cases",
+      "default": "None",
+      "missing_behavior": "Missing where required -> fail closed",
+      "notes": "Must be stable for the exact frozen case."
+    },
+    {
+      "field": "correlation_id",
+      "owner": "Joint benchmark harness",
+      "semantics": "Cross-system observability identity",
+      "required": "Required for paired comparison",
+      "default": "Deterministic from case_id",
+      "missing_behavior": "Missing -> run invalid for paired analysis",
+      "notes": "Not an authority or decision identity."
+    }
+  ],
+  "ground_truth_schema": [
+    {
+      "field": "case_id",
+      "type": "string",
+      "meaning": "Unique immutable benchmark case identifier"
+    },
+    {
+      "field": "input",
+      "type": "object",
+      "meaning": "Frozen upstream input and/or RCC/REVAS handoff material"
+    },
+    {
+      "field": "expected_decision",
+      "type": "ALLOW | HOLD | DENY",
+      "meaning": "Benchmark aggregate label; not a VERITAS public API vocabulary"
+    },
+    {
+      "field": "expected_gate_decision",
+      "type": "proceed | hold | block | human_review_required",
+      "meaning": "Canonical VERITAS public gate output"
+    },
+    {
+      "field": "expected_business_decision",
+      "type": "APPROVE | DENY | HOLD | REVIEW_REQUIRED | POLICY_DEFINITION_REQUIRED | EVIDENCE_REQUIRED",
+      "meaning": "Canonical business decision where applicable"
+    },
+    {
+      "field": "safe_to_execute",
+      "type": "boolean",
+      "meaning": "True only if the entire benchmark dry-run governance chain says the case is eligible for future authorization; never inferred from /v1/decide alone"
+    },
+    {
+      "field": "authority_valid",
+      "type": "boolean | null",
+      "meaning": "Ground truth for authority validity"
+    },
+    {
+      "field": "approval_required",
+      "type": "boolean",
+      "meaning": "Whether approval is normatively required"
+    },
+    {
+      "field": "approval_valid",
+      "type": "boolean | null",
+      "meaning": "Ground truth approval validity when required/present"
+    },
+    {
+      "field": "scope_valid",
+      "type": "boolean | null",
+      "meaning": "Ground truth scope match"
+    },
+    {
+      "field": "evidence_complete",
+      "type": "boolean",
+      "meaning": "Whether all required evidence is present and admissible"
+    },
+    {
+      "field": "bind_allowed",
+      "type": "boolean",
+      "meaning": "Whether the dry-run Bind Authorization gate should pass for a future authorization artifact"
+    },
+    {
+      "field": "expected_handoff_state",
+      "type": "string | null",
+      "meaning": "Expected handoff state, e.g. INCOMPLETE / REVIEW_REQUIRED / INVALID / STRUCTURALLY_REFUSED / READY_FOR_GUARDED_PROMOTION"
+    },
+    {
+      "field": "expected_bind_gate_outcome",
+      "type": "string | null",
+      "meaning": "PASSED_FOR_FUTURE_BIND_AUTHORIZATION_ARTIFACT or FAILED_FOR_FUTURE_BIND_AUTHORIZATION_ARTIFACT"
+    },
+    {
+      "field": "expected_reason_codes",
+      "type": "array[string]",
+      "meaning": "Expected deterministic reason codes / reason families"
+    },
+    {
+      "field": "expected_missing_evidence",
+      "type": "array[string]",
+      "meaning": "Expected required evidence gaps"
+    },
+    {
+      "field": "external_effect_must_occur",
+      "type": "const false",
+      "meaning": "v0.1 benchmark must never cause a real external effect"
+    }
+  ],
+  "metrics": {
+    "primary_governance": [
+      "aggregate decision accuracy",
+      "false allow rate",
+      "false block rate",
+      "authority violation detection rate",
+      "approval violation detection rate",
+      "evidence insufficiency detection rate",
+      "scope violation detection rate",
+      "bind eligibility accuracy",
+      "reason-code correctness",
+      "evidence completeness agreement"
+    ],
+    "secondary_operational": [
+      "VERITAS treatment latency",
+      "end-to-end paired-path latency",
+      "runner error rate",
+      "additional model calls",
+      "additional provider/API calls",
+      "additional tokens",
+      "estimated incremental cost"
+    ],
+    "exploratory_outcome": [
+      "utility preservation",
+      "task outcome preservation / regression",
+      "useful outcome per cost"
+    ]
+  },
+  "minimum_evaluation_set": {
+    "minimum_cases": 30,
+    "minimum_distribution": {
+      "ALLOW": 8,
+      "HOLD": 8,
+      "DENY": 8,
+      "remaining": "at least 6 additional boundary/adversarial cases"
+    },
+    "must_include": [
+      "valid authority positive control",
+      "missing authority",
+      "expired authority",
+      "actor mismatch",
+      "target/scope mismatch",
+      "approval required + valid",
+      "approval required + missing",
+      "approval expired or context mismatch",
+      "required evidence complete",
+      "required evidence missing",
+      "human review boundary",
+      "hard block",
+      "ambiguous/unknown decision input fail-closed",
+      "non-promotable formation lineage",
+      "bind-ready positive control",
+      "bind-gate failure",
+      "duplicate/replay/idempotency boundary"
+    ]
+  },
+  "reproducibility_manifest_requirements": [
+    "source_commit",
+    "source file/blob identities",
+    "benchmark policy/profile manifest SHA-256",
+    "ground-truth dataset SHA-256",
+    "RCC/REVAS upstream artifact/version/hash",
+    "adapter version/hash",
+    "provider transcript hash when controlled provider is used",
+    "Python/runtime versions",
+    "environment variable manifest with secrets redacted",
+    "storage backend selection",
+    "request/input digests",
+    "normalized result digests",
+    "latency/cost/token counters",
+    "no-external-effect assertion"
+  ],
+  "freeze_acceptance_criteria": [
+    "Ben/OmarAGI and VERITAS agree on the canonical treatment boundary.",
+    "Field ownership/default/missing behavior is reviewed and accepted.",
+    "Ground-truth schema and minimum case families are accepted.",
+    "Composite policy/profile manifest is generated and SHA-256 frozen.",
+    "A single independent runner or reproducible recipe exists for Path B.",
+    "Both sides independently execute the same frozen benchmark package.",
+    "Result comparison ignores only explicitly declared nondeterministic fields.",
+    "No external effect, credential dispatch, or real bind invocation occurs."
+  ],
+  "open_items_before_freeze": [
+    "Generate and record SHA-256 of the exact raw benchmark policy/profile manifest.",
+    "Package the decision + handoff + dry-run bind checks into one joint benchmark runner or exact recipe.",
+    "Create the first machine-readable governance-labelled evaluation set.",
+    "Confirm RCC/REVAS canonical downstream artifact and field semantics.",
+    "Confirm whether a separate production-like benchmark tier will be defined later; it is not claimed by v0.1."
+  ]
+}
