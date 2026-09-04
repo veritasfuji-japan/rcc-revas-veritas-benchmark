@@ -1,0 +1,1156 @@
+{
+  "artifact_type": "rcc_revas_veritas_field_contract",
+  "artifact_version": "0.2.0",
+  "date": "2026-09-03",
+  "status": "JOINT_TECHNICAL_REVIEW_DRAFT_FIELD_FREEZE_CANDIDATE_NOT_IMPLEMENTED",
+  "canonical_language": "English",
+  "purpose": "Define field ownership, semantic boundaries, deterministic adapter behavior, missing-field behavior, and the proposed v0.2 handoff envelope between RCC/REVAS and VERITAS.",
+  "supersedes": {
+    "artifact": "RCC_REVAS_VERITAS_Boundary_Artifact_Mapping_v0.1",
+    "json_sha256": "e2924d68c17817d7a511b50751510ef9aa49ee6102a1df0f1a97e0645ecc38af",
+    "scope": "field-level contract only; v0.1 remains historical mapping record"
+  },
+  "related_artifacts": {
+    "boundary_mapping_v0_1_json_sha256": "e2924d68c17817d7a511b50751510ef9aa49ee6102a1df0f1a97e0645ecc38af",
+    "canonical_benchmark_contract_v0_1_json_sha256": "a1352dc3cea28da07ca4799e1587b45616376521021e88c724c753fb60738628",
+    "benchmark_runtime_manifest_v0_1_json_sha256": "edefe64da6ab0980ff94fdc62086933b4ce79860e352472f92873d6e0ac310d8"
+  },
+  "source_snapshot": [
+    {
+      "system": "VERITAS OS",
+      "repository": "veritasfuji-japan/veritas_os",
+      "revision": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+      "role": "normative VERITAS target semantics"
+    },
+    {
+      "system": "OmarAGI x NeoMundi Pilot",
+      "repository": "effacermonexistence/omaragi-neomundi-pilot",
+      "revision": "500bad7b240f1cd9215cec7660b39df69a77977f",
+      "role": "public RCC/REVAS/NeoMundi field evidence"
+    },
+    {
+      "system": "OmarAGI Reliability BYOK Replay",
+      "repository": "effacermonexistence/omaragi-reliability-replay",
+      "revision": "f141fd09217279ca48f2cfbecc532fed8ecaa6e9",
+      "role": "public route/verify/adopt/decision-lock shape"
+    },
+    {
+      "system": "Orthogonal Projection Term Benchmarks",
+      "repository": "effacermonexistence/orthogonal-projection-term-benchmarks",
+      "revision": "57c8bef70e4cdb7ce33ea865dda852c17001925e",
+      "role": "benchmark methodology context only; not field-authoritative"
+    }
+  ],
+  "source_file_identities": [
+    {
+      "path": "pilot-01/artifacts/final_01_stable_but_fragile_revas_artifact.json",
+      "git_blob_sha": "805a2e95e6ce466abcf1a24a2917e532adf048ce"
+    },
+    {
+      "path": "pilot-01/artifacts/final_02_variable_and_uncertain_revas_artifact.json",
+      "git_blob_sha": "7db6599fa626b50be64aeaa18a60f11d0c9fbfa2"
+    },
+    {
+      "path": "pilot-02/protocol-lock/v0.2/pilot02_endpoint_lock.json",
+      "git_blob_sha": "932b3e18d6390fc5a80c83869cf618468a247e7b"
+    },
+    {
+      "path": "examples/example_report.json (Reliability Replay)",
+      "git_blob_sha": "f401477f9c9cfd5fe0634441adf568044cc482f5"
+    },
+    {
+      "path": "veritas_os/policy/bind_artifacts.py",
+      "git_blob_sha": "d25ec429e6c854f0b14dac9ec4e14eea03ee7675"
+    },
+    {
+      "path": "veritas_os/governance/authority_evidence.py",
+      "git_blob_sha": "045c8add9fcedce2eed85d85acef4bb8a637bcaf"
+    },
+    {
+      "path": "veritas_os/governance/human_approval_receipt.py",
+      "git_blob_sha": "5af248eab8878a743929808e58dc930a0c38d9d9"
+    },
+    {
+      "path": "veritas_os/governance/action_contracts.py",
+      "git_blob_sha": "f0819da319267006b56e2125a06214849cae9c78"
+    }
+  ],
+  "v0_2_changes_from_v0_1": [
+    "Separates upstream RCC/REVAS decision identity/hash from VERITAS request_id, decision_id, decision_hash, and execution_intent_id.",
+    "Makes source-namespace preservation normative for revas_decision, admissibility_status, Pilot 02 action labels, and replay adoption labels.",
+    "Adds owner/default/missing-field behavior for every benchmark-relevant field.",
+    "Defines a proposed rcc_revas_to_veritas_handoff v0.2 envelope and deterministic adapter rules.",
+    "Adds public Pilot 02 v0.2 action ontology as study context without treating it as VERITAS authority semantics.",
+    "Adds explicit prohibition on mapping RCC/REVAS decision_lock.decision_sha256 into VERITAS ExecutionIntent.decision_hash.",
+    "Adds strong separation of RCC/REVAS verification from VerifiedAuthorityEvidence / VerifiedHumanApprovalReceipt.",
+    "Aligns promotion requirements with current VERITAS ExecutionIntent, ActionClassContract, AuthorityEvidence, HumanApprovalReceipt, and BindReceipt contracts."
+  ],
+  "responsibility_boundary": {
+    "NeoMundi": [
+      "measurement",
+      "state",
+      "signal",
+      "provenance"
+    ],
+    "RCC_REVAS": [
+      "interpretation",
+      "routing",
+      "candidate/runtime execution within its authorized envelope",
+      "verification",
+      "stopping",
+      "rerouting",
+      "regeneration",
+      "abstention",
+      "candidate adoption",
+      "adoption evidence"
+    ],
+    "VERITAS": [
+      "typed effect-bearing intent governance",
+      "policy lineage",
+      "authority verification",
+      "human approval verification",
+      "execution admissibility",
+      "bind governance",
+      "receipts/evidence chain"
+    ]
+  },
+  "source_ontology": {
+    "pilot01_observed": {
+      "artifact_schema_version": "omaragi.revas.neomundi.scored_artifact.v0.1",
+      "examples": [
+        "ALLOW_WITH_FACTUAL_CAUTION",
+        "ESCALATE_UNCERTAINTY"
+      ],
+      "semantic_scope": "REVAS pre-action/adoption admissibility; source namespace only"
+    },
+    "reliability_replay_observed": {
+      "schema_version": "omaragi-reliability-replay-report-v3",
+      "router_examples": [
+        "route_allowed"
+      ],
+      "adoption_examples": [
+        "candidate_adopted",
+        "baseline_preserved"
+      ],
+      "decision_lock_version": "public-decision-lock-v1",
+      "decision_hash_algorithm": "sha256",
+      "semantic_scope": "sanitized deterministic public replay of routing/verification/adoption/decision-lock shape"
+    },
+    "pilot02_protocol_lock": {
+      "lock_id": "pilot02-endpoint-v0.2",
+      "status": "FROZEN_FOR_DEV_30",
+      "primary_action_lane": [
+        "CONTINUE",
+        "STOP",
+        "ABSTAIN"
+      ],
+      "separate_action_modules": [
+        "REGENERATE",
+        "ROUTE",
+        "ESCALATE"
+      ],
+      "semantic_scope": "Pilot 02 study intervention ontology; not VERITAS execution-authority vocabulary"
+    }
+  },
+  "field_contract": [
+    {
+      "field": "artifact_schema_version",
+      "owner": "RCC/REVAS",
+      "source_path": "artifact_schema_version / schema_version",
+      "target": "source_artifact.schema_version",
+      "status": "SOURCE_NATIVE",
+      "required": "Required for canonical handoff",
+      "default": "None",
+      "missing_behavior": "Reject canonical handoff if absent",
+      "rule": "Preserve source namespace/version exactly; adapter must not silently upgrade it."
+    },
+    {
+      "field": "artifact_ref",
+      "owner": "Joint adapter",
+      "source_path": "repository/path or immutable artifact reference",
+      "target": "source_artifact.artifact_ref",
+      "status": "DETERMINISTIC_ADAPTER_DERIVATION",
+      "required": "Required",
+      "default": "None",
+      "missing_behavior": "Reject canonical handoff",
+      "rule": "Must identify the exact source artifact, not only a repository."
+    },
+    {
+      "field": "artifact_hash",
+      "owner": "Joint adapter / source verifier",
+      "source_path": "raw source artifact bytes",
+      "target": "source_artifact.artifact_hash",
+      "status": "DETERMINISTIC_ADAPTER_DERIVATION",
+      "required": "Required",
+      "default": "None",
+      "missing_behavior": "UNVERIFIED_STRUCTURED_INPUT; not bind eligible",
+      "rule": "Use declared hash profile; SHA-256 preferred for joint benchmark."
+    },
+    {
+      "field": "hash_profile",
+      "owner": "Joint adapter",
+      "source_path": "contract-defined",
+      "target": "source_artifact.hash_profile",
+      "status": "DETERMINISTIC_ADAPTER_DERIVATION",
+      "required": "Required when artifact_hash present",
+      "default": "sha256/raw-bytes for benchmark",
+      "missing_behavior": "Hash is non-portable until profile is declared",
+      "rule": "Do not relabel an upstream decision hash as an artifact hash."
+    },
+    {
+      "field": "source_observation_id",
+      "owner": "NeoMundi / RCC/REVAS",
+      "source_path": "source_observation_id",
+      "target": "lineage.source_observation_id",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Preserve null/absence",
+      "rule": "Evidence lineage only; never VERITAS request_id or decision_id."
+    },
+    {
+      "field": "source_trace_id",
+      "owner": "RCC/REVAS",
+      "source_path": "source_trace_id",
+      "target": "lineage.source_trace_id",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Preserve absence",
+      "rule": "May seed a namespaced correlation_id only through deterministic adapter logic."
+    },
+    {
+      "field": "correlation_id",
+      "owner": "Joint benchmark adapter",
+      "source_path": "case_id + source trace/ref",
+      "target": "adapter_provenance.correlation_id",
+      "status": "DETERMINISTIC_ADAPTER_DERIVATION",
+      "required": "Required for paired benchmark",
+      "default": "None",
+      "missing_behavior": "Run invalid for paired comparison",
+      "rule": "Observability only; not execution authority or canonical VERITAS request identity."
+    },
+    {
+      "field": "source_model_alias",
+      "owner": "RCC/REVAS",
+      "source_path": "source_model_alias",
+      "target": "source_context.source_model_alias",
+      "status": "CONTEXT_ONLY",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No failure",
+      "rule": "Model identity does not establish actor identity, authority, or signer identity."
+    },
+    {
+      "field": "source_prompt_class",
+      "owner": "RCC/REVAS",
+      "source_path": "source_prompt_class",
+      "target": "source_context.source_prompt_class",
+      "status": "CONTEXT_ONLY",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No failure",
+      "rule": "May inform benchmark stratification; must not select VERITAS policy by itself."
+    },
+    {
+      "field": "neomundi_measurement_summary",
+      "owner": "NeoMundi via RCC/REVAS",
+      "source_path": "neomundi_measurement_summary",
+      "target": "measurement_evidence.raw_summary",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Preserve absence; do not invent measurement",
+      "rule": "Preserve raw source semantics and limitations."
+    },
+    {
+      "field": "measurement_status",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.measurement_status",
+      "target": "measurement_evidence.measurement_status",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Unknown/absent stays unknown",
+      "rule": "complete does not mean governance evidence_complete or execution-safe."
+    },
+    {
+      "field": "measurement_coverage",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.measurement_coverage",
+      "target": "measurement_evidence.measurement_coverage",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Null stays null",
+      "rule": "Never convert null coverage to complete/full."
+    },
+    {
+      "field": "stability_score",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.stability_score",
+      "target": "measurement_evidence.signals.stability_score",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No default",
+      "rule": "Measured signal only; not authority or policy acceptance."
+    },
+    {
+      "field": "coherence_score",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.coherence_score",
+      "target": "measurement_evidence.signals.coherence_score",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No default",
+      "rule": "Measured signal only."
+    },
+    {
+      "field": "factual_validity_status",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.factual_validity_status",
+      "target": "measurement_evidence.signals.factual_validity_status",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "Unknown stays unknown",
+      "rule": "Not legal/safety/authority truth."
+    },
+    {
+      "field": "factual_hallucination_score",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.factual_hallucination_score",
+      "target": "measurement_evidence.signals.factual_hallucination_score",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No default",
+      "rule": "Do not translate into VERITAS risk score without a separately frozen policy."
+    },
+    {
+      "field": "semantic_variability_status",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.semantic_variability_status",
+      "target": "measurement_evidence.signals.semantic_variability_status",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "Unknown stays unknown",
+      "rule": "Evidence/context only."
+    },
+    {
+      "field": "semantic_instability_score",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.semantic_instability_score",
+      "target": "measurement_evidence.signals.semantic_instability_score",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No default",
+      "rule": "Evidence/context only."
+    },
+    {
+      "field": "risk_level / risk_types",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.risk_level / risk_types",
+      "target": "measurement_evidence.signals.source_risk_*",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No default",
+      "rule": "Namespace as source risk; never substitute for VERITAS risk acceptance."
+    },
+    {
+      "field": "measurement_boundary",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.measurement_boundary",
+      "target": "measurement_evidence.boundary",
+      "status": "SOURCE_NATIVE",
+      "required": "Required if present upstream",
+      "default": "[]",
+      "missing_behavior": "Canonical public artifact invalid if silently dropped",
+      "rule": "Must survive repackaging."
+    },
+    {
+      "field": "known_limitations",
+      "owner": "NeoMundi",
+      "source_path": "neomundi_measurement_summary.known_limitations",
+      "target": "measurement_evidence.limitations",
+      "status": "SOURCE_NATIVE",
+      "required": "Required if present upstream",
+      "default": "[]",
+      "missing_behavior": "Canonical public artifact invalid if silently dropped",
+      "rule": "Must survive repackaging and benchmarking."
+    },
+    {
+      "field": "neomundi_artifact_ref/hash",
+      "owner": "NeoMundi / source verifier",
+      "source_path": "not present in Pilot 01 scored artifact",
+      "target": "measurement_evidence.source_artifact_refs",
+      "status": "PENDING_SOURCE_CONFIRMATION",
+      "required": "Required for strong independent verification",
+      "default": "[]",
+      "missing_behavior": "Measurement remains embedded/unverified context",
+      "rule": "Pilot 01 preserves a measurement summary but not an independently verifiable NeoMundi artifact reference/hash."
+    },
+    {
+      "field": "revas_decision",
+      "owner": "RCC/REVAS",
+      "source_path": "revas_decision",
+      "target": "rcc_revas.disposition.source_value",
+      "status": "SOURCE_NATIVE",
+      "required": "Required when present in source schema",
+      "default": "None",
+      "missing_behavior": "No normalization by guess",
+      "rule": "Preserve RCC/REVAS namespace. Never map directly to VERITAS proceed/hold/block or ALLOW/HOLD/DENY."
+    },
+    {
+      "field": "revas_action",
+      "owner": "RCC/REVAS",
+      "source_path": "revas_action",
+      "target": "rcc_revas.recommendation_text",
+      "status": "CONTEXT_ONLY",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No failure",
+      "rule": "Free text is not VERITAS intended_action and cannot create a typed action."
+    },
+    {
+      "field": "admissibility_status",
+      "owner": "RCC/REVAS",
+      "source_path": "admissibility_status / adoption_gate.admissibility_status",
+      "target": "rcc_revas.adoption.admissibility_status",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Unknown stays unknown",
+      "rule": "Always namespace as RCC/REVAS adoption/pre-action admissibility; never BindReceipt.admissibility_result."
+    },
+    {
+      "field": "confidence_score",
+      "owner": "RCC/REVAS",
+      "source_path": "confidence_score / scored_artifact.confidence_score",
+      "target": "rcc_revas.scores.confidence_score",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No default",
+      "rule": "Must carry score_semantics if used."
+    },
+    {
+      "field": "risk_score",
+      "owner": "RCC/REVAS",
+      "source_path": "risk_score / scored_artifact.risk_score",
+      "target": "rcc_revas.scores.risk_score",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No default",
+      "rule": "Source score only; not VERITAS runtime risk acceptance."
+    },
+    {
+      "field": "score_semantics",
+      "owner": "RCC/REVAS",
+      "source_path": "score_semantics",
+      "target": "rcc_revas.scores.score_semantics",
+      "status": "SOURCE_NATIVE",
+      "required": "Required if confidence/risk scores carried",
+      "default": "None",
+      "missing_behavior": "Scores become non-comparable / context-only",
+      "rule": "Pilot 01 explicitly labels scores first-pass and non-production."
+    },
+    {
+      "field": "uncertainty_preserved",
+      "owner": "RCC/REVAS",
+      "source_path": "uncertainty_preserved",
+      "target": "rcc_revas.constraints.uncertainty_preserved",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No default",
+      "rule": "Does not prove evidence completeness."
+    },
+    {
+      "field": "required_next_step",
+      "owner": "RCC/REVAS",
+      "source_path": "required_next_step",
+      "target": "rcc_revas.constraints.required_next_step",
+      "status": "CONTEXT_ONLY",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No failure",
+      "rule": "Not a VERITAS policy rule or execution instruction."
+    },
+    {
+      "field": "rationale",
+      "owner": "RCC/REVAS",
+      "source_path": "rationale / routing_reason / gate reason",
+      "target": "rcc_revas.audit.rationale",
+      "status": "CONTEXT_ONLY",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No failure",
+      "rule": "Cannot supply actor, target, authority, approval, or typed action semantics."
+    },
+    {
+      "field": "limitations / boundary_notes",
+      "owner": "RCC/REVAS",
+      "source_path": "limitations / boundary_notes",
+      "target": "rcc_revas.constraints.limitations",
+      "status": "SOURCE_NATIVE",
+      "required": "Required if present upstream",
+      "default": "[]",
+      "missing_behavior": "Canonical public artifact invalid if silently dropped",
+      "rule": "Boundary claims survive every adapter transformation."
+    },
+    {
+      "field": "router.route_family",
+      "owner": "RCC/REVAS",
+      "source_path": "revas_pipeline.router.route_family",
+      "target": "rcc_revas.route.route_family",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Preserve absence",
+      "rule": "Upstream routing evidence only."
+    },
+    {
+      "field": "router.routing_reason",
+      "owner": "RCC/REVAS",
+      "source_path": "revas_pipeline.router.routing_reason",
+      "target": "rcc_revas.route.reason",
+      "status": "CONTEXT_ONLY",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No failure",
+      "rule": "Explanation only."
+    },
+    {
+      "field": "router.source_signals_used",
+      "owner": "RCC/REVAS",
+      "source_path": "revas_pipeline.router.source_signals_used",
+      "target": "rcc_revas.route.source_signals_used",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "{}",
+      "missing_behavior": "Preserve empty",
+      "rule": "Useful to prove which NeoMundi fields affected the route."
+    },
+    {
+      "field": "executor_status/type/result",
+      "owner": "RCC/REVAS",
+      "source_path": "revas_pipeline.executor.* / executor_result",
+      "target": "rcc_revas.execution.*",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Preserve source state",
+      "rule": "Pilot 01 executor is explicitly not_executed; replay executor is sanitized/offline. Neither proves external effect."
+    },
+    {
+      "field": "verifier_status/type/method",
+      "owner": "RCC/REVAS",
+      "source_path": "revas_pipeline.verifier.* / runtime_verifier_result",
+      "target": "rcc_revas.verification.*",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Preserve source state",
+      "rule": "Verifier pass is upstream candidate verification only."
+    },
+    {
+      "field": "verifier evidence refs/provenance",
+      "owner": "RCC/REVAS verifier",
+      "source_path": "not fully frozen in public artifacts",
+      "target": "rcc_revas.verification.evidence_refs / verifier_ref",
+      "status": "PENDING_SOURCE_CONFIRMATION",
+      "required": "Required for strong verified-evidence classification",
+      "default": "[]",
+      "missing_behavior": "Treat verifier result as structured source claim only",
+      "rule": "Need verifier identity/version/config/evidence provenance for portable trust."
+    },
+    {
+      "field": "adoption_gate decision",
+      "owner": "RCC/REVAS",
+      "source_path": "revas_pipeline.adoption_gate.gate_decision / adoption_gate_result.decision",
+      "target": "rcc_revas.adoption.decision",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Preserve source state",
+      "rule": "candidate_adopted / baseline_preserved are upstream adoption outcomes, not execution permission."
+    },
+    {
+      "field": "allowed_use / blocked_use",
+      "owner": "RCC/REVAS",
+      "source_path": "revas_pipeline.adoption_gate.allowed_use / blocked_use",
+      "target": "rcc_revas.adoption.use_constraints",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "[]",
+      "missing_behavior": "No default widening",
+      "rule": "Adapter must never widen allowed use beyond source constraints."
+    },
+    {
+      "field": "fallback_policy",
+      "owner": "RCC/REVAS",
+      "source_path": "revas_pipeline.adoption_gate.fallback_policy",
+      "target": "rcc_revas.adoption.fallback_policy",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No failure",
+      "rule": "Upstream fallback semantics only."
+    },
+    {
+      "field": "Pilot 02 primary action lane",
+      "owner": "RCC/REVAS study protocol",
+      "source_path": "CONTINUE / STOP / ABSTAIN",
+      "target": "rcc_revas.intervention.source_action",
+      "status": "CONTEXT_ONLY",
+      "required": "Conditional to Pilot 02 benchmark",
+      "default": "None",
+      "missing_behavior": "No cross-ontology guess",
+      "rule": "Study action ontology; not VERITAS gate/Bind vocabulary."
+    },
+    {
+      "field": "Pilot 02 separate modules",
+      "owner": "RCC/REVAS study protocol",
+      "source_path": "REGENERATE / ROUTE / ESCALATE",
+      "target": "rcc_revas.intervention.module_action",
+      "status": "CONTEXT_ONLY",
+      "required": "Conditional to Pilot 02 benchmark",
+      "default": "None",
+      "missing_behavior": "No cross-ontology guess",
+      "rule": "Remain separate modules in Pilot 02 v0.2; do not collapse into primary action lane."
+    },
+    {
+      "field": "decision_lock.status",
+      "owner": "RCC/REVAS replay",
+      "source_path": "decision_lock.status",
+      "target": "rcc_revas.decision_lock.status",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "No lock claim if absent",
+      "rule": "Evidence of source freeze/ordering only."
+    },
+    {
+      "field": "decision_lock.lock_version",
+      "owner": "RCC/REVAS replay",
+      "source_path": "decision_lock.lock_version",
+      "target": "rcc_revas.decision_lock.lock_version",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "No lock portability claim",
+      "rule": "Must accompany decision hash when present."
+    },
+    {
+      "field": "decision_lock.hash_algorithm",
+      "owner": "RCC/REVAS replay",
+      "source_path": "decision_lock.hash_algorithm",
+      "target": "rcc_revas.decision_lock.hash_algorithm",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Hash remains source-domain only",
+      "rule": "Observed public replay uses sha256."
+    },
+    {
+      "field": "decision_lock.decision_sha256",
+      "owner": "RCC/REVAS replay",
+      "source_path": "decision_lock.decision_sha256",
+      "target": "rcc_revas.decision_lock.decision_hash",
+      "status": "SOURCE_NATIVE",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "No source decision integrity claim if absent",
+      "rule": "MUST NOT populate VERITAS ExecutionIntent.decision_hash."
+    },
+    {
+      "field": "decision lock canonical preimage/profile",
+      "owner": "RCC/REVAS",
+      "source_path": "not fully specified as portable external contract",
+      "target": "rcc_revas.decision_lock.hash_profile",
+      "status": "PENDING_SOURCE_CONFIRMATION",
+      "required": "Required for independent portable verification",
+      "default": "None",
+      "missing_behavior": "Hash treated as opaque source digest",
+      "rule": "Need canonical preimage/serialization and verification/origin contract."
+    },
+    {
+      "field": "post_lock_scorer_result",
+      "owner": "RCC/REVAS replay",
+      "source_path": "post_lock_scorer_result",
+      "target": "rcc_revas.post_lock_evaluation",
+      "status": "CONTEXT_ONLY",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No failure",
+      "rule": "May measure outcome after lock but cannot retroactively authorize/change the decision."
+    },
+    {
+      "field": "artifact_score",
+      "owner": "RCC/REVAS replay",
+      "source_path": "artifact_score",
+      "target": "rcc_revas.public_demo_score",
+      "status": "CONTEXT_ONLY",
+      "required": "Optional",
+      "default": "None",
+      "missing_behavior": "No failure",
+      "rule": "Public replay explicitly says this is not a benchmark metric."
+    },
+    {
+      "field": "event_log",
+      "owner": "RCC/REVAS replay",
+      "source_path": "event_log",
+      "target": "rcc_revas.audit.event_log",
+      "status": "SOURCE_NATIVE",
+      "required": "Optional",
+      "default": "[]",
+      "missing_behavior": "No failure",
+      "rule": "External audit/replay evidence; not VERITAS TrustLog."
+    },
+    {
+      "field": "public_release_boundary / claim_boundary",
+      "owner": "RCC/REVAS",
+      "source_path": "public_release_boundary / claim_boundary",
+      "target": "source_artifact.claim_boundary",
+      "status": "SOURCE_NATIVE",
+      "required": "Required for public joint artifact when present upstream",
+      "default": "[]",
+      "missing_behavior": "Do not publish transformed artifact without source claim boundary",
+      "rule": "Must survive repackaging verbatim or by exact reference."
+    },
+    {
+      "field": "selected_output_ref",
+      "owner": "RCC/REVAS / joint fixture",
+      "source_path": "content-addressed selected candidate ref if available",
+      "target": "candidate.selected_output_ref",
+      "status": "PENDING_SOURCE_CONFIRMATION",
+      "required": "Required to bind a selected output without embedding content",
+      "default": "None",
+      "missing_behavior": "No promotion to ExecutionIntent",
+      "rule": "Public replay exposes final_answer text but not a portable content-addressed typed action candidate contract."
+    },
+    {
+      "field": "selected_output_hash",
+      "owner": "RCC/REVAS / joint adapter",
+      "source_path": "selected candidate bytes under frozen profile",
+      "target": "candidate.selected_output_hash",
+      "status": "PENDING_SOURCE_CONFIRMATION",
+      "required": "Required for candidate integrity in joint execution benchmark",
+      "default": "None",
+      "missing_behavior": "No candidate-to-action binding",
+      "rule": "Must bind exact selected candidate, not rationale or source decision lock."
+    },
+    {
+      "field": "candidate_type",
+      "owner": "RCC/REVAS / integration contract",
+      "source_path": "typed candidate classification",
+      "target": "candidate.candidate_type",
+      "status": "PENDING_SOURCE_CONFIRMATION",
+      "required": "Required before effect-bearing promotion",
+      "default": "None",
+      "missing_behavior": "Do not form ExecutionIntent",
+      "rule": "Must distinguish text answer, plan, tool call, structured action, etc."
+    },
+    {
+      "field": "typed_action / intended_action",
+      "owner": "Trusted integration input",
+      "source_path": "canonical typed action contract; never revas_action prose",
+      "target": "future ExecutionIntent.intended_action",
+      "status": "INDEPENDENT_GOVERNANCE_INPUT",
+      "required": "Required for effect-bearing promotion",
+      "default": "None",
+      "missing_behavior": "Structural refusal / no ExecutionIntent",
+      "rule": "May be passed through by adapter only when supplied as a typed contract. Adapter must not invent it."
+    },
+    {
+      "field": "action_class",
+      "owner": "VERITAS Action Class Contract / trusted integration",
+      "source_path": "ActionClassContract.action_class",
+      "target": "governance_context.action_class",
+      "status": "INDEPENDENT_GOVERNANCE_INPUT",
+      "required": "Required when governed by action class",
+      "default": "None",
+      "missing_behavior": "Fail closed / no bind eligibility",
+      "rule": "Action class comes from a machine-readable VERITAS contract, not source prose."
+    },
+    {
+      "field": "target_system",
+      "owner": "Trusted integration / action contract",
+      "source_path": "typed target",
+      "target": "future ExecutionIntent.target_system",
+      "status": "INDEPENDENT_GOVERNANCE_INPUT",
+      "required": "Required for effect-bearing promotion",
+      "default": "None",
+      "missing_behavior": "Structural refusal / no ExecutionIntent",
+      "rule": "Never infer from free text."
+    },
+    {
+      "field": "target_resource",
+      "owner": "Trusted integration / action contract",
+      "source_path": "typed target resource",
+      "target": "future ExecutionIntent.target_resource",
+      "status": "INDEPENDENT_GOVERNANCE_INPUT",
+      "required": "Required for effect-bearing promotion",
+      "default": "None",
+      "missing_behavior": "Structural refusal / no ExecutionIntent",
+      "rule": "Must be scope-bound."
+    },
+    {
+      "field": "requested_scope",
+      "owner": "Trusted integration / action contract",
+      "source_path": "typed requested scope",
+      "target": "governance_context.requested_scope",
+      "status": "INDEPENDENT_GOVERNANCE_INPUT",
+      "required": "Required when action is scoped",
+      "default": "None",
+      "missing_behavior": "Fail closed",
+      "rule": "Must be checked against authority and approval scope."
+    },
+    {
+      "field": "actor_identity",
+      "owner": "Independent governance context / Authority Evidence",
+      "source_path": "trusted actor identity",
+      "target": "future ExecutionIntent.actor_identity",
+      "status": "INDEPENDENT_GOVERNANCE_INPUT",
+      "required": "Required for effect-bearing promotion",
+      "default": "None",
+      "missing_behavior": "Structural refusal / no ExecutionIntent",
+      "rule": "Must not be derived from source_model_alias/API caller by guess."
+    },
+    {
+      "field": "policy_snapshot_id",
+      "owner": "VERITAS",
+      "source_path": "verified policy lineage",
+      "target": "future ExecutionIntent.policy_snapshot_id",
+      "status": "VERITAS_GENERATED",
+      "required": "Required for canonical bind lineage",
+      "default": "None",
+      "missing_behavior": "Not canonical / fail closed",
+      "rule": "RCC/REVAS does not own VERITAS policy identity."
+    },
+    {
+      "field": "policy_lineage",
+      "owner": "VERITAS",
+      "source_path": "verified policy/profile lineage",
+      "target": "future ExecutionIntent.policy_lineage",
+      "status": "VERITAS_GENERATED",
+      "required": "Required for canonical benchmark/bind lineage",
+      "default": "None",
+      "missing_behavior": "Not bind eligible",
+      "rule": "Must reference frozen benchmark policy/profile."
+    },
+    {
+      "field": "AuthorityEvidence / VerifiedAuthorityEvidence",
+      "owner": "Independent trusted authority source + VERITAS verifier",
+      "source_path": "signed authority artifact/proof",
+      "target": "authority verification path / evidence_refs",
+      "status": "INDEPENDENT_GOVERNANCE_INPUT",
+      "required": "Required when action contract requires authority",
+      "default": "None",
+      "missing_behavior": "Missing/invalid/expired/mismatch -> fail closed",
+      "rule": "RCC/REVAS verifier pass, risk score, or ADOPT cannot satisfy this."
+    },
+    {
+      "field": "HumanApprovalReceipt / VerifiedHumanApprovalReceipt",
+      "owner": "Independent approver + VERITAS verifier",
+      "source_path": "scope/action/policy/expiry-bound approval proof",
+      "target": "approval_context / bind proof",
+      "status": "INDEPENDENT_GOVERNANCE_INPUT",
+      "required": "Required when action contract requires approval",
+      "default": "None",
+      "missing_behavior": "Missing -> review/hold; invalid/expired/mismatch -> fail closed",
+      "rule": "human_review recommendation is not Human Approval."
+    },
+    {
+      "field": "evidence freshness / required evidence metadata",
+      "owner": "VERITAS policy/action contract",
+      "source_path": "freshness/requirement rules",
+      "target": "governance_context.evidence_requirements",
+      "status": "VERITAS_GENERATED",
+      "required": "Conditional",
+      "default": "None",
+      "missing_behavior": "Required evidence missing/stale -> fail closed",
+      "rule": "Source measurement completeness does not replace governance evidence completeness."
+    },
+    {
+      "field": "request_id",
+      "owner": "VERITAS runtime",
+      "source_path": "generated by canonical runtime/request",
+      "target": "VERITAS request_id",
+      "status": "VERITAS_GENERATED",
+      "required": "Required for canonical runtime lineage",
+      "default": "Runtime generated",
+      "missing_behavior": "Run invalid if missing",
+      "rule": "source_trace_id may be correlated but MUST NOT become request_id."
+    },
+    {
+      "field": "decision_id",
+      "owner": "VERITAS decision runtime/artifact",
+      "source_path": "VERITAS canonical decision",
+      "target": "ExecutionIntent.decision_id",
+      "status": "VERITAS_GENERATED",
+      "required": "Required before ExecutionIntent",
+      "default": "None",
+      "missing_behavior": "No ExecutionIntent",
+      "rule": "RCC/REVAS decision identity is preserved separately as upstream_decision_ref."
+    },
+    {
+      "field": "decision_hash",
+      "owner": "VERITAS decision runtime/artifact",
+      "source_path": "VERITAS canonical decision hash",
+      "target": "ExecutionIntent.decision_hash",
+      "status": "VERITAS_GENERATED",
+      "required": "Required before bind lineage",
+      "default": "None",
+      "missing_behavior": "No bind eligibility",
+      "rule": "MUST NOT reuse decision_lock.decision_sha256 from RCC/REVAS."
+    },
+    {
+      "field": "decision_ts",
+      "owner": "VERITAS decision runtime/artifact",
+      "source_path": "VERITAS canonical decision time",
+      "target": "ExecutionIntent.decision_ts",
+      "status": "VERITAS_GENERATED",
+      "required": "Required for freshness/TTL lineage",
+      "default": "None",
+      "missing_behavior": "No canonical execution intent",
+      "rule": "Upstream timestamps remain separate evidence timestamps."
+    },
+    {
+      "field": "execution_intent_id",
+      "owner": "VERITAS",
+      "source_path": "ExecutionIntent identity",
+      "target": "ExecutionIntent.execution_intent_id",
+      "status": "VERITAS_GENERATED",
+      "required": "Generated only after guarded promotion",
+      "default": "None",
+      "missing_behavior": "Absence means no ExecutionIntent formed",
+      "rule": "RCC/REVAS cannot generate a VERITAS execution intent identity."
+    },
+    {
+      "field": "evidence_refs",
+      "owner": "VERITAS",
+      "source_path": "refs to independently verified upstream/governance artifacts",
+      "target": "ExecutionIntent.evidence_refs",
+      "status": "VERITAS_GENERATED",
+      "required": "Required as policy dictates",
+      "default": "[]",
+      "missing_behavior": "Missing required refs -> no bind eligibility",
+      "rule": "Verified RCC/REVAS handoff/artifact may be one evidence ref; unverified material must remain clearly classified."
+    },
+    {
+      "field": "bind_context_hash",
+      "owner": "VERITAS",
+      "source_path": "hash of exact bind context",
+      "target": "Human Approval proof / bind lineage",
+      "status": "VERITAS_GENERATED",
+      "required": "Conditional/required when context-bound",
+      "default": "None",
+      "missing_behavior": "No portable approval/bind proof",
+      "rule": "Must bind actor/action/target/policy/decision context under VERITAS profile."
+    },
+    {
+      "field": "idempotency_key",
+      "owner": "VERITAS bind layer / benchmark harness",
+      "source_path": "duplicate/replay control identity",
+      "target": "BindReceipt.idempotency_key",
+      "status": "VERITAS_GENERATED",
+      "required": "Required when action contract/bind path requires",
+      "default": "None",
+      "missing_behavior": "Fail closed when required",
+      "rule": "Not RCC/REVAS trace ID by default."
+    },
+    {
+      "field": "BindReceipt.admissibility_result",
+      "owner": "VERITAS Bind Boundary",
+      "source_path": "bind-time governance result",
+      "target": "BindReceipt.admissibility_result",
+      "status": "VERITAS_GENERATED",
+      "required": "Generated at bind boundary",
+      "default": "{}",
+      "missing_behavior": "No bind-time claim if absent",
+      "rule": "Never populated from RCC/REVAS admissibility_status."
+    },
+    {
+      "field": "BindReceipt.final_outcome",
+      "owner": "VERITAS Bind Boundary",
+      "source_path": "COMMITTED/BLOCKED/ESCALATED/etc.",
+      "target": "BindReceipt.final_outcome",
+      "status": "VERITAS_GENERATED",
+      "required": "Generated by VERITAS bind runtime",
+      "default": "BLOCKED default in artifact model",
+      "missing_behavior": "No upstream override",
+      "rule": "Upstream RCC/REVAS outcomes cannot directly set final_outcome."
+    }
+  ],
+  "adapter_rules": {
+    "allowed": [
+      "copy exact source fields",
+      "namespace source enums/labels without widening meaning",
+      "canonicalize JSON ordering / whitespace under declared profile",
+      "compute adapter-local SHA-256 over exact declared bytes or canonical JSON",
+      "derive correlation_id deterministically",
+      "preserve limitations, measurement boundaries, blocked_use, and claim boundaries",
+      "pass through typed action fields only when they were independently supplied as typed fields"
+    ],
+    "prohibited": [
+      "infer actor_identity from source_model_alias, API caller, or prose",
+      "infer typed intended_action from revas_action, rationale, required_next_step, final_answer, or allowed_use",
+      "translate RCC/REVAS ALLOW/admissible/candidate_adopted/CONTINUE directly into VERITAS proceed or execution permission",
+      "translate RCC/REVAS verifier pass into Authority Evidence or Human Approval",
+      "translate NeoMundi measurement_status=complete into governance evidence_complete",
+      "reuse RCC/REVAS decision_lock.decision_sha256 as VERITAS decision_hash",
+      "reuse source_trace_id as VERITAS request_id or decision_id",
+      "fill missing security-relevant fields with defaults or plausible values",
+      "drop null coverage, limitations, blocked-use constraints, or public claim boundaries",
+      "permit external effect from the adapter itself"
+    ]
+  },
+  "proposed_handoff": {
+    "artifact_type": "rcc_revas_to_veritas_handoff",
+    "artifact_version": "0.2.0",
+    "field_contract_version": "0.2.0",
+    "source_artifact": {
+      "artifact_type": "omaragi_revas_neomundi_scored_artifact",
+      "schema_version": "omaragi.revas.neomundi.scored_artifact.v0.1",
+      "artifact_ref": "repo://effacermonexistence/omaragi-neomundi-pilot/pilot-01/artifacts/<artifact>.json",
+      "artifact_hash": "<sha256-of-exact-source-artifact>",
+      "hash_profile": "sha256/raw-bytes",
+      "verification_status": "verified_hash_only",
+      "claim_boundary": []
+    },
+    "lineage": {
+      "source_observation_id": "<source-observation-id-or-null>",
+      "source_trace_id": "<source-trace-id-or-null>",
+      "upstream_decision_ref": "<source-decision-ref-or-null>",
+      "upstream_decision_hash": "<source-decision-lock-hash-or-null>",
+      "upstream_decision_hash_profile": "<source-hash-profile-or-null>"
+    },
+    "measurement_evidence": {
+      "source_artifact_refs": [],
+      "measurement_status": "<source-value-or-null>",
+      "measurement_coverage": null,
+      "signals": {},
+      "boundary": [],
+      "limitations": []
+    },
+    "rcc_revas": {
+      "disposition": {
+        "namespace": "rcc_revas",
+        "source_value": "<source-value>"
+      },
+      "route": {},
+      "execution": {},
+      "verification": {},
+      "adoption": {},
+      "decision_lock": {},
+      "constraints": {},
+      "audit": {}
+    },
+    "candidate": {
+      "selected_output_ref": null,
+      "selected_output_hash": null,
+      "candidate_type": null,
+      "typed_action": null
+    },
+    "adapter_provenance": {
+      "adapter_id": "rcc-revas-veritas-adapter",
+      "adapter_version": "<pending>",
+      "adapter_sha256": "<pending>",
+      "correlation_id": "<deterministic-correlation-id>",
+      "transformations": [
+        "copy",
+        "namespace",
+        "canonicalize",
+        "hash"
+      ],
+      "semantic_inference_performed": false
+    },
+    "boundary_assertions": {
+      "rcc_revas_adoption_is_execution_authority": false,
+      "execution_authority_conferred": false,
+      "external_effect_authorized": false,
+      "authority_evidence_included_by_rcc_revas": false,
+      "human_approval_included_by_rcc_revas": false,
+      "veritas_decision_id_assigned": false,
+      "execution_intent_created": false,
+      "bind_authorized": false,
+      "external_effect_occurred": false
+    },
+    "unresolved_veritas_requirements": [
+      "typed_action_or_action_contract",
+      "actor_identity",
+      "target_system",
+      "target_resource",
+      "policy_snapshot_id",
+      "authority_requirement_and_verified_authority_evidence",
+      "human_approval_requirement_and_verified_approval_if_required"
+    ]
+  },
+  "handoff_acceptance_states": {
+    "STRUCTURALLY_VALID_UPSTREAM_EVIDENCE": "Source artifact is identifiable and field mapping is syntactically valid; this is not execution readiness.",
+    "UNVERIFIED_STRUCTURED_INPUT": "Source integrity/provenance is not sufficiently verified; may be retained for review/benchmark but cannot satisfy verified evidence requirements.",
+    "READY_FOR_VERITAS_GOVERNANCE_JOIN": "Typed candidate/action context and independent governance inputs can be joined to the upstream artifact for VERITAS evaluation.",
+    "NOT_PROMOTABLE": "Missing/ambiguous typed action, actor, target, required source integrity, or conflicting semantics prevent guarded promotion."
+  },
+  "unresolved_questions_for_omaragi": [
+    {
+      "id": "Q1",
+      "topic": "canonical_downstream_artifact",
+      "question": "Is omaragi.revas.neomundi.scored_artifact.v0.1 the intended source-of-truth handoff artifact, or will a different/private RCC/REVAS artifact type/version be used?"
+    },
+    {
+      "id": "Q2",
+      "topic": "production_semantic_parity",
+      "question": "Which Pilot 01 / Reliability Replay / Pilot 02 labels are stable semantic proxies for the current RCC/REVAS downstream implementation?"
+    },
+    {
+      "id": "Q3",
+      "topic": "portable_decision_identity",
+      "question": "Provide/confirm upstream decision ID, timestamp, canonical hash preimage/profile, origin/integrity verification mechanism, and portability expectations."
+    },
+    {
+      "id": "Q4",
+      "topic": "selected_candidate_contract",
+      "question": "Does RCC/REVAS expose a content-addressed selected candidate or typed action candidate with candidate type, target, scope, and selected-output hash?"
+    },
+    {
+      "id": "Q5",
+      "topic": "verifier_provenance",
+      "question": "Provide the verifier identity/version/config/evidence-ref semantics needed to distinguish a verified artifact from a caller-declared verifier result."
+    },
+    {
+      "id": "Q6",
+      "topic": "neomundi_continuity",
+      "question": "Can the downstream RCC/REVAS artifact preserve immutable refs/hashes to the exact NeoMundi measurement object rather than only an embedded summary?"
+    }
+  ],
+  "freeze_candidates": [
+    "Decision Adoption != Execution Authority",
+    "RCC/REVAS source labels remain namespaced and are never direct VERITAS gate/bind labels",
+    "RCC/REVAS decision-lock hash remains an upstream hash domain",
+    "RCC/REVAS verification != VerifiedAuthorityEvidence != VerifiedHumanApprovalReceipt",
+    "Free-text recommendation/rationale/final answer cannot become a typed effect-bearing action",
+    "Actor/target/action-class/policy/authority/approval remain independently sourced VERITAS requirements",
+    "VERITAS owns request_id, decision_id, decision_hash, execution_intent_id, policy_snapshot_id, and bind-time artifacts",
+    "Adapter may normalize syntax but may not fabricate semantics or execution authority",
+    "Missing security-relevant fields fail closed for promotion/bind; null source measurement fields remain null",
+    "No external effect may be caused by the handoff adapter or benchmark dry-run path"
+  ],
+  "claim_boundary": {
+    "code_integration_implemented": false,
+    "joint_benchmark_executed": false,
+    "interoperability_proven": false,
+    "production_deployment": false,
+    "third_party_validation": false,
+    "certification": false,
+    "official_three_party_partnership_claimed": false
+  }
+}
