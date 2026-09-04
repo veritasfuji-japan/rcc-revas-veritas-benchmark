@@ -2,6 +2,15 @@ name: Native VERITAS benchmark v0.1
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - feat/joint-benchmark-v0.1
+    paths:
+      - ".github/workflows/native-veritas-benchmark.yml"
+      - "run_joint_benchmark.py"
+      - "fixtures/**"
+      - "contracts/**"
+      - "PACKAGE_MANIFEST.json"
 
 permissions:
   contents: read
@@ -12,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      BENCHMARK_REPOSITORY: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
       VERITAS_COMMIT: 4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c
       VERITAS_CHECKOUT: veritas_os_checkout
       RESULT_DIR: results/native-v0.1
@@ -20,6 +30,7 @@ jobs:
       - name: Check out benchmark repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Check out pinned VERITAS OS
@@ -120,6 +131,42 @@ jobs:
               for case in cases
           )
           PY
+
+      - name: Record workflow evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          benchmark_commit="$(git rev-parse HEAD)"
+          veritas_commit="$(git -C "$VERITAS_CHECKOUT" rev-parse HEAD)"
+
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            test "$benchmark_commit" = "${{ github.event.pull_request.head.sha }}"
+          fi
+          test "$veritas_commit" = "$VERITAS_COMMIT"
+
+          export BENCHMARK_COMMIT="$benchmark_commit"
+          export EXECUTED_VERITAS_COMMIT="$veritas_commit"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = {
+              "benchmark_repository": os.environ["BENCHMARK_REPOSITORY"],
+              "benchmark_commit_sha": os.environ["BENCHMARK_COMMIT"],
+              "workflow_ref": os.environ["GITHUB_WORKFLOW_REF"],
+              "workflow_sha": os.environ["GITHUB_WORKFLOW_SHA"],
+              "executed_veritas_commit_sha": os.environ[
+                  "EXECUTED_VERITAS_COMMIT"
+              ],
+          }
+          output = Path(os.environ["RESULT_DIR"]) / "workflow_evidence.json"
+          output.write_text(
+              json.dumps(evidence, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          test -s "$RESULT_DIR/workflow_evidence.json"
 
       - name: Upload native benchmark results
         uses: actions/upload-artifact@v4
