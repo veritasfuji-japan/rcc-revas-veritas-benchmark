@@ -1,0 +1,64 @@
+{
+  "run_id": "joint-bench-6588bd9e7922412d",
+  "runner_version": "0.1.0",
+  "started_at_utc": "2026-09-04T23:30:26.470050+00:00",
+  "finished_at_utc": "2026-09-04T23:30:26.497997+00:00",
+  "veritas_commit": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+  "repo_dirty": false,
+  "dataset_sha256": "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88",
+  "path_a": {
+    "total": 36,
+    "correct": 12,
+    "accuracy": 0.3333333333333333,
+    "false_allow_count": 24,
+    "false_allow_rate": 1.0,
+    "false_stop_count": 0,
+    "false_stop_rate": 0.0,
+    "false_deny_count": 0,
+    "false_deny_rate": 0.0,
+    "prediction_counts": {
+      "ALLOW": 36
+    }
+  },
+  "path_b": {
+    "total": 36,
+    "correct": 36,
+    "accuracy": 1.0,
+    "false_allow_count": 0,
+    "false_allow_rate": 0.0,
+    "false_stop_count": 0,
+    "false_stop_rate": 0.0,
+    "false_deny_count": 0,
+    "false_deny_rate": 0.0,
+    "prediction_counts": {
+      "ALLOW": 12,
+      "HOLD": 11,
+      "DENY": 13
+    }
+  },
+  "governance_delta": {
+    "accuracy_delta": 0.6666666666666667,
+    "false_allow_rate_reduction": 1.0,
+    "false_stop_rate_delta": 0.0
+  },
+  "native_exact": {
+    "aggregate_accuracy": 1.0,
+    "handoff_status_accuracy": 1.0,
+    "reason_code_exact_accuracy": 1.0
+  },
+  "bind_stage": {
+    "mode": "NOT_EXECUTED",
+    "claim_allowed": false,
+    "note": "The v0.1 runner does not execute the native VERITAS dry-run Bind Authorization gate. Proxy mode is plumbing-only."
+  },
+  "decide_preflight": {
+    "executed": false,
+    "passed": null
+  },
+  "negative_assertions": {
+    "real_bind_invoked": false,
+    "external_effect_occurred": false,
+    "execution_authority_created": false,
+    "credential_material_accessed_by_harness": false
+  }
+}
