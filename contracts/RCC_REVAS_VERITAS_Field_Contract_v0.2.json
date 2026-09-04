@@ -997,7 +997,8 @@
       "canonicalize JSON ordering / whitespace under declared profile",
       "compute adapter-local SHA-256 over exact declared bytes or canonical JSON",
       "derive correlation_id deterministically",
-      "preserve limitations, measurement boundaries, blocked_use, and claim boundaries",      "pass through typed action fields only when they were independently supplied as typed fields"
+      "preserve limitations, measurement boundaries, blocked_use, and claim boundaries",
+      "pass through typed action fields only when they were independently supplied as typed fields"
     ],
     "prohibited": [
       "infer actor_identity from source_model_alias, API caller, or prose",
