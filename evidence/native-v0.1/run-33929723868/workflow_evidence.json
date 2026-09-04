@@ -1,0 +1,7 @@
+{
+  "benchmark_commit_sha": "8245399224f8ce0d6bc0e5a1f9aab7a852be4fdb",
+  "benchmark_repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+  "executed_veritas_commit_sha": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+  "workflow_ref": "veritasfuji-japan/rcc-revas-veritas-benchmark/.github/workflows/native-veritas-benchmark.yml@refs/pull/4/merge",
+  "workflow_sha": "e8991d9632b1e6753ba497e9f9b4020aad9beada"
+}
