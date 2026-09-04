@@ -1,0 +1,57 @@
+{
+  "artifact_type": "native_veritas_benchmark_evidence_provenance",
+  "artifact_version": "0.1.0",
+  "source_workflow": {
+    "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+    "workflow_name": "Native VERITAS benchmark v0.1",
+    "workflow_run_id": 33929723868,
+    "workflow_run_url": "https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/33929723868",
+    "artifact_id": 9958098677,
+    "artifact_name": "native-veritas-benchmark-v0.1",
+    "artifact_zip_sha256": "80ec1344235e18d771f85e5f807913f478bea6e841b66f741e2735939ae04de6",
+    "source_pr": 4
+  },
+  "source_identity": {
+    "benchmark_repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+    "benchmark_commit_sha": "8245399224f8ce0d6bc0e5a1f9aab7a852be4fdb",
+    "executed_veritas_repository": "veritasfuji-japan/veritas_os",
+    "executed_veritas_commit_sha": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+    "dataset_sha256": "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88"
+  },
+  "persisted_files": {
+    "cases.jsonl": {
+      "bytes": 35669,
+      "sha256": "26e7f3db2fd2cbfc44794329d83d8d9b2fcb335e6c093f0a299084bf4be6221d",
+      "git_blob_sha1": "7b598edbba762c774ab609b2ce3ee21a907224ac"
+    },
+    "summary.json": {
+      "bytes": 1753,
+      "sha256": "f400242a9901a25deccbaa492aed6fbc8daba861df82fc286ae55741e3d2c5b4",
+      "git_blob_sha1": "0641b42c504898f2670404d16a92ccb1c44443f4"
+    },
+    "run_manifest.json": {
+      "bytes": 971,
+      "sha256": "78ec90f0bd9104951a6bf8a2c3245783ba3f07d5f7cb63dcfbbbb346c29a9ebe",
+      "git_blob_sha1": "0529c043a524ccea3f5412fd8df50efddef9d1e0"
+    },
+    "report.md": {
+      "bytes": 651,
+      "sha256": "b6723fdf779e3bcbc8abc2fb7ffd528577277c80f68d9437a5400b587d6fb6b1",
+      "git_blob_sha1": "e049b4757de423d2f51f33744c2b277b674ca234"
+    },
+    "workflow_evidence.json": {
+      "bytes": 419,
+      "sha256": "a1c8edc05d3943a386d8b63b2cec3dd94952e3cdef64f992178e31435aaadca8",
+      "git_blob_sha1": "8b79cf80a99e5b291dd5e5f9706983472ed059ad"
+    }
+  },
+  "preservation_statement": "The five source evidence files are byte-identical copies of the GitHub Actions artifact from workflow run 33929723868. They are persisted without modification.",
+  "claim_boundary": {
+    "native_treatment": "CanonicalDecisionHandoff v1",
+    "native_bind_gate_executed": false,
+    "real_bind_invoked": false,
+    "external_effect_occurred": false,
+    "execution_authority_created": false,
+    "path_a_semantic_scope": "UPSTREAM_ADOPTION_PROXY_NOT_EXECUTION_AUTHORITY"
+  }
+}

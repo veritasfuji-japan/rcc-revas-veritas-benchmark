@@ -1,0 +1,87 @@
+{
+  "artifact_type": "joint_benchmark_runner_package_manifest",
+  "artifact_version": "0.1.0",
+  "status": "EXECUTABLE_NATIVE_HANDOFF_HARNESS_BIND_GATE_NOT_INTEGRATED",
+  "pinned_veritas_commit": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+  "pinned_dataset_version": "0.1.1",
+  "pinned_dataset_sha256": "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88",
+  "self_check": "PASS",
+  "python_compile": "PASS",
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 450,
+      "sha256": "6f5dabd08df3419fd4cd715b2e36062f0b9462c46f9e600d931fd607c58baffc"
+    },
+    {
+      "path": "CLAIM_BOUNDARY.md",
+      "bytes": 587,
+      "sha256": "b5cd86c7610be6d644e3c6011d5c6c20c9c26edf9216e49dd03eb4833240ab29"
+    },
+    {
+      "path": "README.md",
+      "bytes": 5489,
+      "sha256": "e8b16a9862244c05e2590f860698d66ad380a53b712d5d61865187f5401ed9db"
+    },
+    {
+      "path": "SELF_CHECK_ACTUAL.json",
+      "bytes": 194,
+      "sha256": "82b9f12980f8de60e02dbb68a990dcbf4748a603b6b181a649ebef34c946c01a"
+    },
+    {
+      "path": "SELF_CHECK_EXPECTED.json",
+      "bytes": 194,
+      "sha256": "82b9f12980f8de60e02dbb68a990dcbf4748a603b6b181a649ebef34c946c01a"
+    },
+    {
+      "path": "contracts/RCC_REVAS_VERITAS_Field_Contract_v0.2.json",
+      "bytes": 47802,
+      "sha256": "47de8bc99999d7f2d7791f51f6afa046e50f56b5777123374e1d43c00a4496fa"
+    },
+    {
+      "path": "contracts/VERITAS_Benchmark_Runtime_Manifest_v0.1.json",
+      "bytes": 14152,
+      "sha256": "edefe64da6ab0980ff94fdc62086933b4ce79860e352472f92873d6e0ac310d8"
+    },
+    {
+      "path": "contracts/VERITAS_Canonical_Benchmark_Contract_v0.1.json",
+      "bytes": 20633,
+      "sha256": "a1352dc3cea28da07ca4799e1587b45616376521021e88c724c753fb60738628"
+    },
+    {
+      "path": "fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json",
+      "bytes": 153458,
+      "sha256": "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88"
+    },
+    {
+      "path": "fixtures/Governance_labelled_Evaluation_Set_v0.1.1.jsonl",
+      "bytes": 114884,
+      "sha256": "db47a629686ed29ee3c46f403935b97f82add9646dd9331591cbdf7a408f34d7"
+    },
+    {
+      "path": "fixtures/Governance_labelled_Evaluation_Set_v0.1.1_CHANGELOG.md",
+      "bytes": 817,
+      "sha256": "06d5c6c597f91d768f9c25a63a0f1fb15b5ef8373f154528123055c4a36d455b"
+    },
+    {
+      "path": "run_joint_benchmark.py",
+      "bytes": 29315,
+      "sha256": "9c105d91efd46fdb6239abdcd0161cdf7ef1924f82d7b1873e6f4b413824c079"
+    },
+    {
+      "path": "schemas/joint-benchmark-case-result-v0.1.schema.json",
+      "bytes": 1067,
+      "sha256": "e78c67c605ee1cbde8be6792d9aea76327c0e1f4614d24e75566253a23432e76"
+    },
+    {
+      "path": "tests/test_runner.py",
+      "bytes": 5112,
+      "sha256": "89bbf67b1936b7806b272784a4ab6c944e274281bb99c6073e7375728897c47c"
+    }
+  ],
+  "negative_assertions": {
+    "native_bind_gate_integrated": false,
+    "real_bind_invoked": false,
+    "external_effect_occurred": false
+  }
+}

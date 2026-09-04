@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://veritas-os.example/schemas/joint-benchmark-case-result-v0.1.schema.json",
+  "title": "Joint Benchmark Case Result v0.1",
+  "type": "object",
+  "required": [
+    "case_id",
+    "expected_decision",
+    "path_a_decision",
+    "path_b_decision",
+    "actual_handoff_state",
+    "actual_reason_codes",
+    "execution_authority_created",
+    "external_effect_occurred"
+  ],
+  "properties": {
+    "case_id": {"type": "string"},
+    "expected_decision": {"enum": ["ALLOW", "HOLD", "DENY"]},
+    "path_a_decision": {"enum": ["ALLOW", "HOLD", "DENY"]},
+    "path_b_decision": {"enum": ["ALLOW", "HOLD", "DENY"]},
+    "actual_handoff_state": {
+      "enum": [
+        "INCOMPLETE",
+        "REVIEW_REQUIRED",
+        "INVALID",
+        "STRUCTURALLY_REFUSED",
+        "READY_FOR_GUARDED_PROMOTION"
+      ]
+    },
+    "actual_reason_codes": {"type": "array", "items": {"type": "string"}},
+    "execution_authority_created": {"const": false},
+    "external_effect_occurred": {"const": false}
+  }
+}
