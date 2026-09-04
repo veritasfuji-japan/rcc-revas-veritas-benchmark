@@ -4,13 +4,26 @@ from pathlib import Path
 
 import pytest
 
-import bootstrap_package
 import run_joint_benchmark as runner
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DATASET = ROOT / "fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json"
 JSONL_DATASET = ROOT / "fixtures/Governance_labelled_Evaluation_Set_v0.1.1.jsonl"
+PINNED_ARTIFACT_SHA256 = {
+    "contracts/VERITAS_Canonical_Benchmark_Contract_v0.1.json": (
+        "a1352dc3cea28da07ca4799e1587b45616376521021e88c724c753fb60738628"
+    ),
+    "contracts/VERITAS_Benchmark_Runtime_Manifest_v0.1.json": (
+        "edefe64da6ab0980ff94fdc62086933b4ce79860e352472f92873d6e0ac310d8"
+    ),
+    "contracts/RCC_REVAS_VERITAS_Field_Contract_v0.2.json": (
+        "47de8bc99999d7f2d7791f51f6afa046e50f56b5777123374e1d43c00a4496fa"
+    ),
+    "fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json": (
+        "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88"
+    ),
+}
 
 
 def _template() -> dict:
@@ -51,12 +64,21 @@ def _template() -> dict:
     }
 
 
-def test_staged_archive_has_required_sha256() -> None:
-    raw = bootstrap_package._load_archive()
+def test_committed_artifacts_have_required_sha256() -> None:
+    for relative_path, expected_sha256 in PINNED_ARTIFACT_SHA256.items():
+        assert runner.sha256_file(ROOT / relative_path) == expected_sha256
 
-    assert runner.hashlib.sha256(raw).hexdigest() == (
-        "b3b0e074c28c30714224157c6b4f8a5dc9a15f5c03e973c058efcd44b8e5c379"
-    )
+
+def test_package_manifest_integrity() -> None:
+    manifest_path = ROOT / "PACKAGE_MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    entries = {entry["path"]: entry for entry in manifest["files"]}
+
+    assert set(PINNED_ARTIFACT_SHA256) <= set(entries)
+    for relative_path, entry in entries.items():
+        artifact = ROOT / relative_path
+        assert artifact.stat().st_size == entry["bytes"]
+        assert runner.sha256_file(artifact) == entry["sha256"]
 
 
 def test_dataset_is_pinned_and_jsonl_matches() -> None:
