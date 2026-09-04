@@ -9,6 +9,11 @@
   "python_compile": "PASS",
   "files": [
     {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 450,
+      "sha256": "6f5dabd08df3419fd4cd715b2e36062f0b9462c46f9e600d931fd607c58baffc"
+    },
+    {
       "path": "CLAIM_BOUNDARY.md",
       "bytes": 587,
       "sha256": "b5cd86c7610be6d644e3c6011d5c6c20c9c26edf9216e49dd03eb4833240ab29"
@@ -27,6 +32,21 @@
       "path": "SELF_CHECK_EXPECTED.json",
       "bytes": 194,
       "sha256": "82b9f12980f8de60e02dbb68a990dcbf4748a603b6b181a649ebef34c946c01a"
+    },
+    {
+      "path": "contracts/RCC_REVAS_VERITAS_Field_Contract_v0.2.json",
+      "bytes": 47802,
+      "sha256": "47de8bc99999d7f2d7791f51f6afa046e50f56b5777123374e1d43c00a4496fa"
+    },
+    {
+      "path": "contracts/VERITAS_Benchmark_Runtime_Manifest_v0.1.json",
+      "bytes": 14152,
+      "sha256": "edefe64da6ab0980ff94fdc62086933b4ce79860e352472f92873d6e0ac310d8"
+    },
+    {
+      "path": "contracts/VERITAS_Canonical_Benchmark_Contract_v0.1.json",
+      "bytes": 20633,
+      "sha256": "a1352dc3cea28da07ca4799e1587b45616376521021e88c724c753fb60738628"
     },
     {
       "path": "fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json",
@@ -55,13 +75,8 @@
     },
     {
       "path": "tests/test_runner.py",
-      "bytes": 4047,
-      "sha256": "36f7838ccc5a957a70f6792430980af711cfbdef12f6a61ea8d3f819316b9908"
-    },
-    {
-      "path": ".github/workflows/ci.yml",
-      "bytes": 450,
-      "sha256": "0935a8941a46fb60f28c107266d4ec2785cdb24d50413950154923778aa7df86"
+      "bytes": 5112,
+      "sha256": "89bbf67b1936b7806b272784a4ab6c944e274281bb99c6073e7375728897c47c"
     }
   ],
   "negative_assertions": {
