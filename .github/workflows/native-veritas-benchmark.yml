@@ -1,0 +1,130 @@
+name: Native VERITAS benchmark v0.1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canonical-decision-handoff:
+    name: CanonicalDecisionHandoff (36 cases)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERITAS_COMMIT: 4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c
+      VERITAS_CHECKOUT: veritas_os_checkout
+      RESULT_DIR: results/native-v0.1
+
+    steps:
+      - name: Check out benchmark repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check out pinned VERITAS OS
+        uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c
+          path: veritas_os_checkout
+          persist-credentials: false
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pinned VERITAS OS
+        run: python -m pip install ./veritas_os_checkout
+
+      - name: Run benchmark self-check
+        run: python run_joint_benchmark.py --self-check
+
+      - name: Verify pinned benchmark inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum --check <<'SHA256'
+          1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88  fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json
+          a1352dc3cea28da07ca4799e1587b45616376521021e88c724c753fb60738628  contracts/VERITAS_Canonical_Benchmark_Contract_v0.1.json
+          edefe64da6ab0980ff94fdc62086933b4ce79860e352472f92873d6e0ac310d8  contracts/VERITAS_Benchmark_Runtime_Manifest_v0.1.json
+          47de8bc99999d7f2d7791f51f6afa046e50f56b5777123374e1d43c00a4496fa  contracts/RCC_REVAS_VERITAS_Field_Contract_v0.2.json
+          SHA256
+
+      - name: Verify pinned VERITAS checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_commit="$(git -C "$VERITAS_CHECKOUT" rev-parse HEAD)"
+          test "$actual_commit" = "$VERITAS_COMMIT"
+
+          dirty="$(git -C "$VERITAS_CHECKOUT" status --porcelain)"
+          test -z "$dirty"
+
+      - name: Execute native CanonicalDecisionHandoff benchmark
+        run: |
+          python run_joint_benchmark.py \
+            --veritas-repo veritas_os_checkout \
+            --output-dir results/native-v0.1
+
+      - name: Validate benchmark artifacts and claim boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          for artifact in cases.jsonl summary.json run_manifest.json report.md; do
+            test -s "$RESULT_DIR/$artifact"
+          done
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result_dir = Path(os.environ["RESULT_DIR"])
+          expected_commit = os.environ["VERITAS_COMMIT"]
+          cases = [
+              json.loads(line)
+              for line in (result_dir / "cases.jsonl").read_text(
+                  encoding="utf-8"
+              ).splitlines()
+          ]
+          summary = json.loads(
+              (result_dir / "summary.json").read_text(encoding="utf-8")
+          )
+          manifest = json.loads(
+              (result_dir / "run_manifest.json").read_text(encoding="utf-8")
+          )
+
+          assert len(cases) == 36
+          assert summary["veritas_commit"] == expected_commit
+          assert manifest["veritas_commit"] == expected_commit
+          assert summary["repo_dirty"] is False
+          assert manifest["repo_dirty"] is False
+          assert summary["bind_stage"]["mode"] == "NOT_EXECUTED"
+          assert summary["negative_assertions"]["real_bind_invoked"] is False
+          assert summary["negative_assertions"]["external_effect_occurred"] is False
+          assert manifest["real_bind_invoked"] is False
+          assert manifest["external_effect_occurred"] is False
+          assert all(
+              case["path_a_semantic_scope"]
+              == "UPSTREAM_ADOPTION_PROXY_NOT_EXECUTION_AUTHORITY"
+              for case in cases
+          )
+          assert all(
+              case["bind_measurement_kind"] == "NOT_EXECUTED"
+              for case in cases
+          )
+          assert all(
+              case["external_effect_occurred"] is False
+              for case in cases
+          )
+          PY
+
+      - name: Upload native benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-veritas-benchmark-v0.1
+          path: results/native-v0.1/
+          if-no-files-found: error
+          retention-days: 30
