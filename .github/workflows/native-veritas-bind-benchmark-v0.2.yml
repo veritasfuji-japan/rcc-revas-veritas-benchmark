@@ -1,0 +1,78 @@
+name: Native VERITAS Bind benchmark v0.2
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  native-bind-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERITAS_COMMIT: 4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c
+      VERITAS_CHECKOUT: veritas_os_checkout
+      RESULT_DIR: results/native-v0.2
+    steps:
+      - name: Check out benchmark PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Check out pinned VERITAS
+        uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c
+          path: veritas_os_checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify and install pinned VERITAS
+        run: |
+          set -euo pipefail
+          test "$(git -C "$VERITAS_CHECKOUT" rev-parse HEAD)" = "$VERITAS_COMMIT"
+          test -z "$(git -C "$VERITAS_CHECKOUT" status --porcelain)"
+          python -m pip install ./veritas_os_checkout pytest jsonschema
+      - name: Run existing v0.1 CI checks first
+        run: |
+          python run_joint_benchmark.py --self-check
+          pytest -q tests/test_runner.py
+      - name: Run v0.2 checks and benchmark
+        run: |
+          python run_joint_benchmark_v0_2.py --self-check
+          pytest -q tests/test_runner_v0_2.py
+          python run_joint_benchmark_v0_2.py \
+            --veritas-repo "$VERITAS_CHECKOUT" --output-dir "$RESULT_DIR"
+      - name: Fail closed on integrity or effects
+        run: |
+          set -euo pipefail
+          for file in cases.jsonl summary.json run_manifest.json report.md; do
+            test -s "$RESULT_DIR/$file"
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("results/native-v0.2")
+          cases = [json.loads(line) for line in (root / "cases.jsonl").read_text().splitlines()]
+          manifest = json.loads((root / "run_manifest.json").read_text())
+          flags = ("real_bind_invoked", "bind_authorization_created",
+                   "execution_authority_created", "bind_receipt_created",
+                   "request_dispatched", "credential_material_accessed",
+                   "authorization_header_constructed", "network_used",
+                   "external_effect_occurred")
+          assert len(cases) == 36
+          assert manifest["pinned_veritas_commit"] == "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c"
+          assert manifest["veritas_repo_dirty"] is False
+          assert all(not row[flag] for row in cases for flag in flags)
+          assert all(not manifest[flag] for flag in flags)
+          PY
+      - name: Upload scientific results even on label mismatch
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-veritas-bind-benchmark-v0.2
+          path: results/native-v0.2/
+          if-no-files-found: error
