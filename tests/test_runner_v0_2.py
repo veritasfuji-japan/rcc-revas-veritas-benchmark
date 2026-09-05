@@ -13,28 +13,42 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _fake_stages(tamper=False):
     stages = []
-    for index, name in enumerate(runner.STAGES):
-        def build(previous_packet=None, case_id=None, _index=index, **kwargs):
-            body = {"packet_id": f"packet-{_index}", "index": _index,
-                    "previous": previous_packet}
+    names = [item[0] for item in runner.STAGE_SYMBOLS]
+
+    class Packet(dict):
+        def __getattr__(self, name):
+            try:
+                return self[name]
+            except KeyError as exc:
+                raise AttributeError(name) from exc
+
+    for index, name in enumerate(names):
+        def build(*args, _index=index, **kwargs):
+            body = Packet({"packet_id": f"packet-{_index}", "index": _index})
+            body["execution_intent_id"] = "intent-test"
+            body["execution_intent_hash"] = "sha256:intent-test"
             body["packet_hash"] = hashlib.sha256(
                 json.dumps(body, sort_keys=True).encode()
             ).hexdigest()
-            if _index == len(runner.STAGES) - 1:
-                body["outcome"] = runner.BIND_PASS
+            if _index == len(names) - 1:
+                body["gate_review_state"] = runner.BIND_PASS
+                body["live_adapter_dry_run_bind_authorization_gate_review_id"] = "gate-test"
+                body["live_adapter_dry_run_bind_authorization_gate_review_hash"] = "sha256:gate-test"
             return body
 
         def verify(packet, _index=index, **kwargs):
             body = dict(packet)
             actual = body.pop("packet_hash")
-            body.pop("outcome", None)
+            body.pop("gate_review_state", None)
+            body.pop("live_adapter_dry_run_bind_authorization_gate_review_id", None)
+            body.pop("live_adapter_dry_run_bind_authorization_gate_review_hash", None)
             expected = hashlib.sha256(
                 json.dumps(body, sort_keys=True).encode()
             ).hexdigest()
             return actual == expected and not (tamper and _index == 19)
 
-        stages.append({"name": name, "build": build, "verify": verify})
-    return stages
+        stages.append(runner.StageSpec(name, build, verify))
+    return tuple(stages)
 
 
 def _fixture():
@@ -49,9 +63,21 @@ def test_v01_dataset_and_persisted_evidence_are_immutable() -> None:
     assert runner.sha256_file(
         ROOT / "fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json"
     ) == runner.PINNED_DATASET_SHA256
-    evidence = ROOT / "evidence/native-v0.1"
-    assert evidence.is_dir()
-    assert not any(path.is_symlink() for path in evidence.rglob("*"))
+    evidence = ROOT / "evidence/native-v0.1/run-33929723868"
+    provenance = json.loads(
+        (evidence / "ARTIFACT_PROVENANCE.json").read_text()
+    )
+    expected = {
+        "cases.jsonl": "26e7f3db2fd2cbfc44794329d83d8d9b2fcb335e6c093f0a299084bf4be6221d",
+        "summary.json": "f400242a9901a25deccbaa492aed6fbc8daba861df82fc286ae55741e3d2c5b4",
+        "run_manifest.json": "78ec90f0bd9104951a6bf8a2c3245783ba3f07d5f7cb63dcfbbbb346c29a9ebe",
+        "report.md": "b6723fdf779e3bcbc8abc2fb7ffd528577277c80f68d9437a5400b587d6fb6b1",
+        "workflow_evidence.json": "a1c8edc05d3943a386d8b63b2cec3dd94952e3cdef64f992178e31435aaadca8",
+    }
+    assert set(expected) <= set(provenance["persisted_files"])
+    for filename, digest in expected.items():
+        assert provenance["persisted_files"][filename]["sha256"] == digest
+        assert runner.sha256_file(evidence / filename) == digest
 
 
 def test_ground_truth_cannot_influence_treatment_inputs() -> None:
@@ -95,10 +121,10 @@ def test_production_runner_has_no_test_helper_imports() -> None:
 def test_supported_ready_fixture_reaches_and_reverifies_gate() -> None:
     packet, verified = runner.execute_native_chain(
         {"handoff_status": "READY_FOR_GUARDED_PROMOTION"},
-        _fixture(), _fake_stages(),
+        object(), _fixture(), _fake_stages(),
     )
-    assert packet["outcome"] == runner.BIND_PASS
-    assert verified == list(runner.STAGES)
+    assert packet["gate_review_state"] == runner.BIND_PASS
+    assert verified == [item[0] for item in runner.STAGE_SYMBOLS]
     assert verified[-1] == "live_adapter_dry_run_bind_authorization_gate_review"
 
 
@@ -106,7 +132,7 @@ def test_tampered_gate_packet_is_rejected() -> None:
     with pytest.raises(runner.BenchmarkError, match="native verification failed"):
         runner.execute_native_chain(
             {"handoff_status": "READY_FOR_GUARDED_PROMOTION"},
-            _fixture(), _fake_stages(tamper=True),
+            object(), _fixture(), _fake_stages(tamper=True),
         )
 
 

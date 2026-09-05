@@ -31,8 +31,18 @@
     "2030-01-01T00:00:15Z", "2030-01-01T00:00:16Z",
     "2030-01-01T00:00:17Z", "2030-01-01T00:00:18Z",
     "2030-01-01T00:00:19Z", "2030-01-01T00:00:20Z",
-    "2030-01-01T00:00:21Z", "2030-01-01T00:00:22Z"
+    "2030-01-01T00:00:21Z", "2030-01-01T00:00:22Z",
+    "2030-01-01T00:00:23Z"
   ],
+  "fixture_step_results": [
+    {"step_id": "validate-request-shape", "state": "PASSED", "effect_occurred": false},
+    {"step_id": "render-no-effect-preview", "state": "PASSED", "effect_occurred": false}
+  ],
+  "reference_rehearsal_fixture": {
+    "fixture_id": "benchmark-reference-rehearsal-v0.2",
+    "mode": "IN_MEMORY_NO_EFFECT",
+    "expected_steps": ["validate-request-shape", "render-no-effect-preview"]
+  },
   "authority_linkage": {
     "kind": "METADATA_REFERENCE_ONLY",
     "creates_authority_evidence": false,

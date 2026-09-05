@@ -9,7 +9,7 @@
   "dataset": "fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json",
   "dataset_sha256": "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88",
   "bind_profile": "fixtures/Bind_Profile_v0.2.json",
-  "bind_profile_sha256": "c0af66a7e1f045e422bd10f17c926aaaf944569231cf7a7f137288307e607951",
+  "bind_profile_sha256": "75f2a33134fa014fb90f0810f9c6773d4786d91e428fa1b75a5955d54fcb0884",
   "network_policy": "PROHIBITED_DURING_TREATMENT",
   "credentials": "REFERENCE_METADATA_ONLY",
   "live_adapter": "MUST_NOT_BE_INSTANTIATED",

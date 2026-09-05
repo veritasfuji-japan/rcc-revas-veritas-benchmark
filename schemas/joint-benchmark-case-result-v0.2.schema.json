@@ -9,8 +9,11 @@
     "native_bind_gate_invoked", "native_bind_gate_outcome",
     "native_bind_gate_packet_id", "native_bind_gate_packet_hash",
     "full_chain_bind_eligibility_outcome", "expected_bind_gate_outcome",
-    "bind_eligibility_match", "execution_authority_created",
-    "real_bind_invoked", "external_effect_occurred"
+    "bind_eligibility_match", "real_bind_invoked",
+    "bind_authorization_created", "execution_authority_created",
+    "bind_receipt_created", "request_dispatched",
+    "credential_material_accessed", "authorization_header_constructed",
+    "network_used", "external_effect_occurred"
   ],
   "properties": {
     "case_id": {"type": "string"},
@@ -27,6 +30,12 @@
     "expected_bind_gate_outcome": {"type": "string"},
     "bind_eligibility_match": {"type": "boolean"},
     "execution_authority_created": {"const": false},
+    "bind_authorization_created": {"const": false},
+    "bind_receipt_created": {"const": false},
+    "request_dispatched": {"const": false},
+    "credential_material_accessed": {"const": false},
+    "authorization_header_constructed": {"const": false},
+    "network_used": {"const": false},
     "real_bind_invoked": {"const": false},
     "external_effect_occurred": {"const": false}
   }
