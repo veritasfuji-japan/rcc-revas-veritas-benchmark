@@ -16,7 +16,7 @@ import subprocess
 import sys
 from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
 
@@ -164,17 +164,40 @@ def verify_inputs(root: Path, veritas_repo: Path | None = None) -> dict[str, Any
     return state
 
 
+
 def load_native(veritas_repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     if str(veritas_repo) not in sys.path:
         sys.path.insert(0, str(veritas_repo))
     handoff = handoff_runner.load_native_veritas(veritas_repo)
-    functions = {}
+    functions: dict[str, Any] = {}
+    modules: dict[str, Any] = {}
     for spec in STAGE_SPECS:
         module = importlib.import_module(f"veritas_os.policy.{spec.module}")
+        modules[spec.module] = module
         functions[spec.builder] = getattr(module, spec.builder)
         functions[spec.verifier] = getattr(module, spec.verifier)
-    return handoff, functions
 
+    selection = modules["bind_adapter_contract_selection"]
+    fixture_result = modules["adapter_dry_run_result"]
+    endpoint = modules["live_adapter_dry_run_endpoint_allowlist"]
+    credential = modules["live_adapter_dry_run_credential_authorization"]
+    final_readiness = modules["live_adapter_dry_run_final_bind_authorization_readiness"]
+    gate_review = modules["live_adapter_dry_run_bind_authorization_gate_review"]
+
+    functions.update({
+        "_adapter_methods": selection.ADAPTER_METHODS,
+        "_prohibited_during_selection": selection.PROHIBITED_DURING_SELECTION,
+        "_adapter_effect_profile": selection.EFFECT_PROFILE,
+        "_descriptor_scope_limitations": selection.DESCRIPTOR_SCOPE_LIMITATIONS,
+        "_result_limitations": fixture_result.RESULT_LIMITATIONS,
+        "_endpoint_snapshot_hash": endpoint._snapshot_hash,
+        "_credential_policy_snapshot_hash": credential._policy_snapshot_hash,
+        "_final_acknowledgements": final_readiness.ACKNOWLEDGEMENTS,
+        "_final_outcomes": final_readiness.OUTCOMES,
+        "_gate_acknowledgements": gate_review.ACKNOWLEDGEMENTS,
+        "_gate_outcomes": gate_review.OUTCOMES,
+    })
+    return handoff, functions
 
 def treatment_fixture(case: dict[str, Any], profile: dict[str, Any]) -> dict[str, Any]:
     """Construct treatment data without ever reading ``ground_truth``."""
@@ -227,8 +250,381 @@ def treatment_fixture(case: dict[str, Any], profile: dict[str, Any]) -> dict[str
         ),
         "timestamps": list(profile["fixed_timestamps_utc"]),
         **EFFECT_FLAGS,
+        "profile": copy.deepcopy(profile),
     }
 
+
+
+def _native_adapter_descriptor(
+    preflight_packet: Any, selected_at: datetime, native: dict[str, Any]
+) -> dict[str, Any]:
+    source = packet_dict(preflight_packet)
+    intent = source["execution_intent"]
+    return {
+        "adapter_contract_version": "bind-adapter-contract/v1",
+        "adapter_kind": "reference",
+        "adapter_name": "benchmark-inert-reference-v0.2",
+        "target_system": intent["target_system"],
+        "target_resource_scope": intent["target_resource"],
+        "supported_methods": list(native["_adapter_methods"]),
+        "required_methods": list(native["_adapter_methods"]),
+        "prohibited_during_selection": list(native["_prohibited_during_selection"]),
+        "effect_profile": copy.deepcopy(native["_adapter_effect_profile"]),
+        "declared_by": "benchmark:v0.2",
+        "declared_at": selected_at.isoformat(),
+        "descriptor_scope_limitations": list(native["_descriptor_scope_limitations"]),
+    }
+
+
+def _native_fixture_step_results(
+    plan_packet: Any, native: dict[str, Any]
+) -> list[dict[str, Any]]:
+    plan = packet_dict(plan_packet)
+    results = []
+    for step in plan["planned_steps"]:
+        method = step["planned_adapter_method"]
+        results.append({
+            "step_result_id": (
+                f"dry-run-fixture-result:v1:{step['ordinal']}:"
+                f"{method.replace('_', '-')}"
+            ),
+            "planned_step_id": step["step_id"],
+            "ordinal": step["ordinal"],
+            "planned_adapter_method": method,
+            "result_mode": "fixture_no_effect",
+            "result_source_kind": "in_memory_fixture",
+            "live_observed": False,
+            "adapter_instance_created": False,
+            "adapter_method_called": False,
+            "network_used": False,
+            "filesystem_used": False,
+            "external_effect_used": False,
+            "trustlog_written": False,
+            "bind_receipt_created": False,
+            "fixture_input_ref": f"benchmark-fixture:{method}",
+            "fixture_value_summary": {
+                "status": "FIXTURE_RESULT_AVAILABLE",
+                "semantic": "no_effect_fixture",
+                "live_system_claim": False,
+            },
+            "matched_expected_output_ref": step["expected_output_ref"],
+            "refusal_if_missing_later": step["refusal_if_missing_later"],
+            "result_scope_limitations": list(native["_result_limitations"]),
+        })
+    return results
+
+
+def _native_endpoint_inputs(
+    dispatch_packet: Any, profile: dict[str, Any], evaluated_at: datetime,
+    native: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    source = packet_dict(dispatch_packet)
+    intent = source["execution_intent"]
+    endpoint_profile = profile["endpoint"]
+    candidate = {
+        "endpoint_candidate_id": (
+            f"endpoint:benchmark:{source['execution_intent_id'][-16:]}"
+        ),
+        "endpoint_kind": "HTTPS_API",
+        "endpoint_scheme": endpoint_profile["scheme"],
+        "endpoint_host": endpoint_profile["host"],
+        "endpoint_port": endpoint_profile["port"],
+        "endpoint_path_prefix": endpoint_profile["path"],
+        "endpoint_environment": "benchmark",
+        "endpoint_purpose": "dry-run",
+        "adapter_contract_id": source["adapter_contract_id"],
+        "target_system": intent["target_system"],
+        "target_resource_scope": intent["target_resource"],
+        "declared_by": "benchmark:v0.2",
+        "declared_at": evaluated_at.isoformat(),
+    }
+    entry = {
+        "entry_id": f"allow:benchmark:{source['execution_intent_id'][-16:]}",
+        "endpoint_kind": candidate["endpoint_kind"],
+        "endpoint_scheme": candidate["endpoint_scheme"],
+        "endpoint_host": candidate["endpoint_host"],
+        "endpoint_port": candidate["endpoint_port"],
+        "endpoint_path_prefix": candidate["endpoint_path_prefix"],
+        "endpoint_environment": candidate["endpoint_environment"],
+        "allowed_adapter_contract_ids": [candidate["adapter_contract_id"]],
+        "allowed_target_systems": [candidate["target_system"]],
+        "allowed_target_resource_scopes": [candidate["target_resource_scope"]],
+        "allowed_purposes": [candidate["endpoint_purpose"]],
+        "entry_status": "ACTIVE",
+    }
+    snapshot = {
+        "allowlist_snapshot_id": (
+            f"allowlist:benchmark:{source['execution_intent_id'][-16:]}"
+        ),
+        "allowlist_snapshot_hash": "0" * 64,
+        "allowlist_version": "0.2",
+        "allowlist_source": "benchmark-local-reviewed-fixture",
+        "allowlist_generated_at": evaluated_at.isoformat(),
+        "allowlist_entries": [entry],
+        "allowlist_scope_limitations": ["LOCAL_DECLARATIONS_ONLY"],
+    }
+    snapshot["allowlist_snapshot_hash"] = native["_endpoint_snapshot_hash"](snapshot)
+    return candidate, snapshot
+
+
+def _native_credential_inputs(
+    allowlist_packet: Any, evaluated_at: datetime, native: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    source = packet_dict(allowlist_packet)
+    candidate = source["endpoint_candidate"]
+    reference = {
+        "credential_reference_id": (
+            f"credential-ref:benchmark:{source['execution_intent_id'][-16:]}"
+        ),
+        "credential_kind": "API_CREDENTIAL",
+        "credential_provider_type": "LOCAL_REFERENCE",
+        "credential_scope": (
+            f"{candidate['target_system']}:{candidate['target_resource_scope']}"
+        ),
+        "credential_environment": candidate["endpoint_environment"],
+        "credential_purpose": candidate["endpoint_purpose"],
+        "adapter_contract_id": source["adapter_contract_id"],
+        "endpoint_candidate_id": candidate["endpoint_candidate_id"],
+        "target_system": candidate["target_system"],
+        "target_resource_scope": candidate["target_resource_scope"],
+        "declared_by": "benchmark:v0.2",
+        "declared_at": evaluated_at.isoformat(),
+    }
+    entry = {
+        "entry_id": (
+            f"credential-policy:benchmark:{source['execution_intent_id'][-16:]}"
+        ),
+        "credential_kind": reference["credential_kind"],
+        "credential_provider_type": reference["credential_provider_type"],
+        "credential_scope": reference["credential_scope"],
+        "credential_environment": reference["credential_environment"],
+        "allowed_adapter_contract_ids": [reference["adapter_contract_id"]],
+        "allowed_endpoint_candidate_ids": [reference["endpoint_candidate_id"]],
+        "allowed_target_systems": [reference["target_system"]],
+        "allowed_target_resource_scopes": [reference["target_resource_scope"]],
+        "allowed_purposes": [reference["credential_purpose"]],
+        "requires_operator_review": True,
+        "requires_bind_pre_dispatch_review": True,
+        "entry_status": "ACTIVE",
+    }
+    snapshot = {
+        "credential_policy_snapshot_id": (
+            f"credential-policy-snapshot:benchmark:"
+            f"{source['execution_intent_id'][-16:]}"
+        ),
+        "credential_policy_snapshot_hash": "0" * 64,
+        "credential_policy_version": "0.2",
+        "credential_policy_source": "benchmark-local-reviewed-fixture",
+        "credential_policy_generated_at": evaluated_at.isoformat(),
+        "credential_policy_entries": [entry],
+        "credential_policy_scope_limitations": ["LOCAL_METADATA_ONLY"],
+    }
+    snapshot["credential_policy_snapshot_hash"] = (
+        native["_credential_policy_snapshot_hash"](snapshot)
+    )
+    return reference, snapshot
+
+
+def _native_operator_decision(
+    credential_packet: Any, recorded_at: datetime
+) -> dict[str, Any]:
+    source = packet_dict(credential_packet)
+    reference = source["credential_reference"]
+    candidate = source["endpoint_candidate"]
+    return {
+        "operator_review_id": (
+            f"operator-review:benchmark:{source['execution_intent_id'][-16:]}"
+        ),
+        "reviewer_id": "benchmark-reviewer:operator",
+        "reviewer_role": "dispatch-reviewer",
+        "reviewer_organization": "benchmark-local",
+        "reviewed_at": recorded_at.isoformat(),
+        "review_decision": "APPROVE_FOR_BIND_PRE_DISPATCH_REVIEW",
+        "review_reason": (
+            "Synthetic metadata reviewed; advance only to separate Bind review."
+        ),
+        "reviewed_endpoint_candidate_id": candidate["endpoint_candidate_id"],
+        "reviewed_credential_reference_id": reference["credential_reference_id"],
+        "reviewed_adapter_contract_id": source["adapter_contract_id"],
+        "reviewed_target_system": reference["target_system"],
+        "reviewed_target_resource_scope": reference["target_resource_scope"],
+        "acknowledged_scope_limitations": True,
+        "acknowledged_non_effect_guarantees": True,
+        "acknowledged_future_bind_pre_dispatch_review_required": True,
+        "acknowledged_no_dispatch": True,
+        "acknowledged_no_credential_access": True,
+        "acknowledged_no_network": True,
+        "acknowledged_no_bind": True,
+        "acknowledged_no_bind_receipt": True,
+        "acknowledged_no_trustlog_write": True,
+    }
+
+
+def _native_bind_pre_dispatch_decision(recorded_at: datetime) -> dict[str, Any]:
+    return {
+        "bind_pre_dispatch_review_decision_id": "bind-review:benchmark:v0.2",
+        "reviewer_id": "benchmark-reviewer:bind",
+        "reviewer_role": "bind-boundary-reviewer",
+        "reviewer_attestation": (
+            "Reviewed as deterministic synthetic metadata, not authority."
+        ),
+        "reviewed_at": recorded_at.isoformat(),
+        "review_outcome": "ACCEPTED_FOR_FUTURE_BIND_DISPATCH_GATE_REVIEW",
+        "review_reason": "Suitable only for a separate future Bind gate review.",
+        "acknowledged_not_bind_authorization": True,
+        "acknowledged_no_bind_invocation": True,
+        "acknowledged_no_bind_receipt": True,
+        "acknowledged_no_trustlog_write": True,
+        "acknowledged_no_dispatch": True,
+        "acknowledged_no_credential_access": True,
+        "acknowledged_no_network_call": True,
+        "acknowledged_semantic_match_not_authority": True,
+    }
+
+
+def _native_authority_bundle(
+    pre_dispatch_packet: Any, recorded_at: datetime
+) -> dict[str, Any]:
+    source = packet_dict(pre_dispatch_packet)
+    reference_id = (
+        f"authority-ref:benchmark:{source['execution_intent_id'][-16:]}"
+    )
+    scope = "benchmark-bind-scope"
+    reference = {
+        "authority_evidence_reference_id": reference_id,
+        "authority_evidence_kind": "synthetic-delegated-policy-attestation",
+        "authority_source_type": "benchmark-synthetic-upstream-artifact",
+        "authority_source_id": "authority-source:benchmark:v0.2",
+        "authority_policy_id": "policy:benchmark:v0.2",
+        "authority_policy_version": "0.2",
+        "authority_scope": scope,
+        "authority_subject": source["execution_intent"]["actor_identity"],
+        "authority_issuer": "benchmark-authority-metadata-only",
+        "authority_issued_at": (recorded_at - timedelta(days=1)).isoformat(),
+        "authority_expires_at": (recorded_at + timedelta(days=1)).isoformat(),
+        "authority_evidence_hash": "sha256:synthetic-metadata-only",
+        "authority_evidence_format": "benchmark-declared-reference/v0.2",
+        "declared_verification_state": "DECLARED_VERIFIED_BY_UPSTREAM_ARTIFACT",
+        "linked_execution_intent_id": source["execution_intent_id"],
+        "linked_adapter_contract_id": source["adapter_contract_id"],
+        "linked_endpoint_candidate_id": source["endpoint_candidate"][
+            "endpoint_candidate_id"
+        ],
+        "linked_credential_reference_id": source["credential_reference"][
+            "credential_reference_id"
+        ],
+        "linked_target_system": source["credential_reference"]["target_system"],
+        "linked_target_resource_scope": source["credential_reference"][
+            "target_resource_scope"
+        ],
+        "linked_purpose": source["credential_reference"]["credential_purpose"],
+    }
+    return {
+        "authority_evidence_reference_bundle_id": (
+            f"authority-bundle:benchmark:{source['execution_intent_id'][-16:]}"
+        ),
+        "bundle_declared_by": "benchmark:v0.2",
+        "bundle_declared_at": recorded_at.isoformat(),
+        "bundle_scope": [scope],
+        "authority_evidence_references": [reference],
+        "authority_evidence_binding_claims": [],
+        "bundle_limitations": [
+            "synthetic-metadata-only",
+            "no-external-verification-by-benchmark",
+        ],
+    }
+
+
+def _native_human_approval_bundle(
+    authority_packet: Any, recorded_at: datetime
+) -> dict[str, Any]:
+    source = packet_dict(authority_packet)
+    authority_ids = [
+        item["authority_evidence_reference_id"]
+        for item in source["authority_evidence_reference_bundle"][
+            "authority_evidence_references"
+        ]
+    ]
+    scope = "benchmark-bind-scope"
+    reference = {
+        "human_approval_reference_id": (
+            f"approval-ref:benchmark:{source['execution_intent_id'][-16:]}"
+        ),
+        "approval_source_type": "benchmark-synthetic-upstream-artifact",
+        "approval_source_id": "approval-source:benchmark:v0.2",
+        "approver_id": "benchmark-approver:synthetic",
+        "approver_role": "benchmark-bind-reviewer",
+        "approval_scope": scope,
+        "approval_subject": "benchmark-synthetic-request",
+        "approval_reason": "declared synthetic dry-run review",
+        "approval_issued_at": (recorded_at - timedelta(days=1)).isoformat(),
+        "approval_expires_at": (recorded_at + timedelta(days=1)).isoformat(),
+        "approval_evidence_hash": "sha256:synthetic-metadata-only",
+        "approval_evidence_format": "benchmark-declared-reference/v0.2",
+        "declared_approval_state": "DECLARED_APPROVED_BY_UPSTREAM_ARTIFACT",
+        "linked_execution_intent_id": source["execution_intent_id"],
+        "linked_adapter_contract_id": source["adapter_contract_id"],
+        "linked_endpoint_candidate_id": source["endpoint_candidate"][
+            "endpoint_candidate_id"
+        ],
+        "linked_credential_reference_id": source["credential_reference"][
+            "credential_reference_id"
+        ],
+        "linked_target_system": source["credential_reference"]["target_system"],
+        "linked_target_resource_scope": source["credential_reference"][
+            "target_resource_scope"
+        ],
+        "linked_purpose": source["credential_reference"]["credential_purpose"],
+        "linked_authority_evidence_reference_ids": authority_ids,
+    }
+    return {
+        "human_approval_reference_bundle_id": (
+            f"approval-bundle:benchmark:{source['execution_intent_id'][-16:]}"
+        ),
+        "bundle_declared_by": "benchmark:v0.2",
+        "bundle_declared_at": recorded_at.isoformat(),
+        "bundle_scope": [scope],
+        "human_approval_references": [reference],
+        "human_approval_binding_claims": [],
+        "bundle_limitations": [
+            "synthetic-metadata-only",
+            "no-external-verification-by-benchmark",
+        ],
+    }
+
+
+def _native_final_readiness_decision(
+    recorded_at: datetime, native: dict[str, Any]
+) -> dict[str, Any]:
+    value = {
+        "final_bind_authorization_readiness_review_decision_id": (
+            "final-review:benchmark:v0.2"
+        ),
+        "reviewer_id": "benchmark-reviewer:final-readiness",
+        "reviewer_role": "bind-readiness-reviewer",
+        "reviewer_attestation": "Reviewed local synthetic readiness only.",
+        "reviewed_at": recorded_at.isoformat(),
+        "review_outcome": native["_final_outcomes"][0],
+        "review_reason": "Synthetic local linkage artifacts reviewed.",
+    }
+    value.update({field: True for field in native["_final_acknowledgements"]})
+    return value
+
+
+def _native_gate_decision(
+    recorded_at: datetime, native: dict[str, Any]
+) -> dict[str, Any]:
+    value = {
+        "bind_authorization_gate_review_decision_id": "gate-review:benchmark:v0.2",
+        "reviewer_id": "benchmark-reviewer:gate",
+        "reviewer_role": "bind-gate-reviewer",
+        "reviewer_attestation": "Reviewed local synthetic gate evidence only.",
+        "reviewed_at": recorded_at.isoformat(),
+        "review_outcome": native["_gate_outcomes"][0],
+        "review_reason": "Deterministic synthetic local gate review.",
+    }
+    value.update({field: True for field in native["_gate_acknowledgements"]})
+    return value
 
 def _verified(packet: Any, verifier: Callable[[Any], Any], stage: str) -> Any:
     verification = verifier(packet)
@@ -239,67 +635,80 @@ def _verified(packet: Any, verifier: Callable[[Any], Any], stage: str) -> Any:
     return packet
 
 
+
 def execute_native_chain(
     handoff_packet: dict[str, Any], validation_context: Any,
     fixture: dict[str, Any], native: dict[str, Any],
 ) -> tuple[dict[str, Any], list[str]]:
     """Build and independently verify every native prerequisite in order."""
-    at = [datetime.fromisoformat(value.replace("Z", "+00:00"))
-          for value in fixture["timestamps"]]
-    verified_names = []
+    at = [
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        for value in fixture["timestamps"]
+    ]
+    verified_names: list[str] = []
 
     def build(builder: str, verifier: str, stage: str, **kwargs: Any) -> Any:
         packet = native[builder](**kwargs)
+        packet = _verified(packet, native[verifier], stage)
         verified_names.append(stage)
-        return _verified(packet, native[verifier], stage)
+        return packet
 
     eligibility_packet = build(
         STAGE_SPECS[0].builder, STAGE_SPECS[0].verifier, STAGES[0],
-        handoff=handoff_packet, trusted_context=validation_context,
-        evaluated_at=at[0], issued_at=at[0],
+        handoff=handoff_packet,
+        trusted_context=validation_context,
+        evaluated_at=at[0],
+        issued_at=at[0],
     )
     formation_readiness_packet = build(
         STAGE_SPECS[1].builder, STAGE_SPECS[1].verifier, STAGES[1],
-        eligibility_packet=eligibility_packet, checked_at=at[1],
+        eligibility_packet=eligibility_packet,
+        checked_at=at[1],
     )
     formation_packet = build(
         STAGE_SPECS[2].builder, STAGE_SPECS[2].verifier, STAGES[2],
-        readiness_packet=formation_readiness_packet, formed_at=at[2],
+        readiness_packet=formation_readiness_packet,
+        formed_at=at[2],
     )
     pre_bind_validation_packet = build(
         STAGE_SPECS[3].builder, STAGE_SPECS[3].verifier, STAGES[3],
-        formation_packet=formation_packet, checked_at=at[3],
+        formation_packet=formation_packet,
+        checked_at=at[3],
     )
     preflight_packet = build(
         STAGE_SPECS[4].builder, STAGE_SPECS[4].verifier, STAGES[4],
         pre_bind_validation_packet=pre_bind_validation_packet,
         adjudicated_at=at[4],
     )
+    descriptor = _native_adapter_descriptor(preflight_packet, at[5], native)
     selection_packet = build(
         STAGE_SPECS[5].builder, STAGE_SPECS[5].verifier, STAGES[5],
         bind_preflight_adjudication_packet=preflight_packet,
-        adapter_contract_descriptor=fixture["adapter_contract_descriptor"],
+        adapter_contract_descriptor=descriptor,
         selected_at=at[5],
     )
     plan_packet = build(
         STAGE_SPECS[6].builder, STAGE_SPECS[6].verifier, STAGES[6],
-        adapter_contract_selection_packet=selection_packet, planned_at=at[6],
+        adapter_contract_selection_packet=selection_packet,
+        planned_at=at[6],
     )
+    fixture_step_results = _native_fixture_step_results(plan_packet, native)
     fixture_result_packet = build(
         STAGE_SPECS[7].builder, STAGE_SPECS[7].verifier, STAGES[7],
         adapter_dry_run_plan_packet=plan_packet,
-        fixture_step_results=fixture["fixture_step_results"],
+        fixture_step_results=fixture_step_results,
         resulted_at=at[7],
     )
     rehearsal_packet = build(
         STAGE_SPECS[8].builder, STAGE_SPECS[8].verifier, STAGES[8],
         adapter_dry_run_fixture_result_packet=fixture_result_packet,
-        reference_rehearsal_fixture=fixture["reference_rehearsal_fixture"],
+        reference_rehearsal_fixture={"scenario": "deterministic-reference-v0.2"},
         rehearsed_at=at[8],
     )
     request_readiness_packet = build(
         STAGE_SPECS[9].builder, STAGE_SPECS[9].verifier, STAGES[9],
-        reference_rehearsal_packet=rehearsal_packet, readiness_evaluated_at=at[9],
+        reference_rehearsal_packet=rehearsal_packet,
+        readiness_evaluated_at=at[9],
     )
     request_packet = build(
         STAGE_SPECS[10].builder, STAGE_SPECS[10].verifier, STAGES[10],
@@ -311,63 +720,75 @@ def execute_native_chain(
         source_live_adapter_dry_run_request_packet=request_packet,
         dispatch_readiness_evaluated_at=at[11],
     )
+    endpoint_candidate, allowlist_snapshot = _native_endpoint_inputs(
+        dispatch_readiness_packet, fixture["profile"], at[12], native
+    )
     allowlist_packet = build(
         STAGE_SPECS[12].builder, STAGE_SPECS[12].verifier, STAGES[12],
         source_dispatch_readiness_packet=dispatch_readiness_packet,
-        endpoint_candidate=fixture["endpoint_candidate"],
-        allowlist_snapshot=fixture["endpoint_allowlist_snapshot"],
+        endpoint_candidate=endpoint_candidate,
+        allowlist_snapshot=allowlist_snapshot,
         endpoint_allowlist_evaluated_at=at[12],
+    )
+    credential_reference, credential_policy_snapshot = _native_credential_inputs(
+        allowlist_packet, at[13], native
     )
     credential_packet = build(
         STAGE_SPECS[13].builder, STAGE_SPECS[13].verifier, STAGES[13],
         source_endpoint_allowlist_evaluation_packet=allowlist_packet,
-        credential_reference=fixture["credential_reference"],
-        credential_policy_snapshot=fixture["credential_policy_snapshot"],
+        credential_reference=credential_reference,
+        credential_policy_snapshot=credential_policy_snapshot,
         credential_authorization_evaluated_at=at[13],
     )
     operator_packet = build(
         STAGE_SPECS[14].builder, STAGE_SPECS[14].verifier, STAGES[14],
         source_credential_authorization_evaluation_packet=credential_packet,
-        operator_review_decision=fixture["operator_review_decision"],
+        operator_review_decision=_native_operator_decision(
+            credential_packet, at[14]
+        ),
         operator_dispatch_review_recorded_at=at[14],
     )
     pre_dispatch_packet = build(
         STAGE_SPECS[15].builder, STAGE_SPECS[15].verifier, STAGES[15],
         source_operator_dispatch_review_packet=operator_packet,
-        bind_pre_dispatch_review_decision=(
-            fixture["bind_pre_dispatch_review_decision"]
-        ), bind_pre_dispatch_review_recorded_at=at[15],
+        bind_pre_dispatch_review_decision=_native_bind_pre_dispatch_decision(
+            at[15]
+        ),
+        bind_pre_dispatch_review_recorded_at=at[15],
     )
     authority_packet = build(
         STAGE_SPECS[16].builder, STAGE_SPECS[16].verifier, STAGES[16],
         source_bind_pre_dispatch_review_packet=pre_dispatch_packet,
-        authority_evidence_reference_bundle=(
-            fixture["authority_evidence_reference_bundle"]
-        ), authority_evidence_linkage_review_recorded_at=at[16],
+        authority_evidence_reference_bundle=_native_authority_bundle(
+            pre_dispatch_packet, at[16]
+        ),
+        authority_evidence_linkage_review_recorded_at=at[16],
     )
     approval_packet = build(
         STAGE_SPECS[17].builder, STAGE_SPECS[17].verifier, STAGES[17],
         source_authority_evidence_linkage_review_packet=authority_packet,
-        human_approval_reference_bundle=(
-            fixture["human_approval_reference_bundle"]
-        ), human_approval_linkage_review_recorded_at=at[17],
+        human_approval_reference_bundle=_native_human_approval_bundle(
+            authority_packet, at[17]
+        ),
+        human_approval_linkage_review_recorded_at=at[17],
     )
     final_readiness_packet = build(
         STAGE_SPECS[18].builder, STAGE_SPECS[18].verifier, STAGES[18],
         source_human_approval_linkage_review_packet=approval_packet,
-        final_bind_authorization_readiness_review_decision=fixture[
-            "final_bind_authorization_readiness_review_decision"
-        ], final_bind_authorization_readiness_recorded_at=at[18],
+        final_bind_authorization_readiness_review_decision=(
+            _native_final_readiness_decision(at[18], native)
+        ),
+        final_bind_authorization_readiness_recorded_at=at[18],
     )
     gate_packet = build(
         STAGE_SPECS[19].builder, STAGE_SPECS[19].verifier, STAGES[19],
         source_final_bind_authorization_readiness_packet=final_readiness_packet,
-        bind_authorization_gate_review_decision=fixture[
-            "bind_authorization_gate_review_decision"
-        ], bind_authorization_gate_review_recorded_at=at[19],
+        bind_authorization_gate_review_decision=_native_gate_decision(
+            at[19], native
+        ),
+        bind_authorization_gate_review_recorded_at=at[19],
     )
     return packet_dict(gate_packet), verified_names
-
 
 def base_result(case: dict[str, Any], handoff_result: dict[str, Any]) -> dict[str, Any]:
     status = handoff_result["status"]
