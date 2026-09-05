@@ -22,9 +22,9 @@ def _fake_stages(tamper=False):
             ).hexdigest()
             if _index == len(runner.STAGE_SPECS) - 1:
                 body.update({
-                    "bind_authorization_gate_review_state": "PASSED",
-                    "bind_authorization_gate_review_packet_id": "gate-1",
-                    "bind_authorization_gate_review_packet_hash": "sha256:gate",
+                    "gate_review_state": runner.BIND_PASS,
+                    "live_adapter_dry_run_bind_authorization_gate_review_id": "gate-1",
+                    "live_adapter_dry_run_bind_authorization_gate_review_hash": "sha256:gate",
                 })
             return body
 
@@ -102,7 +102,7 @@ def test_supported_ready_fixture_reaches_and_reverifies_gate() -> None:
         {"handoff_status": "READY_FOR_GUARDED_PROMOTION"},
         object(), _fixture(), _fake_stages(),
     )
-    assert packet["bind_authorization_gate_review_state"] == "PASSED"
+    assert packet["gate_review_state"] == runner.BIND_PASS
     assert verified == list(runner.STAGES)
     assert verified[-1] == "live_adapter_dry_run_bind_authorization_gate_review"
 
@@ -113,6 +113,24 @@ def test_tampered_gate_packet_is_rejected() -> None:
             {"handoff_status": "READY_FOR_GUARDED_PROMOTION"},
             object(), _fixture(), _fake_stages(tamper=True),
         )
+
+
+def test_guarded_promotion_receives_exact_native_context_arguments() -> None:
+    functions = _fake_stages()
+    name = "build_guarded_promotion_eligibility_packet"
+    original = functions[name]
+    captured = {}
+
+    def capture(**kwargs):
+        captured.update(kwargs)
+        return original(**kwargs)
+
+    functions[name] = capture
+    runner.execute_native_chain({}, object(), _fixture(), functions)
+    assert "trusted_context" in captured
+    assert "validation_context" not in captured
+    assert "evaluated_at" in captured
+    assert "issued_at" in captured
 
 
 def test_pre_bind_validation_receives_formation_packet() -> None:
