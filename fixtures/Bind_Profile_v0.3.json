@@ -1,0 +1,78 @@
+{
+  "artifact_type": "rcc_revas_veritas_deterministic_bind_profile",
+  "artifact_version": "0.3.0",
+  "status": "FINAL_BYTES_HASH_RECORDED",
+  "endpoint": {
+    "scheme": "https",
+    "host": "adapter.example.invalid",
+    "port": 443,
+    "path": "/dry-run",
+    "identity": "https://adapter.example.invalid/dry-run",
+    "routable": false
+  },
+  "adapter_contract": {
+    "adapter_contract_id": "benchmark.synthetic.no-effect-adapter/v0.3",
+    "mode": "DRY_RUN_ONLY",
+    "live_adapter_instantiation_allowed": false
+  },
+  "credential_reference": {
+    "credential_ref": "metadata://benchmark/credential-reference/v0.3",
+    "kind": "REFERENCE_ONLY",
+    "secret_present": false,
+    "material_resolution_allowed": false
+  },
+  "fixed_timestamps_utc": [
+    "2030-01-01T00:00:03Z",
+    "2030-01-01T00:00:04Z",
+    "2030-01-01T00:00:05Z",
+    "2030-01-01T00:00:06Z",
+    "2030-01-01T00:00:07Z",
+    "2030-01-01T00:00:08Z",
+    "2030-01-01T00:00:09Z",
+    "2030-01-01T00:00:10Z",
+    "2030-01-01T00:00:11Z",
+    "2030-01-01T00:00:12Z",
+    "2030-01-01T00:00:13Z",
+    "2030-01-01T00:00:14Z",
+    "2030-01-01T00:00:15Z",
+    "2030-01-01T00:00:16Z",
+    "2030-01-01T00:00:17Z",
+    "2030-01-01T00:00:18Z",
+    "2030-01-01T00:00:19Z",
+    "2030-01-01T00:00:20Z",
+    "2030-01-01T00:00:21Z",
+    "2030-01-01T00:00:22Z",
+    "2030-01-01T00:00:23Z",
+    "2030-01-01T00:00:24Z"
+  ],
+  "authority_linkage": {
+    "kind": "METADATA_REFERENCE_ONLY",
+    "creates_authority_evidence": false,
+    "externally_verified": false
+  },
+  "human_approval_requirement": {
+    "resolution": "ACTION_CLASS_CONTRACT_BOUND",
+    "states": [
+      "REQUIRED",
+      "NOT_REQUIRED_BY_ACTION_CONTRACT"
+    ],
+    "ground_truth_used_for_resolution": false
+  },
+  "human_approval_linkage": {
+    "kind": "METADATA_REFERENCE_ONLY_WHEN_REQUIRED",
+    "creates_human_approval": false,
+    "externally_verified": false,
+    "approval_not_required_reference": null
+  },
+  "effects": {
+    "real_bind_invoked": false,
+    "bind_authorization_created": false,
+    "execution_authority_created": false,
+    "bind_receipt_created": false,
+    "request_dispatched": false,
+    "credential_material_accessed": false,
+    "authorization_header_constructed": false,
+    "network_used": false,
+    "external_effect_occurred": false
+  }
+}
