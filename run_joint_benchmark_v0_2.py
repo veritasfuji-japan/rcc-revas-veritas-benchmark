@@ -255,8 +255,8 @@ def execute_native_chain(
 
     eligibility_packet = build(
         STAGE_SPECS[0].builder, STAGE_SPECS[0].verifier, STAGES[0],
-        handoff=handoff_packet, validation_context=validation_context,
-        evaluated_at=at[0],
+        handoff=handoff_packet, trusted_context=validation_context,
+        evaluated_at=at[0], issued_at=at[0],
     )
     formation_readiness_packet = build(
         STAGE_SPECS[1].builder, STAGE_SPECS[1].verifier, STAGES[1],
@@ -277,92 +277,94 @@ def execute_native_chain(
     )
     selection_packet = build(
         STAGE_SPECS[5].builder, STAGE_SPECS[5].verifier, STAGES[5],
-        preflight_packet=preflight_packet,
+        bind_preflight_adjudication_packet=preflight_packet,
         adapter_contract_descriptor=fixture["adapter_contract_descriptor"],
         selected_at=at[5],
     )
     plan_packet = build(
         STAGE_SPECS[6].builder, STAGE_SPECS[6].verifier, STAGES[6],
-        selection_packet=selection_packet, planned_at=at[6],
+        adapter_contract_selection_packet=selection_packet, planned_at=at[6],
     )
     fixture_result_packet = build(
         STAGE_SPECS[7].builder, STAGE_SPECS[7].verifier, STAGES[7],
-        plan_packet=plan_packet,
+        adapter_dry_run_plan_packet=plan_packet,
         fixture_step_results=fixture["fixture_step_results"],
-        evaluated_at=at[7],
+        resulted_at=at[7],
     )
     rehearsal_packet = build(
         STAGE_SPECS[8].builder, STAGE_SPECS[8].verifier, STAGES[8],
-        fixture_result_packet=fixture_result_packet,
+        adapter_dry_run_fixture_result_packet=fixture_result_packet,
         reference_rehearsal_fixture=fixture["reference_rehearsal_fixture"],
         rehearsed_at=at[8],
     )
     request_readiness_packet = build(
         STAGE_SPECS[9].builder, STAGE_SPECS[9].verifier, STAGES[9],
-        rehearsal_packet=rehearsal_packet, checked_at=at[9],
+        reference_rehearsal_packet=rehearsal_packet, readiness_evaluated_at=at[9],
     )
     request_packet = build(
         STAGE_SPECS[10].builder, STAGE_SPECS[10].verifier, STAGES[10],
-        readiness_packet=request_readiness_packet,
-        endpoint_candidate=fixture["endpoint_candidate"], created_at=at[10],
+        live_adapter_dry_run_readiness_packet=request_readiness_packet,
+        requested_at=at[10],
     )
     dispatch_readiness_packet = build(
         STAGE_SPECS[11].builder, STAGE_SPECS[11].verifier, STAGES[11],
-        request_packet=request_packet, checked_at=at[11],
+        source_live_adapter_dry_run_request_packet=request_packet,
+        dispatch_readiness_evaluated_at=at[11],
     )
     allowlist_packet = build(
         STAGE_SPECS[12].builder, STAGE_SPECS[12].verifier, STAGES[12],
-        dispatch_readiness_packet=dispatch_readiness_packet,
-        endpoint_allowlist_snapshot=fixture["endpoint_allowlist_snapshot"],
-        evaluated_at=at[12],
+        source_dispatch_readiness_packet=dispatch_readiness_packet,
+        endpoint_candidate=fixture["endpoint_candidate"],
+        allowlist_snapshot=fixture["endpoint_allowlist_snapshot"],
+        endpoint_allowlist_evaluated_at=at[12],
     )
     credential_packet = build(
         STAGE_SPECS[13].builder, STAGE_SPECS[13].verifier, STAGES[13],
-        endpoint_allowlist_evaluation_packet=allowlist_packet,
+        source_endpoint_allowlist_evaluation_packet=allowlist_packet,
         credential_reference=fixture["credential_reference"],
         credential_policy_snapshot=fixture["credential_policy_snapshot"],
-        evaluated_at=at[13],
+        credential_authorization_evaluated_at=at[13],
     )
     operator_packet = build(
         STAGE_SPECS[14].builder, STAGE_SPECS[14].verifier, STAGES[14],
-        credential_authorization_evaluation_packet=credential_packet,
+        source_credential_authorization_evaluation_packet=credential_packet,
         operator_review_decision=fixture["operator_review_decision"],
-        reviewed_at=at[14],
+        operator_dispatch_review_recorded_at=at[14],
     )
     pre_dispatch_packet = build(
         STAGE_SPECS[15].builder, STAGE_SPECS[15].verifier, STAGES[15],
-        operator_dispatch_review_packet=operator_packet,
+        source_operator_dispatch_review_packet=operator_packet,
         bind_pre_dispatch_review_decision=(
             fixture["bind_pre_dispatch_review_decision"]
-        ), reviewed_at=at[15],
+        ), bind_pre_dispatch_review_recorded_at=at[15],
     )
     authority_packet = build(
         STAGE_SPECS[16].builder, STAGE_SPECS[16].verifier, STAGES[16],
-        bind_pre_dispatch_review_packet=pre_dispatch_packet,
+        source_bind_pre_dispatch_review_packet=pre_dispatch_packet,
         authority_evidence_reference_bundle=(
             fixture["authority_evidence_reference_bundle"]
-        ), reviewed_at=at[16],
+        ), authority_evidence_linkage_review_recorded_at=at[16],
     )
     approval_packet = build(
         STAGE_SPECS[17].builder, STAGE_SPECS[17].verifier, STAGES[17],
-        authority_evidence_linkage_review_packet=authority_packet,
+        source_authority_evidence_linkage_review_packet=authority_packet,
         human_approval_reference_bundle=(
             fixture["human_approval_reference_bundle"]
-        ), reviewed_at=at[17],
+        ), human_approval_linkage_review_recorded_at=at[17],
     )
     final_readiness_packet = build(
         STAGE_SPECS[18].builder, STAGE_SPECS[18].verifier, STAGES[18],
-        human_approval_linkage_review_packet=approval_packet,
+        source_human_approval_linkage_review_packet=approval_packet,
         final_bind_authorization_readiness_review_decision=fixture[
             "final_bind_authorization_readiness_review_decision"
-        ], reviewed_at=at[18],
+        ], final_bind_authorization_readiness_recorded_at=at[18],
     )
     gate_packet = build(
         STAGE_SPECS[19].builder, STAGE_SPECS[19].verifier, STAGES[19],
-        final_bind_authorization_readiness_packet=final_readiness_packet,
+        source_final_bind_authorization_readiness_packet=final_readiness_packet,
         bind_authorization_gate_review_decision=fixture[
             "bind_authorization_gate_review_decision"
-        ], reviewed_at=at[19],
+        ], bind_authorization_gate_review_recorded_at=at[19],
     )
     return packet_dict(gate_packet), verified_names
 
@@ -411,20 +413,19 @@ def run_case(case: dict[str, Any], repo: Path, native: dict[str, Any],
     packet, verified = execute_native_chain(
         handoff, context, fixture, functions
     )
-    gate_state = packet["bind_authorization_gate_review_state"]
-    outcome = {
-        "PASSED": BIND_PASS,
-        "FAILED": BIND_FAIL,
-    }[gate_state]
+    gate_state = packet["gate_review_state"]
+    if gate_state not in (BIND_PASS, BIND_FAIL):
+        raise BenchmarkError(f"unexpected native gate_review_state: {gate_state}")
+    outcome = gate_state
     row.update({
         "native_bind_gate_invoked": True,
         "native_bind_gate_outcome": outcome,
         "native_bind_gate_review_state": gate_state,
         "native_bind_gate_packet_id": packet[
-            "bind_authorization_gate_review_packet_id"
+            "live_adapter_dry_run_bind_authorization_gate_review_id"
         ],
         "native_bind_gate_packet_hash": packet[
-            "bind_authorization_gate_review_packet_hash"
+            "live_adapter_dry_run_bind_authorization_gate_review_hash"
         ],
         "full_chain_bind_eligibility_outcome": outcome,
         "verified_native_stages": verified,
