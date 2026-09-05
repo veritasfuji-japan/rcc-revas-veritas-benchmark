@@ -1,0 +1,42 @@
+{
+  "artifact_type": "veritas_canonical_benchmark_contract",
+  "artifact_version": "0.2.0",
+  "status": "FINAL_BYTES_HASH_RECORDED",
+  "source": {
+    "repository": "https://github.com/veritasfuji-japan/veritas_os",
+    "commit": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c"
+  },
+  "treatment": "native dry-run Bind Authorization Gate prerequisite chain",
+  "ground_truth_use": "scoring_only",
+  "non_ready_policy": "NOT_REACHED_UPSTREAM_GOVERNANCE_STOP",
+  "approval_not_required_policy": "stop without fabricated Human Approval when native contract requires a reference",
+  "semantic_boundaries": [
+    "Decision Adoption != Execution Authority",
+    "READY_FOR_GUARDED_PROMOTION != execution authorization",
+    "PASSED_FOR_FUTURE_BIND_AUTHORIZATION_ARTIFACT != execution authorization"
+  ],
+  "native_stages": [
+    "guarded_promotion_eligibility",
+    "execution_intent_formation_readiness",
+    "canonical_execution_intent_formation",
+    "execution_intent_pre_bind_validation",
+    "canonical_bind_preflight_adjudication",
+    "bind_adapter_contract_selection",
+    "adapter_dry_run_plan",
+    "adapter_dry_run_result",
+    "reference_adapter_rehearsal",
+    "live_adapter_dry_run_readiness",
+    "live_adapter_dry_run_request",
+    "live_adapter_dry_run_dispatch_readiness",
+    "live_adapter_dry_run_endpoint_allowlist",
+    "live_adapter_dry_run_credential_authorization",
+    "live_adapter_dry_run_operator_dispatch_review",
+    "live_adapter_dry_run_bind_pre_dispatch_review",
+    "live_adapter_dry_run_authority_evidence_linkage",
+    "live_adapter_dry_run_human_approval_linkage",
+    "live_adapter_dry_run_final_bind_authorization_readiness",
+    "live_adapter_dry_run_bind_authorization_gate_review"
+  ],
+  "final_verification": "verify_live_adapter_dry_run_bind_authorization_gate_review_packet",
+  "effecting_operations_allowed": false
+}
