@@ -1,0 +1,39 @@
+{
+  "approval_not_required_compatibility_case_ids": [
+    "GOV-A04",
+    "GOV-A07",
+    "GOV-A10",
+    "GOV-A11",
+    "GOV-A12"
+  ],
+  "approval_not_required_native_compatibility_block_count": 5,
+  "approval_required_false_ready_count": 5,
+  "approval_required_true_ready_count": 7,
+  "authorization_header_constructed": false,
+  "bind_authorization_created": false,
+  "bind_receipt_created": false,
+  "credential_material_accessed": false,
+  "execution_authority_created": false,
+  "external_effect_occurred": false,
+  "full_chain_bind_eligibility_accuracy": 0.8611111111111112,
+  "handoff_ready_cases": 12,
+  "mismatch_case_ids": [
+    "GOV-A04",
+    "GOV-A07",
+    "GOV-A10",
+    "GOV-A11",
+    "GOV-A12"
+  ],
+  "native_bind_chain_eligible_cases": 7,
+  "native_bind_gate_error_count": 0,
+  "native_bind_gate_fail_count": 0,
+  "native_bind_gate_invoked_count": 7,
+  "native_bind_gate_not_reached_count": 29,
+  "native_bind_gate_pass_count": 7,
+  "native_bind_gate_supported_subset_accuracy": 1.0,
+  "network_used": false,
+  "real_bind_invoked": false,
+  "request_dispatched": false,
+  "total_cases": 36,
+  "upstream_stopped_cases": 24
+}

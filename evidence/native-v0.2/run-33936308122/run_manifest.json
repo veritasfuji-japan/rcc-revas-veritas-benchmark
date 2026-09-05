@@ -1,0 +1,28 @@
+{
+  "authorization_header_constructed": false,
+  "benchmark_repository_commit": "27ce2bf7348a46ef119b2ca7559a336e93cdb73e",
+  "bind_authorization_created": false,
+  "bind_profile_sha256": "c0af66a7e1f045e422bd10f17c926aaaf944569231cf7a7f137288307e607951",
+  "bind_receipt_created": false,
+  "contract_sha256": "081e1a3f8069eaa336f8c1a0f5c7d7151206e9dd670207726906236c8bc1c08f",
+  "credential_material_accessed": false,
+  "dataset_sha256": "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88",
+  "execution_authority_created": false,
+  "external_effect_occurred": false,
+  "native_bind_gate_invocation_count": 7,
+  "network_used": false,
+  "os_platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "pinned_veritas_commit": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+  "python_version": "3.11.16",
+  "real_bind_invoked": false,
+  "request_dispatched": false,
+  "result_file_sha256": {
+    "cases.jsonl": "e085f76107caf2c9e848d63e6a098bf9218b2f02f532bc593413903f9fc23dcf",
+    "report.md": "7c51ebd7faa44b3a5da576ce31d4627c8a45c8cfdcb32aac877d256b7b61e4d3",
+    "summary.json": "603841e031fba9bf5d68531cdf37bdefec399c085b0bf0c548c82044f7b5e8d4"
+  },
+  "runner_version": "0.2.0",
+  "runtime_manifest_sha256": "46b03b19904658e02d1bf401d7f54c533e97e543a4c92fb7f18d9cab6d62844a",
+  "veritas_commit": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+  "veritas_repo_dirty": false
+}

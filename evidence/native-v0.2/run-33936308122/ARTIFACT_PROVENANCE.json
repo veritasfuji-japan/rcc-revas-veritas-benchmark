@@ -1,0 +1,41 @@
+{
+  "artifact_id": 9960293177,
+  "artifact_name": "native-veritas-bind-benchmark-v0.2",
+  "artifact_type": "native_veritas_bind_benchmark_v0_2_artifact_provenance",
+  "artifact_version": "0.2.0",
+  "artifact_zip_sha256": "aac04ab6e9842cc5315e3c6462501a41eed175c9e5ff4272e3c64cc5349d0dfc",
+  "claim_boundary": [
+    "Decision Adoption != Execution Authority",
+    "READY_FOR_GUARDED_PROMOTION != execution authorization",
+    "PASSED_FOR_FUTURE_BIND_AUTHORIZATION_ARTIFACT != execution authorization",
+    "No real Bind, dispatch, credential access, network use, or external effect occurred."
+  ],
+  "persisted_files": {
+    "cases.jsonl": {
+      "sha256": "e085f76107caf2c9e848d63e6a098bf9218b2f02f532bc593413903f9fc23dcf",
+      "size_bytes": 39575
+    },
+    "report.md": {
+      "sha256": "7c51ebd7faa44b3a5da576ce31d4627c8a45c8cfdcb32aac877d256b7b61e4d3",
+      "size_bytes": 303
+    },
+    "run_manifest.json": {
+      "sha256": "b2d0135b5d02137913df9818003f06e996c9cb40979d4d1c492acc094907914d",
+      "size_bytes": 1392
+    },
+    "summary.json": {
+      "sha256": "603841e031fba9bf5d68531cdf37bdefec399c085b0bf0c548c82044f7b5e8d4",
+      "size_bytes": 1139
+    }
+  },
+  "pinned_veritas_commit": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+  "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+  "source_benchmark_commit": "27ce2bf7348a46ef119b2ca7559a336e93cdb73e",
+  "source_pull_request": 8,
+  "source_pull_request_merge_sha": "feb8101cab0b264a387b090d1aa9a98696a7ca55",
+  "source_workflow_conclusion": "success",
+  "source_workflow_name": "Native VERITAS Bind benchmark v0.2",
+  "source_workflow_run_id": 33936308122,
+  "status": "PERSISTED_EXACT_GITHUB_ACTIONS_ARTIFACT",
+  "workflow_evidence_sha256": "87b735aceb056c9385fc4cff761757487606a16a2276dd902c7383a3a4f47663"
+}

@@ -1,0 +1,27 @@
+{
+  "artifact_id": 9960293177,
+  "artifact_name": "native-veritas-bind-benchmark-v0.2",
+  "artifact_type": "github_actions_workflow_evidence",
+  "artifact_version": "0.2.0",
+  "artifact_zip_sha256": "aac04ab6e9842cc5315e3c6462501a41eed175c9e5ff4272e3c64cc5349d0dfc",
+  "claims": {
+    "authorization_header_constructed": false,
+    "bind_authorization_created": false,
+    "bind_receipt_created": false,
+    "credential_material_accessed": false,
+    "execution_authority_created": false,
+    "external_effect_occurred": false,
+    "network_used": false,
+    "real_bind_invoked": false,
+    "request_dispatched": false
+  },
+  "pinned_veritas_commit": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+  "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+  "source_pull_request": 8,
+  "source_pull_request_merge_sha": "feb8101cab0b264a387b090d1aa9a98696a7ca55",
+  "workflow_name": "Native VERITAS Bind benchmark v0.2",
+  "workflow_run_conclusion": "success",
+  "workflow_run_head_branch": "codex/implement-v0.2-benchmark-with-bind-authorization-4qeqlc",
+  "workflow_run_head_sha": "27ce2bf7348a46ef119b2ca7559a336e93cdb73e",
+  "workflow_run_id": 33936308122
+}
