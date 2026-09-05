@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://benchmark.example.invalid/schemas/joint-benchmark-case-result-v0.2.schema.json",
+  "title": "RCC/REVAS x VERITAS native Bind benchmark case result v0.2",
+  "type": "object",
+  "required": [
+    "case_id", "handoff_status", "handoff_aggregate_decision",
+    "bind_chain_reached", "bind_stop_stage", "bind_stop_reason",
+    "native_bind_gate_invoked", "native_bind_gate_outcome",
+    "native_bind_gate_packet_id", "native_bind_gate_packet_hash",
+    "full_chain_bind_eligibility_outcome", "expected_bind_gate_outcome",
+    "bind_eligibility_match", "execution_authority_created",
+    "real_bind_invoked", "external_effect_occurred"
+  ],
+  "properties": {
+    "case_id": {"type": "string"},
+    "handoff_status": {"type": "string"},
+    "handoff_aggregate_decision": {"enum": ["ALLOW", "HOLD", "DENY"]},
+    "bind_chain_reached": {"type": "boolean"},
+    "bind_stop_stage": {"type": ["string", "null"]},
+    "bind_stop_reason": {"type": ["string", "null"]},
+    "native_bind_gate_invoked": {"type": "boolean"},
+    "native_bind_gate_outcome": {"type": ["string", "null"]},
+    "native_bind_gate_packet_id": {"type": ["string", "null"]},
+    "native_bind_gate_packet_hash": {"type": ["string", "null"]},
+    "full_chain_bind_eligibility_outcome": {"enum": ["PASSED_FOR_FUTURE_BIND_AUTHORIZATION_ARTIFACT", "FAILED_FOR_FUTURE_BIND_AUTHORIZATION_ARTIFACT"]},
+    "expected_bind_gate_outcome": {"type": "string"},
+    "bind_eligibility_match": {"type": "boolean"},
+    "execution_authority_created": {"const": false},
+    "real_bind_invoked": {"const": false},
+    "external_effect_occurred": {"const": false}
+  }
+}
