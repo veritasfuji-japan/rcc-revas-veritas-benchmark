@@ -15,8 +15,47 @@ def _fake_stages(tamper=False):
     functions = {}
     for index, spec in enumerate(runner.STAGE_SPECS):
         def build(_index=index, **kwargs):
-            body = {"packet_id": f"packet-{_index}", "index": _index,
-                    "inputs": sorted(kwargs)}
+            body = {
+                "packet_id": f"packet-{_index}",
+                "index": _index,
+                "inputs": sorted(kwargs),
+                "execution_intent_id": "execution-intent:test:v0.2",
+                "execution_intent": {
+                    "actor_identity": "agent:test",
+                    "target_system": "billing",
+                    "target_resource": "invoices:read",
+                },
+                "adapter_contract_id": "adapter-contract:test:v0.2",
+                "endpoint_candidate": {
+                    "endpoint_candidate_id": "endpoint:test:v0.2",
+                    "target_system": "billing",
+                    "target_resource_scope": "invoices:read",
+                    "endpoint_environment": "benchmark",
+                    "endpoint_purpose": "dry-run",
+                },
+                "credential_reference": {
+                    "credential_reference_id": "credential-ref:test:v0.2",
+                    "target_system": "billing",
+                    "target_resource_scope": "invoices:read",
+                    "credential_purpose": "dry-run",
+                },
+            }
+            if _index == 6:
+                body["planned_steps"] = [{
+                    "step_id": "dry-run-step:v1:1:describe-target",
+                    "ordinal": 1,
+                    "planned_adapter_method": "describe_target",
+                    "expected_output_ref": "expected:describe-target",
+                    "refusal_if_missing_later": "refuse-if-missing",
+                }]
+            if "endpoint_candidate" in kwargs:
+                body["endpoint_candidate"] = kwargs["endpoint_candidate"]
+            if "credential_reference" in kwargs:
+                body["credential_reference"] = kwargs["credential_reference"]
+            if "authority_evidence_reference_bundle" in kwargs:
+                body["authority_evidence_reference_bundle"] = (
+                    kwargs["authority_evidence_reference_bundle"]
+                )
             body["packet_hash"] = hashlib.sha256(
                 json.dumps(body, sort_keys=True).encode()
             ).hexdigest()
@@ -33,8 +72,24 @@ def _fake_stages(tamper=False):
 
         functions[spec.builder] = build
         functions[spec.verifier] = verify
-    return functions
 
+    functions.update({
+        "_adapter_methods": ("describe_target",),
+        "_prohibited_during_selection": (),
+        "_adapter_effect_profile": {},
+        "_descriptor_scope_limitations": (),
+        "_result_limitations": ("NOT_LIVE_RESULT",),
+        "_endpoint_snapshot_hash": lambda value: "0" * 64,
+        "_credential_policy_snapshot_hash": lambda value: "0" * 64,
+        "_final_acknowledgements": (),
+        "_final_outcomes": (
+            "ACCEPTED_FOR_FUTURE_BIND_AUTHORIZATION_GATE_REVIEW",
+            "REJECTED_FOR_FUTURE_BIND_AUTHORIZATION_GATE_REVIEW",
+        ),
+        "_gate_acknowledgements": (),
+        "_gate_outcomes": (runner.BIND_PASS, runner.BIND_FAIL),
+    })
+    return functions
 
 def _fixture():
     profile = json.loads((ROOT / "fixtures/Bind_Profile_v0.2.json").read_text())
