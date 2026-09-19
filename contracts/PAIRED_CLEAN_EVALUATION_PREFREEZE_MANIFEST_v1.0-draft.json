@@ -1,0 +1,153 @@
+{
+  "artifact_type": "rcc_revas_veritas_paired_clean_evaluation_prefreeze_manifest",
+  "artifact_version": "1.0-draft",
+  "date": "2026-09-19",
+  "status": "PREFREEZE_PREPARATION_ONLY_NOT_EXECUTABLE",
+  "purpose": "Record the currently verifiable source, dataset, treatment-boundary, and unresolved joint inputs before freezing Paired Clean Evaluation Contract v1.0. This artifact is preparation only and does not authorize benchmark execution.",
+  "joint_contract": {
+    "title": "RCC/REVAS × VERITAS — Paired Clean Evaluation Contract v1.0-draft",
+    "url": "https://docs.google.com/document/d/1BlhAcON2PaA3vWalC09SjmPnUZd6Gr6CeAgmTMReLF4/edit",
+    "status": "DRAFT_NOT_FROZEN",
+    "sha256": null,
+    "freeze_rule": "Freeze and hash the final contract before any paired run."
+  },
+  "veritas": {
+    "repository": "veritasfuji-japan/veritas_os",
+    "candidate_evaluation_commit": "d2405d5460a8812aeb7fd127f8475c960d022161",
+    "candidate_status": "CURRENT_MAIN_AT_PREFREEZE_PREPARATION",
+    "entry_boundary": "POST /v1/decide",
+    "final_commit_frozen": false,
+    "note": "The final VERITAS commit must be explicitly frozen immediately before paired execution after all joint open items are resolved."
+  },
+  "benchmark": {
+    "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+    "baseline_main_commit": "13d97aff4600a38494c85e1731827686f2cac93b",
+    "existing_historical_pr_10": {
+      "url": "https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/pull/10",
+      "head_commit": "3e72140f45ea8177db63363995226f2e3b4c683b",
+      "pinned_veritas_commit": "3d9b8f85138fb0c5cde48915f10410861d015abc",
+      "status": "HISTORICAL_OPEN_DO_NOT_MERGE_AS_CURRENT_PAIRED_EVALUATION_SURFACE"
+    },
+    "new_paired_runner": null,
+    "new_paired_runner_status": "DO_NOT_IMPLEMENT_UNTIL_FREEZE_GATE_CLOSES"
+  },
+  "dataset": {
+    "name": "Governance_labelled_Evaluation_Set_v0.1.1",
+    "path": "fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json",
+    "case_count": 36,
+    "sha256": "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88",
+    "ground_truth_status": "EXISTING_PREREGISTERED_SYNTHETIC_LABELS",
+    "final_dataset_frozen": false,
+    "rule": "No result inspection may be used to silently alter labels under the same contract version."
+  },
+  "historical_runtime_reference": {
+    "runner": "run_joint_benchmark_v0_2.py",
+    "manifest": "contracts/VERITAS_Benchmark_Runtime_Manifest_v0.2.json",
+    "veritas_commit": "4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c",
+    "status": "HISTORICAL_REFERENCE_ONLY_NOT_CURRENT_PAIRED_RUN"
+  },
+  "rcc_revas_current_source": {
+    "repository": null,
+    "commit": null,
+    "canonical_entrypoint": null,
+    "status": "AWAITING_BEN_CONFIRMATION",
+    "rule": "Do not infer or freeze Ben's current canonical RCC/REVAS source or entrypoint from historical benchmark material."
+  },
+  "evaluation_arms": {
+    "arm_a": "RCC/REVAS only under frozen identical input/scenario conditions",
+    "arm_b": "RCC/REVAS plus current VERITAS full governance treatment under the same frozen input/scenario conditions"
+  },
+  "proposed_treatment_boundary": {
+    "status": "PROPOSED_NOT_FROZEN",
+    "veritas_entry": "POST /v1/decide",
+    "downstream_stop_point": "native Bind eligibility / gate-review boundary before any external dispatch",
+    "external_effects_permitted": false,
+    "rationale": "Measure governance and Bind-eligibility delta without turning the first clean paired run into a production-effect experiment."
+  },
+  "required_governance_metrics": [
+    "false_allow_count",
+    "false_allow_rate",
+    "false_block_count",
+    "false_block_rate",
+    "authority_violation_detection",
+    "approval_violation_detection",
+    "evidence_insufficiency_detection",
+    "scope_violation_detection",
+    "bind_eligibility_accuracy",
+    "ALLOW_precision_recall_where_meaningful",
+    "HOLD_correctness",
+    "DENY_correctness"
+  ],
+  "required_preservation_metrics": [
+    "baseline_task_output_preservation",
+    "changed_output_count",
+    "unexpected_regression_count",
+    "candidate_adoption_changes",
+    "decision_divergence_by_case_id"
+  ],
+  "required_operational_metrics": [
+    "total_latency",
+    "veritas_added_latency",
+    "additional_model_calls",
+    "token_consumption",
+    "api_provider_calls",
+    "api_provider_cost_when_exactly_measurable",
+    "compute_time_or_overhead_where_measurable",
+    "retry_count",
+    "error_count"
+  ],
+  "runtime_environment": {
+    "python_version": null,
+    "dependency_lock": null,
+    "os_image": null,
+    "hardware_or_runner_class": null,
+    "status": "TBD_BEFORE_FREEZE"
+  },
+  "cost_accounting": {
+    "method": null,
+    "status": "TBD_BEFORE_FREEZE",
+    "rule": "Use UNKNOWN or NOT_APPLICABLE when exact provider cost cannot be measured; do not fabricate estimates."
+  },
+  "case_exclusions": {
+    "items": [],
+    "status": "NONE_PROPOSED_YET_NOT_FROZEN"
+  },
+  "external_validation": {
+    "selection": null,
+    "status": "SEPARATE_LATER_EVIDENCE_LAYER_NOT_REQUIRED_TO_START_INTERNAL_PAIRED_RUN_AFTER_FREEZE"
+  },
+  "invariants": [
+    "Decision Adoption != Execution Authority",
+    "Benchmark ALLOW/HOLD/DENY != execution permission",
+    "RCC/REVAS verification != VERITAS Authority Evidence",
+    "RCC/REVAS verification != VERITAS Human Approval",
+    "Missing required governance evidence follows frozen fail-closed semantics",
+    "Infrastructure failure != governance result",
+    "Unsupported case != coerced ALLOW/HOLD/DENY",
+    "Unknown external-effect state remains explicit",
+    "No uncontrolled external effect in the first paired clean run"
+  ],
+  "freeze_gate": {
+    "ben_canonical_repository_confirmed": false,
+    "ben_canonical_commit_confirmed": false,
+    "ben_canonical_entrypoint_confirmed": false,
+    "final_veritas_commit_frozen": false,
+    "exact_downstream_stop_point_jointly_confirmed": false,
+    "runtime_environment_frozen": false,
+    "cost_accounting_method_frozen": false,
+    "case_exclusions_frozen": false,
+    "dataset_and_labels_frozen": false,
+    "contract_frozen_and_hashed": false,
+    "benchmark_execution_allowed": false
+  },
+  "claim_boundary": {
+    "paired_run_executed": false,
+    "current_head_governance_efficacy_proven": false,
+    "independent_validation": false,
+    "production_validation": false,
+    "customer_deployment": false,
+    "paid_poc": false,
+    "formal_partnership": false,
+    "certification": false
+  }
+}
