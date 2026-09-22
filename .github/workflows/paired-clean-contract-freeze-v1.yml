@@ -1,0 +1,100 @@
+name: Paired Clean Contract Freeze v1
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CONTRACT_PATH: contracts/PAIRED_CLEAN_EVALUATION_CONTRACT_v1.0.json
+  CONTRACT_SHA256: 532958fc9371fb34e550fb2a108868c64e87a980833dd46e8a92c7a133d9ae1f
+  DATASET_PATH: fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json
+  DATASET_SHA256: 1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88
+  RCC_REPO: effacermonexistence/rcc-revas-veritas-benchmark
+  RCC_COMMIT: 805cd5ff17e431cf50a3dafa7f78a60a704613b9
+  RCC_ARCHIVE_SHA256: 4c736357ab93a8f4b5027b94c20340b973c760de1a0027df30bb53d3d10f47d8
+  VERITAS_REPO: veritasfuji-japan/veritas_os
+  VERITAS_COMMIT: b39961b003179aea70e320a57cb000f56a81951e
+
+jobs:
+  freeze-gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout contract branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11.16
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - name: Verify contract and dataset bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum "$CONTRACT_PATH" | awk '{print $1}')" = "$CONTRACT_SHA256"
+          test "$(sha256sum "$DATASET_PATH" | awk '{print $1}')" = "$DATASET_SHA256"
+
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          c = json.loads(Path(os.environ["CONTRACT_PATH"]).read_text())
+          assert c["status"] == "VERITAS_SIDE_FROZEN_PENDING_COUNTERPARTY_ACK"
+          assert c["baseline"]["publication_commit"] == os.environ["RCC_COMMIT"]
+          assert c["baseline"]["source_archive_sha256"] == os.environ["RCC_ARCHIVE_SHA256"]
+          assert c["treatment"]["commit"] == os.environ["VERITAS_COMMIT"]
+          assert c["dataset"]["case_count"] == 36
+          assert c["dataset"]["sha256"] == os.environ["DATASET_SHA256"]
+          assert c["dataset"]["known_preserved_semantic_divergences"] == ["GOV-H06","GOV-H07","GOV-D08"]
+          assert c["freeze_gate"]["counterparty_acknowledged_exact_contract_hash"] is False
+          assert c["freeze_gate"]["benchmark_execution_allowed"] is False
+          assert c["benchmark_harness"]["execution_allowed"] is False
+          assert c["treatment"]["external_dispatch_permitted"] is False
+          assert c["treatment"]["credential_material_handoff_permitted"] is False
+          assert c["treatment"]["network_effect_permitted"] is False
+          assert c["pairing"]["same_case_required"] is True
+          assert c["pairing"]["same_pre_state_required"] is True
+          assert c["pairing"]["same_rcc_revas_candidate_handoff_required"] is True
+          assert c["pairing"]["selective_reruns_permitted"] is False
+          PY
+
+      - name: Checkout frozen RCC REVAS publication
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.RCC_REPO }}
+          ref: ${{ env.RCC_COMMIT }}
+          path: rcc_upstream
+          persist-credentials: false
+
+      - name: Verify RCC REVAS frozen publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C rcc_upstream rev-parse HEAD)" = "$RCC_COMMIT"
+          archive="rcc_upstream/rcc-revas-eval/v0.1.0/source/rcc-revas-eval-v0.1.0-source.tar.gz"
+          test "$(sha256sum "$archive" | awk '{print $1}')" = "$RCC_ARCHIVE_SHA256"
+
+      - name: Checkout frozen VERITAS treatment
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.VERITAS_REPO }}
+          ref: ${{ env.VERITAS_COMMIT }}
+          path: veritas_os_checkout
+          persist-credentials: false
+
+      - name: Verify frozen VERITAS source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C veritas_os_checkout rev-parse HEAD)" = "$VERITAS_COMMIT"
+          test -f veritas_os_checkout/pyproject.toml
+          test -f veritas_os_checkout/veritas_os/core/pipeline/pipeline_response.py
+
+      - name: Confirm freeze is non-executing
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Contract bytes, dataset, RCC/REVAS pin, and VERITAS pin verified."
+          echo "Paired benchmark execution remains disabled pending counterparty acknowledgement."
