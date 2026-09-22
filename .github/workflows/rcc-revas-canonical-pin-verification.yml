@@ -83,17 +83,25 @@ jobs:
           )
           PY
 
-      - name: Independently verify source archive SHA-256
+      - name: Independently compute source archive SHA-256
+        id: archive_hash
         shell: bash
         run: |
           set -euo pipefail
           archive="upstream/$PACKAGE_DIR/source/rcc-revas-eval-v0.1.0-source.tar.gz"
           actual_sha="$(sha256sum "$archive" | awk '{print $1}')"
-          printf 'observed=%s\nexpected=%s\n' "$actual_sha" "$EXPECTED_ARCHIVE_SHA256"
+          hash_match=false
+          if [ "$actual_sha" = "$EXPECTED_ARCHIVE_SHA256" ]; then
+            hash_match=true
+          fi
+          printf 'observed=%s\nexpected=%s\nmatch=%s\n' "$actual_sha" "$EXPECTED_ARCHIVE_SHA256" "$hash_match"
           printf '%s  %s\n' "$actual_sha" "$archive" | tee verification/source-archive-sha256.txt
-          test "$actual_sha" = "$EXPECTED_ARCHIVE_SHA256"
+          printf 'expected=%s\nobserved=%s\nmatch=%s\n' "$EXPECTED_ARCHIVE_SHA256" "$actual_sha" "$hash_match" > verification/archive-hash-gate.txt
+          echo "actual_sha=$actual_sha" >> "$GITHUB_OUTPUT"
+          echo "hash_match=$hash_match" >> "$GITHUB_OUTPUT"
 
       - name: Extract canonical source archive
+        if: steps.archive_hash.outputs.hash_match == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -110,6 +118,7 @@ jobs:
           printf '%s\n' "$root" > verification/source-root.txt
 
       - name: Resolve exact verified entrypoint
+        if: steps.archive_hash.outputs.hash_match == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -118,6 +127,7 @@ jobs:
           python -m rcc_revas_eval evaluate --help
 
       - name: Run upstream preflight
+        if: steps.archive_hash.outputs.hash_match == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -126,6 +136,7 @@ jobs:
           python -m rcc_revas_eval preflight --manifest evaluation_manifest.json
 
       - name: Reproduce canonical upstream fixture execution
+        if: steps.archive_hash.outputs.hash_match == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -140,7 +151,11 @@ jobs:
             > "$GITHUB_WORKSPACE/verification/reproduction-sha256.txt"
 
       - name: Write bounded independent-verification record
+        if: always()
         shell: bash
+        env:
+          OBSERVED_ARCHIVE_SHA256: ${{ steps.archive_hash.outputs.actual_sha }}
+          ARCHIVE_HASH_MATCH: ${{ steps.archive_hash.outputs.hash_match }}
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -150,8 +165,13 @@ jobs:
           from pathlib import Path
 
           pin = json.loads(Path("verification/canonical-pin.json").read_text())
-          archive_sha = Path("verification/source-archive-sha256.txt").read_text().split()[0]
-          file_hashes = Path("verification/reproduction-sha256.txt").read_text()
+          hash_match = os.environ.get("ARCHIVE_HASH_MATCH") == "true"
+          reproduction = Path("verification/reproduction-sha256.txt")
+          reproduction_digest = (
+              hashlib.sha256(reproduction.read_bytes()).hexdigest()
+              if reproduction.exists()
+              else None
+          )
 
           record = {
               "schema_version": "veritas.rcc-revas-upstream-pin-verification.v1",
@@ -162,20 +182,21 @@ jobs:
               "package": "rcc-revas-eval",
               "version": "0.1.0",
               "local_canonical_source_commit_claimed_by_upstream": pin["local_canonical_source_commit"],
-              "verified_entrypoint": os.environ["EXPECTED_ENTRYPOINT"],
+              "verified_entrypoint_claimed_by_upstream": os.environ["EXPECTED_ENTRYPOINT"],
               "source_archive_sha256_expected": os.environ["EXPECTED_ARCHIVE_SHA256"],
-              "source_archive_sha256_observed": archive_sha,
-              "entrypoint_resolution": "PASS",
-              "preflight": "PASS",
-              "canonical_reproduction": "PASS",
-              "reproduction_hash_manifest_sha256": hashlib.sha256(
-                  file_hashes.encode("utf-8")
-              ).hexdigest(),
+              "source_archive_sha256_observed": os.environ.get("OBSERVED_ARCHIVE_SHA256"),
+              "source_archive_hash_match": hash_match,
+              "entrypoint_resolution": "PASS" if hash_match else "NOT_RUN_PIN_HASH_MISMATCH",
+              "preflight": "PASS" if hash_match else "NOT_RUN_PIN_HASH_MISMATCH",
+              "canonical_reproduction": "PASS" if hash_match else "NOT_RUN_PIN_HASH_MISMATCH",
+              "reproduction_hash_manifest_sha256": reproduction_digest,
               "preserved_partner_label_divergences": pin["validation"][
                   "preserved_partner_label_divergences"
               ],
+              "disposition": "PASS" if hash_match else "FAIL_CLOSED_PIN_HASH_MISMATCH",
               "claim_boundary": [
                   "Independent verification of the exact published RCC/REVAS bounded upstream pin only",
+                  "Runtime execution is intentionally not attempted when the frozen source archive hash does not match",
                   "Paired Clean Evaluation Contract v1.0 is not frozen by this verification",
                   "VERITAS joint treatment delta is not measured by this verification",
                   "No production-readiness, certification, or external-effect claim",
@@ -190,8 +211,15 @@ jobs:
             > verification/independent-verification.sha256
 
       - name: Upload independent verification evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: rcc-revas-canonical-pin-v0.1.0-verification
           path: verification/
           if-no-files-found: error
+
+      - name: Enforce frozen archive hash gate
+        if: always()
+        shell: bash
+        run: |
+          test "${{ steps.archive_hash.outputs.hash_match }}" = "true"
