@@ -20,7 +20,7 @@ import paired_clean_metrics_v1 as metrics
 import run_joint_benchmark as handoff_runner
 import run_joint_benchmark_v0_2 as bind_runner
 
-RUNNER_VERSION = "paired-clean-v1.0.0"
+RUNNER_VERSION = "paired-clean-v1.0.1"
 CONTRACT_SHA256 = "532958fc9371fb34e550fb2a108868c64e87a980833dd46e8a92c7a133d9ae1f"
 DATASET_SHA256 = "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88"
 RCC_COMMIT = "805cd5ff17e431cf50a3dafa7f78a60a704613b9"
@@ -126,6 +126,14 @@ def dataset(root: Path) -> dict[str, Any]:
     if len({c["case_id"] for c in cases}) != CASE_COUNT:
         raise RunnerError("duplicate case_id")
     return data
+
+
+def treatment_case(source_case: dict[str, Any]) -> dict[str, Any]:
+    """Return the exact non-label case surface allowed into treatment helpers."""
+    clean = {k: copy.deepcopy(v) for k, v in source_case.items() if k != "ground_truth"}
+    if "ground_truth" in clean:
+        raise RunnerError("ground_truth leaked into treatment case")
+    return clean
 
 
 def verify_inputs(root: Path, upstream: Path, veritas: Path) -> dict[str, Any]:
@@ -462,7 +470,8 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
     c = contract(root)
     require_scored_environment(c)
     data = dataset(root)
-    cases = {row["case_id"]: row for row in data["cases"]}
+    source_cases = {row["case_id"]: row for row in data["cases"]}
+    treatment_cases = {cid: treatment_case(row) for cid, row in source_cases.items()}
     reg, rcc_run = run_rcc(root, args.upstream_repo, args.output_dir)
     results, handoffs, source_ids = index_rcc(reg, rcc_run)
     profile = read_json(root / "fixtures/Bind_Profile_v0.2.json")
@@ -475,25 +484,23 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
     for runtime_id in sorted(results):
         result = results[runtime_id]
         case_id = source_ids[runtime_id]
-        case = cases[case_id]
+        case = treatment_cases[case_id]
         handoff = handoffs.get(runtime_id)
         candidate, state, state_hash = candidate_state(result, handoff)
         baseline = arm_a(result)
+        candidate_handoff_sha = sha_json(handoff) if handoff else None
         common = {
             "case_id": case_id,
             "runtime_case_id": runtime_id,
             "input_sha256": sha_json(case["input"]),
             "rcc_result_sha256": sha_json(result),
-            "candidate_handoff_sha256": sha_json(handoff) if handoff else None,
+            "candidate_handoff_sha256": candidate_handoff_sha,
+            "candidate_present": candidate is not None,
+            "same_candidate_handoff": handoff is not None,
             "arm_a_pre_state_sha256": state_hash,
-            "expected": case["ground_truth"]["expected_decision"],
-            "expected_bind_gate_outcome": case["ground_truth"]["expected_bind_gate_outcome"],
-            "conditions": {
-                k: case["ground_truth"].get(k)
-                for k in ("authority_valid", "approval_valid", "scope_valid", "evidence_complete")
-            },
             "arm_a": baseline,
             "arm_a_result_sha256": sha_json(result),
+            "label_attached_after_treatment": False,
             **EFFECTS,
         }
         if candidate is None:
@@ -504,18 +511,25 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
                     "arm_b_status": "UPSTREAM_RCC_WITHHELD_BEFORE_VERITAS",
                     "arm_b_pre_state_sha256": state_hash,
                     "same_pre_state": True,
-                    "same_candidate": True,
+                    "same_candidate": None,
                     "http_boundary": None,
                     "native_gate": None,
+                    "pair_binding_sha256": None,
+                    "infrastructure_error": None,
                     "arm_b_result_sha256": sha_json(
-                        {"status": "UPSTREAM_RCC_WITHHELD_BEFORE_VERITAS", "result": sha_json(result)}
+                        {
+                            "status": "UPSTREAM_RCC_WITHHELD_BEFORE_VERITAS",
+                            "result": sha_json(result),
+                            "candidate_handoff_sha256": candidate_handoff_sha,
+                            "pre_state_sha256": state_hash,
+                        }
                     ),
                 }
             )
             continue
 
         if handoff is None:
-            raise RunnerError(f"{case_id}: missing RCC handoff")
+            raise RunnerError(f"{case_id}: released candidate missing RCC handoff")
         request, proof = build_decide_request(handoff, rcc_run)
         exact = request["context"]["rcc_revas"]
         if canonical(exact["candidate"]) != canonical(candidate):
@@ -525,36 +539,149 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
         if proof["evaluation_pre_state_hash"] != state_hash:
             raise RunnerError(f"{case_id}: pre-state hash drift")
 
-        response, boundary = post_decide(args.veritas_repo, request)
-        require_response_candidate(response, candidate, proof)
+        same_pre_state = proof["evaluation_pre_state_hash"] == state_hash
+        try:
+            response, boundary = post_decide(args.veritas_repo, request)
+        except Exception as exc:
+            error = {
+                "status": "INFRASTRUCTURE_ERROR",
+                "stage": "POST_V1_DECIDE",
+                "error_type": type(exc).__name__,
+                "detail": str(exc)[:500],
+                "governance_outcome": None,
+                "automatic_retry_performed": False,
+            }
+            rows.append(
+                {
+                    **common,
+                    "candidate_sha256": sha_json(candidate),
+                    "arm_b": None,
+                    "arm_b_status": "INFRASTRUCTURE_ERROR_POST_V1_DECIDE",
+                    "arm_b_pre_state_sha256": proof["evaluation_pre_state_hash"],
+                    "same_pre_state": same_pre_state,
+                    "same_candidate": None,
+                    "http_boundary": None,
+                    "native_gate": None,
+                    "pair_binding_sha256": None,
+                    "infrastructure_error": error,
+                    "arm_b_result_sha256": sha_json(error),
+                }
+            )
+            continue
+
+        try:
+            require_response_candidate(response, candidate, proof)
+        except RunnerError as exc:
+            violation = {
+                "status": "PAIRING_VIOLATION",
+                "stage": "POST_V1_DECIDE_RESPONSE",
+                "detail": str(exc)[:500],
+                "governance_outcome": None,
+                "automatic_retry_performed": False,
+            }
+            rows.append(
+                {
+                    **common,
+                    "candidate_sha256": sha_json(candidate),
+                    "arm_b": None,
+                    "arm_b_status": "PAIRING_VIOLATION_CANDIDATE_CHANGED",
+                    "arm_b_pre_state_sha256": proof["evaluation_pre_state_hash"],
+                    "same_pre_state": same_pre_state,
+                    "same_candidate": False,
+                    "http_boundary": boundary,
+                    "native_gate": None,
+                    "pair_binding_sha256": None,
+                    "infrastructure_error": None,
+                    "pairing_violation": violation,
+                    "arm_b_result_sha256": sha_json(
+                        {"http_boundary": boundary, "pairing_violation": violation}
+                    ),
+                }
+            )
+            continue
+
         gate_started = time.perf_counter_ns()
-        gate, native_handoff = native_gate(
-            case, args.veritas_repo, response, candidate, profile, native, funcs
-        )
+        try:
+            gate, native_handoff = native_gate(
+                case, args.veritas_repo, response, candidate, profile, native, funcs
+            )
+        except Exception as exc:
+            gate_elapsed = time.perf_counter_ns() - gate_started
+            error = {
+                "status": "INFRASTRUCTURE_ERROR",
+                "stage": "NATIVE_BIND_GATE_REVIEW",
+                "error_type": type(exc).__name__,
+                "detail": str(exc)[:500],
+                "governance_outcome": None,
+                "automatic_retry_performed": False,
+            }
+            pair_binding = {
+                "rcc_candidate_handoff_sha256": candidate_handoff_sha,
+                "rcc_candidate_sha256": sha_json(candidate),
+                "rcc_pre_state_sha256": state_hash,
+                "veritas_request_sha256": boundary["request_sha256"],
+                "veritas_canonical_decision_hash": boundary["canonical_decision_hash"],
+            }
+            rows.append(
+                {
+                    **common,
+                    "candidate_sha256": sha_json(candidate),
+                    "arm_b": None,
+                    "arm_b_status": "INFRASTRUCTURE_ERROR_NATIVE_BIND_GATE",
+                    "arm_b_pre_state_sha256": proof["evaluation_pre_state_hash"],
+                    "same_pre_state": same_pre_state,
+                    "same_candidate": True,
+                    "http_boundary": boundary,
+                    "native_gate_elapsed_ns": gate_elapsed,
+                    "native_gate": None,
+                    "pair_binding_sha256": sha_json(pair_binding),
+                    "infrastructure_error": error,
+                    "arm_b_result_sha256": sha_json(
+                        {
+                            "http_boundary": boundary,
+                            "pair_binding": pair_binding,
+                            "infrastructure_error": error,
+                        }
+                    ),
+                }
+            )
+            continue
+
         gate_elapsed = time.perf_counter_ns() - gate_started
         treatment = arm_b(gate, baseline)
+        pair_binding = {
+            "rcc_candidate_handoff_sha256": candidate_handoff_sha,
+            "rcc_candidate_sha256": sha_json(candidate),
+            "rcc_pre_state_sha256": state_hash,
+            "veritas_request_sha256": boundary["request_sha256"],
+            "veritas_canonical_decision_hash": boundary["canonical_decision_hash"],
+            "native_handoff_sha256": sha_json(native_handoff),
+            "native_bind_gate_packet_hash": gate.get("native_bind_gate_packet_hash"),
+        }
         row = {
             **common,
             "candidate_sha256": sha_json(candidate),
             "arm_b": treatment,
             "arm_b_status": gate["stop_reason"],
             "arm_b_pre_state_sha256": proof["evaluation_pre_state_hash"],
-            "same_pre_state": proof["evaluation_pre_state_hash"] == state_hash,
-            "same_candidate": canonical(exact["candidate"]) == canonical(candidate),
+            "same_pre_state": same_pre_state,
+            "same_candidate": True,
             "http_boundary": boundary,
             "native_handoff_sha256": sha_json(native_handoff),
             "native_gate_elapsed_ns": gate_elapsed,
             "native_gate": gate,
+            "pair_binding_sha256": sha_json(pair_binding),
+            "infrastructure_error": None,
         }
         row["arm_b_result_sha256"] = sha_json(
             {
                 "http_boundary": boundary,
-                "native_handoff_sha256": row["native_handoff_sha256"],
+                "pair_binding": pair_binding,
                 "native_gate": gate,
             }
         )
-        if not row["same_pre_state"] or not row["same_candidate"]:
-            raise RunnerError(f"{case_id}: pair identity failed")
+        if not row["same_pre_state"]:
+            raise RunnerError(f"{case_id}: pre-state identity failed")
         if any(row[name] for name in EFFECTS):
             raise RunnerError(f"{case_id}: effect flag true")
         rows.append(row)
@@ -562,11 +689,29 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
     if len(rows) != CASE_COUNT:
         raise RunnerError("paired denominator changed")
 
+    # Labels enter only after every treatment attempt has already been recorded.
+    for row in rows:
+        label = source_cases[row["case_id"]]["ground_truth"]
+        row["expected"] = label["expected_decision"]
+        row["expected_bind_gate_outcome"] = label["expected_bind_gate_outcome"]
+        row["conditions"] = {
+            k: label.get(k)
+            for k in ("authority_valid", "approval_valid", "scope_valid", "evidence_complete")
+        }
+        row["label_attached_after_treatment"] = True
+
     env = environment_manifest()
     write_json(args.output_dir / "environment_manifest.json", env)
     write_jsonl(args.output_dir / "paired_cases.jsonl", rows)
     gov = metrics.governance(rows)
     preservation = metrics.preservation(rows)
+    infrastructure_errors = sum(
+        str(r["arm_b_status"]).startswith("INFRASTRUCTURE_ERROR") for r in rows
+    )
+    pairing_violations = sum(
+        str(r["arm_b_status"]).startswith("PAIRING_VIOLATION") for r in rows
+    )
+    unsupported = sum(r["arm_b_status"] == "UNSUPPORTED_APPROVAL_NOT_REQUIRED" for r in rows)
     operational = {
         "total_latency_ns": time.perf_counter_ns() - started,
         "veritas_added_latency_ns": sum(
@@ -574,20 +719,27 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
             + int(r.get("native_gate_elapsed_ns") or 0)
             for r in rows
         ),
-        "additional_model_calls": "NOT_MEASURED",
-        "token_consumption": "NOT_MEASURED",
+        "additional_model_calls": "UNKNOWN",
+        "token_consumption": "UNKNOWN",
         "api_provider_calls": 0,
         "api_provider_calls_basis": "ALL_SOCKET_CONNECTS_BLOCKED_DURING_TREATMENT",
         "api_provider_cost": "NOT_APPLICABLE",
         "compute_time_or_overhead_ns": time.process_time_ns() - cpu_started,
         "retry_count": 0,
-        "error_count": sum(r["arm_b"] is None for r in rows),
+        "error_count": infrastructure_errors + pairing_violations,
+        "infrastructure_error_count": infrastructure_errors,
+        "pairing_violation_count": pairing_violations,
+        "unsupported_count": unsupported,
         "cost_estimates_used": False,
     }
     write_json(args.output_dir / "governance_metrics.json", gov)
     write_json(args.output_dir / "preservation_metrics.json", preservation)
     write_json(args.output_dir / "operational_metrics.json", operational)
 
+    candidate_present_count = sum(r["candidate_present"] for r in rows)
+    same_candidate_when_present = sum(
+        r["candidate_present"] and r.get("same_candidate") is True for r in rows
+    )
     summary = {
         "schema_version": "veritas.rcc-revas.paired-clean-evaluation.v1",
         "runner_version": RUNNER_VERSION,
@@ -600,10 +752,18 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
         "enrolled": len(rows),
         "arm_a_observed": len(rows),
         "arm_b_observed": sum(r["arm_b"] is not None for r in rows),
-        "same_candidate_count": sum(r["same_candidate"] for r in rows),
+        "candidate_present_count": candidate_present_count,
+        "same_candidate_when_present_count": same_candidate_when_present,
+        "same_candidate_handoff_count": sum(r["same_candidate_handoff"] for r in rows),
         "same_pre_state_count": sum(r["same_pre_state"] for r in rows),
+        "infrastructure_error_count": infrastructure_errors,
+        "pairing_violation_count": pairing_violations,
+        "unsupported_count": unsupported,
         "selective_reruns": 0,
         "denominator_reduction": 0,
+        "preserved_divergence_case_ids": list(DIVERGENCES),
+        "ground_truth_passed_to_treatment_helpers": False,
+        "labels_attached_after_treatment_attempts": True,
         "environment_manifest_sha256": sha_file(args.output_dir / "environment_manifest.json"),
         "paired_cases_sha256": sha_file(args.output_dir / "paired_cases.jsonl"),
         "governance_metrics_sha256": sha_file(args.output_dir / "governance_metrics.json"),
@@ -631,10 +791,29 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
         "scored_execution_performed": True,
         "single_complete_run_required": True,
         "no_automatic_retry": True,
+        "ground_truth_passed_to_treatment_helpers": False,
         **EFFECTS,
     }
     write_json(args.output_dir / "run_manifest.json", manifest)
-    return summary
+    evidence_index = {
+        "schema_version": "veritas.rcc-revas.paired-clean-evidence-index.v1",
+        "algorithm": "sha256/raw-bytes",
+        "run_manifest_sha256": sha_file(args.output_dir / "run_manifest.json"),
+        "summary_sha256": sha_file(args.output_dir / "summary.json"),
+        "environment_manifest_sha256": sha_file(args.output_dir / "environment_manifest.json"),
+        "paired_cases_sha256": sha_file(args.output_dir / "paired_cases.jsonl"),
+        "governance_metrics_sha256": sha_file(args.output_dir / "governance_metrics.json"),
+        "preservation_metrics_sha256": sha_file(args.output_dir / "preservation_metrics.json"),
+        "operational_metrics_sha256": sha_file(args.output_dir / "operational_metrics.json"),
+        "rcc_run_bundle_seal_sha256": sha_file(rcc_run / "bundle_seal.json"),
+        "registration_sha256": sha_file(reg / "registration.json"),
+    }
+    write_json(args.output_dir / "evidence_index.json", evidence_index)
+    return {
+        **summary,
+        "run_manifest_sha256": evidence_index["run_manifest_sha256"],
+        "evidence_index_sha256": sha_file(args.output_dir / "evidence_index.json"),
+    }
 
 
 def build_parser() -> argparse.ArgumentParser:
