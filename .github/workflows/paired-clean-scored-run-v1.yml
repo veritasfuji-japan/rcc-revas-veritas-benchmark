@@ -102,7 +102,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in             paired_cases.jsonl environment_manifest.json governance_metrics.json             preservation_metrics.json operational_metrics.json summary.json run_manifest.json; do
+          for file in             paired_cases.jsonl environment_manifest.json governance_metrics.json             preservation_metrics.json operational_metrics.json summary.json run_manifest.json evidence_index.json; do
             test -s "$RESULT_DIR/$file"
           done
           python - <<'PY'
@@ -127,8 +127,11 @@ jobs:
 
           assert len(rows) == 36
           assert summary["enrolled"] == 36
-          assert summary["same_candidate_count"] == 36
+          assert summary["same_candidate_handoff_count"] == 36
+          assert summary["same_candidate_when_present_count"] <= summary["candidate_present_count"]
           assert summary["same_pre_state_count"] == 36
+          assert summary["ground_truth_passed_to_treatment_helpers"] is False
+          assert summary["labels_attached_after_treatment_attempts"] is True
           assert summary["selective_reruns"] == 0
           assert summary["denominator_reduction"] == 0
           assert manifest["paired_runner_commit"] == "${{ inputs.runner_commit }}"
@@ -140,12 +143,14 @@ jobs:
           assert manifest["no_automatic_retry"] is True
           assert operational["retry_count"] == 0
           assert operational["cost_estimates_used"] is False
+          assert operational["api_provider_calls"] == 0
           assert all(not row[name] for row in rows for name in effects)
           assert all(not summary[name] for name in effects)
           assert all(not manifest[name] for name in effects)
           PY
 
       - name: Upload immutable scored evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: paired-clean-scored-run-v1-${{ inputs.runner_commit }}
@@ -153,3 +158,22 @@ jobs:
             paired-clean-runner-preflight.json
             results/paired-clean-v1/
           if-no-files-found: error
+
+      - name: Mark incomplete paired attempt after evidence retention
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$RESULT_DIR/summary.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          summary = json.loads((Path(os.environ["RESULT_DIR"]) / "summary.json").read_text())
+          if summary["infrastructure_error_count"] != 0:
+              raise SystemExit("scored attempt retained but incomplete: infrastructure error(s)")
+          if summary["pairing_violation_count"] != 0:
+              raise SystemExit("scored attempt retained but invalid: pairing violation(s)")
+          if summary["same_candidate_when_present_count"] != summary["candidate_present_count"]:
+              raise SystemExit("scored attempt retained but invalid: candidate preservation mismatch")
+          PY
