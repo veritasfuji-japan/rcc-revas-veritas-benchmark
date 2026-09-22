@@ -1,0 +1,97 @@
+name: Paired Clean Runner Pin v1
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runner-pin-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      RCC_REPO: rcc_upstream
+      RCC_COMMIT: 805cd5ff17e431cf50a3dafa7f78a60a704613b9
+      VERITAS_REPO: veritas_os_checkout
+      VERITAS_COMMIT: b39961b003179aea70e320a57cb000f56a81951e
+    steps:
+      - name: Check out benchmark runner candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Check out exact frozen RCC/REVAS publication
+        uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 805cd5ff17e431cf50a3dafa7f78a60a704613b9
+          path: rcc_upstream
+          persist-credentials: false
+
+      - name: Check out exact frozen VERITAS treatment
+        uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: b39961b003179aea70e320a57cb000f56a81951e
+          path: veritas_os_checkout
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - name: Verify immutable source pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(python -c 'import platform; print(platform.python_version())')" = "3.11.16"
+          test "$(uname -m)" = "x86_64"
+          test "$(git -C "$RCC_REPO" rev-parse HEAD)" = "$RCC_COMMIT"
+          test -z "$(git -C "$RCC_REPO" status --porcelain)"
+          test "$(git -C "$VERITAS_REPO" rev-parse HEAD)" = "$VERITAS_COMMIT"
+          test -z "$(git -C "$VERITAS_REPO" status --porcelain)"
+          test "$(sha256sum contracts/PAIRED_CLEAN_EVALUATION_CONTRACT_v1.0.json | awk '{print $1}')" =             "532958fc9371fb34e550fb2a108868c64e87a980833dd46e8a92c7a133d9ae1f"
+          test "$(sha256sum fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json | awk '{print $1}')" =             "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88"
+          test "$(sha256sum "$RCC_REPO/rcc-revas-eval/v0.1.0/source/rcc-revas-eval-v0.1.0-source.tar.gz" | awk '{print $1}')" =             "4c736357ab93a8f4b5027b94c20340b973c760de1a0027df30bb53d3d10f47d8"
+
+      - name: Install exact treatment dependencies
+        run: |
+          python -m pip install ./veritas_os_checkout pytest jsonschema
+
+      - name: Run runner unit invariants
+        run: |
+          python -m pytest -q tests/test_paired_clean_runner_v1.py
+
+      - name: Run pin-only preflight
+        run: |
+          python paired_clean_runner_v1.py             --preflight             --upstream-repo "$RCC_REPO"             --veritas-repo "$VERITAS_REPO"             > paired-clean-runner-preflight.json
+
+      - name: Enforce no scored execution during pin gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path("paired-clean-runner-preflight.json").read_text())
+          assert p["contract_sha256"] == "532958fc9371fb34e550fb2a108868c64e87a980833dd46e8a92c7a133d9ae1f"
+          assert p["dataset_sha256"] == "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88"
+          assert p["rcc_publication_commit"] == "805cd5ff17e431cf50a3dafa7f78a60a704613b9"
+          assert p["veritas_commit"] == "b39961b003179aea70e320a57cb000f56a81951e"
+          assert p["case_count"] == 36
+          assert p["scored_execution_performed"] is False
+          assert p["contract_bytes_unchanged"] is True
+          assert p["native_stage_import_compatibility"] == "PASS"
+          assert all(v is False for v in p["effect_flags"].values())
+          assert not Path("results/paired-clean-v1").exists()
+          PY
+
+      - name: Upload pin-gate evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: paired-clean-runner-v1-pin-preflight
+          path: paired-clean-runner-preflight.json
+          if-no-files-found: error
