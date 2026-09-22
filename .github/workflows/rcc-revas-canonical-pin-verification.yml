@@ -89,8 +89,9 @@ jobs:
           set -euo pipefail
           archive="upstream/$PACKAGE_DIR/source/rcc-revas-eval-v0.1.0-source.tar.gz"
           actual_sha="$(sha256sum "$archive" | awk '{print $1}')"
-          test "$actual_sha" = "$EXPECTED_ARCHIVE_SHA256"
+          printf 'observed=%s\nexpected=%s\n' "$actual_sha" "$EXPECTED_ARCHIVE_SHA256"
           printf '%s  %s\n' "$actual_sha" "$archive" | tee verification/source-archive-sha256.txt
+          test "$actual_sha" = "$EXPECTED_ARCHIVE_SHA256"
 
       - name: Extract canonical source archive
         shell: bash
