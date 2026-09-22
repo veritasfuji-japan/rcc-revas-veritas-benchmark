@@ -1,0 +1,177 @@
+{
+  "artifact_type": "rcc_revas_veritas_paired_clean_evaluation_contract",
+  "artifact_version": "1.0",
+  "baseline": {
+    "entrypoint": "python -m rcc_revas_eval evaluate",
+    "package": "rcc-revas-eval",
+    "publication_commit": "805cd5ff17e431cf50a3dafa7f78a60a704613b9",
+    "repository": "effacermonexistence/rcc-revas-veritas-benchmark",
+    "source_archive_sha256": "4c736357ab93a8f4b5027b94c20340b973c760de1a0027df30bb53d3d10f47d8",
+    "source_git_tree_declared_by_upstream": "ab477cff7924b922b0885fb665e5ca0d6e42868a",
+    "upstream_local_canonical_source_commit": "8692c48bc4f93b56ab019004c27b7c6fd9c8fe62",
+    "veritas_independent_verification_artifact_id": "10686261092",
+    "veritas_independent_verification_artifact_sha256": "219a3389c03e809bee9b5e297594f4154d10ee70d5036bf684be244f07b2109c",
+    "veritas_independent_verification_run_id": "35710486162",
+    "version": "0.1.0"
+  },
+  "benchmark_harness": {
+    "execution_allowed": false,
+    "freeze_base_commit": "b0c1d49243382092b97764b957df87826f5f04f3",
+    "paired_runner": null,
+    "paired_runner_status": "MUST_BE_IMPLEMENTED_AFTER_COUNTERPARTY_ACK_AGAINST_THIS_CONTRACT_WITH_NO_SEMANTIC_CHANGES",
+    "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark"
+  },
+  "case_handling": {
+    "case_exclusions": [],
+    "infrastructure_failure_handling": "Record INFRASTRUCTURE_ERROR separately from governance outcome; no automatic rerun under the same scored execution.",
+    "unknown_external_effect_state": "NOT_APPLICABLE because external dispatch is prohibited by contract.",
+    "unsupported_case_handling": "Record UNSUPPORTED separately; do not coerce to ALLOW/HOLD/DENY and do not silently remove from denominator."
+  },
+  "claim_boundary": {
+    "certification": false,
+    "customer_deployment": false,
+    "formal_partnership": false,
+    "independent_third_party_validation": false,
+    "paid_poc": false,
+    "paired_run_executed": false,
+    "production_validation": false,
+    "treatment_delta_measured": false
+  },
+  "cost_accounting": {
+    "estimated_provider_cost_permitted": false,
+    "method": "Record directly observed model/provider call counts, token counts, retries, wall-clock timings, and exact provider cost only when exact billing metadata is available.",
+    "not_applicable_value": "NOT_APPLICABLE",
+    "unknown_cost_value": "UNKNOWN"
+  },
+  "counterparty_ack_required_before_execution": true,
+  "dataset": {
+    "case_count": 36,
+    "known_preserved_semantic_divergences": [
+      "GOV-H06",
+      "GOV-H07",
+      "GOV-D08"
+    ],
+    "label_is_execution_authority": false,
+    "labels_status": "FROZEN_PREREGISTERED_SYNTHETIC_LABELS",
+    "name": "Governance_labelled_Evaluation_Set_v0.1.1",
+    "path": "fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json",
+    "retuning_after_result_inspection_permitted": false,
+    "sha256": "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88"
+  },
+  "date": "2026-09-22",
+  "freeze_gate": {
+    "benchmark_execution_allowed": false,
+    "case_exclusions_frozen": true,
+    "contract_bytes_frozen": true,
+    "cost_accounting_method_frozen": true,
+    "counterparty_acknowledged_exact_contract_hash": false,
+    "dataset_and_labels_frozen": true,
+    "exact_downstream_stop_point_frozen_by_veritas": true,
+    "final_veritas_commit_frozen": true,
+    "paired_runner_implemented_against_frozen_contract": false,
+    "rcc_revas_corrected_canonical_pin_independently_verified": true,
+    "runtime_environment_frozen": true
+  },
+  "invariants": [
+    "Decision Adoption != Execution Authority",
+    "Authorization at issuance != permission at execution",
+    "Benchmark ALLOW/HOLD/DENY != execution permission",
+    "RCC/REVAS verification != VERITAS Authority Evidence",
+    "RCC/REVAS verification != VERITAS Human Approval",
+    "RCC/REVAS output or partner label must not be used as hidden VERITAS authority",
+    "Missing required governance evidence follows frozen fail-closed semantics",
+    "Infrastructure failure != governance result",
+    "Unsupported case != coerced ALLOW/HOLD/DENY",
+    "No uncontrolled external effect in the paired clean run",
+    "Known GOV-H06/GOV-H07/GOV-D08 semantic divergences remain visible and are not retuned"
+  ],
+  "pairing": {
+    "arm_a": "RCC/REVAS baseline result and downstream candidate/handoff recorded without VERITAS treatment and without external effect.",
+    "arm_b": "Consume the exact same RCC/REVAS-produced candidate/handoff artifact under the frozen VERITAS treatment from the same case input and paired pre-state.",
+    "candidate_handoff_hash_equality_required": true,
+    "failed_case_denominator_removal_permitted": false,
+    "rcc_revas_execution": "Run the frozen RCC/REVAS executable on the frozen case input and preserve its exact output/handoff artifact.",
+    "same_case_required": true,
+    "same_pre_state_required": true,
+    "same_rcc_revas_candidate_handoff_required": true,
+    "selective_reruns_permitted": false,
+    "unit": "case"
+  },
+  "purpose": "Freeze the exact RCC/REVAS baseline pin, VERITAS treatment pin, 36-case dataset, treatment boundary, scoring semantics, runtime environment, and evidence rules before any paired clean evaluation execution.",
+  "required_governance_metrics": [
+    "false_allow_count",
+    "false_allow_rate",
+    "false_block_count",
+    "false_block_rate",
+    "authority_violation_detection",
+    "approval_violation_detection",
+    "evidence_insufficiency_detection",
+    "scope_violation_detection",
+    "bind_eligibility_accuracy",
+    "ALLOW_precision_recall_where_meaningful",
+    "HOLD_correctness",
+    "DENY_correctness"
+  ],
+  "required_operational_metrics": [
+    "total_latency",
+    "veritas_added_latency",
+    "additional_model_calls",
+    "token_consumption",
+    "api_provider_calls",
+    "api_provider_cost_when_exactly_measurable",
+    "compute_time_or_overhead_where_measurable",
+    "retry_count",
+    "error_count"
+  ],
+  "required_preservation_metrics": [
+    "baseline_task_output_preservation",
+    "changed_output_count",
+    "unexpected_regression_count",
+    "candidate_adoption_changes",
+    "decision_divergence_by_case_id"
+  ],
+  "required_provenance": [
+    "baseline_publication_commit",
+    "baseline_source_archive_sha256",
+    "veritas_commit",
+    "dataset_sha256",
+    "contract_sha256",
+    "paired_runner_commit",
+    "environment_manifest_sha256",
+    "per_case_input_sha256",
+    "per_case_rcc_output_sha256",
+    "per_case_candidate_handoff_sha256",
+    "per_arm_pre_state_sha256",
+    "per_arm_result_sha256",
+    "summary_sha256",
+    "run_manifest_sha256"
+  ],
+  "runtime_environment": {
+    "environment_capture_required": [
+      "python --version",
+      "pip freeze",
+      "uname -a",
+      "runner image metadata where available"
+    ],
+    "network_during_scored_execution": "DISALLOWED_EXCEPT_LOOPBACK_LOCAL_PROCESS_COMMUNICATION",
+    "python": "3.11.16",
+    "rcc_revas_runtime_dependencies": "Python standard library only, as declared by frozen upstream package",
+    "realized_dependency_freeze_required_in_evidence": true,
+    "runner_class": "GitHub-hosted x86_64",
+    "runner_os": "ubuntu-24.04",
+    "veritas_dependency_source": "pyproject.toml at frozen VERITAS commit",
+    "veritas_install": "python -m pip install ./veritas_os_checkout"
+  },
+  "status": "VERITAS_SIDE_FROZEN_PENDING_COUNTERPARTY_ACK",
+  "treatment": {
+    "commit": "b39961b003179aea70e320a57cb000f56a81951e",
+    "credential_material_handoff_permitted": false,
+    "decision_response_is_execution_permission": false,
+    "downstream_stop_point": "Record the native Bind eligibility / gate-review result and all associated governance evidence, then stop before credential-material handoff, transport invocation, network dispatch, or any external effect.",
+    "entry_boundary": "POST /v1/decide",
+    "external_dispatch_permitted": false,
+    "full_governance_treatment_required": true,
+    "network_effect_permitted": false,
+    "repository": "veritasfuji-japan/veritas_os"
+  }
+}
