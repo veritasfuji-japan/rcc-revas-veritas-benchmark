@@ -9,9 +9,9 @@ permissions:
 
 env:
   UPSTREAM_REPOSITORY: effacermonexistence/rcc-revas-veritas-benchmark
-  UPSTREAM_COMMIT: 4f6996329ec49c4968545e0c0235d463225d88b3
+  UPSTREAM_COMMIT: 805cd5ff17e431cf50a3dafa7f78a60a704613b9
   PACKAGE_DIR: rcc-revas-eval/v0.1.0
-  EXPECTED_ARCHIVE_SHA256: 5d2f323188e80ff4ced5f9119755b6b298bcc7082e29bc92272fdc11f77ac2ac
+  EXPECTED_ARCHIVE_SHA256: 4c736357ab93a8f4b5027b94c20340b973c760de1a0027df30bb53d3d10f47d8
   EXPECTED_ENTRYPOINT: python -m rcc_revas_eval evaluate
 
 jobs:
