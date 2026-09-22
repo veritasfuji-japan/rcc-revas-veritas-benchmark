@@ -1,0 +1,196 @@
+name: RCC REVAS Canonical Pin Verification
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  UPSTREAM_REPOSITORY: effacermonexistence/rcc-revas-veritas-benchmark
+  UPSTREAM_COMMIT: 4f6996329ec49c4968545e0c0235d463225d88b3
+  PACKAGE_DIR: rcc-revas-eval/v0.1.0
+  EXPECTED_ARCHIVE_SHA256: 5d2f323188e80ff4ced5f9119755b6b298bcc7082e29bc92272fdc11f77ac2ac
+  EXPECTED_ENTRYPOINT: python -m rcc_revas_eval evaluate
+
+jobs:
+  verify-upstream-pin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout VERITAS benchmark verifier
+        uses: actions/checkout@v4
+
+      - name: Checkout exact RCC/REVAS upstream pin
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.UPSTREAM_REPOSITORY }}
+          ref: ${{ env.UPSTREAM_COMMIT }}
+          path: upstream
+          persist-credentials: false
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify exact publication commit and canonical metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p verification
+
+          actual_commit="$(git -C upstream rev-parse HEAD)"
+          test "$actual_commit" = "$UPSTREAM_COMMIT"
+          printf '%s\n' "$actual_commit" > verification/upstream-publication-commit.txt
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          package_dir = Path("upstream") / os.environ["PACKAGE_DIR"]
+          pin = json.loads((package_dir / "CANONICAL_PIN.json").read_text())
+
+          assert pin["schema_version"] == "rcc-revas.github-canonical-pin.v1"
+          assert pin["status"] == "PUBLISHED_CANONICAL_BOUNDED_UPSTREAM_EXECUTABLE"
+          assert pin["package"] == "rcc-revas-eval"
+          assert pin["version"] == "0.1.0"
+          assert pin["verified_entrypoint"] == os.environ["EXPECTED_ENTRYPOINT"]
+          assert pin["source_archive_sha256"] == os.environ["EXPECTED_ARCHIVE_SHA256"]
+
+          validation = pin["validation"]
+          assert validation["tests_passed"] == 160
+          assert validation["tests_failed"] == 0
+          assert validation["partner_fixtures_executed"] == 36
+          assert validation["partner_fixture_replay_verified"] == 36
+          assert validation["preserved_partner_label_divergences"] == [
+              "GOV-H06", "GOV-H07", "GOV-D08"
+          ]
+
+          assert pin["joint_contract_frozen"] is False
+          assert pin["native_veritas_joint_run_completed"] is False
+
+          sums = (package_dir / "SHA256SUMS.txt").read_text().strip()
+          expected_line = (
+              os.environ["EXPECTED_ARCHIVE_SHA256"]
+              + "  source/rcc-revas-eval-v0.1.0-source.tar.gz"
+          )
+          assert sums == expected_line
+
+          Path("verification/canonical-pin.json").write_text(
+              json.dumps(pin, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+
+      - name: Independently verify source archive SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="upstream/$PACKAGE_DIR/source/rcc-revas-eval-v0.1.0-source.tar.gz"
+          actual_sha="$(sha256sum "$archive" | awk '{print $1}')"
+          test "$actual_sha" = "$EXPECTED_ARCHIVE_SHA256"
+          printf '%s  %s\n' "$actual_sha" "$archive" | tee verification/source-archive-sha256.txt
+
+      - name: Extract canonical source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p verification/source
+          tar -xzf "upstream/$PACKAGE_DIR/source/rcc-revas-eval-v0.1.0-source.tar.gz" -C verification/source
+          find verification/source -type f | sort > verification/source-file-list.txt
+
+          mapfile -t manifests < <(find verification/source -type f -name evaluation_manifest.json | sort)
+          if [ "${#manifests[@]}" -ne 1 ]; then
+            echo "Expected exactly one evaluation_manifest.json, found ${#manifests[@]}" >&2
+            exit 1
+          fi
+          root="$(dirname "${manifests[0]}")"
+          printf '%s\n' "$root" > verification/source-root.txt
+
+      - name: Resolve exact verified entrypoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(cat verification/source-root.txt)"
+          cd "$root"
+          python -m rcc_revas_eval evaluate --help
+
+      - name: Run upstream preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(cat verification/source-root.txt)"
+          cd "$root"
+          python -m rcc_revas_eval preflight --manifest evaluation_manifest.json
+
+      - name: Reproduce canonical upstream fixture execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(cat verification/source-root.txt)"
+          cd "$root"
+          rm -rf output/independent-verification
+          python scripts/reproduce_canonical.py --output-dir output/independent-verification
+
+          find output/independent-verification -type f -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > "$GITHUB_WORKSPACE/verification/reproduction-sha256.txt"
+
+      - name: Write bounded independent-verification record
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          pin = json.loads(Path("verification/canonical-pin.json").read_text())
+          archive_sha = Path("verification/source-archive-sha256.txt").read_text().split()[0]
+          file_hashes = Path("verification/reproduction-sha256.txt").read_text()
+
+          record = {
+              "schema_version": "veritas.rcc-revas-upstream-pin-verification.v1",
+              "verifier_repository": os.environ["GITHUB_REPOSITORY"],
+              "verifier_commit": os.environ["GITHUB_SHA"],
+              "upstream_repository": os.environ["UPSTREAM_REPOSITORY"],
+              "upstream_publication_commit": os.environ["UPSTREAM_COMMIT"],
+              "package": "rcc-revas-eval",
+              "version": "0.1.0",
+              "local_canonical_source_commit_claimed_by_upstream": pin["local_canonical_source_commit"],
+              "verified_entrypoint": os.environ["EXPECTED_ENTRYPOINT"],
+              "source_archive_sha256_expected": os.environ["EXPECTED_ARCHIVE_SHA256"],
+              "source_archive_sha256_observed": archive_sha,
+              "entrypoint_resolution": "PASS",
+              "preflight": "PASS",
+              "canonical_reproduction": "PASS",
+              "reproduction_hash_manifest_sha256": hashlib.sha256(
+                  file_hashes.encode("utf-8")
+              ).hexdigest(),
+              "preserved_partner_label_divergences": pin["validation"][
+                  "preserved_partner_label_divergences"
+              ],
+              "claim_boundary": [
+                  "Independent verification of the exact published RCC/REVAS bounded upstream pin only",
+                  "Paired Clean Evaluation Contract v1.0 is not frozen by this verification",
+                  "VERITAS joint treatment delta is not measured by this verification",
+                  "No production-readiness, certification, or external-effect claim",
+              ],
+          }
+          Path("verification/independent-verification.json").write_text(
+              json.dumps(record, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+
+          sha256sum verification/independent-verification.json \
+            > verification/independent-verification.sha256
+
+      - name: Upload independent verification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcc-revas-canonical-pin-v0.1.0-verification
+          path: verification/
+          if-no-files-found: error
