@@ -109,6 +109,27 @@ def test_treatment_helpers_do_not_read_ground_truth() -> None:
             assert "ground_truth" not in text, node.name
 
 
+
+def test_treatment_case_strips_ground_truth() -> None:
+    source = {
+        "case_id": "GOV-X",
+        "input": {"action_context": {"canonical_action": "x"}},
+        "mutation": {"type": "NONE"},
+        "ground_truth": {"expected_decision": "DENY"},
+    }
+    clean = runner.treatment_case(source)
+    assert "ground_truth" not in clean
+    assert clean["case_id"] == "GOV-X"
+    assert clean["input"] == source["input"]
+    assert clean["mutation"] == source["mutation"]
+    clean["input"]["action_context"]["canonical_action"] = "changed"
+    assert source["input"]["action_context"]["canonical_action"] == "x"
+
+
+def test_runner_version_records_hardening_revision() -> None:
+    assert runner.RUNNER_VERSION == "paired-clean-v1.0.1"
+
+
 def test_scored_execution_is_opt_in() -> None:
     args = runner.build_parser().parse_args(
         ["--upstream-repo", "/tmp/rcc", "--veritas-repo", "/tmp/veritas"]

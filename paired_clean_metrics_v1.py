@@ -108,11 +108,22 @@ def preservation(rows: list[dict[str, Any]]) -> dict[str, Any]:
         for r in comparable
         if r["arm_a"] == r["expected"] and r["arm_b"] != r["expected"]
     ]
-    released = [r for r in rows if r.get("candidate_handoff_sha256") is not None]
+    candidate_present = [r for r in rows if r.get("candidate_present") is True]
+    handoff_observed = [r for r in rows if r.get("candidate_handoff_sha256") is not None]
     return {
         "baseline_task_output_preservation": {
-            **rate(sum(r["same_candidate"] for r in released), len(released)),
-            "semantics": "EXACT_RCC_CANDIDATE_PRESERVED_AT_NATIVE_HTTP_BOUNDARY",
+            **rate(
+                sum(r.get("same_candidate") is True for r in candidate_present),
+                len(candidate_present),
+            ),
+            "semantics": "EXACT_RCC_CANDIDATE_PRESERVED_WHERE_A_CANDIDATE_EXISTS",
+        },
+        "candidate_handoff_preservation": {
+            **rate(
+                sum(r.get("same_candidate_handoff") is True for r in handoff_observed),
+                len(handoff_observed),
+            ),
+            "semantics": "EXACT_RCC_HANDOFF_ACCOUNTED_FOR_ALL_OBSERVED_HANDOFFS",
         },
         "changed_output_count": len(changed),
         "candidate_adoption_changes": len(changed),

@@ -71,9 +71,14 @@ The runner unit suite statically checks the treatment helpers for accidental
 ## Unsupported cases and failures
 
 - Unsupported cases remain in the denominator and are recorded explicitly.
-- Infrastructure failures are not converted to governance labels.
+- Infrastructure failures are recorded per case as `INFRASTRUCTURE_ERROR`; they are never converted to ALLOW/HOLD/DENY.
+- A candidate mismatch after `POST /v1/decide` is recorded as a pairing violation, not as a governance outcome.
+- Cases where RCC/REVAS withholds the candidate record candidate presence as false instead of claiming candidate equality.
 - No automatic retry is permitted.
 - No selective rerun is permitted.
+- The scored workflow uploads the evidence bundle before marking an infrastructure- or pairing-invalid attempt failed.
+- `evidence_index.json` records the raw SHA-256 of the final `run_manifest.json` plus all primary result artifacts.
+- Frozen labels are attached to result rows only after all treatment attempts have been recorded; treatment helpers receive a case object with `ground_truth` removed.
 - No post-result retuning of `GOV-H06`, `GOV-H07`, or `GOV-D08` is permitted.
 
 ## Manual scored invocation
