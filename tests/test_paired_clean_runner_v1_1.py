@@ -176,7 +176,10 @@ def _runtime_response(case_id: str) -> dict:
 
 
 def test_rebound_handoff_reaches_frozen_validator_ready_state() -> None:
-    veritas = Path(os.environ["VERITAS_REPO"])
+    veritas_env = os.environ.get("VERITAS_REPO")
+    if not veritas_env:
+        pytest.skip("frozen VERITAS checkout is provided by the remediation pin workflow")
+    veritas = Path(veritas_env)
     case = runner.treatment_case(_load_case("GOV-A01"))
     candidate = _candidate_from_case(case)
     handoff, flags = runner.bind_handoff(
