@@ -1,0 +1,156 @@
+name: Paired Clean Synthetic Engineering Testbed v1.1
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_commit:
+        description: Exact pinned v1.1 testbed runner commit SHA
+        required: true
+        type: string
+      acknowledged_contract_sha256:
+        description: Exact frozen Contract v1.0 SHA-256
+        required: true
+        type: string
+      confirmation:
+        description: Type RUN_VERSIONED_SYNTHETIC_ENGINEERING_TESTBED_V1_1
+        required: true
+        type: string
+      historical_result_preservation:
+        description: Type PRESERVE_RUN_35813291352_UNCHANGED
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  versioned-testbed:
+    if: >-
+      ${{ inputs.confirmation == 'RUN_VERSIONED_SYNTHETIC_ENGINEERING_TESTBED_V1_1' &&
+          inputs.historical_result_preservation == 'PRESERVE_RUN_35813291352_UNCHANGED' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      RCC_REPO: rcc_upstream
+      RCC_COMMIT: 805cd5ff17e431cf50a3dafa7f78a60a704613b9
+      VERITAS_REPO: veritas_os_checkout
+      VERITAS_COMMIT: b39961b003179aea70e320a57cb000f56a81951e
+      CONTRACT_SHA256: 532958fc9371fb34e550fb2a108868c64e87a980833dd46e8a92c7a133d9ae1f
+      DATASET_SHA256: 1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88
+      RESULT_DIR: results/paired-clean-v1_1
+      REMEDIATION_ACK: COUNTERPARTY_ACK_RECORDED_FOR_PAIRED_CLEAN_V1_1
+    steps:
+      - name: Refuse wrong frozen contract hash
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ inputs.acknowledged_contract_sha256 }}" = "$CONTRACT_SHA256"
+
+      - name: Check out exact pinned testbed runner
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.runner_commit }}
+          persist-credentials: false
+
+      - name: Verify runner checkout pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ inputs.runner_commit }}"
+          test -z "$(git status --porcelain)"
+
+      - name: Check out exact frozen RCC/REVAS publication
+        uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 805cd5ff17e431cf50a3dafa7f78a60a704613b9
+          path: rcc_upstream
+          persist-credentials: false
+
+      - name: Check out exact frozen VERITAS treatment
+        uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: b39961b003179aea70e320a57cb000f56a81951e
+          path: veritas_os_checkout
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - name: Verify frozen source inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(python -c 'import platform; print(platform.python_version())')" = "3.11.16"
+          test "$(uname -m)" = "x86_64"
+          test "$(git -C "$RCC_REPO" rev-parse HEAD)" = "$RCC_COMMIT"
+          test -z "$(git -C "$RCC_REPO" status --porcelain)"
+          test "$(git -C "$VERITAS_REPO" rev-parse HEAD)" = "$VERITAS_COMMIT"
+          test -z "$(git -C "$VERITAS_REPO" status --porcelain)"
+          test "$(sha256sum contracts/PAIRED_CLEAN_EVALUATION_CONTRACT_v1.0.json | awk '{print $1}')" = "$CONTRACT_SHA256"
+          test "$(sha256sum fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json | awk '{print $1}')" = "$DATASET_SHA256"
+
+      - name: Install exact frozen treatment dependencies
+        run: |
+          python -m pip install ./veritas_os_checkout pytest jsonschema cryptography==50.0.0
+
+      - name: Re-run v1.1 testbed hardening gates
+        run: |
+          python -m pytest -q tests/test_paired_clean_runner_v1.py
+          python -m pytest -q tests/test_paired_clean_runner_v1_1.py
+          python paired_clean_runner_v1_1.py             --preflight             --upstream-repo "$RCC_REPO"             --veritas-repo "$VERITAS_REPO"             > paired-clean-testbed-v1_1-preflight.json
+
+      - name: Execute one versioned synthetic testbed run
+        run: |
+          python paired_clean_runner_v1_1.py             --testbed-run             --runner-commit "${{ inputs.runner_commit }}"             --acknowledged-contract-sha256 "${{ inputs.acknowledged_contract_sha256 }}"             --remediation-ack-confirmation "$REMEDIATION_ACK"             --upstream-repo "$RCC_REPO"             --veritas-repo "$VERITAS_REPO"             --output-dir "$RESULT_DIR"
+
+      - name: Validate testbed evidence and claim boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RESULT_DIR"])
+          rows = [json.loads(line) for line in (root / "paired_cases.jsonl").read_text().splitlines()]
+          summary = json.loads((root / "summary.json").read_text())
+          manifest = json.loads((root / "run_manifest.json").read_text())
+          operational = json.loads((root / "operational_metrics.json").read_text())
+
+          assert len(rows) == 36
+          assert summary["schema_version"] == "veritas.rcc-revas.paired-clean-evaluation.v1.1"
+          assert summary["evaluation_role"] == "SYNTHETIC_ENGINEERING_TESTBED"
+          assert summary["runtime_facts"]["synthetic_testbed_execution_performed"] is True
+          assert summary["runtime_facts"]["paired_run_executed"] is True
+          assert summary["runtime_facts"]["independent_external_validation"] is False
+          assert summary["contract_claim_boundary_snapshot"]["independent_third_party_validation"] is False
+
+          assert manifest["evaluation_role"] == "SYNTHETIC_ENGINEERING_TESTBED"
+          assert manifest["synthetic_testbed_execution_performed"] is True
+          assert manifest["scored_execution_performed"] is False
+          assert manifest["independent_external_validation"] is False
+          assert manifest["paired_runner_commit"] == "${{ inputs.runner_commit }}"
+
+          assert summary["infrastructure_error_count"] == 0
+          assert summary["pairing_violation_count"] == 0
+          assert summary["same_pre_state_count"] == 36
+          assert summary["same_candidate_when_present_count"] == summary["candidate_present_count"]
+          assert summary["selective_reruns"] == 0
+          assert summary["denominator_reduction"] == 0
+          assert operational["retry_count"] == 0
+          assert operational["api_provider_calls"] == 0
+          PY
+
+      - name: Upload immutable versioned testbed evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paired-clean-synthetic-testbed-v1_1-${{ inputs.runner_commit }}
+          path: |
+            paired-clean-testbed-v1_1-preflight.json
+            results/paired-clean-v1_1/
+          if-no-files-found: error

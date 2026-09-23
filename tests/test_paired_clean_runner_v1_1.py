@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import ast
+import json
+import os
 from pathlib import Path
 
 import pytest
@@ -138,10 +140,81 @@ def test_v1_1_treatment_helpers_do_not_read_ground_truth() -> None:
             assert "ground_truth" not in text, node.name
 
 
-def test_v1_1_parser_defaults_to_no_execution() -> None:
+def _load_case(case_id: str) -> dict:
+    data = json.loads(
+        Path("fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json").read_text()
+    )
+    return next(case for case in data["cases"] if case["case_id"] == case_id)
+
+
+def _candidate_from_case(case: dict) -> dict:
+    action = case["input"]["action_context"]
+    return {
+        "candidate_id": f"candidate:fixture:{case['case_id'].lower()}",
+        "typed_action": {
+            "actor_identity": action["actor_identity"],
+            "action_class": action["action_class"],
+            "canonical_action": action["canonical_action"],
+            "target_system": action["target_system"],
+            "target_resource": action["target_resource"],
+            "requested_scope": action["requested_scope"],
+        },
+        "binding": {"object_id": action["subject"]},
+    }
+
+
+def _runtime_response(case_id: str) -> dict:
+    digest = "1" * 64
+    return {
+        "request_id": f"runtime-request:{case_id.lower()}",
+        "canonical_decision_artifact": {
+            "decision_id": "cda:v1:sha256:" + digest,
+            "decision_hash": digest,
+            "decision_ts": "2030-01-01T00:00:00.000000Z",
+        },
+    }
+
+
+def test_rebound_handoff_reaches_frozen_validator_ready_state() -> None:
+    veritas = Path(os.environ["VERITAS_REPO"])
+    case = runner.treatment_case(_load_case("GOV-A01"))
+    candidate = _candidate_from_case(case)
+    handoff, flags = runner.bind_handoff(
+        case, veritas, _runtime_response(case["case_id"]), candidate
+    )
+
+    native = runner.handoff_runner.load_native_veritas(veritas)
+    context = runner.handoff_runner.build_context(handoff, native, flags)
+    validated = native["validate"](
+        handoff, context, runner.handoff_runner.EVALUATED_AT
+    ).to_dict()
+
+    assert validated["status"] == "READY_FOR_GUARDED_PROMOTION", validated
+    runtime_request_id = _runtime_response(case["case_id"])["request_id"]
+    assert handoff["source_decision"]["request_id"] == runtime_request_id
+    assert handoff["trustlog_lineage"]["request_id"] == runtime_request_id
+    assert handoff["replay_lineage"]["request_id"] == runtime_request_id
+    assert handoff["human_approval_evidence"]["candidate_ref"] == candidate["candidate_id"]
+
+
+def test_v1_1_parser_defaults_to_no_execution_and_separate_output_path() -> None:
     args = runner.build_parser().parse_args(
         ["--upstream-repo", "/tmp/rcc", "--veritas-repo", "/tmp/veritas"]
     )
     assert args.preflight is False
+    assert args.testbed_run is False
     assert args.scored_run is False
+    assert args.output_dir == Path("results/paired-clean-v1_1")
     assert args.remediation_ack_confirmation is None
+
+
+def test_historical_scored_run_flag_is_disabled_for_v1_1() -> None:
+    args = runner.build_parser().parse_args(
+        [
+            "--upstream-repo", "/tmp/rcc",
+            "--veritas-repo", "/tmp/veritas",
+            "--scored-run",
+        ]
+    )
+    assert args.scored_run is True
+    assert args.testbed_run is False
