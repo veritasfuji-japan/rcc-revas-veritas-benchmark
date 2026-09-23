@@ -175,7 +175,11 @@ def verify_inputs(root: Path, upstream: Path, veritas: Path) -> dict[str, Any]:
             "runtime_request_lineage_rebinding",
             "approval_candidate_reference_rebinding",
         ],
+        "counterparty_direction_recorded": True,
+        "evaluation_role": "SYNTHETIC_ENGINEERING_TESTBED",
+        "independent_external_validation": False,
         "counterparty_ack_required_before_scored_execution": True,
+        "synthetic_testbed_execution_performed": False,
         "scored_execution_performed": False,
         "effect_flags": EFFECTS,
     }
@@ -501,7 +505,7 @@ def require_scored_environment(c: dict[str, Any]) -> None:
         raise RunnerError("wrong scored runner platform")
 
 
-def run_scored(args: argparse.Namespace) -> dict[str, Any]:
+def run_testbed(args: argparse.Namespace) -> dict[str, Any]:
     root = Path(__file__).resolve().parent
     head = git(root, "rev-parse", "HEAD")
     if args.runner_commit != head:
@@ -790,7 +794,7 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
         r["candidate_present"] and r.get("same_candidate") is True for r in rows
     )
     summary = {
-        "schema_version": "veritas.rcc-revas.paired-clean-evaluation.v1",
+        "schema_version": "veritas.rcc-revas.paired-clean-evaluation.v1.1",
         "runner_version": RUNNER_VERSION,
         "paired_runner_commit": head,
         "contract_sha256": CONTRACT_SHA256,
@@ -818,7 +822,21 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
         "governance_metrics_sha256": sha_file(args.output_dir / "governance_metrics.json"),
         "preservation_metrics_sha256": sha_file(args.output_dir / "preservation_metrics.json"),
         "operational_metrics_sha256": sha_file(args.output_dir / "operational_metrics.json"),
-        "claim_boundary": c["claim_boundary"],
+        "evaluation_role": "SYNTHETIC_ENGINEERING_TESTBED",
+        "contract_claim_boundary_snapshot": c["claim_boundary"],
+        "runtime_facts": {
+            "synthetic_testbed_execution_performed": True,
+            "paired_run_executed": True,
+            "complete_denominator_observed": len(rows) == CASE_COUNT,
+            "arm_b_observed_count": sum(r["arm_b"] is not None for r in rows),
+            "unsupported_count": unsupported,
+            "treatment_delta_measured": (
+                infrastructure_errors == 0
+                and pairing_violations == 0
+                and unsupported == 0
+            ),
+            "independent_external_validation": False,
+        },
         **EFFECTS,
     }
     write_json(args.output_dir / "summary.json", summary)
@@ -837,7 +855,11 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
         "summary_sha256": sha_file(args.output_dir / "summary.json"),
         "rcc_run_bundle_seal_sha256": sha_file(rcc_run / "bundle_seal.json"),
         "registration_sha256": sha_file(reg / "registration.json"),
-        "scored_execution_performed": True,
+        "evaluation_role": "SYNTHETIC_ENGINEERING_TESTBED",
+        "synthetic_testbed_execution_performed": True,
+        "scored_execution_performed": False,
+        "independent_external_validation": False,
+        "runtime_facts": summary["runtime_facts"],
         "single_complete_run_required": True,
         "no_automatic_retry": True,
         "ground_truth_passed_to_treatment_helpers": False,
@@ -845,7 +867,7 @@ def run_scored(args: argparse.Namespace) -> dict[str, Any]:
     }
     write_json(args.output_dir / "run_manifest.json", manifest)
     evidence_index = {
-        "schema_version": "veritas.rcc-revas.paired-clean-evidence-index.v1",
+        "schema_version": "veritas.rcc-revas.paired-clean-evidence-index.v1.1",
         "algorithm": "sha256/raw-bytes",
         "run_manifest_sha256": sha_file(args.output_dir / "run_manifest.json"),
         "summary_sha256": sha_file(args.output_dir / "summary.json"),
@@ -869,12 +891,13 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser()
     p.add_argument("--upstream-repo", type=Path, required=True)
     p.add_argument("--veritas-repo", type=Path, required=True)
-    p.add_argument("--output-dir", type=Path, default=Path("results/paired-clean-v1"))
+    p.add_argument("--output-dir", type=Path, default=Path("results/paired-clean-v1_1"))
     p.add_argument("--runner-commit")
     p.add_argument("--acknowledged-contract-sha256")
     p.add_argument("--remediation-ack-confirmation")
     p.add_argument("--preflight", action="store_true")
-    p.add_argument("--scored-run", action="store_true")
+    p.add_argument("--testbed-run", action="store_true")
+    p.add_argument("--scored-run", action="store_true", help=argparse.SUPPRESS)
     return p
 
 
@@ -885,9 +908,13 @@ def main() -> int:
         if args.preflight:
             print(json.dumps(verify_inputs(root, args.upstream_repo, args.veritas_repo), indent=2))
             return 0
-        if not args.scored_run:
-            raise RunnerError("refusing execution without --scored-run after runner pin")
-        print(json.dumps(run_scored(args), indent=2))
+        if args.scored_run:
+            raise RunnerError(
+                "v1.1 is a synthetic engineering testbed; --scored-run is disabled"
+            )
+        if not args.testbed_run:
+            raise RunnerError("refusing execution without --testbed-run after runner pin")
+        print(json.dumps(run_testbed(args), indent=2))
         return 0
     except (RunnerError, OSError, subprocess.CalledProcessError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

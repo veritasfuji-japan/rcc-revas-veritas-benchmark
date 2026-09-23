@@ -63,7 +63,7 @@ jobs:
       - name: Run original frozen v1 invariants
         run: python -m pytest -q tests/test_paired_clean_runner_v1.py
 
-      - name: Run v1.1 remediation regression invariants
+      - name: Run v1.1 remediation + frozen-validator integration regressions
         run: python -m pytest -q tests/test_paired_clean_runner_v1_1.py
 
       - name: Run v1.1 pin-only preflight
@@ -90,7 +90,11 @@ jobs:
           assert p["veritas_commit"] == "b39961b003179aea70e320a57cb000f56a81951e"
           assert p["case_count"] == 36
           assert p["contract_bytes_unchanged"] is True
+          assert p["counterparty_direction_recorded"] is True
+          assert p["evaluation_role"] == "SYNTHETIC_ENGINEERING_TESTBED"
+          assert p["independent_external_validation"] is False
           assert p["counterparty_ack_required_before_scored_execution"] is True
+          assert p["synthetic_testbed_execution_performed"] is False
           assert p["scored_execution_performed"] is False
           assert p["remediation_scope"] == [
               "runtime_request_lineage_rebinding",
