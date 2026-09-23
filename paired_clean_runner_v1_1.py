@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Separately versioned RCC/REVAS × VERITAS paired-clean remediation runner v1.1.\n\nThe original v1.0.1 scored result remains immutable. This runner exists only for\npost-result remediation after the identity-rebinding defect was identified.\n"""
+"""Separately versioned RCC/REVAS × VERITAS paired-clean remediation runner v1.1.
+
+The original v1.0.1 scored result remains immutable. This runner exists only for
+post-result remediation after the identity-rebinding defect was identified.
+"""
 from __future__ import annotations
 
 import argparse
@@ -20,7 +24,8 @@ import paired_clean_metrics_v1 as metrics
 import run_joint_benchmark as handoff_runner
 import run_joint_benchmark_v0_2 as bind_runner
 
-RUNNER_VERSION = "paired-clean-v1.1.0"\nREMEDIATION_ACK_CONFIRMATION = "COUNTERPARTY_ACK_RECORDED_FOR_PAIRED_CLEAN_V1_1"
+RUNNER_VERSION = "paired-clean-v1.1.0"
+REMEDIATION_ACK_CONFIRMATION = "COUNTERPARTY_ACK_RECORDED_FOR_PAIRED_CLEAN_V1_1"
 CONTRACT_SHA256 = "532958fc9371fb34e550fb2a108868c64e87a980833dd46e8a92c7a133d9ae1f"
 DATASET_SHA256 = "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88"
 RCC_COMMIT = "805cd5ff17e431cf50a3dafa7f78a60a704613b9"
