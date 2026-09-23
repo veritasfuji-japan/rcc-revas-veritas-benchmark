@@ -1,0 +1,109 @@
+name: Paired Clean Remediation Runner Pin v1.1
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  remediation-pin-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      RCC_REPO: rcc_upstream
+      RCC_COMMIT: 805cd5ff17e431cf50a3dafa7f78a60a704613b9
+      VERITAS_REPO: veritas_os_checkout
+      VERITAS_COMMIT: b39961b003179aea70e320a57cb000f56a81951e
+      CONTRACT_SHA256: 532958fc9371fb34e550fb2a108868c64e87a980833dd46e8a92c7a133d9ae1f
+      DATASET_SHA256: 1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88
+    steps:
+      - name: Check out remediation runner candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Check out exact frozen RCC/REVAS publication
+        uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 805cd5ff17e431cf50a3dafa7f78a60a704613b9
+          path: rcc_upstream
+          persist-credentials: false
+
+      - name: Check out exact frozen VERITAS treatment
+        uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: b39961b003179aea70e320a57cb000f56a81951e
+          path: veritas_os_checkout
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - name: Verify unchanged frozen inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(python -c 'import platform; print(platform.python_version())')" = "3.11.16"
+          test "$(uname -m)" = "x86_64"
+          test "$(git -C "$RCC_REPO" rev-parse HEAD)" = "$RCC_COMMIT"
+          test "$(git -C "$VERITAS_REPO" rev-parse HEAD)" = "$VERITAS_COMMIT"
+          test "$(sha256sum contracts/PAIRED_CLEAN_EVALUATION_CONTRACT_v1.0.json | awk '{print $1}')" = "$CONTRACT_SHA256"
+          test "$(sha256sum fixtures/Governance_labelled_Evaluation_Set_v0.1.1.json | awk '{print $1}')" = "$DATASET_SHA256"
+
+      - name: Install exact frozen treatment dependencies
+        run: |
+          python -m pip install ./veritas_os_checkout pytest jsonschema cryptography==50.0.0
+
+      - name: Run original frozen v1 invariants
+        run: python -m pytest -q tests/test_paired_clean_runner_v1.py
+
+      - name: Run v1.1 remediation regression invariants
+        run: python -m pytest -q tests/test_paired_clean_runner_v1_1.py
+
+      - name: Run v1.1 pin-only preflight
+        run: |
+          python paired_clean_runner_v1_1.py \
+            --preflight \
+            --upstream-repo "$RCC_REPO" \
+            --veritas-repo "$VERITAS_REPO" \
+            > paired-clean-remediation-v1_1-preflight.json
+
+      - name: Enforce no scored execution before counterparty ACK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          p = json.loads(Path("paired-clean-remediation-v1_1-preflight.json").read_text())
+          assert p["runner_version"] == "paired-clean-v1.1.0"
+          assert p["contract_sha256"] == "532958fc9371fb34e550fb2a108868c64e87a980833dd46e8a92c7a133d9ae1f"
+          assert p["dataset_sha256"] == "1e6ea7f9366876b4cbf041cc0841ab72bd58d6f561ff78553deb6645e5bf2a88"
+          assert p["rcc_publication_commit"] == "805cd5ff17e431cf50a3dafa7f78a60a704613b9"
+          assert p["veritas_commit"] == "b39961b003179aea70e320a57cb000f56a81951e"
+          assert p["case_count"] == 36
+          assert p["contract_bytes_unchanged"] is True
+          assert p["counterparty_ack_required_before_scored_execution"] is True
+          assert p["scored_execution_performed"] is False
+          assert p["remediation_scope"] == [
+              "runtime_request_lineage_rebinding",
+              "approval_candidate_reference_rebinding",
+          ]
+          assert all(v is False for v in p["effect_flags"].values())
+          assert not Path("results/paired-clean-v1").exists()
+          assert not Path("results/paired-clean-v1_1").exists()
+          PY
+
+      - name: Upload pre-ACK remediation evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: paired-clean-remediation-v1_1-pin-preflight
+          path: paired-clean-remediation-v1_1-preflight.json
+          if-no-files-found: error
