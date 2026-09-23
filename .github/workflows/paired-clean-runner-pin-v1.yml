@@ -59,7 +59,7 @@ jobs:
 
       - name: Install exact treatment dependencies
         run: |
-          python -m pip install ./veritas_os_checkout pytest jsonschema
+          python -m pip install ./veritas_os_checkout pytest jsonschema cryptography==50.0.0
 
       - name: Run runner unit invariants
         run: |
