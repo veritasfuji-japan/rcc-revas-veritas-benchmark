@@ -1,0 +1,40 @@
+{
+ "schema_version":"veritas.rcc-revas.agentdojo-zero-cost-preflight.v0.3",
+ "status":"AUTHORITY_AND_SCORER_SOURCE_FREEZE_GATE_CLOSED",
+ "pins":{"benchmark_harness_base":"c71eb5a6653199e55cfddee522d86767bb46bc57","veritas_commit":"825e5c5c539c98e12b0c9702f3cb4a12d67539d3","agentdojo_commit":"a75aba7631d3ca5fb7ab938965c97ead2f9ff84b","ben_canonical_commit":"1d3782d3aae5ff9c88036709c1a5642320cc53c2"},
+ "authority_fixture":{
+   "profile":"BENCHMARK_ONLY_ED25519_V0_1",
+   "actor_identity":"agentdojo:banking:benchmark-user",
+   "required_authority":"agentdojo-banking-protected-mutation",
+   "key_id":"agentdojo-clean-ab-benchmark-ed25519-v0-1",
+   "issuer_identity":"veritas-benchmark-authority-fixture",
+   "verifier_id":"agentdojo-clean-ab-authority-verifier-v0-1",
+   "verifier_policy_id":"agentdojo-clean-ab-authority-verifier-policy-v0-1",
+   "trust_level":"benchmark_fixture_only",
+   "public_key_file":"fixtures/agentdojo_authority_v0_1/public_key.raw.b64",
+   "authority_artifact_file":"fixtures/agentdojo_authority_v0_1/authority_fixture.json",
+   "signer_policy_file":"fixtures/agentdojo_authority_v0_1/signer_policy.json",
+   "revocation_snapshot_file":"fixtures/agentdojo_authority_v0_1/revocations.json",
+   "hash_manifest_file":"fixtures/agentdojo_authority_v0_1/SHA256SUMS.json",
+   "private_key_retained_in_repository":false,
+   "production_authority_claimed":false,
+   "human_approval_created":false
+ },
+ "scorer_source_freeze":{
+   "benchmark_owned":true,
+   "agentdojo_benchmark_source":"src/agentdojo/benchmark.py",
+   "banking_user_task_source":"src/agentdojo/default_suites/v1/banking/user_tasks.py",
+   "banking_injection_task_source":"src/agentdojo/default_suites/v1_2/banking/injection_tasks.py",
+   "source_hashes":"COMPUTED_FROM_EXACT_PIN_BY_CI_AND_EMITTED_TO_AUDIT",
+   "native_semantics":["TaskSuite user-task utility","TaskSuite injection-task security"],
+   "aggregation_semantics":"report enrolled per-case utility/security and arithmetic aggregate only after execution barrier",
+   "runtime_governance_access_to_scorer_or_gold":false,
+   "exact_final_invocation":"DEFERRED_TO_FINAL_CLEAN_RUN_WORKFLOW"
+ },
+ "remaining_before_final_execution_freeze":[
+   "exact model/provider/version/prompt/tool-format/sampling configuration",
+   "immutable executable clean-run workflow including exact scorer invocation and all final artifact hashes"
+ ],
+ "execution_gate":"CLOSED","provider_spend_cap_usd":0,
+ "claim_boundary":{"benchmark_authority_fixture_frozen":true,"production_authority":false,"scorer_source_identity_frozen":true,"final_scorer_invocation_frozen":false,"clean_ab_executed":false}
+}
