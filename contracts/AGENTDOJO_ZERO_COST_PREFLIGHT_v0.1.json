@@ -1,0 +1,79 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-zero-cost-preflight.v0.1",
+  "status": "PREFLIGHT_PARTIAL_CLOSURE_EXECUTION_GATE_CLOSED",
+  "inherits_run_configuration": "contracts/AGENTDOJO_RUN_CONFIGURATION_FREEZE_v0.1.json",
+  "pins": {
+    "benchmark_harness_base": "d598567eb945e95322510e2e48a331004172eea4",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "agentdojo_suite": "banking",
+    "agentdojo_benchmark_version": "v1.2.2",
+    "veritas_commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+    "ben_canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+  },
+  "zero_cost": {
+    "provider_spend_cap_usd": 0,
+    "model_network_calls": false,
+    "result_bearing_benchmark_execution": false
+  },
+  "attack_enrollment": {
+    "source_path": "src/agentdojo/default_suites/v1_2/banking/injection_tasks.py",
+    "exact_injection_task_ids": [0,1,2,3,4,5,6,8],
+    "count": 8,
+    "selection_rule": "all injection tasks registered by the pinned v1_2 Banking injection_tasks module; no post-result selection",
+    "selective_removal": false
+  },
+  "metrics_and_stopping": {
+    "report_all_enrolled_cases": true,
+    "no_selective_rerun": true,
+    "no_denominator_reduction": true,
+    "automatic_retry": false,
+    "stop_and_mark_invalid_on": [
+      "source pin mismatch",
+      "enrollment drift",
+      "arm model/config mismatch",
+      "same-candidate violation where required",
+      "same-prestate violation where required",
+      "scorer/gold leakage",
+      "duplicate effect ownership",
+      "fabricated authority or approval",
+      "unsupported case silently dropped",
+      "provider spend above cap"
+    ],
+    "no_performance_threshold_for_validity": true,
+    "rule": "A poor treatment result remains evidence; it is not grounds to rerun or remove cases."
+  },
+  "evidence_schema": {
+    "schema_version": "veritas.rcc-revas.agentdojo-clean-ab-evidence.v0.1",
+    "required_top_level": [
+      "source_pins","configuration_hash","enrollment_manifest","arm_a_records","arm_b_records",
+      "native_scorer_outputs","governance_receipts","pairing_evidence","operational_metrics",
+      "provider_usage","invalid_run_checks","claim_boundary"
+    ],
+    "raw_records_required": true,
+    "configuration_hash_required": true,
+    "enrollment_hash_required": true
+  },
+  "closed_by_this_preflight": [
+    "exact immutable injection task enrollment",
+    "final validity/stopping semantics",
+    "minimum immutable evidence artifact schema"
+  ],
+  "remaining_before_final_execution_freeze": [
+    "exact RCC/REVAS runtime configuration",
+    "signed authority fixture/public key/signer policy/revocation hashes",
+    "pinned deterministic constraint resolver implementation",
+    "native AgentDojo scorer source hashes and aggregation command",
+    "exact model/provider/version/prompt/tool-format/sampling configuration",
+    "immutable executable clean-run workflow bound to the final configuration"
+  ],
+  "execution_gate": "CLOSED",
+  "claim_boundary": {
+    "zero_cost_preflight_complete": false,
+    "attack_enrollment_frozen": true,
+    "metrics_stopping_frozen": true,
+    "evidence_schema_minimum_frozen": true,
+    "clean_ab_executed": false,
+    "held_out_validation": false,
+    "independent_third_party_validation": false
+  }
+}
