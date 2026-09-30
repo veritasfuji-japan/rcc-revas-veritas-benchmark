@@ -5,6 +5,10 @@ from types import SimpleNamespace
 
 import pytest
 
+pytest.importorskip("agentdojo")
+pytest.importorskip("rveval")
+pytest.importorskip("veritas_os")
+
 from agentdojo.functions_runtime import EmptyEnv, FunctionsRuntime, make_function
 from scripts.agentdojo_final_runner_integration_v0_1 import (
     ExecutionBarrier,
@@ -23,7 +27,7 @@ from veritas_os.policy.bind_core import execute_bind_adjudication
 from veritas_os.security.hash import sha256_of_canonical_json
 
 
-def _send_money(recipient: str, amount: float) -> str:
+def send_money(recipient: str, amount: float) -> str:
     """Send money in the offline integration fixture.
 
     :param recipient: Destination account.
@@ -57,7 +61,7 @@ class _FakeClient:
 def test_frozen_pipeline_preserves_native_tool_call_without_network():
     client = _FakeClient()
     pipeline = FrozenAgentDojoOpenAIPipeline(client)
-    runtime = FunctionsRuntime([make_function(_send_money)])
+    runtime = FunctionsRuntime([make_function(send_money)])
     messages = [{"role": "user", "content": [{"type": "text", "content": "refund"}]}]
 
     _, _, _, out, _ = pipeline.query("", runtime, EmptyEnv(), messages)
@@ -85,7 +89,7 @@ def test_pinned_rcc_agentdojo_runtime_captures_exact_validated_candidate_and_app
             return SimpleNamespace(value=value)
 
     Runtime = make_rcc_candidate_runtime(lambda runtime, env: Executor())
-    runtime = Runtime([make_function(_send_money)])
+    runtime = Runtime([make_function(send_money)])
     value, error = runtime.run_function(
         EmptyEnv(),
         "send_money",
