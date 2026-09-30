@@ -1,0 +1,42 @@
+name: AgentDojo Run Configuration Freeze v0.1
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_RUN_CONFIGURATION_FREEZE_v0.1.json"
+      - "scripts/verify_agentdojo_run_configuration_freeze_v0_1.py"
+      - ".github/workflows/agentdojo-run-configuration-freeze-v0_1.yml"
+      - "docs/AGENTDOJO_RUN_CONFIGURATION_FREEZE_v0.1.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  freeze-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - name: Verify zero-cost partial run freeze
+        run: python scripts/verify_agentdojo_run_configuration_freeze_v0_1.py
+      - name: Assert execution remains impossible
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open("agentdojo-run-configuration-freeze-audit.json"))
+          assert r["status"]=="PASS_PARTIAL_RUN_CONFIGURATION_FREEZE_EXECUTION_GATE_CLOSED"
+          assert r["provider_spend_cap_usd"]==0
+          assert r["execution_gate"]=="CLOSED"
+          assert len(r["remaining_final_freeze_items"])==8
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agentdojo-run-configuration-freeze-v0_1
+          path: |
+            contracts/AGENTDOJO_RUN_CONFIGURATION_FREEZE_v0.1.json
+            agentdojo-run-configuration-freeze-audit.json
+          if-no-files-found: error
+          retention-days: 90
