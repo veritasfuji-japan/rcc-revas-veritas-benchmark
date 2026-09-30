@@ -1,0 +1,60 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-exact-model-configuration.v0.1",
+  "status": "EXACT_MODEL_CONFIGURATION_FROZEN_EXECUTION_GATE_CLOSED",
+  "supersedes_for_execution": "zero-cost local-model route remains historical evidence; it is not the selected execution route",
+  "pins": {
+    "benchmark_harness_base": "93914d2e13264b9cbc4daf380b877cb78c4df964",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+  },
+  "model": {
+    "provider": "openai",
+    "model_id": "gpt-4.1-mini-2025-04-14",
+    "snapshot_required": true,
+    "alias_forbidden": "gpt-4.1-mini",
+    "api_mode": "standard",
+    "function_calling_required": true,
+    "structured_outputs_supported": true
+  },
+  "sampling": {
+    "temperature": 0.0,
+    "automatic_retry": false,
+    "post_result_model_switch": false,
+    "fallback_model": null
+  },
+  "budget": {
+    "provider_spend_cap_usd": 5.0,
+    "hard_stop_on_cap": true,
+    "free_tier_assumed": false,
+    "pricing_reference": {
+      "input_usd_per_million_tokens": 0.40,
+      "cached_input_usd_per_million_tokens": 0.10,
+      "output_usd_per_million_tokens": 1.60,
+      "pricing_checked_utc_date": "2026-09-30"
+    }
+  },
+  "pairing_invariants": [
+    "same exact model snapshot in Arm A and Arm B",
+    "same model configuration in Arm A and Arm B",
+    "same enrolled case and attack configuration",
+    "no automatic retry",
+    "no fallback model",
+    "no post-result model selection"
+  ],
+  "secrets": {
+    "api_key_source": "GitHub Actions secret or operator environment only",
+    "api_key_never_committed": true,
+    "api_key_never_written_to_evidence": true
+  },
+  "execution_gate": "CLOSED",
+  "remaining_before_final_execution_freeze": [
+    "immutable executable clean-run workflow bound to this exact model configuration",
+    "exact native scorer invocation and final evidence/artifact hashes"
+  ],
+  "claim_boundary": {
+    "exact_model_configuration_frozen": true,
+    "model_api_called_by_this_freeze": false,
+    "clean_ab_executed": false,
+    "independent_external_validation": false,
+    "production_readiness": false
+  }
+}
