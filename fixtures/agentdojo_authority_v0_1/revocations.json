@@ -1,0 +1,8 @@
+{
+  "as_of": "2026-09-30T00:00:00Z",
+  "source_identity": "veritas-benchmark-revocations",
+  "status_by_id": {
+    "agentdojo-clean-ab-authority-v0-1": false
+  },
+  "version": "v0.1"
+}

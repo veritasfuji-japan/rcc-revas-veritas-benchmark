@@ -1,0 +1,12 @@
+{
+  "actor_identity": "agentdojo:banking:benchmark-user",
+  "authority_scope": [
+    "agentdojo-banking-protected-mutation"
+  ],
+  "benchmark_fixture_signature": "+Fr/Z4b8TsOH7rslrj2W0qsSbJ6dtocq2zajJ3sGikxDmfxI49x4y8fZkqsCHeBzHxb6nJrS1scSRh7NnIgACg==",
+  "benchmark_only": true,
+  "evidence_id": "agentdojo-clean-ab-authority-v0-1",
+  "issuer_identity": "veritas-benchmark-authority-fixture",
+  "policy_snapshot_id": "agentdojo-banking-clean-ab-v0.1",
+  "schema_version": "veritas.authority-evidence.v0.1"
+}

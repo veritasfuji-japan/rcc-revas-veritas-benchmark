@@ -1,0 +1,10 @@
+{
+  "allowed_issuers": [
+    "veritas-benchmark-authority-fixture"
+  ],
+  "allowed_key_ids": [
+    "agentdojo-clean-ab-benchmark-ed25519-v0-1"
+  ],
+  "benchmark_only": true,
+  "policy_id": "agentdojo-clean-ab-authority-verifier-policy-v0-1"
+}

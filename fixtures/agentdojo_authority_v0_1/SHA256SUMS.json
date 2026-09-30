@@ -1,0 +1,6 @@
+{
+  "authority_fixture.json": "039572991e2b823dc711233b279da6faebe321c1bba943462bf33d367fad1b8d",
+  "public_key.raw.b64": "ccac91490996bceb88255e75e7cd3b8ab3394470ed1f408bf3c712e39c3aab57",
+  "revocations.json": "bc3b25ff088a4b91e85fd83ca5c845551053d5d728966d0aba36f1ec22d6060f",
+  "signer_policy.json": "3c1d749b247328c1933f63d3870f3b59afa128f9291cdc767ea635c59a5cc8da"
+}
