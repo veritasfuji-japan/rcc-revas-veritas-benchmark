@@ -1,14 +1,89 @@
 name: AgentDojo Clean A-B Final v0.1
+
 on:
   workflow_dispatch:
+    inputs:
+      runner_commit:
+        description: Exact reviewed final-runner commit SHA
+        required: true
+        type: string
+      confirmation:
+        description: Type RUN_FROZEN_AGENTDOJO_CLEAN_AB_V0_1
+        required: true
+        type: string
+
 permissions:
   contents: read
+
 jobs:
-  gate-closed:
+  final-clean-ab:
+    if: ${{ inputs.confirmation == 'RUN_FROZEN_AGENTDOJO_CLEAN_AB_V0_1' }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 120
     steps:
-      - name: Refuse result-bearing execution until final freeze opens gate
+      - name: Check out exact reviewed runner
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.runner_commit }}
+          persist-credentials: false
+
+      - name: Verify exact runner checkout and execution gate
         run: |
-          echo "EXECUTION_GATE_CLOSED"
-          echo "This workflow is intentionally non-result-bearing in the freeze-candidate version."
-          exit 1
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ inputs.runner_commit }}"
+          python - <<'PY'
+          import json
+          c=json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"))
+          if c["execution_gate"] != "OPEN":
+              raise SystemExit("EXECUTION_GATE_CLOSED")
+          PY
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: _pins/rcc
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 825e5c5c539c98e12b0c9702f3cb4a12d67539d3
+          path: _pins/veritas
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - run: python -m pip install -U pip
+      - run: python -m pip install -e _pins/agentdojo cryptography==50.0.1
+      - run: python -m pip install -e '_pins/rcc/external-eval/v0.3.9[crypto]'
+      - run: python -m pip install -e _pins/veritas --no-deps
+
+      - name: Execute frozen 128-case Clean A/B once
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          PYTHONPATH=.:_pins/veritas python scripts/agentdojo_clean_ab_final_runner_v0_1.py \
+            --execute \
+            --confirmation RUN_FROZEN_AGENTDOJO_CLEAN_AB_V0_1 \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --output-dir results/agentdojo-clean-ab-final-v0_1
+
+      - name: Upload retained evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentdojo-clean-ab-final-v0_1-${{ inputs.runner_commit }}
+          path: results/agentdojo-clean-ab-final-v0_1/
+          if-no-files-found: error
