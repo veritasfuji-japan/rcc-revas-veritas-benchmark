@@ -1,0 +1,165 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-clean-ab-mapping-freeze.v0.1",
+  "status": "MAPPING_FROZEN_RUN_FREEZE_INCOMPLETE",
+  "purpose": "Freeze the benchmark-specific RCC/REVAS -> VERITAS mapping before any new AgentDojo A/B execution.",
+  "source_pins": {
+    "ben_canonical_repository": "effacermonexistence/rcc-revas-veritas-benchmark",
+    "ben_canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "ben_package_path": "external-eval/v0.3.9",
+    "veritas_repository": "veritasfuji-japan/veritas_os",
+    "veritas_commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+    "agentdojo_repository": "ethz-spylab/agentdojo",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "agentdojo_release": "v0.1.35",
+    "agentdojo_benchmark_version": "v1.2.2",
+    "agentdojo_suite": "banking",
+    "agentdojo_functions_runtime_sha256": "3c67f71eb8a7f15d2a15fe9595d84218c5e6868d95fd71d1cef679cd2192d0f7"
+  },
+  "prior_exposure": {
+    "same_agentdojo_banking_corpus_previously_used_by_veritas": true,
+    "held_out_from_veritas_development": false,
+    "interpretation": "A future run on this same Banking corpus can be a cleanly frozen integration A/B, but not an unseen held-out validation claim.",
+    "historical_lane": "TASK-023 AgentDojo Banking same-candidate evidence"
+  },
+  "arm_design": {
+    "arm_a": {
+      "name": "RCC_REVAS_ONLY",
+      "rcc_surface": "rveval.integrations.rcc_external.ExternalRCCGate via NativeGovernanceHook/GovernedExecutor",
+      "veritas_native_invoked": false,
+      "effect_owner": "AgentDojo FunctionsRuntime.run_function after RCC admission"
+    },
+    "arm_b": {
+      "name": "RCC_REVAS_PLUS_VERITAS",
+      "rcc_surface": "same RCC/REVAS gate and candidate semantics as Arm A",
+      "decision_surface": "rveval.integrations.decide_pipeline.NativeDecisionIntentFactory",
+      "authority_surface": "rveval.integrations.veritas_authority.NativeAuthorityResolver",
+      "bind_surface": "rveval.integrations.veritas_bind.NativeBindExecutor",
+      "agentdojo_runtime_surface": "rveval.integrations.agentdojo.make_runtime_class",
+      "effect_owner": "NativeBindExecutor.Adapter.apply invokes the exact AgentDojo native runtime once",
+      "double_apply_prohibited": true
+    }
+  },
+  "candidate_mapping": {
+    "source": "AgentDojo FunctionsRuntime validated final tool name + Pydantic-normalized arguments immediately before native effect",
+    "rcc_wire_object": "rveval.models.CandidateAction(kind=tool_call,name=function,arguments=validated_args)",
+    "veritas_freeze": "veritas_os.benchmarks.agentdojo_banking_adapter.freeze_agentdojo_candidate",
+    "veritas_candidate_projection": {
+      "candidate_id": "deterministic from frozen AgentDojo candidate hash",
+      "candidate_type": "execution_intent_candidate",
+      "action_type": "tool_call",
+      "actor_identity": "from independently frozen benchmark authority profile, never from candidate/model prose",
+      "target_system": "agentdojo-banking",
+      "target_resource": "FrozenAgentDojoCandidate.target_resource",
+      "intended_action": "exact protected tool name",
+      "required_authority": [
+        "agentdojo-banking-protected-mutation"
+      ],
+      "required_human_approval": false,
+      "risk_level": "benchmark-simulated-protected-mutation",
+      "regulated_or_high_impact": false,
+      "evidence_refs": [
+        "rveval-candidate-sha256:<CandidateAction digest>",
+        "agentdojo-candidate:sha256:<FrozenAgentDojoCandidate hash>"
+      ],
+      "policy_context_refs": [
+        "agentdojo-banking-clean-ab-v0.1"
+      ]
+    },
+    "protected_tools": [
+      "send_money",
+      "schedule_transaction",
+      "update_scheduled_transaction",
+      "update_password",
+      "update_user_info"
+    ],
+    "candidate_substitution_allowed": false,
+    "scorer_or_gold_data_allowed": false
+  },
+  "request_lineage": {
+    "query_source": "exact enrolled AgentDojo user-task instruction",
+    "context_source": "runtime-visible benchmark identity and initial-state metadata only",
+    "candidate_text_may_fill_query_or_context": false,
+    "original_request_id_distinct_from_native_request_id": true,
+    "rcc_decision_digest_distinct_from_native_decision_id": true
+  },
+  "authority_and_approval": {
+    "actor_identity": "agentdojo:banking:benchmark-user",
+    "policy_snapshot_id": "agentdojo-banking-clean-ab-v0.1",
+    "authority_origin": "separately generated and signed benchmark-only AuthorityEvidence frozen before execution",
+    "authority_from_rcc_adopt": false,
+    "authority_from_agentdojo_user_prompt": false,
+    "revocation_snapshot_required": true,
+    "human_approval_required": false,
+    "human_approval_reason": "benchmark ActionClassContract v0.1 declares NOT_REQUIRED for this simulation profile",
+    "human_approval_reference_count": 0,
+    "manufactured_human_approval_prohibited": true,
+    "claim_boundary": "This profile does not test an approval-required branch or production banking authority."
+  },
+  "state_and_effect": {
+    "initial_state_rule": "Arm A and Arm B start each enrolled case from independently restored equivalent AgentDojo initial environments.",
+    "snapshot": "full runtime-visible AgentDojo environment serialized through the pinned native model/dict surface",
+    "prestate_hash_required": true,
+    "same_prestate_required": true,
+    "same_model_configuration_required": true,
+    "same_case_and_attack_configuration_required": true,
+    "sole_effect_owner_arm_b": "NativeBindExecutor.Adapter.apply",
+    "benchmark_wrapper_redispatch_after_bind": false,
+    "post_dispatch_unknown_rule": "An attempted effect without independently established postcondition remains UNKNOWN; do not blind retry."
+  },
+  "measurement_design": {
+    "whole_task": {
+      "scorer": "original pinned AgentDojo native utility/security scoring only",
+      "score_after_execution_barrier": true,
+      "scorer_data_available_to_runtime_governance": false,
+      "later_trajectory_divergence_after_effect_difference": "allowed and reported as treatment behavior"
+    },
+    "same_candidate_counterfactual": {
+      "role": "mechanism/safety secondary measurement",
+      "same_candidate_required": true,
+      "same_prestate_required": true,
+      "no_model_call_during_immediate_replay": true,
+      "must_not_be_relabelled_as_whole_task_utility_or_security": true
+    },
+    "governance_metrics": [
+      "candidate-present count",
+      "RCC ADOPT/HOLD/REJECT/ERROR/UNSUPPORTED",
+      "VERITAS Bind COMMITTED/BLOCKED/ESCALATED/UNKNOWN",
+      "false allow / false block against preregistered mutation policy",
+      "candidate/prestate pairing violations",
+      "duplicate dispatch / retry count",
+      "latency",
+      "provider/model cost",
+      "token usage when measurable"
+    ]
+  },
+  "run_freeze_required_before_execution": {
+    "execution_gate_open": false,
+    "unresolved_fields": [
+      "exact model/provider/version",
+      "exact prompt/system-prompt/tool-format version",
+      "sampling/seed/retry/budget settings",
+      "exact immutable case enrollment list",
+      "exact injection/attack enrollment and seeds",
+      "exact native scorer source hashes and aggregation command",
+      "exact benchmark-only authority artifact/public-key/signer-policy hashes",
+      "exact revocation snapshot hash",
+      "exact NativeDecisionIntentFactory source-pin set for the selected current VERITAS pin",
+      "exact Decide receipt origin/persistence verifier configuration",
+      "exact Bind receipt/TrustLog verification configuration",
+      "exact runtime/scorer input file hashes",
+      "success/failure/invalid-run stopping criteria",
+      "maximum monetary/provider budget"
+    ],
+    "rule": "No AgentDojo clean A/B execution may be described as preregistered until every unresolved field is replaced by an exact frozen value and the gate is explicitly changed in a new reviewable commit."
+  },
+  "claim_boundary": {
+    "mapping_frozen": true,
+    "run_configuration_frozen": false,
+    "external_benchmark_executed": false,
+    "clean_ab_executed": false,
+    "held_out_validation": false,
+    "independent_third_party_validation": false,
+    "production_readiness": false,
+    "certification": false
+  }
+}

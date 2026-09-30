@@ -1,0 +1,106 @@
+name: AgentDojo Clean A/B Mapping Freeze v0.1
+
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_CLEAN_AB_MAPPING_FREEZE_v0.1.json"
+      - "scripts/verify_agentdojo_clean_ab_mapping_freeze_v0_1.py"
+      - ".github/workflows/agentdojo-clean-ab-mapping-freeze-v0_1.yml"
+      - "docs/AGENTDOJO_CLEAN_AB_MAPPING_FREEZE_v0.1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      UPSTREAM_REPO: upstream
+      VERITAS_REPO: veritas_os_checkout
+      AGENTDOJO_REPO: agentdojo_checkout
+      REPORT_PATH: agentdojo-clean-ab-mapping-freeze-audit.json
+    steps:
+      - name: Check out freeze contract
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check out Ben canonical substrate
+        uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: upstream
+          persist-credentials: false
+
+      - name: Check out exact VERITAS pin
+        uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 825e5c5c539c98e12b0c9702f3cb4a12d67539d3
+          path: veritas_os_checkout
+          persist-credentials: false
+
+      - name: Check out exact AgentDojo pin
+        uses: actions/checkout@v4
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: agentdojo_checkout
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - name: Verify clean worktrees and exact source pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C "$UPSTREAM_REPO" rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          test "$(git -C "$VERITAS_REPO" rev-parse HEAD)" = "825e5c5c539c98e12b0c9702f3cb4a12d67539d3"
+          test "$(git -C "$AGENTDOJO_REPO" rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test -z "$(git -C "$UPSTREAM_REPO" status --porcelain)"
+          test -z "$(git -C "$VERITAS_REPO" status --porcelain)"
+          test -z "$(git -C "$AGENTDOJO_REPO" status --porcelain)"
+
+      - name: Install only mapping-audit dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install "./$VERITAS_REPO"
+          python -m pip install "./$UPSTREAM_REPO/external-eval/v0.3.9"
+
+      - name: Verify frozen mapping and closed execution gate
+        run: |
+          python scripts/verify_agentdojo_clean_ab_mapping_freeze_v0_1.py
+
+      - name: Assert no benchmark execution occurred
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          r=json.load(open("agentdojo-clean-ab-mapping-freeze-audit.json"))
+          assert r["status"] == "PASS_MAPPING_FROZEN_EXECUTION_GATE_CLOSED"
+          assert r["execution_gate_open"] is False
+          c=r["claim_boundary"]
+          assert c["run_configuration_frozen"] is False
+          assert c["external_benchmark_executed"] is False
+          assert c["clean_ab_executed"] is False
+          assert c["held_out_validation"] is False
+          assert c["independent_third_party_validation"] is False
+          PY
+
+      - name: Upload mapping-freeze evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentdojo-clean-ab-mapping-freeze-v0_1
+          path: |
+            contracts/AGENTDOJO_CLEAN_AB_MAPPING_FREEZE_v0.1.json
+            agentdojo-clean-ab-mapping-freeze-audit.json
+          if-no-files-found: error
+          retention-days: 90
