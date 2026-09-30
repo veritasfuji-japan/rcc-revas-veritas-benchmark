@@ -1,0 +1,30 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-native-scorer-freeze.v0.1",
+  "status": "EXACT_NATIVE_SCORER_INVOCATION_FROZEN_EXECUTION_GATE_CLOSED",
+  "pins": {
+    "harness_base": "5441142adebb525ea00416059fbd62c405a9c9f5",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "benchmark_version": "v1.2.2",
+    "suite": "banking"
+  },
+  "invocation": {
+    "wrapper": "scripts/agentdojo_native_scorer_invocation_v0_1.py::invoke_native_agentdojo_scorer",
+    "native_method": "TaskSuite._check_task_result",
+    "timing": "POST_EXECUTION_ONLY",
+    "scorer_gold_available_to_runtime_governance": false,
+    "performs_model_call": false,
+    "performs_tool_dispatch": false,
+    "performs_effect": false,
+    "automatic_retry": false
+  },
+  "execution_gate": "CLOSED",
+  "api_called": false,
+  "clean_ab_executed": false,
+  "claim_boundary": {
+    "exact_scorer_invocation_frozen": true,
+    "final_result_bearing_runner_frozen": false,
+    "clean_ab_executed": false,
+    "held_out_validation": false,
+    "independent_external_validation": false
+  }
+}
