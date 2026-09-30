@@ -1,0 +1,36 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-final-runner-freeze.v0.1",
+  "status": "FINAL_RUNNER_FROZEN_EXECUTION_GATE_CLOSED",
+  "merged_main_sha": "fd112f999ac690fb3f36cc0d50cdc082231262cc",
+  "frozen_files": {
+    "scripts/agentdojo_clean_ab_final_runner_v0_1.py": "fe0302cde8a85baea427bfbd748886ba0152de77249cb7d5cda9c11589dafe3b",
+    ".github/workflows/agentdojo-clean-ab-final-v0_1.yml": "bc993b55a6f23e42a21def66ac034ae327aef2aeb499cfb86d9bf22ca6bff705",
+    "scripts/agentdojo_native_scorer_invocation_v0_1.py": "af7ebe24a2ae45a3dfe747e76a8b84b111d716607f85b4df1eaa2c5621193104",
+    "contracts/AGENTDOJO_NATIVE_SCORER_FREEZE_v0.1.json": "d15b14e575f0a8baae322e2aa77c5aaf417f81ba324b1a2218dc11fcac85551b"
+  },
+  "pins": {
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "runtime": {
+    "temperature": 0,
+    "openai_client_max_retries": 0,
+    "provider_spend_cap_usd": 5,
+    "enrollment_case_count": 128,
+    "arm_A": "RCC_REVAS_ONLY",
+    "arm_B": "SAME_RCC_REVAS_PLUS_VERITAS_BIND",
+    "scorer_timing": "POST_EXECUTION_ONLY"
+  },
+  "execution_gate": "CLOSED",
+  "api_called": false,
+  "clean_ab_executed": false,
+  "result_bearing_execution_authorized": false,
+  "claim_boundary": {
+    "final_result_bearing_runner_frozen": true,
+    "held_out_validation": false,
+    "independent_third_party_validation": false,
+    "production_readiness": false
+  }
+}
