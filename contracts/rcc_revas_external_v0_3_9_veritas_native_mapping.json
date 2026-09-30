@@ -1,0 +1,119 @@
+{
+  "schema_version": "veritas.rcc-revas.external-native-mapping.v1",
+  "mapping_version": "0.1",
+  "status": "PRIMITIVES_VERIFIED_ADAPTER_LAYER_REQUIRED",
+  "ben_canonical_package": {
+    "repository": "effacermonexistence/rcc-revas-veritas-benchmark",
+    "commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "package_path": "external-eval/v0.3.9",
+    "mapping_contract_path": "external-eval/v0.3.9/contracts/VERITAS_MAPPING_v0.3.4.json",
+    "mapping_contract_sha256": "3362038842f889b49aaf0e05c4491eaf688f20b97905c19233e9e09168728385"
+  },
+  "veritas_native": {
+    "repository": "veritasfuji-japan/veritas_os",
+    "commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3"
+  },
+  "connection_surfaces": [
+    {
+      "surface": "NativeDecisionIntentFactory",
+      "status": "ADAPTER_REQUIRED",
+      "native_primitives": [
+        "veritas_os.policy.decision_candidate.DecisionCandidate",
+        "veritas_os.policy.decision_candidate.hash_decision_candidate",
+        "veritas_os.policy.decision_candidate.try_promote_verified_canonical_decision_candidate_to_execution_intent",
+        "veritas_os.governance.canonical_decision_artifact.verify_canonical_decision_artifact"
+      ],
+      "source_files": [
+        "veritas_os/policy/decision_candidate.py",
+        "veritas_os/governance/canonical_decision_artifact.py"
+      ],
+      "required_invariants": [
+        "RCC ADOPT is an offered candidate, not VERITAS execution authority",
+        "original request identity remains distinct from generated candidate identity",
+        "candidate typed action and arguments require an explicit deterministic projection",
+        "candidate hash must be bound to the same native candidate used by canonical decision promotion",
+        "native decision id/hash/timestamp come only from the independently verified native CDA",
+        "scorer/gold information is forbidden from the runtime governance path"
+      ],
+      "open_adapter_work": [
+        "define and freeze CandidateAction to DecisionCandidate projection",
+        "wire original request context independently of candidate content",
+        "wire canonical /v1/decide response and persisted receipt verification",
+        "freeze exact request/candidate/decision lineage fields before external execution"
+      ]
+    },
+    {
+      "surface": "NativeAuthorityResolver",
+      "status": "ADAPTER_REQUIRED",
+      "native_primitives": [
+        "veritas_os.governance.authority_evidence.verify_authority_evidence_artifact_to_proof",
+        "veritas_os.governance.authority_evidence.validate_verified_authority_evidence",
+        "veritas_os.governance.action_contracts.ActionClassContract",
+        "veritas_os.policy.human_approval_requirement_resolution.build_human_approval_requirement_resolution_packet",
+        "veritas_os.policy.live_adapter_dry_run_human_approval_requirement_satisfaction.build_live_adapter_dry_run_human_approval_requirement_satisfaction_packet"
+      ],
+      "source_files": [
+        "veritas_os/governance/authority_evidence.py",
+        "veritas_os/governance/action_contracts.py",
+        "veritas_os/policy/human_approval_requirement_resolution.py",
+        "veritas_os/policy/live_adapter_dry_run_human_approval_requirement_satisfaction.py"
+      ],
+      "required_invariants": [
+        "authority is obtained from an independent authoritative source",
+        "RCC candidate or adoption never mints authority",
+        "grant binds actor/action-contract/scope/policy/time and current revocation",
+        "required Human Approval is separately verified and operation-bound",
+        "NOT_REQUIRED_BY_ACTION_CONTRACT uses zero fabricated approval references"
+      ],
+      "open_adapter_work": [
+        "define benchmark governance source for actor/policy/authority/approval",
+        "freeze signer/verifier/revocation policy and experiment clock",
+        "define required-vs-not-required approval source behavior for the chosen external benchmark"
+      ]
+    },
+    {
+      "surface": "NativeBindExecutor",
+      "status": "ADAPTER_REQUIRED",
+      "native_primitives": [
+        "veritas_os.policy.bind_artifacts.ExecutionIntent",
+        "veritas_os.policy.bind_core.contracts.BindAdapterContract",
+        "veritas_os.policy.bind_core.execute_bind_adjudication"
+      ],
+      "source_files": [
+        "veritas_os/policy/bind_artifacts.py",
+        "veritas_os/policy/bind_core/contracts.py",
+        "veritas_os/policy/bind_core/core.py"
+      ],
+      "required_invariants": [
+        "VERITAS Bind is the sole owner of an admitted effect on the joint path",
+        "same exact candidate and pre-state are bound before effect",
+        "no benchmark wrapper re-dispatch after Bind invokes the callback",
+        "post-dispatch uncertainty remains UNKNOWN until independent reconciliation",
+        "receipt and TrustLog evidence remain distinct from HTTP success"
+      ],
+      "open_adapter_work": [
+        "implement benchmark-native BindAdapterContract against the selected benchmark operation",
+        "freeze one-effect-owner callback and postcondition semantics",
+        "freeze state snapshot/fingerprint/reset ownership",
+        "wire persisted native receipt/TrustLog verification before a clean external run"
+      ]
+    }
+  ],
+  "future_agentdojo_surface": {
+    "status": "AVAILABLE_NOT_WIRED_BY_THIS_MAPPING_AUDIT",
+    "primitives": [
+      "veritas_os.benchmarks.agentdojo_banking_adapter.freeze_agentdojo_candidate",
+      "veritas_os.benchmarks.agentdojo_banking_adapter.build_agentdojo_benchmark_execution_intent",
+      "veritas_os.benchmarks.agentdojo_banking_adapter.AgentDojoBankingBindAdapter"
+    ],
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "benchmark_version": "v1.2.2"
+  },
+  "claim_boundary": {
+    "native_veritas_connected": false,
+    "real_external_evaluation_executed": false,
+    "agentdojo_clean_ab_executed": false,
+    "independent_third_party_validation": false,
+    "production_readiness": false
+  }
+}
