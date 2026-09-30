@@ -68,6 +68,16 @@ jobs:
       - run: python -m pip install -e '_pins/rcc/external-eval/v0.3.9[crypto]'
       - run: python -m pip install -e _pins/veritas --no-deps
 
+      - name: Verify OpenAI API key is configured
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${OPENAI_API_KEY}" ]; then
+            echo "OPENAI_API_KEY_MISSING"
+            exit 1
+          fi
+
       - name: Execute frozen 128-case Clean A/B once
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
