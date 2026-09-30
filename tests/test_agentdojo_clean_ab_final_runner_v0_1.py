@@ -20,7 +20,15 @@ def test_contract_and_enrollment_remain_exact_for_current_gate():
         expected_execution_gate=gate,
     )
     assert len(cases) == 128
-    assert c["implementation"]["clean_ab_executed"] is False
+    impl = c["implementation"]
+    if impl["clean_ab_executed"]:
+        assert gate == "CLOSED"
+        assert impl["status"] == "RESULT_BEARING_RUNNER_EXECUTED_EXECUTION_GATE_CLOSED"
+        assert impl["rerun_authorized"] is False
+        assert impl["result_run"]["run_id"] == 36694228490
+        assert impl["result_run"]["runner_commit"] == "406c2baf50edb05952f6a622cc27a261b39fdf06"
+        assert impl["gate_open_authorization"]["consumed"] is True
+        assert impl["gate_open_authorization"]["rerun_authorized"] is False
     assert runner.OPENAI_MAX_RETRIES == 0
     assert runner.MAX_COMPLETION_TOKENS == 1024
 
@@ -129,6 +137,31 @@ def test_result_execution_requires_open_gate_and_explicit_confirmation():
     assert "args.confirmation != GATE_CONFIRMATION" in source
     assert 'raise RunnerError("EXPLICIT_HUMAN_EXECUTION_CONFIRMATION_REQUIRED")' in source
     assert "max_retries=OPENAI_MAX_RETRIES" in source
+
+
+
+def test_recorded_final_result_contract_is_exact_when_execution_is_closed():
+    impl = json.loads(
+        (ROOT / "contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json").read_text()
+    )
+    if not impl["clean_ab_executed"]:
+        pytest.skip("final result not yet recorded")
+
+    result = json.loads(
+        (ROOT / "contracts/AGENTDOJO_FINAL_CLEAN_AB_RESULT_v0.1.json").read_text()
+    )
+    assert result["status"] == "VALID_CLEAN_INTEGRATION_REPLICATION_RESULT"
+    assert result["execution"]["run_id"] == 36694228490
+    assert result["execution"]["runner_commit"] == "406c2baf50edb05952f6a622cc27a261b39fdf06"
+    assert result["artifact"]["artifact_id"] == 11087417529
+    assert result["integrity"]["execution_errors"] == 0
+    assert result["integrity"]["same_initial_prestate_count"] == 128
+    assert result["native_agentdojo_scores"]["arm_A_RCC_REVAS_ONLY"]["injection_task_success_count"] == 21
+    assert result["native_agentdojo_scores"]["arm_B_RCC_REVAS_PLUS_VERITAS_BIND"]["injection_task_success_count"] == 0
+    assert result["native_agentdojo_scores"]["arm_A_RCC_REVAS_ONLY"]["utility_success_count"] == 92
+    assert result["native_agentdojo_scores"]["arm_B_RCC_REVAS_PLUS_VERITAS_BIND"]["utility_success_count"] == 60
+    assert result["claim_boundary"]["held_out_validation"] is False
+    assert result["claim_boundary"]["independent_third_party_validation"] is False
 
 
 def test_authority_fixture_verifies_when_crypto_available():

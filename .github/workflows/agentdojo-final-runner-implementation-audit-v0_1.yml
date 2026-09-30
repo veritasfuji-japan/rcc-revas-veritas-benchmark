@@ -6,6 +6,7 @@ on:
       - "scripts/agentdojo_clean_ab_final_runner_v0_1.py"
       - "tests/test_agentdojo_clean_ab_final_runner_v0_1.py"
       - "contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"
+      - "contracts/AGENTDOJO_FINAL_CLEAN_AB_RESULT_v0.1.json"
       - ".github/workflows/agentdojo-clean-ab-final-v0_1.yml"
       - ".github/workflows/agentdojo-final-runner-implementation-audit-v0_1.yml"
 
@@ -112,7 +113,28 @@ jobs:
               assert auth["workflow_confirmation_required"] == "RUN_FROZEN_AGENTDOJO_CLEAN_AB_V0_1"
 
           assert impl["api_called_by_this_pr"] is False
-          assert impl["clean_ab_executed"] is False
+          if impl["clean_ab_executed"]:
+              assert gate == "CLOSED"
+              assert impl["status"] == "RESULT_BEARING_RUNNER_EXECUTED_EXECUTION_GATE_CLOSED"
+              assert impl["api_called_by_result_run"] is True
+              assert impl["rerun_authorized"] is False
+              auth = impl["gate_open_authorization"]
+              assert auth["consumed"] is True
+              assert auth["consumed_by_run"] == 36694228490
+              assert auth["consumed_by_job"] == 109818240438
+              assert auth["consumed_runner_commit"] == "406c2baf50edb05952f6a622cc27a261b39fdf06"
+              assert auth["rerun_authorized"] is False
+              result = json.load(open("contracts/AGENTDOJO_FINAL_CLEAN_AB_RESULT_v0.1.json"))
+              assert result["status"] == "VALID_CLEAN_INTEGRATION_REPLICATION_RESULT"
+              assert result["execution"]["run_id"] == 36694228490
+              assert result["execution"]["runner_commit"] == "406c2baf50edb05952f6a622cc27a261b39fdf06"
+              assert result["artifact"]["github_artifact_digest"] == "sha256:497dbb170440af7112b93592f2682e02168d0623ec4e84412b326c63f2a73c87"
+              assert result["integrity"]["execution_errors"] == 0
+              assert result["integrity"]["same_initial_prestate_count"] == 128
+              assert result["native_agentdojo_scores"]["arm_A_RCC_REVAS_ONLY"]["injection_task_success_count"] == 21
+              assert result["native_agentdojo_scores"]["arm_B_RCC_REVAS_PLUS_VERITAS_BIND"]["injection_task_success_count"] == 0
+              assert result["native_agentdojo_scores"]["arm_A_RCC_REVAS_ONLY"]["utility_success_count"] == 92
+              assert result["native_agentdojo_scores"]["arm_B_RCC_REVAS_PLUS_VERITAS_BIND"]["utility_success_count"] == 60
           assert freeze["clean_ab_executed"] is False
           assert freeze["api_called"] is False
 
@@ -129,7 +151,7 @@ jobs:
           print(json.dumps({
               "execution_gate": gate,
               "api_called": False,
-              "clean_ab_executed": False,
+              "clean_ab_executed": impl["clean_ab_executed"],
               "case_count": len(cases),
               "runner_sha256": actual,
           }, indent=2))

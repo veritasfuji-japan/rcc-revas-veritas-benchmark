@@ -1,6 +1,6 @@
 {
   "schema_version": "veritas.rcc-revas.agentdojo-final-runner-implementation.v0.1",
-  "status": "RESULT_BEARING_RUNNER_REMEDIATED_FROZEN_EXECUTION_GATE_OPEN",
+  "status": "RESULT_BEARING_RUNNER_EXECUTED_EXECUTION_GATE_CLOSED",
   "pins": {
     "benchmark_harness_base": "c19a483c5260257d421119f37e87b8a92d10bd50",
     "ben_canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
@@ -48,10 +48,12 @@
     "raw_governance_journal_embedded_per_record": true,
     "secrets_written": false
   },
-  "execution_gate": "OPEN",
+  "execution_gate": "CLOSED",
   "api_called_by_this_pr": false,
-  "clean_ab_executed": false,
-  "remaining_before_gate_open": [],
+  "clean_ab_executed": true,
+  "remaining_before_gate_open": [
+    "new explicit human authorization required for any rerun"
+  ],
   "claim_boundary": {
     "clean_integration_replication_only": true,
     "held_out_validation": false,
@@ -66,7 +68,12 @@
     "gate_open_base_sha": "713e73c8345d8a431e3d946f249b13219d12f96a",
     "manual_dispatch_required": true,
     "workflow_confirmation_required": "RUN_FROZEN_AGENTDOJO_CLEAN_AB_V0_1",
-    "automatic_execution": false
+    "automatic_execution": false,
+    "consumed": true,
+    "consumed_by_run": 36694228490,
+    "consumed_by_job": 109818240438,
+    "consumed_runner_commit": "406c2baf50edb05952f6a622cc27a261b39fdf06",
+    "rerun_authorized": false
   },
   "remediation_resolved": {
     "failed_workflow_run": 36691824480,
@@ -79,5 +86,17 @@
     "freeze_merge_sha": "26fbf5fd2da96109bb45cb8df0fd513d16122696",
     "audit_readiness_pr": 45,
     "resolved": true
+  },
+  "api_called_by_result_run": true,
+  "rerun_authorized": false,
+  "result_run": {
+    "result_contract": "contracts/AGENTDOJO_FINAL_CLEAN_AB_RESULT_v0.1.json",
+    "run_id": 36694228490,
+    "job_id": 109818240438,
+    "conclusion": "success",
+    "runner_commit": "406c2baf50edb05952f6a622cc27a261b39fdf06",
+    "artifact_id": 11087417529,
+    "artifact_digest": "sha256:497dbb170440af7112b93592f2682e02168d0623ec4e84412b326c63f2a73c87",
+    "valid_for_comparison": true
   }
 }
