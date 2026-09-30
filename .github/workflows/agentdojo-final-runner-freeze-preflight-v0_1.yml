@@ -1,0 +1,49 @@
+name: AgentDojo Final Runner Freeze Preflight v0.1
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/agentdojo-final-runner-freeze-preflight-v0_1.yml"
+      - "contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.1.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-preflight:
+    runs-on: ubuntu-24.04
+    env:
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fd112f999ac690fb3f36cc0d50cdc082231262cc
+          persist-credentials: false
+
+      - name: Verify exact merged-main provenance and compute frozen raw-byte SHA-256
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "fd112f999ac690fb3f36cc0d50cdc082231262cc"
+          sha256sum \
+            scripts/agentdojo_clean_ab_final_runner_v0_1.py \
+            .github/workflows/agentdojo-clean-ab-final-v0_1.yml \
+            scripts/agentdojo_native_scorer_invocation_v0_1.py \
+            contracts/AGENTDOJO_NATIVE_SCORER_FREEZE_v0.1.json
+
+      - name: Assert execution remains closed and non-result-bearing
+        run: |
+          python - <<'PY'
+          import json
+          c=json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"))
+          assert c["execution_gate"] == "CLOSED"
+          assert c["api_called_by_this_pr"] is False
+          assert c["clean_ab_executed"] is False
+          assert c["pins"]["agentdojo_commit"] == "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          assert c["pins"]["ben_canonical_commit"] == "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          assert c["pins"]["veritas_commit"] == "825e5c5c539c98e12b0c9702f3cb4a12d67539d3"
+          assert c["pins"]["model"] == "gpt-4.1-mini-2025-04-14"
+          assert c["model_runtime"]["temperature"] == 0
+          assert c["model_runtime"]["openai_client_max_retries"] == 0
+          assert c["budget_guard"]["provider_spend_cap_usd"] == 5
+          PY
