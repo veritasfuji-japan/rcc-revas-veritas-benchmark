@@ -1,0 +1,94 @@
+name: RCC REVAS External v0.3.9 VERITAS Native Mapping Audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rcc-revas-external-v0_3_9-veritas-native-mapping-audit.yml"
+      - "contracts/rcc_revas_external_v0_3_9_veritas_native_mapping.json"
+      - "scripts/verify_veritas_native_mapping_v0_3_9.py"
+      - "docs/RCC_REVAS_EXTERNAL_V0_3_9_VERITAS_NATIVE_MAPPING_AUDIT.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-native-mapping:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      UPSTREAM_REPO: upstream
+      VERITAS_REPO: veritas_os_checkout
+      BEN_CANONICAL_COMMIT: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+      VERITAS_COMMIT: 825e5c5c539c98e12b0c9702f3cb4a12d67539d3
+      REPORT_PATH: veritas-native-mapping-audit.json
+    steps:
+      - name: Check out mapping audit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check out Ben canonical v0.3.9
+        uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: upstream
+          persist-credentials: false
+
+      - name: Check out exact current VERITAS native pin
+        uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 825e5c5c539c98e12b0c9702f3cb4a12d67539d3
+          path: veritas_os_checkout
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - name: Verify exact repository pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C "$UPSTREAM_REPO" rev-parse HEAD)" = "$BEN_CANONICAL_COMMIT"
+          test "$(git -C "$VERITAS_REPO" rev-parse HEAD)" = "$VERITAS_COMMIT"
+          test -z "$(git -C "$UPSTREAM_REPO" status --porcelain)"
+          test -z "$(git -C "$VERITAS_REPO" status --porcelain)"
+
+      - name: Install exact VERITAS native pin
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "./$VERITAS_REPO"
+
+      - name: Audit native mapping surfaces
+        run: |
+          python scripts/verify_veritas_native_mapping_v0_3_9.py
+
+      - name: Assert claim boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          r = json.load(open("veritas-native-mapping-audit.json"))
+          assert r["status"] == "PASS_PRIMITIVES_VERIFIED_ADAPTER_LAYER_REQUIRED"
+          assert set(r["connection_surface_status"].values()) == {"ADAPTER_REQUIRED"}
+          c = r["claim_boundary"]
+          assert c["native_veritas_connected"] is False
+          assert c["real_external_evaluation_executed"] is False
+          assert c["agentdojo_clean_ab_executed"] is False
+          assert c["independent_third_party_validation"] is False
+          assert c["production_readiness"] is False
+          PY
+
+      - name: Upload mapping audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcc-revas-external-v0_3_9-veritas-native-mapping-audit
+          path: |
+            contracts/rcc_revas_external_v0_3_9_veritas_native_mapping.json
+            veritas-native-mapping-audit.json
+          if-no-files-found: error
+          retention-days: 90
