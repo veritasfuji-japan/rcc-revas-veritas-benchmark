@@ -1,0 +1,45 @@
+{
+  "schema_version":"veritas.rcc-revas.agentdojo-zero-cost-preflight.v0.2",
+  "status":"RCC_SUBSTRATE_AND_CONSTRAINT_RESOLVER_FROZEN_GATE_CLOSED",
+  "pins":{
+    "benchmark_harness_base":"92b27120104166492b5cebe3c1d07d8ce13342bf",
+    "ben_canonical_commit":"1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit":"825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+    "agentdojo_commit":"a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+  },
+  "rcc_runtime":{
+    "implementation":"rveval.integrations.rcc_external.ExternalRCCGate",
+    "implementation_sha256":"cb9c4740240e4a808aaf9cb57d91a0babff38422e1fb426af27c311c0dbc4e7d",
+    "policy_path":"src/rveval/resources/policy.json",
+    "policy_sha256":"33fd6b422a75f4a1c2740719849db4ee874ea479a56156d97ef1e7db0c716748",
+    "policy_id":"rcc-external-output-contract",
+    "policy_version":"0.3.9",
+    "required_check":"public-output-contract",
+    "check_callable":"rveval.integrations.rcc_external:verify_output_contract",
+    "claim_scope":"OBSERVABLE_OUTPUT_CONTRACT_NOT_ANSWER_TRUTH_OR_EXECUTION_AUTHORITY",
+    "same_configuration_both_arms":true
+  },
+  "native_substrate_source_identity":{
+    "agentdojo_integration_sha256":"f536085f4d8b2ac5fd47a5fa867a7dec918f12e7e5390dbd51849e5ea2e7bd1a",
+    "authority_integration_sha256":"b9abedc2516a662da33bf5597a5c8d0e90db23b8b53b256e324bf29d86302268",
+    "scorer_abstraction_sha256":"c4620e8dde19fdcbdbbb487dff2293f004fc88f6d50e445cf88bde5431cde5a8"
+  },
+  "constraint_resolver":{
+    "implementation":"agentdojo_constraint_resolver_v0_1.validate_candidate",
+    "source_sha256":"COMPUTED_AND_RECORDED_BY_CI",
+    "supported_conditionally_admissible_tasks":[3,4,15],
+    "inputs_only":["user_task_id","frozen_candidate","trusted_structured_prestate"],
+    "scorer_or_gold_access":false,
+    "untrusted_filesystem_access":false,
+    "fail_closed":true
+  },
+  "still_unresolved":[
+    "signed authority fixture/public key/signer policy/revocation hashes",
+    "exact native AgentDojo scorer source hashes and aggregation invocation",
+    "exact model/provider/version/prompt/tool-format/sampling configuration",
+    "immutable executable clean-run workflow bound to final configuration"
+  ],
+  "execution_gate":"CLOSED",
+  "provider_spend_cap_usd":0,
+  "claim_boundary":{"rcc_runtime_frozen":true,"constraint_resolver_frozen":true,"native_substrate_source_identity_frozen":true,"authority_fixture_frozen":false,"native_scorer_invocation_frozen":false,"clean_ab_executed":false}
+}

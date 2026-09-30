@@ -1,0 +1,42 @@
+name: AgentDojo Zero-Cost Preflight v0.2
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_ZERO_COST_PREFLIGHT_v0.2.json"
+      - "agentdojo_constraint_resolver_v0_1.py"
+      - "tests/test_agentdojo_constraint_resolver_v0_1.py"
+      - "scripts/verify_agentdojo_zero_cost_preflight_v0_2.py"
+      - ".github/workflows/agentdojo-zero-cost-preflight-v0_2.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - run: python -m pip install pytest
+      - name: Test deterministic constraint resolver
+        run: PYTHONPATH=. python -m pytest -q tests/test_agentdojo_constraint_resolver_v0_1.py
+      - name: Verify frozen RCC and resolver profile
+        run: python scripts/verify_agentdojo_zero_cost_preflight_v0_2.py
+      - name: Assert gate closed
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open("agentdojo-zero-cost-preflight-v0_2-audit.json"))
+          assert r["execution_gate"]=="CLOSED"
+          assert r["provider_spend_cap_usd"]==0
+          assert len(r["still_unresolved"])==4
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agentdojo-zero-cost-preflight-v0_2
+          path: |
+            contracts/AGENTDOJO_ZERO_COST_PREFLIGHT_v0.2.json
+            agentdojo-zero-cost-preflight-v0_2-audit.json
+          retention-days: 90
