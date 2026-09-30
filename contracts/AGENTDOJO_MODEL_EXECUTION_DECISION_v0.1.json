@@ -1,0 +1,33 @@
+{
+  "schema_version":"veritas.rcc-revas.agentdojo-model-execution-decision.v0.1",
+  "status":"MODEL_EXECUTION_MODE_NOT_FROZEN_GATE_CLOSED",
+  "pins":{"benchmark_harness_base":"4d6d50c587e3924f481ad936dcdc493187b015b3","agentdojo_commit":"a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"},
+  "verified_agentdojo_local_surface":{
+    "source_path":"src/agentdojo/agent_pipeline/llms/local_llm.py",
+    "interface":"LocalLLM",
+    "transport":"OpenAI-compatible API client",
+    "documented_example_server":"vLLM",
+    "documented_example_port":8000,
+    "temperature_default":0.0,
+    "top_p_default":0.9,
+    "tool_call_format":"prompt-encoded <function=...>{json}</function>",
+    "seed_behavior":"random.randint(0,1000000) per request",
+    "exact_reproducible_seed_supported_without_code_change":false
+  },
+  "zero_cost_constraints":{"provider_spend_cap_usd":0,"paid_external_model_api":false},
+  "decision":{
+    "do_not_select_model_just_to_satisfy_zero_cost":true,
+    "local_execution_is_supported_by_pinned_agentdojo":true,
+    "local_execution_is_not_yet_frozen_for_clean_ab":true,
+    "reason":"Pinned LocalLLM introduces per-request random seed and requires a concrete locally available OpenAI-compatible model/server. Free availability and hardware fitness are execution-environment facts, not source-code facts."
+  },
+  "required_before_model_freeze":[
+    "concrete locally available model identifier and immutable revision/digest",
+    "execution server identity/version and model artifact provenance",
+    "deterministic seed strategy or explicitly versioned adapter removing per-request random seed",
+    "temperature/top_p/max generation/tool-format configuration",
+    "evidence that the selected local execution environment incurs USD 0 provider spend"
+  ],
+  "execution_gate":"CLOSED",
+  "clean_ab_executed":false
+}
