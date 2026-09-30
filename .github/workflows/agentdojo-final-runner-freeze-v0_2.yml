@@ -1,0 +1,77 @@
+name: AgentDojo Final Runner Freeze Audit v0.2
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/agentdojo-final-runner-freeze-v0_2.yml"
+      - "contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.2.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-audit-v0-2:
+    runs-on: ubuntu-24.04
+    env:
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify corrected runner exact-byte freeze
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin f89ba574035efbea07c0f5ca5e7451c41f2ea356
+          python - <<'PY'
+          import hashlib, json, subprocess
+          c=json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.2.json"))
+          assert c["merged_main_sha"] == "f89ba574035efbea07c0f5ca5e7451c41f2ea356"
+          for path, expected in c["frozen_files"].items():
+              raw=subprocess.check_output(["git","show",f'{c["merged_main_sha"]}:{path}'])
+              actual=hashlib.sha256(raw).hexdigest()
+              assert actual == expected, (path, actual, expected)
+              print(actual, path)
+          PY
+
+      - name: Verify repaired gate-transition semantics and closed authorization
+        run: |
+          set -euo pipefail
+          git show f89ba574035efbea07c0f5ca5e7451c41f2ea356:contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json > /tmp/impl.json
+          git show f89ba574035efbea07c0f5ca5e7451c41f2ea356:contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json > /tmp/enrollment.json
+          git show f89ba574035efbea07c0f5ca5e7451c41f2ea356:scripts/agentdojo_clean_ab_final_runner_v0_1.py > /tmp/runner.py
+          python - <<'PY'
+          import json, os
+          f=json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.2.json"))
+          i=json.load(open("/tmp/impl.json"))
+          e=json.load(open("/tmp/enrollment.json"))
+          src=open("/tmp/runner.py").read()
+
+          assert os.environ.get("OPENAI_API_KEY","") == ""
+          assert f["execution_gate"] == "CLOSED"
+          assert f["api_called"] is False
+          assert f["clean_ab_executed"] is False
+          assert f["result_bearing_execution_authorized"] is False
+
+          assert i["execution_gate"] == "CLOSED"
+          assert i["api_called_by_this_pr"] is False
+          assert i["clean_ab_executed"] is False
+
+          assert 'expected_execution_gate="OPEN"' in src
+          assert 'expected_execution_gate="CLOSED"' in src
+          assert "INVALID_EXPECTED_EXECUTION_GATE" in src
+          assert "EXECUTION_GATE_STATE_MISMATCH" in src
+
+          assert f["pins"]["agentdojo_commit"] == i["pins"]["agentdojo_commit"]
+          assert f["pins"]["rcc_revas_commit"] == i["pins"]["ben_canonical_commit"]
+          assert f["pins"]["veritas_commit"] == i["pins"]["veritas_commit"]
+          assert f["pins"]["model"] == i["pins"]["model"]
+          assert f["runtime"]["temperature"] == i["model_runtime"]["temperature"] == 0
+          assert f["runtime"]["openai_client_max_retries"] == i["model_runtime"]["openai_client_max_retries"] == 0
+          assert f["runtime"]["provider_spend_cap_usd"] == i["budget_guard"]["provider_spend_cap_usd"] == 5
+          assert e["enrollment"]["case_count"] == f["runtime"]["enrollment_case_count"] == 128
+          assert f["runtime"]["arm_A"] == i["arms"]["A"]
+          assert f["runtime"]["arm_B"] == i["arms"]["B"]
+          print("FINAL_RUNNER_FREEZE_V0_2_AUDIT_PASS")
+          PY
