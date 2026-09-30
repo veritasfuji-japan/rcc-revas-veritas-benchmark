@@ -1,0 +1,137 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-run-configuration-freeze.v0.1",
+  "status": "RUN_CONFIGURATION_PARTIALLY_FROZEN_EXECUTION_GATE_CLOSED",
+  "inherits": {
+    "mapping_freeze": "contracts/AGENTDOJO_CLEAN_AB_MAPPING_FREEZE_v0.1.json",
+    "preexecution_freeze": "contracts/agentdojo_clean_ab_preexecution_freeze_v1.json"
+  },
+  "source_pins": {
+    "benchmark_harness_commit": "76ffc3c0b43bd8c5a3c39e811e116c85d4ed3468",
+    "ben_canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "agentdojo_release": "v0.1.35",
+    "agentdojo_benchmark_version": "v1.2.2",
+    "agentdojo_suite": "banking"
+  },
+  "free_execution_profile": {
+    "provider_spend_cap_usd": 0,
+    "paid_external_model_api_allowed": false,
+    "network_model_call_allowed": false,
+    "purpose": "Freeze and verify every non-model experimental input without spending provider budget.",
+    "benchmark_execution_allowed": false
+  },
+  "enrollment_policy": {
+    "suite": "banking",
+    "user_task_ids": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+    "user_task_count": 16,
+    "injection_task_ids": "UNRESOLVED_EXACT_LIST",
+    "attack_pair_manifest": "UNRESOLVED_IMMUTABLE_MANIFEST",
+    "selective_case_removal_allowed": false,
+    "selective_rerun_allowed": false,
+    "denominator_reduction_allowed": false
+  },
+  "arm_invariants": {
+    "same_model_configuration": true,
+    "same_case_enrollment": true,
+    "same_attack_configuration": true,
+    "same_candidate_for_immediate_counterfactual": true,
+    "same_prestate_for_immediate_counterfactual": true,
+    "arm_a": "RCC_REVAS_ONLY",
+    "arm_b": "RCC_REVAS_PLUS_VERITAS"
+  },
+  "rcc_revas": {
+    "package_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "package_path": "external-eval/v0.3.9",
+    "runtime_configuration": "UNRESOLVED_EXACT_RUNTIME_CONFIG",
+    "same_configuration_both_arms": true
+  },
+  "authority_profile": {
+    "actor_identity": "agentdojo:banking:benchmark-user",
+    "required_authority": "agentdojo-banking-protected-mutation",
+    "human_approval_required": false,
+    "authority_artifact": "UNRESOLVED_SIGNED_FIXTURE",
+    "public_key": "UNRESOLVED",
+    "signer_policy": "UNRESOLVED",
+    "revocation_snapshot": "UNRESOLVED",
+    "candidate_or_rcc_adopt_may_create_authority": false
+  },
+  "constraint_profile": {
+    "conditionally_admissible_user_tasks": [3,4,15],
+    "resolver_implementation": "UNRESOLVED_PINNED_IMPLEMENTATION",
+    "allowed_inputs": [
+      "exact enrolled user request",
+      "trusted structured pre-state"
+    ],
+    "scorer_or_gold_allowed": false,
+    "untrusted_filesystem_content_may_grant_authority": false
+  },
+  "scoring_profile": {
+    "whole_task_scorer": "AgentDojo original pinned native scorer",
+    "source_hashes": "UNRESOLVED",
+    "aggregation_command": "UNRESOLVED",
+    "score_after_execution_barrier": true,
+    "runtime_governance_access_to_scorer_private_data": false
+  },
+  "model_profile": {
+    "provider": "UNRESOLVED_FINAL_EXECUTION_FREEZE",
+    "model": "UNRESOLVED_FINAL_EXECUTION_FREEZE",
+    "exact_version": "UNRESOLVED_FINAL_EXECUTION_FREEZE",
+    "system_prompt_hash": "UNRESOLVED_FINAL_EXECUTION_FREEZE",
+    "tool_format_hash": "UNRESOLVED_FINAL_EXECUTION_FREEZE",
+    "temperature": "UNRESOLVED_FINAL_EXECUTION_FREEZE",
+    "seed": "UNRESOLVED_FINAL_EXECUTION_FREEZE",
+    "retry_policy": "NO_AUTOMATIC_RETRY",
+    "maximum_provider_budget_usd": 0
+  },
+  "invalid_run_conditions": [
+    "any source pin mismatch",
+    "case or attack enrollment drift",
+    "Arm A and Arm B model configuration mismatch",
+    "same-candidate violation in immediate counterfactual evidence",
+    "same-prestate violation in immediate counterfactual evidence",
+    "scorer or gold leakage into runtime governance",
+    "selective rerun",
+    "denominator reduction",
+    "duplicate effect ownership",
+    "fabricated authority or approval",
+    "unsupported case silently dropped",
+    "automatic retry",
+    "provider spend above frozen cap"
+  ],
+  "evidence_profile": {
+    "immutable_clean_run_workflow": "UNRESOLVED",
+    "artifact_schema": "UNRESOLVED",
+    "required": [
+      "exact source pins",
+      "run configuration hash",
+      "immutable enrollment manifest hash",
+      "Arm A and Arm B raw records",
+      "native scorer outputs",
+      "governance receipts",
+      "same-candidate and same-prestate evidence",
+      "latency and operational overhead",
+      "provider cost and token usage when measurable",
+      "invalid-run checks"
+    ]
+  },
+  "final_execution_freeze_required": [
+    "exact immutable injection/attack enrollment manifest",
+    "exact RCC/REVAS runtime configuration",
+    "signed authority fixture/public key/signer policy/revocation hashes",
+    "pinned deterministic constraint resolver implementation",
+    "native AgentDojo scorer source hashes and aggregation command",
+    "exact model/provider/version/prompt/tool-format/sampling configuration",
+    "final metric thresholds and stopping criteria",
+    "immutable clean-run workflow and evidence artifact schema"
+  ],
+  "execution_gate": "CLOSED",
+  "claim_boundary": {
+    "run_configuration_complete": false,
+    "paid_model_execution_authorized": false,
+    "external_benchmark_executed": false,
+    "clean_ab_executed": false,
+    "held_out_validation": false,
+    "independent_third_party_validation": false
+  }
+}
