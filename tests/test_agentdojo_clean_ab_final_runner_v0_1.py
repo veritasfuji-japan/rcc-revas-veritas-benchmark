@@ -52,6 +52,18 @@ def test_invalid_expected_gate_is_rejected():
         )
 
 
+def test_pinned_direct_attack_requires_suite_and_pipeline():
+    from agentdojo.attacks.baseline_attacks import DirectAttack
+    from agentdojo.task_suite.load_suites import get_suite
+
+    suite = get_suite("v1.2.2", "banking")
+    pipeline = SimpleNamespace(name="gpt-4.1-mini-2025-04-14-agentdojo-frozen-v0.1")
+    attack = DirectAttack(suite, pipeline)
+
+    assert attack.task_suite is suite
+    assert attack.target_pipeline is pipeline
+
+
 def test_budgeted_client_is_single_attempt_and_accounts_usage():
     class Base:
         def __init__(self):
