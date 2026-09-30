@@ -1,0 +1,14 @@
+name: AgentDojo Clean A-B Final v0.1
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate-closed:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Refuse result-bearing execution until final freeze opens gate
+        run: |
+          echo "EXECUTION_GATE_CLOSED"
+          echo "This workflow is intentionally non-result-bearing in the freeze-candidate version."
+          exit 1

@@ -1,0 +1,30 @@
+name: AgentDojo Final Execution Freeze Candidate v0.1
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_EXECUTION_FREEZE_CANDIDATE_v0.1.json"
+      - "scripts/verify_agentdojo_final_execution_freeze_candidate_v0_1.py"
+      - ".github/workflows/agentdojo-final-execution-freeze-candidate-v0_1.yml"
+      - ".github/workflows/agentdojo-clean-ab-final-v0_1.yml"
+      - "docs/AGENTDOJO_FINAL_EXECUTION_FREEZE_CANDIDATE_v0.1.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  freeze-audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - run: python scripts/verify_agentdojo_final_execution_freeze_candidate_v0_1.py
+      - name: Assert result-bearing execution remains disabled
+        run: |
+          python - <<'PY'
+          import json
+          c=json.load(open("contracts/AGENTDOJO_FINAL_EXECUTION_FREEZE_CANDIDATE_v0.1.json"))
+          assert c["execution_gate"]=="CLOSED"
+          assert c["runner"]["result_bearing_execution_enabled"] is False
+          assert c["claim_boundary"]["clean_ab_executed"] is False
+          PY

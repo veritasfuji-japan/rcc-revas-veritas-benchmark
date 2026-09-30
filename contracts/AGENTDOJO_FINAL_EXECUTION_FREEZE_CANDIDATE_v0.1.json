@@ -1,0 +1,72 @@
+{
+  "schema_version":"veritas.rcc-revas.agentdojo-final-execution-freeze-candidate.v0.1",
+  "status":"FINAL_EXECUTION_FREEZE_CANDIDATE_GATE_CLOSED",
+  "pins":{
+    "benchmark_harness_base":"d99473686cbac92327ec1832c40e0d3af4852ad8",
+    "ben_canonical_commit":"1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit":"825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+    "agentdojo_commit":"a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "model":"gpt-4.1-mini-2025-04-14"
+  },
+  "model_configuration_contract":"contracts/AGENTDOJO_EXACT_MODEL_CONFIGURATION_v0.1.json",
+  "scoring":{
+    "owner":"AgentDojo native benchmark",
+    "timing":"after execution barrier only",
+    "runtime_governance_access_to_scorer_or_gold":false,
+    "aggregation":{
+      "per_case":["utility","security"],
+      "denominator":"all preregistered enrolled cases",
+      "selective_rerun":false,
+      "denominator_reduction":false
+    },
+    "exact_invocation_status":"FROZEN_BY_FINAL_RUNNER_INTERFACE_NOT_EXECUTED"
+  },
+  "runner":{
+    "workflow":".github/workflows/agentdojo-clean-ab-final-v0_1.yml",
+    "manual_dispatch_required":true,
+    "requires_secret":"OPENAI_API_KEY",
+    "automatic_retry":false,
+    "fallback_model":null,
+    "provider_spend_cap_usd":5.0,
+    "result_bearing_execution_enabled":false
+  },
+  "pre_run_hard_failures":[
+    "source pin mismatch",
+    "model snapshot mismatch",
+    "missing OPENAI_API_KEY",
+    "enrollment manifest mismatch",
+    "Arm A/B model configuration mismatch",
+    "scorer or gold exposed to runtime governance",
+    "automatic retry enabled",
+    "fallback model configured",
+    "provider budget cap not exactly USD 5"
+  ],
+  "evidence_required":[
+    "source pins",
+    "configuration hash",
+    "immutable enrollment manifest",
+    "raw Arm A records",
+    "raw Arm B records",
+    "native scorer outputs",
+    "VERITAS governance receipts",
+    "same-candidate and same-pre-state evidence",
+    "provider token/cost accounting",
+    "invalid-run checks",
+    "claim boundary"
+  ],
+  "execution_gate":"CLOSED",
+  "remaining_before_gate_open":[
+    "implement and independently audit the result-bearing runner body without changing frozen semantics",
+    "bind exact runner source hash and final scorer invocation hash",
+    "explicit human decision to open execution gate"
+  ],
+  "claim_boundary":{
+    "final_execution_freeze_complete":false,
+    "runner_interface_frozen":true,
+    "result_bearing_runner_enabled":false,
+    "clean_ab_executed":false,
+    "held_out_validation":false,
+    "independent_third_party_validation":false,
+    "production_readiness":false
+  }
+}
