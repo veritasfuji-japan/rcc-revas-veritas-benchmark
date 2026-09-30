@@ -1,0 +1,173 @@
+name: RCC REVAS External v0.3.9 Independent Reproduction
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rcc-revas-external-v0_3_9-independent-reproduction.yml"
+      - "docs/RCC_REVAS_EXTERNAL_V0_3_9_INDEPENDENT_REPRODUCTION.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce-canonical-package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      UPSTREAM_REPO: effacermonexistence/rcc-revas-veritas-benchmark
+      CANONICAL_COMMIT: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+      PACKAGE_PATH: external-eval/v0.3.9
+      REPRO_ROOT: reproduction
+    steps:
+      - name: Check out VERITAS-side reproduction harness
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check out Ben canonical external package
+        uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: upstream
+          persist-credentials: false
+
+      - name: Verify exact canonical commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream rev-parse HEAD)" = "$CANONICAL_COMMIT"
+          test -z "$(git -C upstream status --porcelain)"
+          test -f "upstream/$PACKAGE_PATH/docs/PARTNER_START_HERE.md"
+          test -f "upstream/$PACKAGE_PATH/contracts/VERITAS_MAPPING_v0.3.4.json"
+          test -f "upstream/$PACKAGE_PATH/SOURCE_MANIFEST.json"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - name: Verify canonical package source manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          root = Path("upstream/external-eval/v0.3.9")
+          manifest = json.loads((root / "SOURCE_MANIFEST.json").read_text())
+          assert manifest["schema_version"] == "rveval.release-source-manifest.v2"
+          assert manifest["version"] == "0.3.9"
+
+          checked = 0
+          for item in manifest["files"]:
+              p = root / item["path"]
+              assert p.is_file(), item["path"]
+              data = p.read_bytes()
+              assert len(data) == item["size_bytes"], item["path"]
+              assert hashlib.sha256(data).hexdigest() == item["sha256"], item["path"]
+              checked += 1
+
+          assert checked == len(manifest["files"])
+          print(f"verified_manifest_entries={checked}")
+          PY
+
+      - name: Reproduce PARTNER_START_HERE unmodified starter
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$REPRO_ROOT"
+          mkdir -p "$REPRO_ROOT"
+
+          python -m venv "$REPRO_ROOT/.venv"
+          source "$REPRO_ROOT/.venv/bin/activate"
+
+          python -m pip install --upgrade pip
+          python -m pip install "./upstream/$PACKAGE_PATH"
+
+          python -m rveval init-pilot \
+            --name takeshi-independent-reproduction \
+            --output-dir "$GITHUB_WORKSPACE/$REPRO_ROOT/partner-pilot"
+
+          cd "$GITHUB_WORKSPACE/$REPRO_ROOT/partner-pilot"
+
+          python -m rveval mapping-check --contract contracts/mapping.json
+          python -m rveval freeze --config config.json --output freeze.json
+
+          FREEZE_SHA256="$(python -m rveval hash freeze.json)"
+          python -m rveval run \
+            --config config.json \
+            --freeze freeze.json \
+            --ack-freeze-sha256 "$FREEZE_SHA256" \
+            --output-dir run-001
+
+          EVIDENCE_INDEX_SHA256="$(python -m rveval hash run-001/evidence_index.json)"
+          python -m rveval verify \
+            --run-dir run-001 \
+            --expected-index-sha256 "$EVIDENCE_INDEX_SHA256"
+
+          printf '%s\n' "$FREEZE_SHA256" > freeze.sha256
+          printf '%s\n' "$EVIDENCE_INDEX_SHA256" > evidence_index.sha256
+
+      - name: Create reproduction manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$REPRO_ROOT/.venv/bin/activate"
+          python - <<'PY'
+          import hashlib, json, platform, subprocess
+          from pathlib import Path
+
+          root = Path("upstream/external-eval/v0.3.9")
+          pilot = Path("reproduction/partner-pilot")
+
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          out = {
+              "schema_version": "veritas.rcc-revas.external-v0.3.9-independent-reproduction.v1",
+              "upstream_repository": "effacermonexistence/rcc-revas-veritas-benchmark",
+              "canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+              "package_path": "external-eval/v0.3.9",
+              "python_version": platform.python_version(),
+              "package_version": "0.3.9",
+              "starter_role": "UNMODIFIED_ENGINEERING_CONTROL",
+              "native_veritas_connected": False,
+              "external_evaluation_executed": False,
+              "independent_third_party_validation": False,
+              "source_manifest_file_sha256": sha(root / "SOURCE_MANIFEST.json"),
+              "partner_start_here_sha256": sha(root / "docs/PARTNER_START_HERE.md"),
+              "veritas_mapping_v0_3_4_sha256": sha(root / "contracts/VERITAS_MAPPING_v0.3.4.json"),
+              "freeze_sha256": (pilot / "freeze.sha256").read_text().strip(),
+              "evidence_index_sha256": (pilot / "evidence_index.sha256").read_text().strip(),
+              "freeze_file_sha256": sha(pilot / "freeze.json"),
+              "evidence_index_file_sha256": sha(pilot / "run-001/evidence_index.json"),
+              "claim_boundary": [
+                  "starter PASS proves delivery/reproduction path only",
+                  "does not prove native VERITAS integration",
+                  "does not prove model task performance",
+                  "does not prove external validation or production readiness"
+              ]
+          }
+          Path("reproduction/reproduction_manifest.json").write_text(
+              json.dumps(out, indent=2, sort_keys=True) + "\n"
+          )
+          print(json.dumps(out, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload independent reproduction evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcc-revas-external-v0_3_9-independent-reproduction
+          path: |
+            reproduction/reproduction_manifest.json
+            reproduction/partner-pilot/pilot-files.json
+            reproduction/partner-pilot/config.json
+            reproduction/partner-pilot/contracts/
+            reproduction/partner-pilot/freeze.json
+            reproduction/partner-pilot/freeze.sha256
+            reproduction/partner-pilot/evidence_index.sha256
+            reproduction/partner-pilot/run-001/
+          if-no-files-found: error
+          retention-days: 90
