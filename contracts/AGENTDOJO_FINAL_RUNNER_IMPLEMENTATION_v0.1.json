@@ -1,0 +1,67 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-final-runner-implementation.v0.1",
+  "status": "RESULT_BEARING_RUNNER_IMPLEMENTED_EXECUTION_GATE_CLOSED",
+  "pins": {
+    "benchmark_harness_base": "c19a483c5260257d421119f37e87b8a92d10bd50",
+    "ben_canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "runner": {
+    "source": "scripts/agentdojo_clean_ab_final_runner_v0_1.py",
+    "workflow": ".github/workflows/agentdojo-clean-ab-final-v0_1.yml",
+    "enrollment_contract": "contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json",
+    "scorer_contract": "contracts/AGENTDOJO_NATIVE_SCORER_FREEZE_v0.1.json",
+    "model_contract": "contracts/AGENTDOJO_EXACT_MODEL_CONFIGURATION_v0.1.json",
+    "result_bearing_body_implemented": true,
+    "manual_dispatch_required": true,
+    "automatic_retry": false,
+    "fallback_model": null
+  },
+  "model_runtime": {
+    "provider": "openai",
+    "exact_snapshot": "gpt-4.1-mini-2025-04-14",
+    "temperature": 0,
+    "max_completion_tokens": 1024,
+    "openai_client_max_retries": 0,
+    "request_timeout_seconds": 60
+  },
+  "budget_guard": {
+    "provider_spend_cap_usd": 5,
+    "pre_call_local_reservation": true,
+    "post_call_usage_accounting": true,
+    "provider_account_billing_cap_claimed": false,
+    "run_invalid_if_budget_guard_stops_execution": true
+  },
+  "arms": {
+    "A": "RCC_REVAS_ONLY",
+    "B": "SAME_RCC_REVAS_PLUS_VERITAS_BIND",
+    "protected_effect_owner_B": "VERITAS AgentDojoBankingBindAdapter",
+    "nonprotected_tools": "RCC reviewed native AgentDojo execution",
+    "scorer_timing": "after all enrolled arm executions"
+  },
+  "evidence": {
+    "execution_records": "execution_records.jsonl",
+    "native_scores": "native_scores.jsonl",
+    "summary": "summary.json",
+    "raw_governance_journal_embedded_per_record": true,
+    "secrets_written": false
+  },
+  "execution_gate": "CLOSED",
+  "api_called_by_this_pr": false,
+  "clean_ab_executed": false,
+  "remaining_before_gate_open": [
+    "independently audit this result-bearing runner implementation",
+    "bind exact runner/scorer/workflow SHA-256 values in a separate freeze commit",
+    "explicit human decision to open execution gate"
+  ],
+  "claim_boundary": {
+    "clean_integration_replication_only": true,
+    "held_out_validation": false,
+    "independent_third_party_validation": false,
+    "production_readiness": false,
+    "benchmark_authority_fixture_only": true,
+    "native_trustlog_append_claimed": false
+  }
+}

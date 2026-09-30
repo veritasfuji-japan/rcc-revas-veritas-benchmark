@@ -1,0 +1,82 @@
+name: AgentDojo Final Runner Implementation Audit v0.1
+
+on:
+  pull_request:
+    paths:
+      - "scripts/agentdojo_clean_ab_final_runner_v0_1.py"
+      - "tests/test_agentdojo_clean_ab_final_runner_v0_1.py"
+      - "contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"
+      - ".github/workflows/agentdojo-clean-ab-final-v0_1.yml"
+      - ".github/workflows/agentdojo-final-runner-implementation-audit-v0_1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: _pins/rcc
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 825e5c5c539c98e12b0c9702f3cb4a12d67539d3
+          path: _pins/veritas
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - run: python -m pip install -U pip
+      - run: python -m pip install -e _pins/agentdojo pytest cryptography==50.0.1
+      - run: python -m pip install -e '_pins/rcc/external-eval/v0.3.9[crypto]'
+      - run: python -m pip install -e _pins/veritas --no-deps
+
+      - name: Verify exact source pins
+        run: |
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/rcc rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "825e5c5c539c98e12b0c9702f3cb4a12d67539d3"
+
+      - name: Pure tests
+        env:
+          OPENAI_API_KEY: ""
+        run: PYTHONPATH=.:_pins/veritas pytest -q tests/test_agentdojo_clean_ab_final_runner_v0_1.py
+
+      - name: Offline implementation audit
+        env:
+          OPENAI_API_KEY: ""
+        run: |
+          PYTHONPATH=.:_pins/veritas python scripts/agentdojo_clean_ab_final_runner_v0_1.py \
+            --audit-only \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas
+
+      - name: Assert no result-bearing execution occurred
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open("agentdojo-final-runner-implementation-audit.json"))
+          assert r["execution_gate"]=="CLOSED"
+          assert r["api_called"] is False
+          assert r["clean_ab_executed"] is False
+          PY
