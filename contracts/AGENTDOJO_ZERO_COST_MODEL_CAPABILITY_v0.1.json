@@ -1,0 +1,56 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-zero-cost-model-capability.v0.1",
+  "status": "CAPABILITY_GATE_DEFINED_EXECUTION_GATE_CLOSED",
+  "pins": {
+    "benchmark_harness_base": "4d6d50c587e3924f481ad936dcdc493187b015b3",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+  },
+  "purpose": "Qualify an exact zero-cost local model configuration before any result-bearing AgentDojo clean A/B.",
+  "provider": {
+    "kind": "local",
+    "transport": "OpenAI-compatible localhost",
+    "endpoint_env": "LOCAL_LLM_PORT",
+    "external_paid_model_api": false,
+    "provider_spend_cap_usd": 0
+  },
+  "required_capabilities": [
+    "GET /v1/models returns exactly identified model id",
+    "single structured tool call survives AgentDojo local parsing",
+    "multiple tool calls are not silently dropped",
+    "tool arguments round-trip exactly",
+    "tool-call parse failure is explicit",
+    "context limit is explicitly recorded",
+    "temperature and sampling configuration are explicitly recorded",
+    "prompt/tool delimiter is explicitly recorded"
+  ],
+  "known_risk": {
+    "description": "Local-model tool-call handling can differ from native provider paths; capability must be demonstrated rather than assumed.",
+    "fail_closed_on_silent_tool_call_loss": true
+  },
+  "prohibited": [
+    "AgentDojo result-bearing benchmark execution",
+    "clean A/B execution",
+    "paid external model API calls",
+    "automatic fallback to a different model",
+    "post-result model selection"
+  ],
+  "candidate_configuration": {
+    "model_id": null,
+    "model_artifact_sha256": null,
+    "runtime_name": null,
+    "runtime_version": null,
+    "context_length": null,
+    "temperature": null,
+    "sampling": null,
+    "tool_delimiter": null
+  },
+  "qualification_status": "NOT_RUN",
+  "execution_gate": "CLOSED",
+  "claim_boundary": {
+    "model_configuration_frozen": false,
+    "model_capability_qualified": false,
+    "clean_ab_executed": false,
+    "independent_external_validation": false,
+    "production_readiness": false
+  }
+}

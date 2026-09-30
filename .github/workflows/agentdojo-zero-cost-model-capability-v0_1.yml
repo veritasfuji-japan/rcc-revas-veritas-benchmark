@@ -1,0 +1,29 @@
+name: AgentDojo Zero-Cost Model Capability Gate v0.1
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_ZERO_COST_MODEL_CAPABILITY_v0.1.json"
+      - "scripts/verify_agentdojo_zero_cost_model_capability_v0_1.py"
+      - "scripts/probe_local_model_endpoint_v0_1.py"
+      - ".github/workflows/agentdojo-zero-cost-model-capability-v0_1.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  definition-gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - run: python scripts/verify_agentdojo_zero_cost_model_capability_v0_1.py
+      - name: Assert no model server is required and no benchmark is run
+        run: |
+          python - <<'PY'
+          import json
+          c=json.load(open("contracts/AGENTDOJO_ZERO_COST_MODEL_CAPABILITY_v0.1.json"))
+          assert c["qualification_status"]=="NOT_RUN"
+          assert c["execution_gate"]=="CLOSED"
+          assert c["provider"]["provider_spend_cap_usd"]==0
+          PY
