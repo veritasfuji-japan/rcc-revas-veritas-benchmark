@@ -1,0 +1,55 @@
+name: AgentDojo Zero-Cost Preflight Closure v0.1
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_ZERO_COST_PREFLIGHT_v0.1.json"
+      - "scripts/verify_agentdojo_zero_cost_preflight_v0_1.py"
+      - ".github/workflows/agentdojo-zero-cost-preflight-v0_1.yml"
+      - "docs/AGENTDOJO_ZERO_COST_PREFLIGHT_v0.1.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      AGENTDOJO_REPO: agentdojo_checkout
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: agentdojo_checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - name: Verify exact AgentDojo pin
+        run: |
+          test "$(git -C "$AGENTDOJO_REPO" rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test -z "$(git -C "$AGENTDOJO_REPO" status --porcelain)"
+      - name: Verify zero-cost preflight closure
+        run: python scripts/verify_agentdojo_zero_cost_preflight_v0_1.py
+      - name: Assert execution gate remains closed
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open("agentdojo-zero-cost-preflight-audit.json"))
+          assert r["status"]=="PASS_PARTIAL_ZERO_COST_PREFLIGHT_GATE_CLOSED"
+          assert r["execution_gate"]=="CLOSED"
+          assert r["provider_spend_cap_usd"]==0
+          assert r["attack_ids"]==[0,1,2,3,4,5,6,8]
+          assert len(r["remaining"])==6
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agentdojo-zero-cost-preflight-v0_1
+          path: |
+            contracts/AGENTDOJO_ZERO_COST_PREFLIGHT_v0.1.json
+            agentdojo-zero-cost-preflight-audit.json
+          if-no-files-found: error
+          retention-days: 90
