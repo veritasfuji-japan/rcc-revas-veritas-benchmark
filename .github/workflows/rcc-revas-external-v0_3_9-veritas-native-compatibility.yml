@@ -1,0 +1,210 @@
+name: RCC REVAS External v0.3.9 VERITAS Native Compatibility Gate
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rcc-revas-external-v0_3_9-veritas-native-compatibility.yml"
+      - "docs/RCC_REVAS_EXTERNAL_V0_3_9_VERITAS_NATIVE_COMPATIBILITY_GATE.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-compatibility:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      UPSTREAM_REPO: upstream
+      PACKAGE_PATH: external-eval/v0.3.9
+      BEN_CANONICAL_COMMIT: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+      BEN_PINNED_VERITAS_COMMIT: b39961b003179aea70e320a57cb000f56a81951e
+      VERITAS_REPO: veritas_os_checkout
+      VERITAS_COMMIT: 825e5c5c539c98e12b0c9702f3cb4a12d67539d3
+    steps:
+      - name: Check out VERITAS-side gate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check out Ben canonical package
+        uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: upstream
+          persist-credentials: false
+
+      - name: Check out exact current VERITAS native pin
+        uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 825e5c5c539c98e12b0c9702f3cb4a12d67539d3
+          path: veritas_os_checkout
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - name: Verify exact pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C "$UPSTREAM_REPO" rev-parse HEAD)" = "$BEN_CANONICAL_COMMIT"
+          test "$(git -C "$VERITAS_REPO" rev-parse HEAD)" = "$VERITAS_COMMIT"
+          test -z "$(git -C "$UPSTREAM_REPO" status --porcelain)"
+          test -z "$(git -C "$VERITAS_REPO" status --porcelain)"
+
+      - name: Record canonical source-pin drift without rewriting upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+
+          root = Path(os.environ["UPSTREAM_REPO"]) / os.environ["PACKAGE_PATH"]
+          current = Path(os.environ["VERITAS_REPO"])
+          sources = json.loads((root / "SOURCES_NATIVE.json").read_text())
+
+          historical = sources["repositories"]["veritas"]["commit"]
+          assert historical == os.environ["BEN_PINNED_VERITAS_COMMIT"]
+          assert historical != os.environ["VERITAS_COMMIT"]
+
+          critical = {
+              item["path"]: item["sha256"]
+              for item in sources["critical_files"]["veritas"]
+          }
+          core_path = "veritas_os/policy/bind_core/core.py"
+          actual_core = hashlib.sha256((current / core_path).read_bytes()).hexdigest()
+          assert actual_core != critical[core_path]
+
+          report = {
+              "schema_version": "veritas.rcc-revas.external-source-pin-drift.v1",
+              "ben_canonical_commit": os.environ["BEN_CANONICAL_COMMIT"],
+              "ben_pinned_veritas_commit": historical,
+              "current_veritas_commit": os.environ["VERITAS_COMMIT"],
+              "source_pin_drift_present": True,
+              "example_path": core_path,
+              "ben_expected_sha256": critical[core_path],
+              "current_sha256": actual_core,
+              "interpretation": (
+                  "Ben's fresh full native sandbox intentionally refuses a different "
+                  "VERITAS source pin before semantic compatibility is exercised."
+              ),
+              "upstream_source_pins_modified": False,
+          }
+          Path("source-pin-drift.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n"
+          )
+          print(json.dumps(report, indent=2, sort_keys=True))
+          PY
+          test -z "$(git -C "$UPSTREAM_REPO" status --porcelain)"
+
+      - name: Install exact packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install "./$VERITAS_REPO"
+          python -m pip install "./$UPSTREAM_REPO/$PACKAGE_PATH[crypto]"
+          python -m pip install pytest
+
+      - name: Run current-pin decision-intent wrapper compatibility tests
+        working-directory: upstream/external-eval/v0.3.9
+        run: |
+          python -m pytest -q integration_tests/test_decide_pipeline.py             -k "not test_fresh_native_http_policy_cda_bind_trustlog"
+
+      - name: Run authority and native Bind compatibility tests
+        working-directory: upstream/external-eval/v0.3.9
+        run: |
+          python -m pytest -q integration_tests/test_native_boundaries.py             -k "real_native_bind_outcomes or native_failure_is_not_successful_refusal or persistent_reservation_survives_new_executor or real_crypto_authority_resolver_into_native_bind or native_bind_detects_mutating_authority_callback"
+
+      - name: Emit compatibility manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, inspect, json, os
+          from pathlib import Path
+
+          from veritas_os.governance.canonical_decision_artifact import verify_canonical_decision_artifact
+          from veritas_os.policy.canonical_verified_decision_promotion import build_canonical_verified_decision_promotion_packet
+          from veritas_os.governance.authority_evidence import verify_authority_evidence_artifact_to_proof
+          from veritas_os.policy.bind_core import execute_bind_adjudication
+
+          def sha_file(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          drift = json.loads(Path("source-pin-drift.json").read_text())
+          report = {
+              "schema_version": "veritas.rcc-revas.external-native-compatibility.v2",
+              "status": "PASS_CURRENT_WRAPPER_COMPATIBILITY_SOURCE_PIN_DRIFT_RECORDED",
+              "ben_canonical_commit": os.environ["BEN_CANONICAL_COMMIT"],
+              "ben_pinned_veritas_commit": os.environ["BEN_PINNED_VERITAS_COMMIT"],
+              "veritas_native_commit": os.environ["VERITAS_COMMIT"],
+              "verified_surfaces": [
+                  "NativeDecisionIntentFactory",
+                  "NativeAuthorityResolver",
+                  "NativeBindExecutor"
+              ],
+              "source_pin_drift": drift,
+              "native_source_hashes": {
+                  "canonical_decision_artifact": sha_file(inspect.getsourcefile(verify_canonical_decision_artifact)),
+                  "canonical_verified_decision_promotion": sha_file(inspect.getsourcefile(build_canonical_verified_decision_promotion_packet)),
+                  "authority_evidence": sha_file(inspect.getsourcefile(verify_authority_evidence_artifact_to_proof)),
+                  "bind_core": sha_file(inspect.getsourcefile(execute_bind_adjudication))
+              },
+              "claim_boundary": {
+                  "compatibility_only": True,
+                  "upstream_full_source_pinned_sandbox_run_against_current_pin": False,
+                  "reason_full_sandbox_not_run": (
+                      "canonical v0.3.9 SOURCES_NATIVE pins VERITAS b39961b0; "
+                      "current pin is intentionally different and must not be silently substituted"
+                  ),
+                  "benchmark_specific_adapter_frozen": False,
+                  "native_veritas_connected_to_external_benchmark": False,
+                  "external_benchmark_executed": False,
+                  "clean_ab_executed": False,
+                  "independent_third_party_validation": False,
+                  "production_readiness": False
+              },
+              "next_gate": (
+                  "freeze benchmark-specific candidate/request/authority/approval/bind mapping "
+                  "against the current VERITAS pin before any external benchmark execution"
+              )
+          }
+          Path("veritas-native-compatibility.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n"
+          )
+          print(json.dumps(report, indent=2, sort_keys=True))
+          PY
+
+      - name: Assert bounded compatibility claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          r = json.load(open("veritas-native-compatibility.json"))
+          assert r["status"] == "PASS_CURRENT_WRAPPER_COMPATIBILITY_SOURCE_PIN_DRIFT_RECORDED"
+          assert r["source_pin_drift"]["source_pin_drift_present"] is True
+          c = r["claim_boundary"]
+          assert c["upstream_full_source_pinned_sandbox_run_against_current_pin"] is False
+          assert c["benchmark_specific_adapter_frozen"] is False
+          assert c["external_benchmark_executed"] is False
+          assert c["clean_ab_executed"] is False
+          assert c["independent_third_party_validation"] is False
+          assert c["production_readiness"] is False
+          PY
+
+      - name: Upload compatibility evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcc-revas-external-v0_3_9-veritas-native-compatibility
+          path: |
+            source-pin-drift.json
+            veritas-native-compatibility.json
+          if-no-files-found: error
+          retention-days: 90
