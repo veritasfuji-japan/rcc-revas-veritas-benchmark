@@ -1,0 +1,42 @@
+name: AgentDojo Injection Enrollment Freeze v0.1
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json"
+      - "scripts/verify_agentdojo_injection_enrollment_freeze_v0_1.py"
+      - ".github/workflows/agentdojo-injection-enrollment-freeze-v0_1.yml"
+permissions:
+  contents: read
+jobs:
+  freeze:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - run: python scripts/verify_agentdojo_injection_enrollment_freeze_v0_1.py
+      - run: python -m pip install -e _pins/agentdojo
+      - name: Verify pinned profile identity
+        env:
+          PYTHONPATH: "_pins/agentdojo"
+        run: |
+          python - <<'PY'
+          from agentdojo.attacks.baseline_attacks import DirectAttack
+          import inspect
+          assert DirectAttack.name == "direct"
+          assert DirectAttack.__module__ == "agentdojo.attacks.baseline_attacks"
+          source=inspect.getsource(DirectAttack)
+          assert '"TODO: {goal}"' in source
+          print("PINNED_DIRECT_PROFILE_IDENTITY:PASS")
+          PY
+      - name: Verify exact AgentDojo pin
+        run: test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
