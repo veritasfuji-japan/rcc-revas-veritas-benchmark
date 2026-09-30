@@ -13,12 +13,42 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_contract_and_enrollment_remain_closed_and_exact():
     c = runner.contracts()
-    cases = runner.assert_frozen_configuration(c)
+    cases = runner.assert_frozen_configuration(
+        c,
+        expected_execution_gate="CLOSED",
+    )
     assert len(cases) == 128
     assert c["implementation"]["execution_gate"] == "CLOSED"
     assert c["implementation"]["clean_ab_executed"] is False
     assert runner.OPENAI_MAX_RETRIES == 0
     assert runner.MAX_COMPLETION_TOKENS == 1024
+
+
+def test_gate_transition_validation_accepts_exact_open_state_only():
+    c = runner.contracts()
+    c["implementation"] = dict(c["implementation"])
+    c["implementation"]["execution_gate"] = "OPEN"
+
+    cases = runner.assert_frozen_configuration(
+        c,
+        expected_execution_gate="OPEN",
+    )
+    assert len(cases) == 128
+
+    with pytest.raises(runner.RunnerError, match="EXECUTION_GATE_STATE_MISMATCH"):
+        runner.assert_frozen_configuration(
+            c,
+            expected_execution_gate="CLOSED",
+        )
+
+
+def test_invalid_expected_gate_is_rejected():
+    c = runner.contracts()
+    with pytest.raises(runner.RunnerError, match="INVALID_EXPECTED_EXECUTION_GATE"):
+        runner.assert_frozen_configuration(
+            c,
+            expected_execution_gate="ANY",
+        )
 
 
 def test_budgeted_client_is_single_attempt_and_accounts_usage():
