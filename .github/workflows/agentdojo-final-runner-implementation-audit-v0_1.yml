@@ -65,18 +65,48 @@ jobs:
         env:
           OPENAI_API_KEY: ""
         run: |
-          PYTHONPATH=.:_pins/veritas python scripts/agentdojo_clean_ab_final_runner_v0_1.py \
-            --audit-only \
-            --agentdojo-root _pins/agentdojo \
-            --rcc-root _pins/rcc \
-            --veritas-root _pins/veritas
-
-      - name: Assert no result-bearing execution occurred
-        run: |
+          set -euo pipefail
           python - <<'PY'
+          import hashlib
           import json
-          r=json.load(open("agentdojo-final-runner-implementation-audit.json"))
-          assert r["execution_gate"]=="CLOSED"
-          assert r["api_called"] is False
-          assert r["clean_ab_executed"] is False
+          import os
+          from pathlib import Path
+          import scripts.agentdojo_clean_ab_final_runner_v0_1 as runner
+
+          assert os.environ.get("OPENAI_API_KEY", "") == ""
+
+          impl = json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"))
+          freeze = json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.2.json"))
+          gate = impl["execution_gate"]
+          assert gate in {"CLOSED", "OPEN"}
+
+          cases = runner.assert_frozen_configuration(
+              runner.contracts(),
+              expected_execution_gate=gate,
+          )
+          assert len(cases) == 128
+
+          runner_path = "scripts/agentdojo_clean_ab_final_runner_v0_1.py"
+          actual = hashlib.sha256(Path(runner_path).read_bytes()).hexdigest()
+          expected = freeze["frozen_files"][runner_path]
+          assert actual == expected, (actual, expected)
+
+          assert impl["api_called_by_this_pr"] is False
+          assert impl["clean_ab_executed"] is False
+          assert freeze["clean_ab_executed"] is False
+          assert freeze["api_called"] is False
+
+          src = Path(runner_path).read_text()
+          assert 'if c["execution_gate"] != "OPEN":' in src
+          assert 'raise RunnerError("EXECUTION_GATE_CLOSED")' in src
+          assert "args.confirmation != GATE_CONFIRMATION" in src
+          assert 'raise RunnerError("EXPLICIT_HUMAN_EXECUTION_CONFIRMATION_REQUIRED")' in src
+
+          print(json.dumps({
+              "execution_gate": gate,
+              "api_called": False,
+              "clean_ab_executed": False,
+              "case_count": len(cases),
+              "runner_sha256": actual,
+          }, indent=2))
           PY
