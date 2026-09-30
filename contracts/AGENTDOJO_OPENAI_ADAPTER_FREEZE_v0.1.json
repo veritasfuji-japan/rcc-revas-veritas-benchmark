@@ -1,0 +1,22 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-openai-adapter-freeze.v0.1",
+  "status": "MODEL_ADAPTER_FROZEN_EXECUTION_GATE_CLOSED",
+  "benchmark_harness_base": "e19fbea90b260421e56c5e0dc0bb12a46eaad9d6",
+  "upstream_agentdojo_pin": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "upstream_observation": {
+    "path": "src/agentdojo/agent_pipeline/llms/openai_llm.py",
+    "chat_completion_request_retry_attempts": 3,
+    "temperature_expression": "temperature or NOT_GIVEN",
+    "impact": "incompatible with frozen no-automatic-retry and explicit-temperature-0 requirements"
+  },
+  "frozen_adapter": {
+    "path": "scripts/agentdojo_openai_frozen_adapter_v0_1.py",
+    "model_id": "gpt-4.1-mini-2025-04-14",
+    "temperature": 0,
+    "max_attempts": 1,
+    "fallback_model": null
+  },
+  "execution_gate": "CLOSED",
+  "api_called_by_this_freeze": false,
+  "clean_ab_executed": false
+}
