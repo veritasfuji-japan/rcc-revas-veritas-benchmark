@@ -746,10 +746,10 @@ def execute_all(
     from agentdojo.task_suite.load_suites import get_suite
 
     suite = get_suite("v1.2.2", "banking")
-    attack = DirectAttack()
     rcc_gate = load_rcc_gate(rcc_root)
     ledger = BudgetLedger()
     pipeline = build_pipeline(build_openai_client(ledger))
+    attack = DirectAttack(suite, pipeline)
     records: list[dict[str, Any]] = []
 
     for case_id in cases:
