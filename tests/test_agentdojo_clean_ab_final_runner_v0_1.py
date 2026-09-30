@@ -11,14 +11,15 @@ import scripts.agentdojo_clean_ab_final_runner_v0_1 as runner
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_contract_and_enrollment_remain_closed_and_exact():
+def test_contract_and_enrollment_remain_exact_for_current_gate():
     c = runner.contracts()
+    gate = c["implementation"]["execution_gate"]
+    assert gate in {"CLOSED", "OPEN"}
     cases = runner.assert_frozen_configuration(
         c,
-        expected_execution_gate="CLOSED",
+        expected_execution_gate=gate,
     )
     assert len(cases) == 128
-    assert c["implementation"]["execution_gate"] == "CLOSED"
     assert c["implementation"]["clean_ab_executed"] is False
     assert runner.OPENAI_MAX_RETRIES == 0
     assert runner.MAX_COMPLETION_TOKENS == 1024
@@ -104,13 +105,16 @@ def test_budgeted_client_does_not_retry_provider_failure():
     assert base.calls == 1
 
 
-def test_result_execution_refuses_while_gate_closed():
+def test_result_execution_requires_open_gate_and_explicit_confirmation():
     c = json.loads(
         (ROOT / "contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json").read_text()
     )
-    assert c["execution_gate"] == "CLOSED"
+    assert c["execution_gate"] in {"CLOSED", "OPEN"}
     source = (ROOT / "scripts/agentdojo_clean_ab_final_runner_v0_1.py").read_text()
+    assert 'if c["execution_gate"] != "OPEN":' in source
     assert 'raise RunnerError("EXECUTION_GATE_CLOSED")' in source
+    assert "args.confirmation != GATE_CONFIRMATION" in source
+    assert 'raise RunnerError("EXPLICIT_HUMAN_EXECUTION_CONFIRMATION_REQUIRED")' in source
     assert "max_retries=OPENAI_MAX_RETRIES" in source
 
 
