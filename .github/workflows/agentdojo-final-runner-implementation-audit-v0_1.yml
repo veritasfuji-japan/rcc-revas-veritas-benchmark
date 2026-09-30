@@ -76,7 +76,7 @@ jobs:
           assert os.environ.get("OPENAI_API_KEY", "") == ""
 
           impl = json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"))
-          freeze = json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.2.json"))
+          freeze = json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.3.json"))
           gate = impl["execution_gate"]
           assert gate in {"CLOSED", "OPEN"}
 
@@ -91,18 +91,25 @@ jobs:
           actual = hashlib.sha256(Path(runner_path).read_bytes()).hexdigest()
           expected = freeze["frozen_files"][runner_path]
 
+          assert actual == expected, (actual, expected)
+
           remediation = impl.get("remediation_pending")
-          if remediation is None:
-              assert actual == expected, (actual, expected)
-          else:
+          resolved = impl.get("remediation_resolved")
+          if remediation is not None:
               assert impl["execution_gate"] == "CLOSED"
               assert impl["status"] == "RESULT_BEARING_RUNNER_REMEDIATION_PENDING_EXECUTION_GATE_CLOSED"
               assert remediation["failed_workflow_run"] == 36691824480
               assert remediation["failure_stage"] == "PRE_PROVIDER_DIRECT_ATTACK_CONSTRUCTION"
               assert remediation["api_call_reached"] is False
               assert remediation["provider_cost_incurred"] is False
-              assert remediation["refreeze_required"] is True
-              assert actual != expected
+          if gate == "OPEN":
+              assert remediation is None
+              assert resolved is not None
+              assert resolved["failed_workflow_run"] == 36691824480
+              assert resolved["freeze_contract"] == "contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.3.json"
+              auth = impl["gate_open_authorization"]
+              assert auth["freeze_contract"] == "contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.3.json"
+              assert auth["workflow_confirmation_required"] == "RUN_FROZEN_AGENTDOJO_CLEAN_AB_V0_1"
 
           assert impl["api_called_by_this_pr"] is False
           assert impl["clean_ab_executed"] is False
@@ -115,9 +122,9 @@ jobs:
           assert 'raise RunnerError("EXECUTION_GATE_CLOSED")' in src
           assert "args.confirmation != GATE_CONFIRMATION" in src
           assert 'raise RunnerError("EXPLICIT_HUMAN_EXECUTION_CONFIRMATION_REQUIRED")' in src
-          if remediation is not None:
-              assert "DirectAttack(suite, pipeline)" in src
-              assert "OPENAI_API_KEY_MISSING" in workflow
+          assert "DirectAttack(suite, pipeline)" in src
+          assert "OPENAI_API_KEY_MISSING" in workflow
+          assert "secrets.OPENAI_API_KEY" in workflow
 
           print(json.dumps({
               "execution_gate": gate,
