@@ -127,13 +127,24 @@ def contracts() -> dict[str, Any]:
     }
 
 
-def assert_frozen_configuration(c: dict[str, Any]) -> list[str]:
+def assert_frozen_configuration(
+    c: dict[str, Any],
+    *,
+    expected_execution_gate: str,
+) -> list[str]:
     impl = c["implementation"]
     model = c["model"]
     enrollment = c["enrollment"]
     scorer = c["scorer"]
-    if impl["execution_gate"] != "CLOSED":
-        raise RunnerError("IMPLEMENTATION_PR_MUST_KEEP_GATE_CLOSED")
+    if expected_execution_gate not in {"CLOSED", "OPEN"}:
+        raise RunnerError("INVALID_EXPECTED_EXECUTION_GATE")
+    if impl["execution_gate"] != expected_execution_gate:
+        raise RunnerError(
+            "EXECUTION_GATE_STATE_MISMATCH:"
+            + str(impl["execution_gate"])
+            + "!="
+            + expected_execution_gate
+        )
     if model["model"]["model_id"] != MODEL_ID or model["sampling"]["temperature"] != 0.0:
         raise RunnerError("MODEL_CONFIGURATION_DRIFT")
     if model["sampling"]["automatic_retry"] is not False or model["sampling"]["fallback_model"] is not None:
@@ -725,7 +736,10 @@ def execute_all(
     require_git_pin(agentdojo_root, AGENTDOJO_COMMIT, "AGENTDOJO")
     require_git_pin(rcc_root, RCC_COMMIT, "RCC")
     require_git_pin(veritas_root, VERITAS_COMMIT, "VERITAS")
-    cases = assert_frozen_configuration(contracts())
+    cases = assert_frozen_configuration(
+        contracts(),
+        expected_execution_gate="OPEN",
+    )
     authority_ok = verify_authority_fixture()
 
     from agentdojo.attacks.baseline_attacks import DirectAttack
@@ -816,7 +830,10 @@ def audit_only(
     require_git_pin(agentdojo_root, AGENTDOJO_COMMIT, "AGENTDOJO")
     require_git_pin(rcc_root, RCC_COMMIT, "RCC")
     require_git_pin(veritas_root, VERITAS_COMMIT, "VERITAS")
-    cases = assert_frozen_configuration(contracts())
+    cases = assert_frozen_configuration(
+        contracts(),
+        expected_execution_gate="CLOSED",
+    )
     verify_authority_fixture()
     report = {
         "status": "PASS_FINAL_RUNNER_IMPLEMENTED_GATE_CLOSED",
