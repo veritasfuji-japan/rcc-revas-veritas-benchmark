@@ -1,0 +1,46 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-final-runner-freeze.v0.2",
+  "status": "FINAL_RUNNER_FROZEN_EXECUTION_GATE_CLOSED",
+  "merged_main_sha": "f89ba574035efbea07c0f5ca5e7451c41f2ea356",
+  "remediation_provenance": {
+    "reason": "gate-transition validation contradiction repaired before execution",
+    "repair_pr": 39,
+    "prior_freeze": "contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.1.json",
+    "prior_freeze_remains_historical": true
+  },
+  "frozen_files": {
+    "scripts/agentdojo_clean_ab_final_runner_v0_1.py": "4227074628d9b87fd162b639b24a4b83287c01acd81603de8d54023752464576",
+    ".github/workflows/agentdojo-clean-ab-final-v0_1.yml": "bc993b55a6f23e42a21def66ac034ae327aef2aeb499cfb86d9bf22ca6bff705",
+    "scripts/agentdojo_native_scorer_invocation_v0_1.py": "af7ebe24a2ae45a3dfe747e76a8b84b111d716607f85b4df1eaa2c5621193104",
+    "contracts/AGENTDOJO_NATIVE_SCORER_FREEZE_v0.1.json": "d15b14e575f0a8baae322e2aa77c5aaf417f81ba324b1a2218dc11fcac85551b",
+    "tests/test_agentdojo_clean_ab_final_runner_v0_1.py": "b96e17c93afd651014710cb36d37e414132c17f30be9c117ed69d6976a380c68"
+  },
+  "pins": {
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "runtime": {
+    "temperature": 0,
+    "openai_client_max_retries": 0,
+    "provider_spend_cap_usd": 5,
+    "enrollment_case_count": 128,
+    "arm_A": "RCC_REVAS_ONLY",
+    "arm_B": "SAME_RCC_REVAS_PLUS_VERITAS_BIND",
+    "scorer_timing": "POST_EXECUTION_ONLY",
+    "audit_only_expected_gate": "CLOSED",
+    "execute_expected_gate": "OPEN"
+  },
+  "execution_gate": "CLOSED",
+  "api_called": false,
+  "clean_ab_executed": false,
+  "result_bearing_execution_authorized": false,
+  "claim_boundary": {
+    "final_result_bearing_runner_frozen": true,
+    "gate_transition_repair_frozen": true,
+    "held_out_validation": false,
+    "independent_third_party_validation": false,
+    "production_readiness": false
+  }
+}
