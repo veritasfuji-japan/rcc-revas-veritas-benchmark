@@ -1,0 +1,61 @@
+name: AgentDojo Final Runner Integration Closure v0.1
+on:
+  pull_request:
+    paths:
+      - "scripts/agentdojo_final_runner_integration_v0_1.py"
+      - "tests/test_agentdojo_final_runner_integration_v0_1.py"
+      - "contracts/AGENTDOJO_FINAL_RUNNER_INTEGRATION_CLOSURE_v0.1.json"
+      - ".github/workflows/agentdojo-final-runner-integration-closure-v0_1.yml"
+permissions:
+  contents: read
+jobs:
+  offline-integration-closure:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: _pins/rcc
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 825e5c5c539c98e12b0c9702f3cb4a12d67539d3
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - run: python -m pip install -U pip
+      - run: python -m pip install -e _pins/agentdojo pytest
+      - run: python -m pip install -e _pins/rcc/external-eval/v0.3.9
+      - run: python -m pip install -e _pins/veritas --no-deps
+      - name: Verify exact checkout pins
+        run: |
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/rcc rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "825e5c5c539c98e12b0c9702f3cb4a12d67539d3"
+      - name: Offline integration closure
+        env:
+          OPENAI_API_KEY: ""
+        run: PYTHONPATH=.:_pins/veritas pytest -q tests/test_agentdojo_final_runner_integration_v0_1.py
+      - name: Assert gate remains closed
+        run: |
+          python - <<'PY'
+          import json
+          c=json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_INTEGRATION_CLOSURE_v0.1.json"))
+          assert c["execution_gate"]=="CLOSED"
+          assert c["api_called"] is False
+          assert c["clean_ab_executed"] is False
+          assert c["claim_boundary"]["final_runner_frozen"] is False
+          PY

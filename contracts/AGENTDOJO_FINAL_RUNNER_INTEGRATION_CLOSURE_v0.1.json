@@ -1,0 +1,37 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-final-runner-integration-closure.v0.1",
+  "status": "INTEGRATION_CLOSURE_CANDIDATE_EXECUTION_GATE_CLOSED",
+  "pins": {
+    "benchmark_harness_base": "260a4fcce6729e3c1c5217b491ecf7b94ff73e2d",
+    "ben_canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "closure_tests": [
+    "frozen GPT-4.1 mini adapter -> pinned AgentDojo message/tool-call conversion",
+    "pinned RCC/REVAS AgentDojo runtime -> exact validated CandidateAction capture",
+    "native effect callback invoked exactly once after candidate capture",
+    "VERITAS Bind + deterministic resolver commits legitimate protected mutations for tasks 3, 4, and 15",
+    "unsupported protected mutation fails closed before effect",
+    "benchmark-owned scorer callback requires explicit post-execution barrier"
+  ],
+  "forbidden_in_this_pr": [
+    "OpenAI network call",
+    "result-bearing AgentDojo benchmark execution",
+    "clean A/B scoring",
+    "execution gate opening",
+    "fallback model",
+    "automatic retry"
+  ],
+  "execution_gate": "CLOSED",
+  "api_called": false,
+  "clean_ab_executed": false,
+  "claim_boundary": {
+    "integration_plumbing_tested_offline": true,
+    "final_runner_frozen": false,
+    "exact_scorer_invocation_frozen": false,
+    "independent_external_validation": false,
+    "production_readiness": false
+  }
+}
