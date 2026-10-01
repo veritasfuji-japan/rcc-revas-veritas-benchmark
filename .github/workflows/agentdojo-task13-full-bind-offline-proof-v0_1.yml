@@ -1,0 +1,31 @@
+name: AgentDojo Task13 Full Bind Offline Proof v0.1
+on:
+  pull_request:
+    paths:
+      - "agentdojo_constraint_resolver_v0_1.py"
+      - "scripts/agentdojo_task13_full_bind_offline_proof_v0_1.py"
+      - "contracts/AGENTDOJO_TASK13_FULL_BIND_OFFLINE_PROOF_v0.1.json"
+      - ".github/workflows/agentdojo-task13-full-bind-offline-proof-v0_1.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 99bdb9e684f422a8f6ef083d3330dc9fd5346583
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify exact VERITAS pin
+        run: test "$(git -C _pins/veritas rev-parse HEAD)" = "99bdb9e684f422a8f6ef083d3330dc9fd5346583"
+      - name: Install offline proof dependencies
+        run: pip install pydantic cryptography
+      - name: Run task13 cross-repository offline proof
+        run: python scripts/agentdojo_task13_full_bind_offline_proof_v0_1.py --veritas-root _pins/veritas
