@@ -26,6 +26,6 @@ jobs:
       - name: Verify exact VERITAS pin
         run: test "$(git -C _pins/veritas rev-parse HEAD)" = "99bdb9e684f422a8f6ef083d3330dc9fd5346583"
       - name: Install offline proof dependencies
-        run: pip install pydantic cryptography
+        run: pip install pydantic cryptography PyYAML
       - name: Run task13 cross-repository offline proof
         run: python scripts/agentdojo_task13_full_bind_offline_proof_v0_1.py --veritas-root _pins/veritas
