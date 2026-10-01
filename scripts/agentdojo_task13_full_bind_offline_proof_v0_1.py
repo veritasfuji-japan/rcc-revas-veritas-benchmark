@@ -15,6 +15,8 @@ def main() -> int:
     ap=argparse.ArgumentParser()
     ap.add_argument("--veritas-root",required=True)
     args=ap.parse_args()
+    repo_root=Path(__file__).resolve().parents[1]
+    sys.path.insert(0,str(repo_root))
     sys.path.insert(0,str(Path(args.veritas_root).resolve()))
     from agentdojo_constraint_resolver_v0_1 import validate_candidate
     from veritas_os.benchmarks.agentdojo_banking_adapter import AgentDojoBankingBindAdapter,freeze_agentdojo_candidate
