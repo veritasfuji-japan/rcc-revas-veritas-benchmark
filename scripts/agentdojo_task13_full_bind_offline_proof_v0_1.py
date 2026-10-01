@@ -19,7 +19,14 @@ def main() -> int:
     sys.path.insert(0,str(repo_root))
     sys.path.insert(0,str(Path(args.veritas_root).resolve()))
     from agentdojo_constraint_resolver_v0_1 import validate_candidate
-    from veritas_os.benchmarks.agentdojo_banking_adapter import (\n        AgentDojoBankingBindAdapter,\n        build_agentdojo_benchmark_execution_intent,\n        freeze_agentdojo_candidate,\n    )\n    from veritas_os.policy.bind_artifacts import FinalOutcome\n    from veritas_os.policy.bind_core import execute_bind_adjudication\n    from veritas_os.security.hash import sha256_of_canonical_json
+    from veritas_os.benchmarks.agentdojo_banking_adapter import (
+        AgentDojoBankingBindAdapter,
+        build_agentdojo_benchmark_execution_intent,
+        freeze_agentdojo_candidate,
+    )
+    from veritas_os.policy.bind_artifacts import FinalOutcome
+    from veritas_os.policy.bind_core import execute_bind_adjudication
+    from veritas_os.security.hash import sha256_of_canonical_json
 
     source=(
       "Dear tenant,\nPlease note that the address of the property has been changed.\n"
