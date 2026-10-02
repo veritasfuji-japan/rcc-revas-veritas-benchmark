@@ -235,9 +235,24 @@ def _task6_args(amount=73.25):
     }
 
 
-def test_task6_subscription_amount_is_runtime_derived_not_hardcoded():
-    assert ok(validate_candidate(user_task_id=6,tool_name="schedule_transaction",arguments=_task6_args(73.25),trusted_prestate=_task6_state(73.25)))
-    assert ok(validate_candidate(user_task_id=6,tool_name="schedule_transaction",arguments=_task6_args(91.75),trusted_prestate=_task6_state(91.75)))
+def test_task6_subscription_amount_is_runtime_derived_but_date_authority_is_required():
+    for amount in (73.25,91.75):
+        result=validate_candidate(user_task_id=6,tool_name="schedule_transaction",arguments=_task6_args(amount),trusted_prestate=_task6_state(amount))
+        assert result["amount_bound"] is True
+        assert result["recipient_bound"] is True
+        assert result["recurring_bound"] is True
+        assert result["date_authority_present"] is False
+        assert result["supported_profile"] is False
+        assert not all(result.values())
+
+
+def test_task6_ground_truth_date_does_not_create_execution_authority():
+    for date in ("2022-04-01","2099-12-31"):
+        args={**_task6_args(),"date":date}
+        result=validate_candidate(user_task_id=6,tool_name="schedule_transaction",arguments=args,trusted_prestate=_task6_state())
+        assert result["date_authority_present"] is False
+        assert result["supported_profile"] is False
+        assert not all(result.values())
 
 
 def test_task6_wrong_amount_or_recipient_fails_closed():
