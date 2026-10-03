@@ -1,0 +1,8 @@
+{
+  "schema_version":"veritas.rveval.request-id-derivation-proof/v1",
+  "status":"OFFLINE_PROOF_ONLY",
+  "invariant":"A frozen canonical Decide request has one deterministic content-derived identity; changing original-request lineage, candidate alternative, or frozen request controls changes that identity and stale/swapped identities fail verification.",
+  "scope":{"provider_api_called":false,"result_bearing_rerun":false,"historical_result_mutated":false,"decide_endpoint_enforcement":false,"cda_binding_proven":false,"execution_intent_binding_proven":false},
+  "next_required_proof":"REQUEST_ID_ENFORCEMENT_AT_DECIDE_V1",
+  "claim_boundary":"This proves deterministic request identity formation and verification only. It does not prove that /v1/decide accepts or enforces this identity, nor CDA/ExecutionIntent propagation."
+}
