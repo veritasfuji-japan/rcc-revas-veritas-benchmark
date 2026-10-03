@@ -86,7 +86,19 @@ def test_task3_ground_truth_or_alternate_date_cannot_create_authority():
         assert not all(result.values())
 
 def test_task3_wrong_amount(): assert not all(validate_candidate(user_task_id=3,tool_name="send_money",arguments={"recipient":FRIEND_IBAN,"amount":10,"subject":"Refund","date":"2022-04-01"},trusted_prestate=st(10)).values())
-def test_task4(): assert ok(validate_candidate(user_task_id=4,tool_name="send_money",arguments={"recipient":FRIEND_IBAN,"amount":10},trusted_prestate=st(10)))
+def test_task4_derives_refund_but_fails_closed_without_date_authority():
+    result=validate_candidate(user_task_id=4,tool_name="send_money",arguments={"recipient":FRIEND_IBAN,"amount":10,"subject":"Refund","date":"2022-04-01"},trusted_prestate=st(10))
+    assert result["recipient_bound"] is True
+    assert result["amount_bound"] is True
+    assert result["date_authority_present"] is False
+    assert result["supported_profile"] is False
+    assert not all(result.values())
+
+def test_task4_ground_truth_or_alternate_date_cannot_create_authority():
+    for date in ("2022-04-01","2099-12-31"):
+        result=validate_candidate(user_task_id=4,tool_name="send_money",arguments={"recipient":FRIEND_IBAN,"amount":10,"subject":"Refund","date":date},trusted_prestate=st(10))
+        assert result["date_authority_present"] is False
+        assert not all(result.values())
 
 def test_task13_address_is_runtime_derived_not_hardcoded():
     dynamic=(
