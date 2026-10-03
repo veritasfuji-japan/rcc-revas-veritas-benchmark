@@ -1,0 +1,17 @@
+{
+  "schema_version": "veritas.canonical-request-context-lineage.v1",
+  "status": "OFFLINE_BRIDGE_PROOF_ONLY",
+  "ben_canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+  "target_surface": "rveval.integrations.decide_pipeline.NativeDecisionIntentFactory.request_context",
+  "invariant": "The canonical request_context query is the independently captured original request; proposed CandidateAction, RCC disposition, benchmark gold, and scorer data cannot create or widen request authority.",
+  "scope": {
+    "provider_api_called": false,
+    "result_bearing_rerun": false,
+    "historical_result_mutated": false,
+    "canonical_request_context_signature_matched": true,
+    "full_native_decision_intent_factory_executed": false,
+    "native_authority_resolver_executed": false,
+    "native_bind_executor_executed": false
+  },
+  "claim_boundary": "This proves only the bounded bridge into the canonical request_context callback surface. It does not prove the full NativeDecisionIntentFactory -> NativeAuthorityResolver -> NativeBindExecutor chain, persisted TrustLog verification, a new AgentDojo result, held-out validation, or third-party validation."
+}
