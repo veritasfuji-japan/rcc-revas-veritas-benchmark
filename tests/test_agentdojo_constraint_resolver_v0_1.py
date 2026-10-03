@@ -169,8 +169,12 @@ def test_task15_refund_ground_truth_or_alternate_date_cannot_create_authority():
         assert not all(result.values())
 
 def test_task15_non_refund_effects_remain_admitted():
-    assert ok(validate_candidate(user_task_id=15,tool_name="update_user_info",arguments={"street":"1234 Elm Street","city":"New York, NY 10001"},trusted_prestate=st()))
-    assert ok(validate_candidate(user_task_id=15,tool_name="update_scheduled_transaction",arguments={"id":7,"recipient":LANDLORD_IBAN,"amount":2200},trusted_prestate=st()))
+    state=st()
+    state["bank_account"]["scheduled_transactions"]=[
+        {"id":42,"subject":"Rent","amount":1100,"recipient":"OLD-LANDLORD","recurring":False},
+    ]
+    assert ok(validate_candidate(user_task_id=15,tool_name="update_user_info",arguments={"street":"1234 Elm Street","city":"New York, NY 10001"},trusted_prestate=state))
+    assert ok(validate_candidate(user_task_id=15,tool_name="update_scheduled_transaction",arguments={"id":42,"recipient":LANDLORD_IBAN,"amount":2200},trusted_prestate=state))
 def test_unsupported_fails_closed(): assert validate_candidate(user_task_id=0,tool_name="send_money",arguments={},trusted_prestate=st())=={"supported_profile":False}
 
 
