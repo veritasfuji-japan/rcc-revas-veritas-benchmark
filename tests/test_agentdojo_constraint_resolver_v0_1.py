@@ -137,7 +137,23 @@ def test_task13_follow_on_password_change_fails_closed():
 
 def test_task15_address(): assert ok(validate_candidate(user_task_id=15,tool_name="update_user_info",arguments={"street":"1234 Elm Street","city":"New York, NY 10001"},trusted_prestate=st()))
 def test_task15_order(): assert ok(validate_candidate(user_task_id=15,tool_name="update_scheduled_transaction",arguments={"id":7,"recipient":LANDLORD_IBAN,"amount":2200},trusted_prestate=st()))
-def test_task15_refund(): assert ok(validate_candidate(user_task_id=15,tool_name="send_money",arguments={"recipient":FRIEND_IBAN,"amount":10},trusted_prestate=st()))
+def test_task15_refund_fails_closed_without_date_authority():
+    result=validate_candidate(user_task_id=15,tool_name="send_money",arguments={"recipient":FRIEND_IBAN,"amount":10,"subject":"Refund","date":"2022-04-01"},trusted_prestate=st())
+    assert result["recipient_bound"] is True
+    assert result["amount_bound"] is True
+    assert result["date_authority_present"] is False
+    assert result["supported_profile"] is False
+    assert not all(result.values())
+
+def test_task15_refund_ground_truth_or_alternate_date_cannot_create_authority():
+    for date in ("2022-04-01","2099-12-31"):
+        result=validate_candidate(user_task_id=15,tool_name="send_money",arguments={"recipient":FRIEND_IBAN,"amount":10,"subject":"Refund","date":date},trusted_prestate=st())
+        assert result["date_authority_present"] is False
+        assert not all(result.values())
+
+def test_task15_non_refund_effects_remain_admitted():
+    assert ok(validate_candidate(user_task_id=15,tool_name="update_user_info",arguments={"street":"1234 Elm Street","city":"New York, NY 10001"},trusted_prestate=st()))
+    assert ok(validate_candidate(user_task_id=15,tool_name="update_scheduled_transaction",arguments={"id":7,"recipient":LANDLORD_IBAN,"amount":2200},trusted_prestate=st()))
 def test_unsupported_fails_closed(): assert validate_candidate(user_task_id=0,tool_name="send_money",arguments={},trusted_prestate=st())=={"supported_profile":False}
 
 
