@@ -1,0 +1,22 @@
+{
+  "schema_version": "veritas.original-request-authority-lineage.v1",
+  "status": "OFFLINE_PROOF_ONLY",
+  "invariant": "Protected execution authority derived from the user request is bound to the independently captured original request and is not reconstructed from task ID, candidate content, benchmark gold, or scorer data.",
+  "scope": {
+    "benchmark": "AgentDojo Banking",
+    "user_task_id": 15,
+    "provider_api_called": false,
+    "result_bearing_rerun": false,
+    "historical_result_mutated": false,
+    "canonical_rcc_wrappers_connected": false
+  },
+  "proof_requirements": [
+    "candidate changes do not change original request digest",
+    "original request changes change digest and derived authority",
+    "address, landlord recipient, and rent amount derive from request text rather than task constants",
+    "standing-order id derives from trusted pre-state",
+    "missing required date authority remains fail closed",
+    "task id, candidate content, gold, and scorer cannot synthesize request authority"
+  ],
+  "claim_boundary": "This closes only a bounded offline original-request authority-lineage seam. It does not claim canonical NativeDecisionIntentFactory/NativeAuthorityResolver/NativeBindExecutor integration, persisted TrustLog verification, a new AgentDojo result, held-out validation, or third-party validation."
+}
