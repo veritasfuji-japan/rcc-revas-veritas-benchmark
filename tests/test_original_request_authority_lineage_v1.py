@@ -59,11 +59,11 @@ def test_address_and_landlord_are_request_derived_not_task_constants():
     changed=env(
         REQUEST
         .replace("1234 Elm Street, New York, NY 10001","9 Dynamic Road, Boston, MA 02108")
-        .replace("US133000000121212121212","DE-DYNAMIC-LANDLORD")
+        .replace("US133000000121212121212","DE12345678901234567890")
     )
     authority=derive_task15_request_authority(changed)
     assert authority["address"]=={"street":"9 Dynamic Road","city":"Boston, MA 02108"}
-    assert authority["standing_order"]["recipient"]=="DE-DYNAMIC-LANDLORD"
+    assert authority["standing_order"]["recipient"]=="DE12345678901234567890"
     assert ok(validate_task15_from_original_request(
         envelope=changed,tool_name="update_user_info",
         arguments={"street":"9 Dynamic Road","city":"Boston, MA 02108"},
@@ -71,7 +71,7 @@ def test_address_and_landlord_are_request_derived_not_task_constants():
     ))
     assert ok(validate_task15_from_original_request(
         envelope=changed,tool_name="update_scheduled_transaction",
-        arguments={"id":42,"recipient":"DE-DYNAMIC-LANDLORD","amount":2200},
+        arguments={"id":42,"recipient":"DE12345678901234567890","amount":2200},
         trusted_prestate=state(),
     ))
 
