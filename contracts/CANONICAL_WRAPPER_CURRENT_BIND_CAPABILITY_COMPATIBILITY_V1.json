@@ -1,0 +1,52 @@
+{
+  "schema": "veritas.canonical-wrapper-current-bind-capability-compatibility.v1",
+  "proof_round": "CANONICAL_WRAPPER_CURRENT_BIND_CAPABILITY_COMPATIBILITY_V1",
+  "status": "DESIGNED_IMPLEMENTATION_PENDING",
+  "rule_of_one": "ACTION_CAPABILITY_PATH_ONLY",
+  "base_benchmark_commit": "fdef6e4f7bfab4c49c366078c15b99a682e2d8da",
+  "ben_canonical_pin": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+  "current_veritas_pin": "9b7376ba0077365b9d89004b06c80e76c8bfadc8",
+  "historical_veritas_pin": "b39961b003179aea70e320a57cb000f56a81951e",
+  "invariant": "A Ben-canonical candidate may reach the controlled ACTION effect under the current VERITAS profile only through a verified and atomically consumed LiveAdapterBindAuthorization, transported ConsumedAuthorizationLineage, current Bind core ACTION dispatch authorization, BoundExecutionPermit, exact final dispatch, and permit consumption.",
+  "required_chain": [
+    "Ben canonical candidate",
+    "CDA / promotion / ExecutionIntent",
+    "verified LiveAdapterBindAuthorization",
+    "atomic consume_once",
+    "ConsumedAuthorizationLineage",
+    "execute_bind_adjudication",
+    "_authorize_action_dispatch",
+    "BoundExecutionPermit",
+    "exact final dispatch",
+    "permit consumption",
+    "controlled ACTION effect",
+    "BindReceipt"
+  ],
+  "acceptance": [
+    "Historical Ben source pins remain unchanged.",
+    "Current VERITAS source identity is verified independently against the current-pin profile.",
+    "No benchmark code mints or transports ConsumedAuthorizationLineage directly.",
+    "No benchmark code mints BoundExecutionPermit directly.",
+    "Valid case reaches exactly one controlled ACTION effect and returns COMMITTED.",
+    "Missing, invalid, replayed, or mismatched authorization fails closed before the controlled ACTION effect.",
+    "Candidate, request, pre-state, authority, and execution-intent lineage remain bound across the bridge.",
+    "Evidence proves ACTION permit consumption rather than merely successful adapter.apply."
+  ],
+  "excluded": [
+    "COMPENSATION capability proof",
+    "external validation",
+    "model-performance claims",
+    "optimized 128-case rerun"
+  ],
+  "claims": {
+    "external_validation": false,
+    "model_performance": false,
+    "production_authority": false,
+    "scope": "BOUNDED_LOCAL_ENGINEERING_PROOF"
+  },
+  "notes": [
+    "This proof does not update a historical source hash to silence NATIVE_SOURCE_PIN_MISMATCH.",
+    "It separates the historical Ben profile from the current VERITAS profile and proves a current-profile bridge using VERITAS-owned authorization-consumption and capability mechanisms.",
+    "COMPENSATION is intentionally deferred to a separate Rule-of-One."
+  ]
+}
