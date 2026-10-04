@@ -217,5 +217,5 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--veritas-root',type=Path,required=True)
-    p.add_argument('--mode',choices=['valid','tampered','revoked'],default='valid');a=p.parse_args()
+    p.add_argument('--mode',choices=['valid','tampered','revoked','candidate_substitution'],default='valid');a=p.parse_args()
     raise SystemExit(run(a.output.resolve(),a.veritas_root.resolve(),mode=a.mode))
