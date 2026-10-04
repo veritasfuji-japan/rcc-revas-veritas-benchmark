@@ -15,5 +15,6 @@
   "next_gate": "Generate exact critical-file hashes from current VERITAS commit and execute an equivalent uninterrupted fixture under this independent profile.",
   "external_validation": false,
   "paid_provider_calls": 0,
-  "historical_128_case_rerun": false
+  "historical_128_case_rerun": false,
+  "trigger_note": "PR synchronize after workflow path-filter update; no proof semantics changed."
 }
