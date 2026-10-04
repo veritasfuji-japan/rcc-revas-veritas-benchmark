@@ -1,0 +1,24 @@
+{
+  "schema_version": "veritas.ben-native-factory-content-bound-request-id.v1",
+  "status": "OFFLINE_BRIDGE_PROOF_ONLY",
+  "ben_canonical_pin": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+  "ben_component": "rveval.integrations.decide_pipeline.NativeDecisionIntentFactory",
+  "veritas_request_id_profile": "veritas.rveval.request-id-derivation/v1",
+  "finding": "Pinned Ben factory constructs the exact frozen Decide request but does not itself attach the opt-in content-bound request identity profile.",
+  "bridge_invariant": "The adapter derives request_id from the exact factory request before transport and adds only request_id_profile and request_id.",
+  "mutations_that_change_identity": [
+    "query",
+    "context.original_request_digest",
+    "alternatives candidate identity",
+    "min_evidence"
+  ],
+  "prohibited_authority_sources": [
+    "scorer",
+    "gold",
+    "candidate prose as original request"
+  ],
+  "provider_call": false,
+  "historical_128_case_rerun": false,
+  "external_validation": false,
+  "limitation": "This does not yet prove the bridge is wired into Ben's exact NativeDecisionIntentFactory transport or that the full canonical chain executes end-to-end."
+}
