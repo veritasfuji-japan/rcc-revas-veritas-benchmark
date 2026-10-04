@@ -227,9 +227,14 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
                 elif mode=='request_id_substitution' and type(exc).__name__=='IntegrityError' and str(exc)=='NATIVE_CDA_REQUEST_ID_MISMATCH':
                     outcome='BLOCKED'
                     journal('EXPECTED_REQUEST_ID_SUBSTITUTION_REFUSAL',{'reason':str(exc),'apply_count':state['counter']})
-                elif mode=='prestate_drift' and isinstance(exc,NativeBindFailure) and exc.receipt.get('final_outcome')=='APPLY_FAILED' and type(exc.__cause__).__name__=='IntegrityError' and str(exc.__cause__)=='NATIVE_STATE_DRIFT_BEFORE_APPLY':
-                    outcome='BLOCKED'
-                    journal('EXPECTED_PRESTATE_DRIFT_REFUSAL',{'reason':str(exc.__cause__),'native_final_outcome':exc.receipt.get('final_outcome'),'apply_count':state['counter']})
+                elif mode=='prestate_drift' and isinstance(exc,NativeBindFailure):
+                    cause=exc.__cause__
+                    journal('PRESTATE_DRIFT_FAILURE_DIAGNOSTIC',{'exception_type':type(exc).__name__,'native_final_outcome':exc.receipt.get('final_outcome'),'cause_type':type(cause).__name__ if cause is not None else None,'cause':str(cause) if cause is not None else None,'apply_count':state['counter']})
+                    if exc.receipt.get('final_outcome')=='APPLY_FAILED' and type(cause).__name__=='IntegrityError' and str(cause)=='NATIVE_STATE_DRIFT_BEFORE_APPLY':
+                        outcome='BLOCKED'
+                        journal('EXPECTED_PRESTATE_DRIFT_REFUSAL',{'reason':str(cause),'native_final_outcome':exc.receipt.get('final_outcome'),'apply_count':state['counter']})
+                    else:
+                        raise
                 else:
                     raise
             raw=trust_log.LOG_JSONL.read_bytes()
