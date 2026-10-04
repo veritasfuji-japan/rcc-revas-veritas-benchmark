@@ -1,0 +1,87 @@
+name: Current Bind ACTION Capability Compatibility V1
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: veritas
+          POSTGRES_PASSWORD: veritas
+          POSTGRES_DB: veritas_action_capability
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U veritas -d veritas_action_capability"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      BEN_CANONICAL_PIN: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+      VERITAS_PIN: 9b7376ba0077365b9d89004b06c80e76c8bfadc8
+      VERITAS_DATABASE_URL: postgresql+psycopg://veritas:veritas@127.0.0.1:5432/veritas_action_capability
+      VERITAS_SANDBOX_DATABASE_URL: postgresql://veritas:veritas@127.0.0.1:5432/veritas_action_capability_sandbox
+      VERITAS_SANDBOX_WRITER_TOKEN: action-capability-writer-token-0123456789abcdef
+      VERITAS_SANDBOX_READER_TOKEN: action-capability-reader-token-fedcba9876543210
+      VERITAS_SANDBOX_CA_FILE: /tmp/veritas-action-capability/ca.crt
+    steps:
+      - uses: actions/checkout@v4
+        with: {path: benchmark}
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: ${{ env.VERITAS_PIN }}
+          path: veritas_os_source
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Verify exact pins
+        run: |
+          test "$(git -C veritas_os_source rev-parse HEAD)" = "$VERITAS_PIN"
+          test "$(git -C benchmark rev-parse "$BEN_CANONICAL_PIN^{commit}")" = "$BEN_CANONICAL_PIN"
+      - name: Install
+        run: |
+          pip install -r veritas_os_source/veritas_os/requirements.txt
+          pip install "psycopg[binary]" psycopg-pool alembic pytest pytest-asyncio httpx cryptography
+          pip install -e benchmark/external-eval/v0.3.9
+      - name: Create sandbox database
+        run: |
+          python - <<'PY'
+          import psycopg
+          c=psycopg.connect("postgresql://veritas:veritas@127.0.0.1:5432/postgres",autocommit=True)
+          c.execute("CREATE DATABASE veritas_action_capability_sandbox"); c.close()
+          PY
+      - name: Migrate
+        working-directory: veritas_os_source
+        run: alembic upgrade head
+      - name: Create TLS sandbox
+        run: |
+          mkdir -p /tmp/veritas-action-capability
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -keyout /tmp/veritas-action-capability/ca.key -out /tmp/veritas-action-capability/ca.crt -subj "/CN=VERITAS Controlled CA"
+          openssl req -newkey rsa:2048 -nodes -keyout /tmp/veritas-action-capability/server.key -out /tmp/veritas-action-capability/server.csr -subj "/CN=sandbox.example.invalid"
+          printf '%s\n' 'subjectAltName=DNS:sandbox.example.invalid' 'extendedKeyUsage=serverAuth' >/tmp/veritas-action-capability/ext.cnf
+          openssl x509 -req -days 1 -in /tmp/veritas-action-capability/server.csr -CA /tmp/veritas-action-capability/ca.crt -CAkey /tmp/veritas-action-capability/ca.key -CAcreateserial -out /tmp/veritas-action-capability/server.crt -extfile /tmp/veritas-action-capability/ext.cnf
+          echo "127.0.0.1 sandbox.example.invalid" | sudo tee -a /etc/hosts
+          cd veritas_os_source
+          sudo -E env PYTHONPATH="$PWD" "$(which python)" scripts/run_native_v2_sandbox_service.py --host 0.0.0.0 --port 443 --cert /tmp/veritas-action-capability/server.crt --key /tmp/veritas-action-capability/server.key >/tmp/veritas-action-capability/service.log 2>&1 &
+          echo $! >/tmp/veritas-action-capability/service.pid
+      - name: Run exact integration
+        working-directory: benchmark
+        env:
+          PYTHONPATH: ../veritas_os_source:.
+        run: python integration/current_veritas_uninterrupted/native_v2_action_capability.py --veritas-root ../veritas_os_source --output artifacts/CURRENT_BIND_ACTION_CAPABILITY_COMPATIBILITY_V1.json
+      - name: Enforce fail closed
+        if: always()
+        working-directory: benchmark
+        run: pytest tests/test_current_bind_action_capability_compatibility_v1.py -q --tb=short
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: current-bind-action-capability-compatibility-v1
+          path: |
+            benchmark/artifacts/CURRENT_BIND_ACTION_CAPABILITY_COMPATIBILITY_V1.json
+            /tmp/veritas-action-capability/service.log
+          if-no-files-found: warn
