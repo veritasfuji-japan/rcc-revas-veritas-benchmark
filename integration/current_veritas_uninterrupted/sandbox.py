@@ -232,9 +232,13 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
                     diagnostic={'exception_type':type(exc).__name__,'native_final_outcome':exc.receipt.get('final_outcome'),'cause_type':type(cause).__name__ if cause is not None else None,'cause':str(cause) if cause is not None else None,'apply_count':state['counter'],'receipt':exc.receipt}
                     journal('PRESTATE_DRIFT_FAILURE_DIAGNOSTIC',diagnostic)
                     print('PRESTATE_DRIFT_FAILURE_DIAGNOSTIC='+json.dumps(diagnostic,sort_keys=True),flush=True)
-                    if exc.receipt.get('final_outcome')=='APPLY_FAILED' and type(cause).__name__=='IntegrityError' and str(cause)=='NATIVE_STATE_DRIFT_BEFORE_APPLY':
+                    if (exc.receipt.get('final_outcome')=='APPLY_FAILED'
+                            and exc.receipt.get('failure_category')=='APPLY'
+                            and exc.receipt.get('rollback_reason')=='BIND_APPLY_FAILED:NATIVE_STATE_DRIFT_BEFORE_APPLY'
+                            and exc.receipt.get('rollback_status')=='rollback_not_attempted'
+                            and state['counter']==0):
                         outcome='BLOCKED'
-                        journal('EXPECTED_PRESTATE_DRIFT_REFUSAL',{'reason':str(cause),'native_final_outcome':exc.receipt.get('final_outcome'),'apply_count':state['counter']})
+                        journal('EXPECTED_PRESTATE_DRIFT_REFUSAL',{'reason':exc.receipt.get('rollback_reason'),'native_final_outcome':exc.receipt.get('final_outcome'),'failure_category':exc.receipt.get('failure_category'),'rollback_status':exc.receipt.get('rollback_status'),'apply_count':state['counter']})
                     else:
                         raise
                 else:
