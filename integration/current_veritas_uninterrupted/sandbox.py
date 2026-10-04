@@ -286,6 +286,45 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
             require(any(e['event']=='PRESTATE_DRIFT_INJECTED' for e in events),'PRESTATE_DRIFT_NOT_INJECTED')
             require(any(e['event']=='EXPECTED_PRESTATE_DRIFT_REFUSAL' for e in events),'PRESTATE_DRIFT_REFUSAL_NOT_OBSERVED')
             require(state['counter']==0,'PRESTATE_DRIFT_EFFECT_OCCURRED')
+        # Materialize the continuity proof from the native artifacts/events rather than
+        # inventing a parallel lineage. Valid mode must expose the complete committed chain.
+        continuity=None
+        if mode=='valid':
+            decide_req=next(e['payload'] for e in events if e['event']=='NATIVE_DECIDE_REQUEST')
+            promoted=next(e['payload'] for e in events if e['event']=='NATIVE_CDA_PROMOTED')
+            authority_evt=next(e['payload'] for e in events if e['event']=='NATIVE_AUTHORITY_VALIDATED')
+            bind_evt=next(e['payload'] for e in events if e['event']=='VERITAS_NATIVE_BIND_RECEIPT')
+            cda=factory.last_response['canonical_decision_artifact']
+            promotion=factory.last_promotion
+            intent=promotion['exact_execution_intent']
+            receipt=bind_evt['native_receipt']
+            original_request_digest=decide_req['upstream_candidate_sha256']
+            candidate_hash=decide_req['native_candidate_hash']
+            expected_state_fingerprint=intent['expected_state_fingerprint']
+            continuity={
+              'original_request_digest':original_request_digest,
+              'request_id':cda['request_id'],
+              'candidate_hash':candidate_hash,
+              'decision_id':cda['decision_id'],
+              'expected_state_fingerprint':expected_state_fingerprint,
+              'execution_intent_id':intent['execution_intent_id'],
+              'observations':{
+                'factory_input':{'original_request_digest':original_request_digest,'candidate_hash':candidate_hash},
+                'decide_request':{'request_sha256':decide_req['request_sha256'],'original_request_digest':decide_req['upstream_candidate_sha256'],'candidate_hash':decide_req['native_candidate_hash']},
+                'CDA':{'request_id':cda['request_id'],'decision_id':cda['decision_id']},
+                'promotion_packet':{'request_id':promoted['request_id'],'decision_id':promoted['canonical_decision_id'],'original_request_digest':promoted['upstream_candidate_sha256'],'execution_intent_hash':promoted['execution_intent_hash']},
+                'ExecutionIntent':{'request_id':intent['request_id'],'decision_id':intent['decision_id'],'expected_state_fingerprint':intent['expected_state_fingerprint'],'execution_intent_id':intent['execution_intent_id']},
+                'verified_authority':{'observed':True,'verification_proof_hash':authority_evt['verification_proof_hash']},
+                'BindReceipt':{'decision_id':receipt['decision_id'],'expected_state_fingerprint':receipt['revalidation_context']['expected_state_fingerprint'],'execution_intent_id':receipt['execution_intent_id']},
+                'apply_count':apply_count}}
+            require(promoted['request_id']==cda['request_id']==intent['request_id'],'CONTINUITY_REQUEST_ID_MISMATCH')
+            require(promoted['canonical_decision_id']==cda['decision_id']==intent['decision_id']==receipt['decision_id'],'CONTINUITY_DECISION_ID_MISMATCH')
+            require(promoted['upstream_candidate_sha256']==original_request_digest,'CONTINUITY_ORIGINAL_REQUEST_DIGEST_MISMATCH')
+            require(intent['expected_state_fingerprint']==receipt['revalidation_context']['expected_state_fingerprint'],'CONTINUITY_PRESTATE_MISMATCH')
+            require(intent['execution_intent_id']==receipt['execution_intent_id'],'CONTINUITY_EXECUTION_INTENT_ID_MISMATCH')
+            require(apply_count==1,'CONTINUITY_APPLY_COUNT_MISMATCH')
+            write_json_new(output/'continuity-matrix.json',continuity)
+            journal('CONTINUITY_MATRIX_VERIFIED',{'request_id':cda['request_id'],'decision_id':cda['decision_id'],'execution_intent_id':intent['execution_intent_id'],'apply_count':apply_count})
         report={'status':'PASS' if ok else 'FAIL','mode':mode,'native_outcome':outcome,'final_state':state,
           'boundary':'HTTP_DECIDE_SIGNED_POLICY_CDA_PROMOTION_AUTHORITY_BIND_ENCRYPTED_TRUSTLOG',
           'veritas_source_commit':current_pins['veritas_commit'],
