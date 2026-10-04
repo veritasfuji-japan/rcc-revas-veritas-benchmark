@@ -203,6 +203,12 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
                 outcome=result.receipt['native_bind_receipt']['final_outcome']
             except GovernanceStop as exc:
                 outcome='BLOCKED'
+            except Exception as exc:
+                if mode=='candidate_substitution' and type(exc).__name__=='IntegrityError' and str(exc)=='NATIVE_CDA_SELECTED_CANDIDATE_CHANGED':
+                    outcome='BLOCKED'
+                    journal('EXPECTED_CANDIDATE_SUBSTITUTION_REFUSAL',{'reason':str(exc),'apply_count':state['counter']})
+                else:
+                    raise
             raw=trust_log.LOG_JSONL.read_bytes()
             require(all(s.encode() not in raw for s in (query,api_key,enc)),'LEDGER_PLAINTEXT_LEAK')
             require(provider_calls>0 and kernel_calls>0,'NATIVE_KERNEL_NOT_OBSERVED')
@@ -213,7 +219,12 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
             (output/'native-ledger-encrypted.jsonl').write_bytes(raw)
         expected='COMMITTED' if mode=='valid' else 'BLOCKED'
         ok=outcome==expected and state['counter']==(1 if mode=='valid' else 0)
-        require(any(e['event']=='NATIVE_BIND_PERSISTENCE_VERIFIED' for e in events),'BIND_PERSISTENCE_NOT_MEASURED')
+        if mode in ('valid','tampered','revoked'):
+            require(any(e['event']=='NATIVE_BIND_PERSISTENCE_VERIFIED' for e in events),'BIND_PERSISTENCE_NOT_MEASURED')
+        if mode=='candidate_substitution':
+            require(any(e['event']=='CANDIDATE_SUBSTITUTION_INJECTED' for e in events),'CANDIDATE_SUBSTITUTION_NOT_INJECTED')
+            require(any(e['event']=='EXPECTED_CANDIDATE_SUBSTITUTION_REFUSAL' for e in events),'CANDIDATE_SUBSTITUTION_REFUSAL_NOT_OBSERVED')
+            require(state['counter']==0,'CANDIDATE_SUBSTITUTION_EFFECT_OCCURRED')
         report={'status':'PASS' if ok else 'FAIL','mode':mode,'native_outcome':outcome,'final_state':state,
           'boundary':'HTTP_DECIDE_SIGNED_POLICY_CDA_PROMOTION_AUTHORITY_BIND_ENCRYPTED_TRUSTLOG',
           'veritas_source_commit':current_pins['veritas_commit'],
