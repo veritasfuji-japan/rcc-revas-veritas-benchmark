@@ -6,6 +6,7 @@ on:
       - ".github/workflows/single-candidate-uninterrupted-trace-v1.yml"
       - "contracts/SINGLE_CANDIDATE_UNINTERRUPTED_CANONICAL_CHAIN_V1.json"
       - "contracts/CURRENT_VERITAS_CRITICAL_SOURCE_HASHES_V1.json"
+      - "contracts/CURRENT_VERITAS_SOURCE_PIN_PROFILE_V1.json"
       - "tools/verify_current_veritas_source_pin_v1.py"
       - "integration/current_veritas_uninterrupted/sandbox.py"
   workflow_dispatch:
