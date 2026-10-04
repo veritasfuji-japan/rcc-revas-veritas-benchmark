@@ -1,0 +1,21 @@
+{
+  "schema_version": "veritas.current-veritas-critical-source-hashes.v1",
+  "status": "IMPLEMENTATION_PROOF_PENDING",
+  "profile": "CURRENT_VERITAS_SOURCE_PIN_PROFILE_V1",
+  "veritas_repository": "veritasfuji-japan/veritas_os",
+  "veritas_commit": "4f727cf8c4f060e47d62be4d1d535e6fc0d45a92",
+  "hash_algorithm": "sha256",
+  "critical_sources": {
+    "veritas_os/governance/canonical_decision_artifact.py": "9c7bf3b31c4c0edaec184227ba25969b9c8ae3e22035d357f0a417f51f5900fe",
+    "veritas_os/policy/canonical_verified_decision_promotion.py": "aaebc1bf35e12149167169781cbdf20cd73af40a53e9a3b708ffa7b4269ac490",
+    "veritas_os/governance/authority_evidence.py": "e93d53c73a423e45ed153117564542ec75071e9b0c6172ec6e0751256cfcbb0f",
+    "veritas_os/governance/runtime_authority.py": "fe3a5c61b42e112d7a9c659b9865356813c2b43ad8f39ae03049232f565fd98b",
+    "veritas_os/policy/bind_core/core.py": "aee04eee4b82d9125c643e34e8afd9052e59b26c080ea34e77394da21afb303d",
+    "veritas_os/policy/bind_core/normalizers.py": "0b68fb32123eb3d00925995ce5bc9a23b4ea9839de535e44336eecc27a201f35",
+    "veritas_os/security/hash.py": "97bbf88a0f5ddef13435f5d846eb28ec9720109b180e90325cf40f1f1eba6f8c"
+  },
+  "fail_closed_on": ["commit_mismatch", "path_missing", "hash_mismatch", "unexpected_manifest_shape"],
+  "external_validation": false,
+  "paid_provider_calls": 0,
+  "historical_128_case_rerun": false
+}
