@@ -1,0 +1,36 @@
+{
+  "schema_version": "veritas.canonical-native-chain-e2e.v1",
+  "status": "IMPLEMENTATION_PROOF_PENDING",
+  "ben_canonical_pin": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+  "benchmark_base_sha": "fc897d1bfe69d9f7c757daffa1a9339d2af12488",
+  "invariant": "One controlled candidate must traverse the exact pinned canonical native wrapper chain from independently captured original request through content-bound Decide identity, CDA/promotion, native authority resolution and native Bind without scorer/gold authority.",
+  "required_chain": [
+    "OriginalRequestEnvelope",
+    "CanonicalRequestContextV1",
+    "content-bound request identity bridge",
+    "NativeDecisionIntentFactory",
+    "RCC/REVAS ExternalRCCGate",
+    "VERITAS /v1/decide",
+    "CanonicalDecisionArtifact",
+    "CanonicalVerifiedDecisionPromotion",
+    "ExecutionIntent",
+    "NativeAuthorityResolver",
+    "NativeBindExecutor",
+    "VERITAS execute_bind_adjudication"
+  ],
+  "adversarial_requirements": [
+    "original request mutation changes/rejects request identity",
+    "candidate substitution rejected",
+    "CDA request_id substitution rejected",
+    "ExecutionIntent request_id substitution rejected",
+    "pre-state drift rejected",
+    "authority evidence tamper rejected",
+    "revoked authority rejected",
+    "scorer/gold authority injection rejected"
+  ],
+  "provider_mode": "CONTROLLED_TRANSCRIPT_OR_LOCAL_TEST_SEAM_ONLY",
+  "paid_provider_calls": 0,
+  "historical_128_case_rerun": false,
+  "external_validation": false,
+  "closure_rule": "Do not mark PROVEN until an executable exact-pin test traverses every required component and post-merge exact-main CI succeeds."
+}
