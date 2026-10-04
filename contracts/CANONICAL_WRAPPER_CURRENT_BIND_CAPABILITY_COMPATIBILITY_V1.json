@@ -1,38 +1,42 @@
 {
   "schema": "veritas.canonical-wrapper-current-bind-capability-compatibility.v1",
   "proof_round": "CANONICAL_WRAPPER_CURRENT_BIND_CAPABILITY_COMPATIBILITY_V1",
-  "status": "DESIGNED_IMPLEMENTATION_PENDING",
+  "status": "ARCHITECTURE_CORRECTED_IMPLEMENTATION_PENDING",
   "rule_of_one": "ACTION_CAPABILITY_PATH_ONLY",
   "base_benchmark_commit": "fdef6e4f7bfab4c49c366078c15b99a682e2d8da",
   "ben_canonical_pin": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
   "current_veritas_pin": "9b7376ba0077365b9d89004b06c80e76c8bfadc8",
   "historical_veritas_pin": "b39961b003179aea70e320a57cb000f56a81951e",
-  "invariant": "A Ben-canonical candidate may reach the controlled ACTION effect under the current VERITAS profile only through a verified and atomically consumed LiveAdapterBindAuthorization, transported ConsumedAuthorizationLineage, current Bind core ACTION dispatch authorization, BoundExecutionPermit, exact final dispatch, and permit consumption.",
+  "invariant": "A Ben-canonical candidate configured for the controlled sandbox ACTION may reach that effect under the current VERITAS profile only through verified Native v2 authorization, atomic authorization consumption, durable pre-effect ownership, exact immutable final dispatch binding, BoundExecutionPermit, permit consumption at the HTTPS transport boundary, and effect-state persistence/reconciliation.",
   "required_chain": [
-    "Ben canonical candidate",
-    "CDA / promotion / ExecutionIntent",
-    "verified LiveAdapterBindAuthorization",
-    "atomic consume_once",
-    "ConsumedAuthorizationLineage",
-    "execute_bind_adjudication",
-    "_authorize_action_dispatch",
+    "Ben canonical CandidateAction",
+    "NativeDecisionIntentFactory",
+    "verified CDA",
+    "canonical promotion / exact ExecutionIntent",
+    "verified Native Bind Authorization v2",
+    "atomic consume_native_bind_authorization",
+    "durable sandbox pre-effect ownership",
+    "exact ImmutableFinalDispatch / PermitBinding",
     "BoundExecutionPermit",
-    "exact final dispatch",
-    "permit consumption",
-    "controlled ACTION effect",
-    "BindReceipt"
+    "consume_bound_execution_permit at SandboxHTTPSTransport",
+    "controlled sandbox ACTION effect",
+    "effect-state persistence / reconciliation",
+    "BindReceipt / outcome lineage"
   ],
   "acceptance": [
     "Historical Ben source pins remain unchanged.",
     "Current VERITAS source identity is verified independently against the current-pin profile.",
-    "No benchmark code mints or transports ConsumedAuthorizationLineage directly.",
-    "No benchmark code mints BoundExecutionPermit directly.",
-    "Valid case reaches exactly one controlled ACTION effect and returns COMMITTED.",
-    "Missing, invalid, replayed, or mismatched authorization fails closed before the controlled ACTION effect.",
-    "Candidate, request, pre-state, authority, and execution-intent lineage remain bound across the bridge.",
-    "Evidence proves ACTION permit consumption rather than merely successful adapter.apply."
+    "The Ben-canonical candidate is sandbox-compatible from initial candidate construction; no post-promotion semantic substitution is allowed.",
+    "No benchmark code mints ConsumedAuthorizationLineage or BoundExecutionPermit directly.",
+    "Benchmark code uses the existing Native v2 authorization-consumption and sandbox execution APIs rather than creating a parallel authority bridge.",
+    "Valid case reaches exactly one controlled ACTION effect.",
+    "Missing, invalid, replayed, stale, or mismatched authorization fails closed before the controlled ACTION effect.",
+    "Candidate, request, decision, promotion, execution-intent, authorization, consumption, dispatch, effect-state, and receipt lineage remain bound.",
+    "Evidence proves BoundExecutionPermit consumption at the exact final HTTPS dispatch rather than merely successful adapter.apply."
   ],
   "excluded": [
+    "generic LiveAdapterBindAuthorization / ConsumedAuthorizationLineage route",
+    "generic execute_bind_adjudication ACTION-hook route",
     "COMPENSATION capability proof",
     "external validation",
     "model-performance claims",
@@ -45,8 +49,9 @@
     "scope": "BOUNDED_LOCAL_ENGINEERING_PROOF"
   },
   "notes": [
-    "This proof does not update a historical source hash to silence NATIVE_SOURCE_PIN_MISMATCH.",
-    "It separates the historical Ben profile from the current VERITAS profile and proves a current-profile bridge using VERITAS-owned authorization-consumption and capability mechanisms.",
-    "COMPENSATION is intentionally deferred to a separate Rule-of-One."
+    "Architecture correction: the prior frozen contract over-specified the generic LiveAdapterBindAuthorization -> ConsumedAuthorizationLineage -> Bind-core ACTION-hook route.",
+    "Current Native v2 sandbox execution already has an independent fail-closed capability path: Native v2 authorization -> atomic consumption -> pre-effect ownership -> exact final dispatch -> BoundExecutionPermit -> permit consumption -> controlled effect.",
+    "PR #2333 was closed unmerged because a new bridge into ConsumedAuthorizationLineage is not required for this invariant.",
+    "This correction changes the required proof path, not the historical Ben source pin and not the security requirement that the final effect be capability-gated."
   ]
 }
