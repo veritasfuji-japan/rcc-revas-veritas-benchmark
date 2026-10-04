@@ -124,8 +124,17 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
                     (actor,pid,'local-counter','counter','increment'),'LOCAL_GRANT_SCOPE_MISMATCH')
             return {'action_contract':contract,'authority_artifact':artifact,'requested_scope':['counter:increment'],
                     'required_evidence_metadata':{},'bind_context_metadata':{'valid':True}}
-        authority=NativeAuthorityResolver(binding_provider=grant_binding,signature_verifier=verifier,signer_policy=signer,verifier_policy=vp,
+        authority_resolver=NativeAuthorityResolver(binding_provider=grant_binding,signature_verifier=verifier,signer_policy=signer,verifier_policy=vp,
           revocation_checker=PinnedRevocations(rev,sha_file(rev)),revocation_policy=AuthorityRevocationPolicy(300,['sandbox-revocations']),clock=clock,journal=journal)
+        drift_injected=False
+        def authority(intent, pre):
+            nonlocal drift_injected
+            result=authority_resolver(intent,pre)
+            if mode=='prestate_drift' and not drift_injected:
+                state['drift_nonce']='injected-after-authority-before-apply'
+                drift_injected=True
+                journal('PRESTATE_DRIFT_INJECTED',{'counter':state['counter'],'drift_nonce':state['drift_nonce']})
+            return result
         def typed(action,pre,review):
             require(action.name=='increment' and action.arguments=={'amount':1},'LOCAL_ACTION_OUTSIDE_REQUEST')
             return DecisionCandidate(candidate_id='counter-candidate',source_model='declared-controlled-engineering-agent',
@@ -218,6 +227,9 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
                 elif mode=='request_id_substitution' and type(exc).__name__=='IntegrityError' and str(exc)=='NATIVE_CDA_REQUEST_ID_MISMATCH':
                     outcome='BLOCKED'
                     journal('EXPECTED_REQUEST_ID_SUBSTITUTION_REFUSAL',{'reason':str(exc),'apply_count':state['counter']})
+                elif mode=='prestate_drift' and type(exc).__name__=='IntegrityError' and str(exc)=='NATIVE_STATE_DRIFT_BEFORE_APPLY':
+                    outcome='BLOCKED'
+                    journal('EXPECTED_PRESTATE_DRIFT_REFUSAL',{'reason':str(exc),'apply_count':state['counter']})
                 else:
                     raise
             raw=trust_log.LOG_JSONL.read_bytes()
@@ -240,6 +252,10 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
             require(any(e['event']=='REQUEST_ID_SUBSTITUTION_INJECTED' for e in events),'REQUEST_ID_SUBSTITUTION_NOT_INJECTED')
             require(any(e['event']=='EXPECTED_REQUEST_ID_SUBSTITUTION_REFUSAL' for e in events),'REQUEST_ID_SUBSTITUTION_REFUSAL_NOT_OBSERVED')
             require(state['counter']==0,'REQUEST_ID_SUBSTITUTION_EFFECT_OCCURRED')
+        if mode=='prestate_drift':
+            require(any(e['event']=='PRESTATE_DRIFT_INJECTED' for e in events),'PRESTATE_DRIFT_NOT_INJECTED')
+            require(any(e['event']=='EXPECTED_PRESTATE_DRIFT_REFUSAL' for e in events),'PRESTATE_DRIFT_REFUSAL_NOT_OBSERVED')
+            require(state['counter']==0,'PRESTATE_DRIFT_EFFECT_OCCURRED')
         report={'status':'PASS' if ok else 'FAIL','mode':mode,'native_outcome':outcome,'final_state':state,
           'boundary':'HTTP_DECIDE_SIGNED_POLICY_CDA_PROMOTION_AUTHORITY_BIND_ENCRYPTED_TRUSTLOG',
           'veritas_source_commit':current_pins['veritas_commit'],
@@ -253,5 +269,5 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--veritas-root',type=Path,required=True)
-    p.add_argument('--mode',choices=['valid','tampered','revoked','candidate_substitution','request_id_substitution'],default='valid');a=p.parse_args()
+    p.add_argument('--mode',choices=['valid','tampered','revoked','candidate_substitution','request_id_substitution','prestate_drift'],default='valid');a=p.parse_args()
     raise SystemExit(run(a.output.resolve(),a.veritas_root.resolve(),mode=a.mode))
