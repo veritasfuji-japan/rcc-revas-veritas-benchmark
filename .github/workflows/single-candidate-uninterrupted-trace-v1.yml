@@ -25,7 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: veritasfuji-japan/rcc-revas-veritas-benchmark
           ref: external/single-candidate-uninterrupted-trace-v1
+          path: proof_checkout
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
@@ -49,7 +51,7 @@ jobs:
           test "$(git -C veritas_os_checkout rev-parse HEAD)" = "$VERITAS_PIN"
           test -z "$(git -C veritas_os_checkout status --porcelain)"
       - name: Verify current VERITAS critical source hashes
-        run: python tools/verify_current_veritas_source_pin_v1.py veritas_os_checkout
+        run: python proof_checkout/tools/verify_current_veritas_source_pin_v1.py veritas_os_checkout
       - name: Install exact canonical package
         run: |
           python -m pip install --upgrade pip
@@ -59,12 +61,12 @@ jobs:
       - name: Run current-pin canonical chain
         env:
           BEN_CANONICAL_ROOT: upstream/external-eval/v0.3.9
-        run: python integration/current_veritas_uninterrupted/sandbox.py --veritas-root veritas_os_checkout --mode valid --output current-pin-valid
+        run: python proof_checkout/integration/current_veritas_uninterrupted/sandbox.py --veritas-root veritas_os_checkout --mode valid --output current-pin-valid
       - name: Prove selected test contains one uninterrupted canonical chain
         run: |
           python - <<'PY'
           from pathlib import Path
-          p=Path("integration/current_veritas_uninterrupted/sandbox.py")
+          p=Path("proof_checkout/integration/current_veritas_uninterrupted/sandbox.py")
           tail=p.read_text()
           markers=[
             "NativeDecisionIntentFactory",
