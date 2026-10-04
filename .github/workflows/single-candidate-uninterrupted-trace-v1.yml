@@ -17,6 +17,7 @@ jobs:
     env:
       BEN_PIN: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
       BEN_PACKAGE: external-eval/v0.3.9
+      VERITAS_PIN: 4f727cf8c4f060e47d62be4d1d535e6fc0d45a92
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,6 +28,12 @@ jobs:
           ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
           path: upstream
           persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 4f727cf8c4f060e47d62be4d1d535e6fc0d45a92
+          path: veritas_os_checkout
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11.16"
@@ -34,9 +41,12 @@ jobs:
         run: |
           test "$(git -C upstream rev-parse HEAD)" = "$BEN_PIN"
           test -z "$(git -C upstream status --porcelain)"
+          test "$(git -C veritas_os_checkout rev-parse HEAD)" = "$VERITAS_PIN"
+          test -z "$(git -C veritas_os_checkout status --porcelain)"
       - name: Install exact canonical package
         run: |
           python -m pip install --upgrade pip
+          python -m pip install ./veritas_os_checkout
           python -m pip install './upstream/external-eval/v0.3.9[crypto]'
           python -m pip install pytest
       - name: Run Ben fresh native HTTP policy CDA Bind TrustLog chain
