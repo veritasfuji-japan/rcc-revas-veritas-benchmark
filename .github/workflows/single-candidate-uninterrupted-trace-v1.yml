@@ -7,6 +7,7 @@ on:
       - "contracts/SINGLE_CANDIDATE_UNINTERRUPTED_CANONICAL_CHAIN_V1.json"
       - "contracts/CURRENT_VERITAS_CRITICAL_SOURCE_HASHES_V1.json"
       - "tools/verify_current_veritas_source_pin_v1.py"
+      - "integration/current_veritas_uninterrupted/sandbox.py"
   workflow_dispatch:
 
 permissions:
@@ -53,18 +54,16 @@ jobs:
           python -m pip install ./veritas_os_checkout
           python -m pip install './upstream/external-eval/v0.3.9[crypto]'
           python -m pip install pytest
-      - name: Run Ben fresh native HTTP policy CDA Bind TrustLog chain
-        working-directory: upstream/external-eval/v0.3.9
-        run: |
-          python -m pytest -vv -s integration_tests/test_decide_pipeline.py -k test_fresh_native_http_policy_cda_bind_trustlog
+      - name: Run current-pin canonical chain
+        env:
+          BEN_CANONICAL_ROOT: upstream/external-eval/v0.3.9
+        run: python integration/current_veritas_uninterrupted/sandbox.py --veritas-root veritas_os_checkout --mode valid --output current-pin-valid
       - name: Prove selected test contains one uninterrupted canonical chain
         run: |
           python - <<'PY'
           from pathlib import Path
-          p=Path("upstream/external-eval/v0.3.9/integration_tests/test_decide_pipeline.py")
-          s=p.read_text()
-          start=s.index("def test_fresh_native_http_policy_cda_bind_trustlog")
-          tail=s[start:]
+          p=Path("integration/current_veritas_uninterrupted/sandbox.py")
+          tail=p.read_text()
           markers=[
             "NativeDecisionIntentFactory",
             "NativeAuthorityResolver",
