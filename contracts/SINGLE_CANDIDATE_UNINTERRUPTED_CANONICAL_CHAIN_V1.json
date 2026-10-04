@@ -38,3 +38,4 @@
   "external_validation": false,
   "note": "The existing Ben fresh native sandbox is a candidate implementation fixture, but it may not be relabeled as AgentDojo semantic authority. This proof must preserve its fixture scope unless an AgentDojo-native authority source is explicitly wired."
 }
+
