@@ -1,0 +1,52 @@
+name: Current VERITAS Critical Source Hash Pinning V1
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/current-veritas-critical-source-hash-pinning-v1.yml"
+      - "contracts/CURRENT_VERITAS_CRITICAL_SOURCE_HASHES_V1.json"
+      - "tools/verify_current_veritas_source_pin_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-source-pin:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      VERITAS_PIN: 4f727cf8c4f060e47d62be4d1d535e6fc0d45a92
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 4f727cf8c4f060e47d62be4d1d535e6fc0d45a92
+          path: veritas_os_checkout
+          persist-credentials: false
+      - name: Verify exact commit and critical source hashes
+        run: python tools/verify_current_veritas_source_pin_v1.py veritas_os_checkout
+      - name: Prove one-byte mutation fails closed
+        run: |
+          cp -a veritas_os_checkout mutated
+          printf '\n# mutation\n' >> mutated/veritas_os/security/hash.py
+          if python tools/verify_current_veritas_source_pin_v1.py mutated; then
+            echo "mutation unexpectedly accepted"; exit 1
+          fi
+      - name: Prove missing critical source fails closed
+        run: |
+          cp -a veritas_os_checkout missing
+          rm missing/veritas_os/security/hash.py
+          if python tools/verify_current_veritas_source_pin_v1.py missing; then
+            echo "missing source unexpectedly accepted"; exit 1
+          fi
+      - name: Prove source substitution fails closed
+        run: |
+          cp -a veritas_os_checkout substituted
+          cp substituted/veritas_os/policy/bind_core/normalizers.py substituted/veritas_os/security/hash.py
+          if python tools/verify_current_veritas_source_pin_v1.py substituted; then
+            echo "substitution unexpectedly accepted"; exit 1
+          fi
