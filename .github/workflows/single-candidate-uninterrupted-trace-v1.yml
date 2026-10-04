@@ -74,6 +74,10 @@ jobs:
         env:
           BEN_CANONICAL_ROOT: upstream/external-eval/v0.3.9
         run: python proof_checkout/integration/current_veritas_uninterrupted/sandbox.py --veritas-root veritas_os_checkout --mode prestate_drift --output current-pin-prestate-drift
+      - name: Run scorer gold authority isolation negative
+        env:
+          BEN_CANONICAL_ROOT: upstream/external-eval/v0.3.9
+        run: python proof_checkout/integration/current_veritas_uninterrupted/sandbox.py --veritas-root veritas_os_checkout --mode scorer_gold_authority --output current-pin-scorer-gold-authority
       - name: Run authority tamper negative
         env:
           BEN_CANONICAL_ROOT: upstream/external-eval/v0.3.9
