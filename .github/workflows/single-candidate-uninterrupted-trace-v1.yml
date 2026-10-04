@@ -62,6 +62,14 @@ jobs:
         env:
           BEN_CANONICAL_ROOT: upstream/external-eval/v0.3.9
         run: python proof_checkout/integration/current_veritas_uninterrupted/sandbox.py --veritas-root veritas_os_checkout --mode valid --output current-pin-valid
+      - name: Run authority tamper negative
+        env:
+          BEN_CANONICAL_ROOT: upstream/external-eval/v0.3.9
+        run: python proof_checkout/integration/current_veritas_uninterrupted/sandbox.py --veritas-root veritas_os_checkout --mode tampered --output current-pin-tampered
+      - name: Run authority revocation negative
+        env:
+          BEN_CANONICAL_ROOT: upstream/external-eval/v0.3.9
+        run: python proof_checkout/integration/current_veritas_uninterrupted/sandbox.py --veritas-root veritas_os_checkout --mode revoked --output current-pin-revoked
       - name: Prove selected test contains one uninterrupted canonical chain
         run: |
           python - <<'PY'
