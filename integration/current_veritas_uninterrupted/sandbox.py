@@ -206,7 +206,7 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
         require(any(e['event']=='NATIVE_BIND_PERSISTENCE_VERIFIED' for e in events),'BIND_PERSISTENCE_NOT_MEASURED')
         report={'status':'PASS' if ok else 'FAIL','mode':mode,'native_outcome':outcome,'final_state':state,
           'boundary':'HTTP_DECIDE_SIGNED_POLICY_CDA_PROMOTION_AUTHORITY_BIND_ENCRYPTED_TRUSTLOG',
-          'veritas_source_commit':expected_pins['repositories']['veritas']['commit'],
+          'veritas_source_commit':current_pins['veritas_commit'],
           'controlled_provider_calls':provider_calls,'successful_native_kernel_calls':kernel_calls,'paid_provider_calls':0,
           'provider_mode':'CONTROLLED_TRANSCRIPT_AT_LLM_CLIENT_ONLY','claim_scope':'LOCAL_ENGINEERING_ACCEPTANCE_NOT_MODEL_PERFORMANCE',
           'public_authority_key_hex':public.hex(),'policy_source_sha256':sha_file(output/'sandbox-policy.json'),
