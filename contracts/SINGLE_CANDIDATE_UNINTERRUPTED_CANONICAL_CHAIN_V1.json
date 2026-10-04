@@ -4,7 +4,7 @@
   "parent_contract": "CANONICAL_NATIVE_CHAIN_E2E_V1",
   "benchmark_base_sha": "293d165444b95e523543f11207bdc66cf27cb035",
   "ben_canonical_pin": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
-  "veritas_pin": "4f727cf8c4f060e47d62be4d1d535e6fc0d45a92",
+  "veritas_pin": "9b7376ba0077365b9d89004b06c80e76c8bfadc8",
   "invariant": "One and the same candidate and request lineage must traverse every canonical wrapper and native VERITAS boundary in one uninterrupted executable proof.",
   "continuity_fields": [
     "original_request_digest",
@@ -38,4 +38,3 @@
   "external_validation": false,
   "note": "The existing Ben fresh native sandbox is a candidate implementation fixture, but it may not be relabeled as AgentDojo semantic authority. This proof must preserve its fixture scope unless an AgentDojo-native authority source is explicitly wired."
 }
-
