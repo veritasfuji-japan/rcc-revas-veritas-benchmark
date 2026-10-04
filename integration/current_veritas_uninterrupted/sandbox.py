@@ -38,7 +38,7 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
     require(current_pins['veritas_commit'] == os.environ.get('VERITAS_PIN'), 'CURRENT_VERITAS_PIN_COMMIT_MISMATCH')
     for rel, expected in sorted(current_pins['critical_sources'].items()):
         require(sha_file(veritas_root/rel) == expected, 'CURRENT_VERITAS_SOURCE_PIN_MISMATCH', rel)
-    events=[]; state={'counter':0}; provider_calls=0; kernel_calls=0
+    events=[]; state={'counter':0}; provider_calls=0; kernel_calls=0; apply_count=0
     def journal(event,payload):
         record={'sequence':len(events),'event':event,'payload':deepcopy(payload)}
         with (output/'journal.jsonl').open('a') as f:
@@ -218,6 +218,9 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
               target='isolated-local-counter',bind_time=lambda:iso(clock()),native_core_sha256=sha_file(Path(inspect.getsourcefile(execute_bind_adjudication))),
               ledger=OperationLedger(output/'operations.sqlite'),append_native_trustlog=True,native_trustlog_verifier=verify_bind)
             def apply(action):
+                nonlocal apply_count
+                apply_count+=1
+                require(apply_count==1,'APPLY_CALLED_MORE_THAN_ONCE')
                 state['counter']+=action.arguments['amount'];return state['counter']
             try:
                 result=executor.call(CandidateAction('tool_call',name='increment',arguments={'amount':1}),apply,operation_id='increment-once')
@@ -261,7 +264,9 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
             write_json_new(output/'native-ledger-decrypted.json',list(trust_log.iter_trust_log(reverse=False)))
             (output/'native-ledger-encrypted.jsonl').write_bytes(raw)
         expected='COMMITTED' if mode=='valid' else 'BLOCKED'
-        ok=outcome==expected and state['counter']==(1 if mode=='valid' else 0)
+        expected_apply_count=1 if mode=='valid' else 0
+        require(apply_count==expected_apply_count,'EXPLICIT_APPLY_COUNT_MISMATCH',f'mode={mode} expected={expected_apply_count} actual={apply_count}')
+        ok=outcome==expected and state['counter']==(1 if mode=='valid' else 0) and apply_count==expected_apply_count
         if mode in ('valid','tampered','revoked'):
             require(any(e['event']=='NATIVE_BIND_PERSISTENCE_VERIFIED' for e in events),'BIND_PERSISTENCE_NOT_MEASURED')
         if mode=='candidate_substitution':
@@ -284,7 +289,7 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
         report={'status':'PASS' if ok else 'FAIL','mode':mode,'native_outcome':outcome,'final_state':state,
           'boundary':'HTTP_DECIDE_SIGNED_POLICY_CDA_PROMOTION_AUTHORITY_BIND_ENCRYPTED_TRUSTLOG',
           'veritas_source_commit':current_pins['veritas_commit'],
-          'controlled_provider_calls':provider_calls,'successful_native_kernel_calls':kernel_calls,'paid_provider_calls':0,
+          'controlled_provider_calls':provider_calls,'successful_native_kernel_calls':kernel_calls,'paid_provider_calls':0,'apply_count':apply_count,
           'provider_mode':'CONTROLLED_TRANSCRIPT_AT_LLM_CLIENT_ONLY','claim_scope':'LOCAL_ENGINEERING_ACCEPTANCE_NOT_MODEL_PERFORMANCE',
           'public_authority_key_hex':public.hex(),'policy_source_sha256':sha_file(output/'sandbox-policy.json'),
           'production_authority_claimed':False,'production_WORM_claimed':False,'native_chain_verified':True,
