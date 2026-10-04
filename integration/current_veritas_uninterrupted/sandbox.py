@@ -176,15 +176,23 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
                 response=client.post('/v1/decide',json=payload,headers={'X-API-Key':api_key})
                 require(response.status_code==200,'NATIVE_DECIDE_HTTP_FAILED',f'status={response.status_code} body={response.text[:2000]}')
                 decoded=response.json()
-                if mode=='candidate_substitution':
-                    require(type(decoded.get('chosen')) is dict,'CANDIDATE_SUBSTITUTION_TARGET_MISSING')
+                if mode in ('candidate_substitution','request_id_substitution'):
                     decoded=deepcopy(decoded)
-                    from veritas_os.policy.decision_candidate import normalize_decision_candidate, hash_decision_candidate
-                    before=hash_decision_candidate(normalize_decision_candidate(decoded['chosen']))
-                    decoded['chosen']['target_resource']='substituted-resource'
-                    after=hash_decision_candidate(normalize_decision_candidate(decoded['chosen']))
-                    require(before != after,'CANDIDATE_SUBSTITUTION_HASH_UNCHANGED')
-                    journal('CANDIDATE_SUBSTITUTION_INJECTED',{'before_hash':before,'after_hash':after})
+                    if mode=='candidate_substitution':
+                        require(type(decoded.get('chosen')) is dict,'CANDIDATE_SUBSTITUTION_TARGET_MISSING')
+                        from veritas_os.policy.decision_candidate import normalize_decision_candidate, hash_decision_candidate
+                        before=hash_decision_candidate(normalize_decision_candidate(decoded['chosen']))
+                        decoded['chosen']['target_resource']='substituted-resource'
+                        after=hash_decision_candidate(normalize_decision_candidate(decoded['chosen']))
+                        require(before != after,'CANDIDATE_SUBSTITUTION_HASH_UNCHANGED')
+                        journal('CANDIDATE_SUBSTITUTION_INJECTED',{'before_hash':before,'after_hash':after})
+                    else:
+                        before=str(decoded.get('request_id') or '')
+                        require(bool(before),'REQUEST_ID_SUBSTITUTION_TARGET_MISSING')
+                        after=before+'-substituted'
+                        require(before != after,'REQUEST_ID_SUBSTITUTION_UNCHANGED')
+                        decoded['request_id']=after
+                        journal('REQUEST_ID_SUBSTITUTION_INJECTED',{'before_request_id':before,'after_request_id':after})
                 return decoded
             sources={k:sha_file(Path(inspect.getsourcefile(fn))) for k,fn in {
                 'cda':verify_canonical_decision_artifact,'promotion':build_canonical_verified_decision_promotion_packet}.items()}
@@ -207,6 +215,9 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
                 if mode=='candidate_substitution' and type(exc).__name__=='IntegrityError' and str(exc)=='NATIVE_CDA_SELECTED_CANDIDATE_CHANGED':
                     outcome='BLOCKED'
                     journal('EXPECTED_CANDIDATE_SUBSTITUTION_REFUSAL',{'reason':str(exc),'apply_count':state['counter']})
+                elif mode=='request_id_substitution' and type(exc).__name__=='IntegrityError' and str(exc)=='NATIVE_CDA_REQUEST_ID_MISMATCH':
+                    outcome='BLOCKED'
+                    journal('EXPECTED_REQUEST_ID_SUBSTITUTION_REFUSAL',{'reason':str(exc),'apply_count':state['counter']})
                 else:
                     raise
             raw=trust_log.LOG_JSONL.read_bytes()
@@ -225,6 +236,10 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
             require(any(e['event']=='CANDIDATE_SUBSTITUTION_INJECTED' for e in events),'CANDIDATE_SUBSTITUTION_NOT_INJECTED')
             require(any(e['event']=='EXPECTED_CANDIDATE_SUBSTITUTION_REFUSAL' for e in events),'CANDIDATE_SUBSTITUTION_REFUSAL_NOT_OBSERVED')
             require(state['counter']==0,'CANDIDATE_SUBSTITUTION_EFFECT_OCCURRED')
+        if mode=='request_id_substitution':
+            require(any(e['event']=='REQUEST_ID_SUBSTITUTION_INJECTED' for e in events),'REQUEST_ID_SUBSTITUTION_NOT_INJECTED')
+            require(any(e['event']=='EXPECTED_REQUEST_ID_SUBSTITUTION_REFUSAL' for e in events),'REQUEST_ID_SUBSTITUTION_REFUSAL_NOT_OBSERVED')
+            require(state['counter']==0,'REQUEST_ID_SUBSTITUTION_EFFECT_OCCURRED')
         report={'status':'PASS' if ok else 'FAIL','mode':mode,'native_outcome':outcome,'final_state':state,
           'boundary':'HTTP_DECIDE_SIGNED_POLICY_CDA_PROMOTION_AUTHORITY_BIND_ENCRYPTED_TRUSTLOG',
           'veritas_source_commit':current_pins['veritas_commit'],
@@ -238,5 +253,5 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--veritas-root',type=Path,required=True)
-    p.add_argument('--mode',choices=['valid','tampered','revoked','candidate_substitution'],default='valid');a=p.parse_args()
+    p.add_argument('--mode',choices=['valid','tampered','revoked','candidate_substitution','request_id_substitution'],default='valid');a=p.parse_args()
     raise SystemExit(run(a.output.resolve(),a.veritas_root.resolve(),mode=a.mode))
