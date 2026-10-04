@@ -169,7 +169,7 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
             nonlocal kernel_calls
             result=await original(*a,**kw);kernel_calls+=1;return result
         with patch.object(llm_client,'chat',chat),patch.object(kernel,'decide',observe):
-          with TestClient(server.app) as client:
+          with TestClient(server.app, raise_server_exceptions=True) as client:
             invalid=client.post('/v1/decide',json=request_context(None,None),headers={'X-API-Key':'invalid-test-key'})
             require(invalid.status_code==401,'NATIVE_AUTHENTICATION_NOT_ENFORCED')
             def post(payload):
