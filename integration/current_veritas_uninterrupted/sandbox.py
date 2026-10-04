@@ -174,7 +174,7 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
             require(invalid.status_code==401,'NATIVE_AUTHENTICATION_NOT_ENFORCED')
             def post(payload):
                 response=client.post('/v1/decide',json=payload,headers={'X-API-Key':api_key})
-                require(response.status_code==200,'NATIVE_DECIDE_HTTP_FAILED')
+                require(response.status_code==200,'NATIVE_DECIDE_HTTP_FAILED',f'status={response.status_code} body={response.text[:2000]}')
                 return response.json()
             sources={k:sha_file(Path(inspect.getsourcefile(fn))) for k,fn in {
                 'cda':verify_canonical_decision_artifact,'promotion':build_canonical_verified_decision_promotion_packet}.items()}
