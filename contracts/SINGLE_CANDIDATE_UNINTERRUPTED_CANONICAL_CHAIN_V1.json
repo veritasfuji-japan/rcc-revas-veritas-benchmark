@@ -1,0 +1,40 @@
+{
+  "schema_version": "veritas.single-candidate-uninterrupted-canonical-chain.v1",
+  "status": "PROOF_PENDING",
+  "parent_contract": "CANONICAL_NATIVE_CHAIN_E2E_V1",
+  "benchmark_base_sha": "293d165444b95e523543f11207bdc66cf27cb035",
+  "ben_canonical_pin": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+  "veritas_pin": "4f727cf8c4f060e47d62be4d1d535e6fc0d45a92",
+  "invariant": "One and the same candidate and request lineage must traverse every canonical wrapper and native VERITAS boundary in one uninterrupted executable proof.",
+  "continuity_fields": [
+    "original_request_digest",
+    "request_id",
+    "candidate_hash",
+    "decision_id",
+    "expected_state_fingerprint",
+    "execution_intent_id"
+  ],
+  "required_observations": [
+    "factory_input",
+    "decide_request",
+    "CDA",
+    "promotion_packet",
+    "ExecutionIntent",
+    "verified_authority",
+    "BindReceipt",
+    "apply_count"
+  ],
+  "closure_conditions": [
+    "all continuity fields are equal where they cross boundaries",
+    "exactly one apply on COMMITTED path",
+    "candidate substitution fails",
+    "request_id substitution fails",
+    "prestate drift fails",
+    "authority tamper/revocation fails",
+    "scorer/gold cannot supply authority"
+  ],
+  "paid_provider_calls": 0,
+  "historical_128_case_rerun": false,
+  "external_validation": false,
+  "note": "The existing Ben fresh native sandbox is a candidate implementation fixture, but it may not be relabeled as AgentDojo semantic authority. This proof must preserve its fixture scope unless an AgentDojo-native authority source is explicitly wired."
+}
