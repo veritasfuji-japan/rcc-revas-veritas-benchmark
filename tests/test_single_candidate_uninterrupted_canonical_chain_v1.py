@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
 
-def test_single_candidate_chain_contract_is_fail_closed_pending_real_trace():
+def test_single_candidate_chain_contract_records_bounded_proof_closure():
     c=json.loads(Path("contracts/SINGLE_CANDIDATE_UNINTERRUPTED_CANONICAL_CHAIN_V1.json").read_text())
-    assert c["status"]=="PROOF_PENDING"
+    assert c["status"]=="PROVEN_WITHIN_BOUNDED_LOCAL_ENGINEERING_SCOPE"
     assert c["paid_provider_calls"]==0
     assert c["historical_128_case_rerun"] is False
     assert c["external_validation"] is False

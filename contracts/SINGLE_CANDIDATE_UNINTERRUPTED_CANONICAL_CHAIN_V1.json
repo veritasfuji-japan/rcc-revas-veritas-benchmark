@@ -1,10 +1,10 @@
 {
   "schema_version": "veritas.single-candidate-uninterrupted-canonical-chain.v1",
-  "status": "PROOF_PENDING",
+  "status": "PROVEN_WITHIN_BOUNDED_LOCAL_ENGINEERING_SCOPE",
   "parent_contract": "CANONICAL_NATIVE_CHAIN_E2E_V1",
   "benchmark_base_sha": "293d165444b95e523543f11207bdc66cf27cb035",
   "ben_canonical_pin": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
-  "veritas_pin": "4f727cf8c4f060e47d62be4d1d535e6fc0d45a92",
+  "veritas_pin": "9b7376ba0077365b9d89004b06c80e76c8bfadc8",
   "invariant": "One and the same candidate and request lineage must traverse every canonical wrapper and native VERITAS boundary in one uninterrupted executable proof.",
   "continuity_fields": [
     "original_request_digest",
@@ -36,5 +36,16 @@
   "paid_provider_calls": 0,
   "historical_128_case_rerun": false,
   "external_validation": false,
-  "note": "The existing Ben fresh native sandbox is a candidate implementation fixture, but it may not be relabeled as AgentDojo semantic authority. This proof must preserve its fixture scope unless an AgentDojo-native authority source is explicitly wired."
+  "note": "The existing Ben fresh native sandbox is a candidate implementation fixture, but it may not be relabeled as AgentDojo semantic authority. This proof must preserve its fixture scope unless an AgentDojo-native authority source is explicitly wired.",
+  "proof_treatment_freeze": {
+    "treatment_head_sha": "f124bb26a84856d3cd5d5c4813c2b374cc5dc544",
+    "closure_run_id": 37199658113,
+    "closure_job_id": 111428543781,
+    "continuity_matrix_sha256": "2b7fdab04c9836ea6b0ad43b6d4318595c9bc5cffa8aeced7ddec951a4b18c02",
+    "status": "CLOSED",
+    "fresh_final_run_id": 37199940843,
+    "fresh_final_job_id": 111429386475,
+    "fresh_final_continuity_matrix_sha256": "86ca27448e50881cc36b8e053a5e75fb59d310a05d4eaed9253b1b5b4100d86c",
+    "determination": "PROVEN within the frozen bounded local engineering fixture and stated assumptions; not external validation, not model-performance evidence, and not AgentDojo semantic authority."
+  }
 }

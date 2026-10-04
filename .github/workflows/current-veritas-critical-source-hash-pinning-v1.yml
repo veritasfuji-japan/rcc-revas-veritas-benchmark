@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      VERITAS_PIN: 4f727cf8c4f060e47d62be4d1d535e6fc0d45a92
+      VERITAS_PIN: 9b7376ba0077365b9d89004b06c80e76c8bfadc8
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: veritasfuji-japan/veritas_os
-          ref: 4f727cf8c4f060e47d62be4d1d535e6fc0d45a92
+          ref: 9b7376ba0077365b9d89004b06c80e76c8bfadc8
           path: veritas_os_checkout
           persist-credentials: false
       - name: Verify exact commit and critical source hashes
