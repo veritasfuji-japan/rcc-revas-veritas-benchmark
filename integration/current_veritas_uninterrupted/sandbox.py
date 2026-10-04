@@ -25,7 +25,7 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
     from rveval.models import CandidateAction
     from rveval.native_hook import NativeGovernanceHook
     from rveval.integrations.rcc_external import ExternalRCCGate
-    from rveval.integrations.veritas_bind import NativeBindExecutor
+    from rveval.integrations.veritas_bind import NativeBindExecutor, NativeBindFailure
     from rveval.integrations.decide_pipeline import NativeDecisionIntentFactory
     from rveval.integrations.veritas_authority import Ed25519AuthorityVerifier, PinnedRevocations, NativeAuthorityResolver
     from rveval.integrations.boundary import GovernanceStop
@@ -227,9 +227,9 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
                 elif mode=='request_id_substitution' and type(exc).__name__=='IntegrityError' and str(exc)=='NATIVE_CDA_REQUEST_ID_MISMATCH':
                     outcome='BLOCKED'
                     journal('EXPECTED_REQUEST_ID_SUBSTITUTION_REFUSAL',{'reason':str(exc),'apply_count':state['counter']})
-                elif mode=='prestate_drift' and type(exc).__name__=='IntegrityError' and str(exc)=='NATIVE_STATE_DRIFT_BEFORE_APPLY':
+                elif mode=='prestate_drift' and isinstance(exc,NativeBindFailure) and exc.receipt.get('final_outcome')=='APPLY_FAILED' and type(exc.__cause__).__name__=='IntegrityError' and str(exc.__cause__)=='NATIVE_STATE_DRIFT_BEFORE_APPLY':
                     outcome='BLOCKED'
-                    journal('EXPECTED_PRESTATE_DRIFT_REFUSAL',{'reason':str(exc),'apply_count':state['counter']})
+                    journal('EXPECTED_PRESTATE_DRIFT_REFUSAL',{'reason':str(exc.__cause__),'native_final_outcome':exc.receipt.get('final_outcome'),'apply_count':state['counter']})
                 else:
                     raise
             raw=trust_log.LOG_JSONL.read_bytes()
