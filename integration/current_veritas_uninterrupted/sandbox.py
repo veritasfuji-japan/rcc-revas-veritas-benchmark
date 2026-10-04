@@ -175,7 +175,17 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
             def post(payload):
                 response=client.post('/v1/decide',json=payload,headers={'X-API-Key':api_key})
                 require(response.status_code==200,'NATIVE_DECIDE_HTTP_FAILED',f'status={response.status_code} body={response.text[:2000]}')
-                return response.json()
+                decoded=response.json()
+                if mode=='candidate_substitution':
+                    require(type(decoded.get('chosen')) is dict,'CANDIDATE_SUBSTITUTION_TARGET_MISSING')
+                    decoded=deepcopy(decoded)
+                    from veritas_os.policy.decision_candidate import normalize_decision_candidate, hash_decision_candidate
+                    before=hash_decision_candidate(normalize_decision_candidate(decoded['chosen']))
+                    decoded['chosen']['target_resource']='substituted-resource'
+                    after=hash_decision_candidate(normalize_decision_candidate(decoded['chosen']))
+                    require(before != after,'CANDIDATE_SUBSTITUTION_HASH_UNCHANGED')
+                    journal('CANDIDATE_SUBSTITUTION_INJECTED',{'before_hash':before,'after_hash':after})
+                return decoded
             sources={k:sha_file(Path(inspect.getsourcefile(fn))) for k,fn in {
                 'cda':verify_canonical_decision_artifact,'promotion':build_canonical_verified_decision_promotion_packet}.items()}
             factory=NativeDecisionIntentFactory(post=post,candidate_factory=typed,request_context=request_context,verify_receipt=verify_decide,
