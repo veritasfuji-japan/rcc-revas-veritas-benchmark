@@ -122,6 +122,10 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
         def grant_binding(intent, pre):
             require((intent.actor_identity,intent.policy_snapshot_id,intent.target_system,intent.target_resource,intent.intended_action)==
                     (actor,pid,'local-counter','counter','increment'),'LOCAL_GRANT_SCOPE_MISMATCH')
+            if mode=='scorer_gold_authority':
+                journal('SCORER_GOLD_AUTHORITY_INJECTION_PRESENT',{'scorer_label':'allow','gold_answer':'counter:increment','trusted_provider_authority_supplied':False})
+                return {'action_contract':contract,'authority_artifact':{},'requested_scope':['counter:increment'],
+                        'required_evidence_metadata':{},'bind_context_metadata':{'valid':True}}
             return {'action_contract':contract,'authority_artifact':artifact,'requested_scope':['counter:increment'],
                     'required_evidence_metadata':{},'bind_context_metadata':{'valid':True}}
         authority_resolver=NativeAuthorityResolver(binding_provider=grant_binding,signature_verifier=verifier,signer_policy=signer,verifier_policy=vp,
@@ -220,6 +224,8 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
                 outcome=result.receipt['native_bind_receipt']['final_outcome']
             except GovernanceStop as exc:
                 outcome='BLOCKED'
+                if mode=='scorer_gold_authority':
+                    journal('EXPECTED_SCORER_GOLD_AUTHORITY_REFUSAL',{'apply_count':state['counter']})
             except Exception as exc:
                 if mode=='candidate_substitution' and type(exc).__name__=='IntegrityError' and str(exc)=='NATIVE_CDA_SELECTED_CANDIDATE_CHANGED':
                     outcome='BLOCKED'
@@ -227,6 +233,9 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
                 elif mode=='request_id_substitution' and type(exc).__name__=='IntegrityError' and str(exc)=='NATIVE_CDA_REQUEST_ID_MISMATCH':
                     outcome='BLOCKED'
                     journal('EXPECTED_REQUEST_ID_SUBSTITUTION_REFUSAL',{'reason':str(exc),'apply_count':state['counter']})
+                elif mode=='scorer_gold_authority' and isinstance(exc,GovernanceStop):
+                    outcome='BLOCKED'
+                    journal('EXPECTED_SCORER_GOLD_AUTHORITY_REFUSAL',{'apply_count':state['counter']})
                 elif mode=='prestate_drift' and isinstance(exc,NativeBindFailure):
                     cause=exc.__cause__
                     diagnostic={'exception_type':type(exc).__name__,'native_final_outcome':exc.receipt.get('final_outcome'),'cause_type':type(cause).__name__ if cause is not None else None,'cause':str(cause) if cause is not None else None,'apply_count':state['counter'],'receipt':exc.receipt}
@@ -263,6 +272,11 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
             require(any(e['event']=='REQUEST_ID_SUBSTITUTION_INJECTED' for e in events),'REQUEST_ID_SUBSTITUTION_NOT_INJECTED')
             require(any(e['event']=='EXPECTED_REQUEST_ID_SUBSTITUTION_REFUSAL' for e in events),'REQUEST_ID_SUBSTITUTION_REFUSAL_NOT_OBSERVED')
             require(state['counter']==0,'REQUEST_ID_SUBSTITUTION_EFFECT_OCCURRED')
+        if mode=='scorer_gold_authority':
+            require(any(e['event']=='SCORER_GOLD_AUTHORITY_INJECTION_PRESENT' for e in events),'SCORER_GOLD_AUTHORITY_INJECTION_NOT_PRESENT')
+            require(any(e['event']=='NATIVE_AUTHORITY_PROOF_REFUSED' for e in events),'SCORER_GOLD_DID_NOT_REACH_NATIVE_AUTHORITY_REFUSAL')
+            require(any(e['event']=='EXPECTED_SCORER_GOLD_AUTHORITY_REFUSAL' for e in events),'SCORER_GOLD_AUTHORITY_REFUSAL_NOT_OBSERVED')
+            require(state['counter']==0,'SCORER_GOLD_AUTHORITY_EFFECT_OCCURRED')
         if mode=='prestate_drift':
             require(any(e['event']=='PRESTATE_DRIFT_INJECTED' for e in events),'PRESTATE_DRIFT_NOT_INJECTED')
             require(any(e['event']=='EXPECTED_PRESTATE_DRIFT_REFUSAL' for e in events),'PRESTATE_DRIFT_REFUSAL_NOT_OBSERVED')
@@ -280,5 +294,5 @@ def run(output: Path, veritas_root: Path, *, mode: str = 'valid') -> int:
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--veritas-root',type=Path,required=True)
-    p.add_argument('--mode',choices=['valid','tampered','revoked','candidate_substitution','request_id_substitution','prestate_drift'],default='valid');a=p.parse_args()
+    p.add_argument('--mode',choices=['valid','tampered','revoked','candidate_substitution','request_id_substitution','prestate_drift','scorer_gold_authority'],default='valid');a=p.parse_args()
     raise SystemExit(run(a.output.resolve(),a.veritas_root.resolve(),mode=a.mode))
