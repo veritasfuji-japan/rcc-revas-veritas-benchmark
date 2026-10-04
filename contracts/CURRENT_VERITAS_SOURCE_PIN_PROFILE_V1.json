@@ -1,0 +1,19 @@
+{
+  "schema_version": "veritas.current-veritas-source-pin-profile.v1",
+  "status": "PROFILE_FREEZE",
+  "purpose": "Define a VERITAS-owned exact source-pin profile for running Ben v0.3.9 canonical wrappers against the current VERITAS proof baseline without modifying or pretending to satisfy Ben's historical SOURCES_NATIVE.json.",
+  "ben_canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+  "ben_historical_veritas_commit": "b39961b003179aea70e320a57cb000f56a81951e",
+  "current_veritas_commit": "4f727cf8c4f060e47d62be4d1d535e6fc0d45a92",
+  "rules": [
+    "Ben SOURCES_NATIVE.json remains immutable and authoritative only for Ben historical sandbox.",
+    "Current VERITAS profile must independently hash every critical VERITAS source path required by the canonical wrappers.",
+    "The current profile must fail closed on any path/hash/commit mismatch.",
+    "No upstream source-pin check may be disabled, monkey-patched, or rewritten.",
+    "A run using this profile must be labeled VERITAS-owned current-pin integration proof, not Ben historical sandbox reproduction."
+  ],
+  "next_gate": "Generate exact critical-file hashes from current VERITAS commit and execute an equivalent uninterrupted fixture under this independent profile.",
+  "external_validation": false,
+  "paid_provider_calls": 0,
+  "historical_128_case_rerun": false
+}
