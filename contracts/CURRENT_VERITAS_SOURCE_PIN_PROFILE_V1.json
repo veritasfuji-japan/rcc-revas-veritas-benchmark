@@ -4,7 +4,7 @@
   "purpose": "Define a VERITAS-owned exact source-pin profile for running Ben v0.3.9 canonical wrappers against the current VERITAS proof baseline without modifying or pretending to satisfy Ben's historical SOURCES_NATIVE.json.",
   "ben_canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
   "ben_historical_veritas_commit": "b39961b003179aea70e320a57cb000f56a81951e",
-  "current_veritas_commit": "4f727cf8c4f060e47d62be4d1d535e6fc0d45a92",
+  "current_veritas_commit": "9b7376ba0077365b9d89004b06c80e76c8bfadc8",
   "rules": [
     "Ben SOURCES_NATIVE.json remains immutable and authoritative only for Ben historical sandbox.",
     "Current VERITAS profile must independently hash every critical VERITAS source path required by the canonical wrappers.",
