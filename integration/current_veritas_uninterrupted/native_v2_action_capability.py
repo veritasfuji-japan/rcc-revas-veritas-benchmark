@@ -79,9 +79,16 @@ def main(output: Path, veritas_root: Path) -> int:
             del request
             from veritas_os.core import pipeline
             desired=candidate_factory(upstream,{},{}).to_dict()
-            candidate=replace(poc._candidate(),intended_action=desired["intended_action"],
-                target_system=desired["target_system"],target_resource=desired["target_resource"],
-                evidence_refs=desired["evidence_refs"],required_human_approval=False)
+            candidate=replace(poc._candidate(),candidate_id=desired["candidate_id"],source_model=desired["source_model"],
+                source_trace_ref=desired["source_trace_ref"],candidate_type=desired["candidate_type"],
+                action_type=desired["action_type"],actor_identity=desired["actor_identity"],
+                intended_action=desired["intended_action"],target_system=desired["target_system"],
+                target_resource=desired["target_resource"],required_authority=desired["required_authority"],
+                evidence_refs=desired["evidence_refs"],required_human_approval=desired["required_human_approval"],
+                risk_level=desired["risk_level"],regulated_or_high_impact=desired["regulated_or_high_impact"],
+                policy_context_refs=desired["policy_context_refs"],ambiguity_flags=desired["ambiguity_flags"],
+                missing_required_fields=desired["missing_required_fields"],candidate_rationale_ref=desired["candidate_rationale_ref"],
+                metadata=desired["metadata"])
             with (patch.object(poc,"_candidate",return_value=candidate),
                   patch.object(pipeline,"REPLAY_SOURCE_DIR",runtime/"replay-sources")):
                 response,pipeline_ok,calls=poc._decide(
