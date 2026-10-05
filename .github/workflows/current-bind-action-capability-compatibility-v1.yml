@@ -29,7 +29,9 @@ jobs:
       VERITAS_SANDBOX_CA_FILE: /tmp/veritas-action-capability/ca.crt
     steps:
       - uses: actions/checkout@v4
-        with: {path: benchmark}
+        with:
+          path: benchmark
+          fetch-depth: 0
       - uses: actions/checkout@v4
         with:
           repository: veritasfuji-japan/veritas_os
@@ -75,7 +77,7 @@ jobs:
       - name: Enforce fail closed
         if: always()
         working-directory: benchmark
-        run: pytest tests/test_current_bind_action_capability_compatibility_v1.py -q --tb=short
+        run: python -m pytest tests/test_current_bind_action_capability_compatibility_v1.py -q --tb=short
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
