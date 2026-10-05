@@ -77,7 +77,7 @@ jobs:
           assert os.environ.get("OPENAI_API_KEY", "") == ""
 
           impl = json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"))
-          freeze = json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.3.json"))
+          freeze = json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.4.json"))
           gate = impl["execution_gate"]
           assert gate in {"CLOSED", "OPEN"}
 
