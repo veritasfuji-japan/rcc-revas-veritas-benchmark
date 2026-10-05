@@ -1,0 +1,27 @@
+{
+  "schema_version": "veritas.agentdojo-final-runner-canonical-pin-alignment.v0.1",
+  "status": "CANONICAL_PIN_ALIGNED_EXECUTION_GATE_CLOSED",
+  "rule_of_one": "Align the current result-bearing final runner VERITAS source pin to the already validated canonical candidate without changing authority semantics or opening execution.",
+  "base_main_sha": "b24f8c7617f38853fcc6e44326f90528f2249b92",
+  "prior_veritas_commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+  "canonical_veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+  "promotion_contract": "contracts/AGENTDOJO_FINAL_128_PROMOTION_v0.1.json",
+  "aligned_files": [
+    "scripts/agentdojo_clean_ab_final_runner_v0_1.py",
+    ".github/workflows/agentdojo-clean-ab-final-v0_1.yml",
+    "contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"
+  ],
+  "unchanged_pins": {
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "authority_semantics_changed": false,
+  "task_dispositions_changed": false,
+  "corpus_changed": false,
+  "execution_gate": "CLOSED",
+  "final_128_authorized": false,
+  "api_execution_authorized": false,
+  "automatic_execution": false,
+  "next_gate": "OFFLINE_CANONICAL_PIN_ALIGNMENT_AUDIT"
+}
