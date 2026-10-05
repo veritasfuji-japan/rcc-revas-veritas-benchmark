@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: veritasfuji-japan/veritas_os
-          ref: 825e5c5c539c98e12b0c9702f3cb4a12d67539d3
+          ref: 4fc02abf23d175d6c56fe30090143d3961ba6230
           path: _pins/veritas
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -56,6 +56,10 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: test -n "$OPENAI_API_KEY"
+      - name: Verify Task 2 offline full-Bind boundary
+        run: |
+          PYTHONPATH=.:_pins/veritas python scripts/agentdojo_task2_full_bind_offline_proof_v0_1.py \
+            --veritas-root _pins/veritas
       - name: Run Task 2 development validation
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
