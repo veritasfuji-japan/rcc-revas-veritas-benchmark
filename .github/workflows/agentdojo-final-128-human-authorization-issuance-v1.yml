@@ -1,0 +1,46 @@
+name: AgentDojo Final 128 Human Authorization Issuance V1
+
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_v1.json"
+      - ".github/workflows/agentdojo-final-128-human-authorization-issuance-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-audit:
+    runs-on: ubuntu-24.04
+    env:
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Audit issuance without dispatch
+        run: |
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          x=json.load(open("contracts/AGENTDOJO_FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_v1.json"))
+          assert os.environ.get("OPENAI_API_KEY","") == ""
+          assert x["status"] == "HUMAN_AUTHORIZATION_ISSUED_EXECUTION_NOT_DISPATCHED"
+          assert x["human_approval"]["approved"] is True
+          assert x["human_approval"]["single_use"] is True
+          assert x["issuance_base_main_sha"] == "46e7026c4abe69820ff0562e976b86ddf2608e3a"
+          assert x["execution_target"]["benchmark_commit"] == "46e7026c4abe69820ff0562e976b86ddf2608e3a"
+          assert x["execution_target"]["veritas_commit"] == "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          digest=hashlib.sha256(Path(x["execution_target"]["runner"]).read_bytes()).hexdigest()
+          assert digest == x["execution_target"]["runner_sha256"]
+          s=x["authorization_state"]
+          assert s["issued"] is True and s["consumed"] is False
+          assert s["dispatch_performed"] is False
+          assert s["provider_api_called_by_this_pr"] is False
+          assert s["automatic_dispatch"] is False
+          assert s["rerun_authorized"] is False
+          assert x["execution_preconditions"]["explicit_cost_confirmation_required_before_dispatch"] is True
+          assert x["claim_boundary"]["final_result_exists"] is False
+          print("FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_V1_AUDIT_PASS")
+          PY
