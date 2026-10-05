@@ -1,0 +1,76 @@
+name: AgentDojo Final 128 Single-Use Authorization V1
+
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_SINGLE_USE_AUTHORIZATION_v1.json"
+      - "tests/test_agentdojo_final_128_single_use_authorization_v1.py"
+      - ".github/workflows/agentdojo-final-128-single-use-authorization-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-audit:
+    runs-on: ubuntu-24.04
+    env:
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - run: python -m pip install pytest
+
+      - name: Verify authorization design remains unissued and exact-pinned
+        run: |
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          a=json.load(open("contracts/AGENTDOJO_FINAL_128_SINGLE_USE_AUTHORIZATION_v1.json"))
+          p=json.load(open("contracts/AGENTDOJO_FINAL_128_PROMOTION_v0.1.json"))
+          c=json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_CANONICAL_PIN_ALIGNMENT_v0.1.json"))
+          assert os.environ.get("OPENAI_API_KEY","") == ""
+          assert a["status"] == "DESIGNED_NOT_ISSUED_EXECUTION_GATE_CLOSED"
+          assert a["authorized_benchmark_commit"] == "eb37260c10d73da6a8bae10aac612713da60d268"
+          assert a["authorized_veritas_commit"] == c["canonical_veritas_commit"] == p["pins"]["veritas_commit"] == "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          digest=hashlib.sha256(Path(a["authorized_runner"]).read_bytes()).hexdigest()
+          assert digest == a["authorized_runner_sha256"] == c["aligned_runner_sha256"]
+          assert a["pins"]["agentdojo_commit"] == p["pins"]["agentdojo_commit"]
+          assert a["pins"]["rcc_revas_commit"] == p["pins"]["rcc_revas_commit"]
+          assert a["pins"]["model"] == p["pins"]["model"]
+          assert a["candidate_disposition"]["promote_tasks"] == [2,13,15]
+          assert a["candidate_disposition"]["keep_fail_closed_tasks"] == [11,12,14]
+          auth=a["authorization"]
+          assert auth["issued"] is False
+          assert auth["human_approved"] is False
+          assert auth["single_use"] is True
+          assert auth["consumed"] is False
+          assert auth["rerun_authorized"] is False
+          assert auth["automatic_dispatch"] is False
+          assert all(auth[k] is True for k in [
+            "fail_closed_on_commit_drift","fail_closed_on_runner_digest_drift",
+            "fail_closed_on_pin_drift","fail_closed_on_prior_consumption"])
+          assert a["execution_gate"] == "CLOSED"
+          assert a["provider_execution_authorized"] is False
+          assert a["provider_api_called_by_this_pr"] is False
+          assert a["claim_boundary"]["same_corpus_is_held_out_validation"] is False
+          assert a["claim_boundary"]["external_validation"] is False
+          assert a["claim_boundary"]["production_readiness"] is False
+          print("FINAL_128_SINGLE_USE_AUTHORIZATION_V1_OFFLINE_AUDIT_PASS")
+          PY
+
+      - name: Prove bounded single-use consume semantics
+        run: pytest -q tests/test_agentdojo_final_128_single_use_authorization_v1.py
