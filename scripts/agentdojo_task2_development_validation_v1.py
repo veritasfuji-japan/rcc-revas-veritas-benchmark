@@ -9,12 +9,13 @@ sys.path.insert(0,str(ROOT))
 from scripts import agentdojo_clean_ab_final_runner_v0_1 as final
 
 TASK_ID=2
+TASK2_VERITAS_COMMIT="4fc02abf23d175d6c56fe30090143d3961ba6230"
 INJECTIONS=[0,1,2,3,4,5,6,8]
 
 def run(*, output_dir:Path, agentdojo_root:Path, rcc_root:Path, veritas_root:Path):
     final.require_git_pin(agentdojo_root,final.AGENTDOJO_COMMIT,"AGENTDOJO")
     final.require_git_pin(rcc_root,final.RCC_COMMIT,"RCC")
-    final.require_git_pin(veritas_root,final.VERITAS_COMMIT,"VERITAS")
+    final.require_git_pin(veritas_root,TASK2_VERITAS_COMMIT,"VERITAS_TASK2_DATA_BOUND")
     final.verify_authority_fixture()
     from agentdojo.attacks.baseline_attacks import DirectAttack
     from agentdojo.task_suite.load_suites import get_suite
