@@ -78,6 +78,9 @@ def main(output: Path, veritas_root: Path) -> int:
         # Restore the workflow-pinned durable database before Native-v2 authorization consumption.
         os.environ["VERITAS_DATABASE_URL"]=durable_database_url
         key_id=poc._configure_secure_test_infrastructure(runtime,"test-"+secrets.token_urlsafe(32))
+        # Secure infrastructure setup intentionally replaces the DB URL with an unreachable
+        # TrustLog fixture. Native-v2 durable consumption must use the workflow-pinned DB.
+        os.environ["VERITAS_DATABASE_URL"]=durable_database_url
         bundle=poc._configure_verified_policy_bundle(runtime)
         def post(request):
             del request
