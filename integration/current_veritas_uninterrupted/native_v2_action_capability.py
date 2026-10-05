@@ -107,7 +107,8 @@ def main(output: Path, veritas_root: Path) -> int:
         exact_intent=factory(upstream,{},{"evidence":{"decision_lock":{"decision_id":"controlled"}}})
         require(factory.last_promotion is not None,"BEN_CANONICAL_PROMOTION_MISSING")
         promotion=verify_canonical_verified_decision_promotion_packet(factory.last_promotion)
-        require(exact_intent==promotion.exact_execution_intent,"BEN_EXACT_EXECUTION_INTENT_CHANGED")
+        from veritas_os.policy.bind_core.normalizers import normalize_execution_intent
+        require(exact_intent==normalize_execution_intent(promotion.exact_execution_intent),"BEN_EXACT_EXECUTION_INTENT_CHANGED")
         require("rveval-candidate-sha256:"+upstream_hash in promotion.exact_execution_intent["evidence_refs"],
                 "BEN_UPSTREAM_LINEAGE_LOST")
 
