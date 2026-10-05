@@ -55,7 +55,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: veritasfuji-japan/veritas_os
-          ref: 825e5c5c539c98e12b0c9702f3cb4a12d67539d3
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
           path: _pins/veritas
           persist-credentials: false
 
