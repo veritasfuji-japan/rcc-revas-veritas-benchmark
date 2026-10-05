@@ -1,0 +1,42 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-promotion.v0.1",
+  "status": "PROMOTION_ELIGIBLE_EXECUTION_GATE_CLOSED",
+  "rule_of_one": "Promote the exact validated canonical candidate to eligibility for one explicit human-authorized final 128 run without widening authority.",
+  "benchmark_main_sha": "eab790a29b2ad94c215152a62c70ff0a5545d18e",
+  "canonical_candidate": "contracts/AGENTDOJO_CANONICAL_CANDIDATE_FREEZE_v0.5.json",
+  "canonical_candidate_unchanged": true,
+  "historical_freeze": "contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.4.json",
+  "historical_freeze_unchanged": true,
+  "pins": {
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "candidate_disposition": {
+    "promote_tasks": [2, 13, 15],
+    "keep_fail_closed_tasks": [11, 12, 14]
+  },
+  "exact_pin_boundary_validation": {
+    "status": "CLOSED_SUCCESS",
+    "run_id": 37320203575,
+    "job_id": 111797035816,
+    "runner_commit": "eab790a29b2ad94c215152a62c70ff0a5545d18e",
+    "task2_proof_veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "task13_proof_veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "task15_authority_lineage_tests": "12/12 PASS"
+  },
+  "promotion_eligible": true,
+  "execution_gate": "CLOSED",
+  "final_128_authorized": false,
+  "authorization_consumed": false,
+  "automatic_execution": false,
+  "rerun_authorized": false,
+  "next_gate": "EXPLICIT_HUMAN_FINAL_128_AUTHORIZATION",
+  "claim_boundary": {
+    "development_evidence_is_final_result": false,
+    "same_corpus_is_held_out_validation": false,
+    "external_validation": false,
+    "production_readiness": false
+  }
+}

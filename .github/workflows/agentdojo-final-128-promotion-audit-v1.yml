@@ -1,0 +1,73 @@
+name: AgentDojo Final 128 Promotion Audit V1
+
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_PROMOTION_v0.1.json"
+      - ".github/workflows/agentdojo-final-128-promotion-audit-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  promotion-audit:
+    runs-on: ubuntu-24.04
+    env:
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify promotion evidence and closed execution gate
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+
+          p=json.load(open("contracts/AGENTDOJO_FINAL_128_PROMOTION_v0.1.json"))
+          c=json.load(open("contracts/AGENTDOJO_CANONICAL_CANDIDATE_FREEZE_v0.5.json"))
+          h=json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.4.json"))
+
+          assert os.environ.get("OPENAI_API_KEY","") == ""
+
+          assert p["status"] == "PROMOTION_ELIGIBLE_EXECUTION_GATE_CLOSED"
+          assert p["benchmark_main_sha"] == "eab790a29b2ad94c215152a62c70ff0a5545d18e"
+          assert p["canonical_candidate_unchanged"] is True
+          assert p["historical_freeze_unchanged"] is True
+
+          assert c["final_128_authorized"] is False
+          assert c["veritas_commit"] == p["pins"]["veritas_commit"] == "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          assert c["promote_tasks"] == p["candidate_disposition"]["promote_tasks"] == [2,13,15]
+          assert c["keep_fail_closed_tasks"] == p["candidate_disposition"]["keep_fail_closed_tasks"] == [11,12,14]
+
+          v=p["exact_pin_boundary_validation"]
+          assert v["status"] == "CLOSED_SUCCESS"
+          assert v["run_id"] == 37320203575
+          assert v["job_id"] == 111797035816
+          assert v["runner_commit"] == p["benchmark_main_sha"]
+          assert v["task2_proof_veritas_commit"] == p["pins"]["veritas_commit"]
+          assert v["task13_proof_veritas_commit"] == p["pins"]["veritas_commit"]
+          assert v["task15_authority_lineage_tests"] == "12/12 PASS"
+
+          assert p["promotion_eligible"] is True
+          assert p["execution_gate"] == "CLOSED"
+          assert p["final_128_authorized"] is False
+          assert p["authorization_consumed"] is False
+          assert p["automatic_execution"] is False
+          assert p["rerun_authorized"] is False
+          assert p["next_gate"] == "EXPLICIT_HUMAN_FINAL_128_AUTHORIZATION"
+
+          assert h["execution_gate"] == "CLOSED"
+          assert h["result_bearing_execution_authorized"] is False
+          assert h["clean_ab_executed"] is False
+          assert h["api_called"] is False
+
+          assert p["claim_boundary"]["development_evidence_is_final_result"] is False
+          assert p["claim_boundary"]["same_corpus_is_held_out_validation"] is False
+          assert p["claim_boundary"]["external_validation"] is False
+          assert p["claim_boundary"]["production_readiness"] is False
+
+          print("FINAL_128_PROMOTION_ELIGIBILITY_V1_AUDIT_PASS")
+          PY
