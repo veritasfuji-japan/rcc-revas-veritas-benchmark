@@ -134,7 +134,39 @@ def main(output: Path, veritas_root: Path) -> int:
         consumed=asyncio.run(consume())
         require(consumed.authorization.execution_intent_hash==promotion.execution_intent_hash,
                 "CONSUMED_EXECUTION_INTENT_CHANGED")
-        raise RuntimeError("NATIVE_V2_SANDBOX_DISPATCH_COMPOSITION_PENDING")
+        from veritas_os.policy.bind_effect_reconciliation import EffectExecutionState, PostgresAtomicEffectStateStore
+        from veritas_os.policy.sandbox_bind_execution import execute_sandbox_bind
+        from veritas_os.policy.sandbox_https_transport import SandboxHTTPSTransport
+        from veritas_os.policy.sandbox_recovery import recover_sandbox_attempt
+        from veritas_os.tests.test_decision_to_effect_controlled_e2e import ControlledCredentialProvider, _clock, _load_current, _reader_inputs, _assert_receipt_decision_lineage, _sandbox_row_count
+
+        async def execute_and_reconcile():
+            rows_before=await _sandbox_row_count()
+            store=PostgresAtomicAuthorizationConsumptionStore()
+            now=datetime.now(UTC); risk,current_source=_fresh(inputs,now)
+            result=await consume_native_bind_authorization(artifact,issuance_source_inputs=inputs["source_inputs"],governance_inputs=inputs["governance_inputs"],trust_inputs=inputs["trust_inputs"],current_source_inputs=current_source,current_runtime_risk_packet=risk,now=now,consumption_store=store)
+            effect_store=PostgresAtomicEffectStateStore()
+            ca_pem=Path(os.environ["VERITAS_SANDBOX_CA_FILE"]).read_text()
+            transport=SandboxHTTPSTransport(endpoint_url=config.endpoint_url,ca_pem=ca_pem)
+            load_current,governance_calls=_load_current(inputs)
+            dispatch=await execute_sandbox_bind(artifact,json.dumps(payload),deployment=config,issuance_source_inputs=inputs["source_inputs"],governance_inputs=inputs["governance_inputs"],trust_inputs=inputs["trust_inputs"],consumption_store=store,effect_store=effect_store,trusted_clock=_clock,load_current_inputs=load_current,provider=ControlledCredentialProvider(os.environ["VERITAS_SANDBOX_WRITER_TOKEN"]),transport=transport)
+            state=await effect_store.get(result.consumption_record.consumption_id)
+            require(state is not None and state.state==EffectExecutionState.EFFECT_UNKNOWN,"EFFECT_UNKNOWN_NOT_PERSISTED")
+            require(dispatch.reason_code=="HTTP_201_MATCHING_ACK","CONTROLLED_ACTION_ACK_MISSING")
+            require(transport.send_calls==1,"CONTROLLED_ACTION_NOT_EXACTLY_ONCE")
+            reader_policy,verifier_policy,reader=_reader_inputs(config,ca_pem,os.environ["VERITAS_SANDBOX_READER_TOKEN"],"ben-current-bind")
+            recovered=await recover_sandbox_attempt(artifact,json.dumps(payload),deployment=config,issuance_source_inputs=inputs["source_inputs"],historical_governance_inputs=inputs["governance_inputs"],trust_inputs=inputs["trust_inputs"],consumption_store=store,effect_store=effect_store,reader_policy=reader_policy,verifier_policy=verifier_policy,provider=reader,trusted_clock=_clock)
+            require(recovered.state==EffectExecutionState.CONFIRMED_EFFECT,"EFFECT_NOT_RECONCILED")
+            require(recovered.external_effect_retry_permitted is False,"EXTERNAL_RETRY_PERMITTED")
+            require(recovered.receipt_bundle is not None,"RECEIPT_BUNDLE_MISSING")
+            _assert_receipt_decision_lineage({"cda":promotion.canonical_decision_artifact,"promotion":promotion},recovered.receipt_bundle)
+            archive=await effect_store.get_reconciliation(result.consumption_record.consumption_id)
+            require(archive is not None,"RECONCILIATION_ARCHIVE_MISSING")
+            rows_after=await _sandbox_row_count(); require(rows_after==rows_before+1,"CONTROLLED_ACTION_EFFECT_COUNT_NOT_ONE")
+            return result,dispatch,recovered,archive,governance_calls["count"]
+
+        asyncio.run(execute_and_reconcile())
+        raise RuntimeError("PROOF_REPORT_AND_PERMIT_CONSUMPTION_EVIDENCE_PENDING")
 
 if __name__=="__main__":
     p=argparse.ArgumentParser(); p.add_argument("--output",type=Path,required=True); p.add_argument("--veritas-root",type=Path,required=True)
