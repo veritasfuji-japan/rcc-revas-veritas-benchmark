@@ -1,0 +1,48 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-single-use-authorization.v1",
+  "status": "DESIGNED_NOT_ISSUED_EXECUTION_GATE_CLOSED",
+  "rule_of_one": "Define a fail-closed single-use authorization envelope for exactly one future final 128 execution without issuing or consuming that authorization.",
+  "authorized_benchmark_commit": "eb37260c10d73da6a8bae10aac612713da60d268",
+  "authorized_veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+  "authorized_runner": "scripts/agentdojo_clean_ab_final_runner_v0_1.py",
+  "authorized_runner_sha256": "f52923920e9825cd5b97e313dcac7b20e25061eab39a291333f8d189fb6a5cb6",
+  "promotion_contract": "contracts/AGENTDOJO_FINAL_128_PROMOTION_v0.1.json",
+  "alignment_contract": "contracts/AGENTDOJO_FINAL_RUNNER_CANONICAL_PIN_ALIGNMENT_v0.1.json",
+  "pins": {
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "candidate_disposition": {
+    "promote_tasks": [2, 13, 15],
+    "keep_fail_closed_tasks": [11, 12, 14]
+  },
+  "authorization": {
+    "issued": false,
+    "human_approved": false,
+    "authorization_id": null,
+    "single_use": true,
+    "consumed": false,
+    "consumed_by_run": null,
+    "consumed_by_job": null,
+    "rerun_authorized": false,
+    "automatic_dispatch": false,
+    "fail_closed_on_commit_drift": true,
+    "fail_closed_on_runner_digest_drift": true,
+    "fail_closed_on_pin_drift": true,
+    "fail_closed_on_prior_consumption": true
+  },
+  "execution_gate": "CLOSED",
+  "provider_execution_authorized": false,
+  "provider_api_called_by_this_pr": false,
+  "provider_spend_cap_usd_if_later_authorized": 5,
+  "next_gate": "EXPLICIT_HUMAN_AUTHORIZATION_ISSUANCE",
+  "claim_boundary": {
+    "authorization_design_is_execution": false,
+    "development_evidence_is_final_result": false,
+    "same_corpus_is_held_out_validation": false,
+    "external_validation": false,
+    "production_readiness": false
+  }
+}
