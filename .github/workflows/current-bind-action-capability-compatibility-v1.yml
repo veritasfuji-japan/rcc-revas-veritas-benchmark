@@ -22,7 +22,7 @@ jobs:
     env:
       BEN_CANONICAL_PIN: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
       VERITAS_PIN: 9b7376ba0077365b9d89004b06c80e76c8bfadc8
-      VERITAS_DATABASE_URL: postgresql+psycopg://veritas:veritas@127.0.0.1:5432/veritas_action_capability
+      VERITAS_DATABASE_URL: postgresql://veritas:veritas@127.0.0.1:5432/veritas_action_capability
       VERITAS_SANDBOX_DATABASE_URL: postgresql://veritas:veritas@127.0.0.1:5432/veritas_action_capability_sandbox
       VERITAS_SANDBOX_WRITER_TOKEN: action-capability-writer-token-0123456789abcdef
       VERITAS_SANDBOX_READER_TOKEN: action-capability-reader-token-fedcba9876543210
