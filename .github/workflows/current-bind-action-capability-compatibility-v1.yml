@@ -34,6 +34,11 @@ jobs:
           fetch-depth: 0
       - uses: actions/checkout@v4
         with:
+          repository: veritasfuji-japan/rcc-revas-veritas-benchmark
+          ref: ${{ env.BEN_CANONICAL_PIN }}
+          path: ben_canonical_source
+      - uses: actions/checkout@v4
+        with:
           repository: veritasfuji-japan/veritas_os
           ref: ${{ env.VERITAS_PIN }}
           path: veritas_os_source
@@ -42,13 +47,12 @@ jobs:
       - name: Verify exact pins
         run: |
           test "$(git -C veritas_os_source rev-parse HEAD)" = "$VERITAS_PIN"
-          git -C benchmark cat-file -e "${BEN_CANONICAL_PIN}^{commit}"
-          test "$(git -C benchmark rev-parse "${BEN_CANONICAL_PIN}^{commit}")" = "$BEN_CANONICAL_PIN"
+          test "$(git -C ben_canonical_source rev-parse HEAD)" = "$BEN_CANONICAL_PIN"
       - name: Install
         run: |
           pip install -r veritas_os_source/veritas_os/requirements.txt
           pip install "psycopg[binary]" psycopg-pool alembic pytest pytest-asyncio httpx cryptography
-          pip install -e benchmark/external-eval/v0.3.9
+          pip install -e ben_canonical_source/external-eval/v0.3.9
       - name: Create sandbox database
         run: |
           python - <<'PY'
