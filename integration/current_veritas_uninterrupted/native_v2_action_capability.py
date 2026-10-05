@@ -60,7 +60,7 @@ def main(output: Path, veritas_root: Path) -> int:
             source_trace_ref="ben-canonical:"+BEN_PIN,candidate_type="execution_intent_candidate",
             action_type="sandbox-effect",actor_identity="synthetic-operator",
             target_system=config.target_system,target_resource=config.endpoint_url,
-            intended_action=binding.ACTION,required_authority=[],required_human_approval=False,
+            intended_action=binding.ACTION,required_authority=["sandbox:events:register"],required_human_approval=False,
             risk_level="low",evidence_refs=[action_binding.reference,"rveval-candidate-sha256:"+upstream_hash])
     def request_context(action,pre_state):
         del action,pre_state
