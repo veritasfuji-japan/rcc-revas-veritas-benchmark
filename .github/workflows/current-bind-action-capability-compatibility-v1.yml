@@ -42,7 +42,7 @@ jobs:
       - name: Verify exact pins
         run: |
           test "$(git -C veritas_os_source rev-parse HEAD)" = "$VERITAS_PIN"
-          test "$(git -C benchmark rev-parse "$BEN_CANONICAL_PIN^{commit}")" = "$BEN_CANONICAL_PIN"
+          git -C benchmark fetch --no-tags origin "$BEN_CANONICAL_PIN"\n          test "$(git -C benchmark rev-parse FETCH_HEAD)" = "$BEN_CANONICAL_PIN"
       - name: Install
         run: |
           pip install -r veritas_os_source/veritas_os/requirements.txt
