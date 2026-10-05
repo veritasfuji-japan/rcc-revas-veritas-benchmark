@@ -1,14 +1,7 @@
 name: AgentDojo Final Runner Implementation Audit v0.1
 
 on:
-  pull_request:
-    paths:
-      - "scripts/agentdojo_clean_ab_final_runner_v0_1.py"
-      - "tests/test_agentdojo_clean_ab_final_runner_v0_1.py"
-      - "contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"
-      - "contracts/AGENTDOJO_FINAL_CLEAN_AB_RESULT_v0.1.json"
-      - ".github/workflows/agentdojo-clean-ab-final-v0_1.yml"
-      - ".github/workflows/agentdojo-final-runner-implementation-audit-v0_1.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -1,0 +1,64 @@
+name: AgentDojo Final Runner Canonical Pin Alignment V1
+on:
+  pull_request:
+    paths:
+      - "scripts/agentdojo_clean_ab_final_runner_v0_1.py"
+      - ".github/workflows/agentdojo-clean-ab-final-v0_1.yml"
+      - "contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"
+      - "contracts/AGENTDOJO_FINAL_RUNNER_CANONICAL_PIN_ALIGNMENT_v0.1.json"
+      - ".github/workflows/agentdojo-final-runner-canonical-pin-alignment-v1.yml"
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    env:
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - name: Verify exact canonical pin and closed gate
+        run: |
+          set -euo pipefail
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          python - <<'PY'
+          import json, os, hashlib
+          from pathlib import Path
+          a=json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_CANONICAL_PIN_ALIGNMENT_v0.1.json"))
+          p=json.load(open("contracts/AGENTDOJO_FINAL_128_PROMOTION_v0.1.json"))
+          i=json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"))
+          src=Path("scripts/agentdojo_clean_ab_final_runner_v0_1.py").read_text()
+          wf=Path(".github/workflows/agentdojo-clean-ab-final-v0_1.yml").read_text()
+          pin="a1d66aef02262cf8a913295270c3aafd159c6adb"
+          old="825e5c5c539c98e12b0c9702f3cb4a12d67539d3"
+          assert os.environ.get("OPENAI_API_KEY","") == ""
+          assert a["canonical_veritas_commit"] == p["pins"]["veritas_commit"] == i["pins"]["veritas_commit"] == pin
+          actual_runner_sha256=hashlib.sha256(Path("scripts/agentdojo_clean_ab_final_runner_v0_1.py").read_bytes()).hexdigest()
+          assert actual_runner_sha256 == a["aligned_runner_sha256"] == "f52923920e9825cd5b97e313dcac7b20e25061eab39a291333f8d189fb6a5cb6"
+          assert f'VERITAS_COMMIT = "{pin}"' in src
+          assert f"ref: {pin}" in wf
+          assert old not in src
+          assert old not in wf
+          assert i["execution_gate"] == "CLOSED"
+          assert i["rerun_authorized"] is False
+          assert a["execution_gate"] == "CLOSED"
+          assert a["final_128_authorized"] is False
+          assert a["api_execution_authorized"] is False
+          assert a["automatic_execution"] is False
+          assert a["authority_semantics_changed"] is False
+          assert a["task_dispositions_changed"] is False
+          assert a["corpus_changed"] is False
+          assert p["candidate_disposition"]["promote_tasks"] == [2,13,15]
+          assert p["candidate_disposition"]["keep_fail_closed_tasks"] == [11,12,14]
+          assert p["pins"]["agentdojo_commit"] == a["unchanged_pins"]["agentdojo_commit"]
+          assert p["pins"]["rcc_revas_commit"] == a["unchanged_pins"]["rcc_revas_commit"]
+          assert p["pins"]["model"] == a["unchanged_pins"]["model"]
+          print("FINAL_RUNNER_CANONICAL_PIN_ALIGNMENT_V1_AUDIT_PASS")
+          PY
