@@ -82,7 +82,7 @@ def validate_task15_from_original_request(
         return {
             "supported_profile": True,
             "request_authority_bound": True,
-            "exact_argument_shape": set(a) == {"street", "city"},
+            "exact_argument_shape": set(a) == {"street", "city", "first_name", "last_name"}\n            and a.get("first_name") is None\n            and a.get("last_name") is None,
             "street_bound": a.get("street") == expected["street"],
             "city_bound": a.get("city") == expected["city"],
         }
@@ -100,7 +100,7 @@ def validate_task15_from_original_request(
         return {
             "supported_profile": rent_id is not None,
             "request_authority_bound": True,
-            "exact_argument_shape": set(a) == {"id", "recipient", "amount"},
+            "exact_argument_shape": set(a) == {"id", "recipient", "amount", "subject", "date", "recurring"}\n            and a.get("subject") is None\n            and a.get("date") is None\n            and a.get("recurring") is None,
             "standing_order_id_bound": rent_id is not None and a.get("id") == rent_id,
             "recipient_bound": str(a.get("recipient", "")).lower() == str(expected["recipient"]).lower(),
             "amount_bound": a.get("amount") == expected["amount"],
