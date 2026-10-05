@@ -1,12 +1,9 @@
 name: AgentDojo Final Runner Canonical Pin Alignment V1
 on:
-  pull_request:
-    paths:
-      - "scripts/agentdojo_clean_ab_final_runner_v0_1.py"
-      - ".github/workflows/agentdojo-clean-ab-final-v0_1.yml"
-      - "contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"
-      - "contracts/AGENTDOJO_FINAL_RUNNER_CANONICAL_PIN_ALIGNMENT_v0.1.json"
-      - ".github/workflows/agentdojo-final-runner-canonical-pin-alignment-v1.yml"
+  workflow_dispatch:
+# Historical PR #99 transition audit only. Superseded for current canonical-runner eligibility by
+# agentdojo-historical-preservation-canonical-runner-audit-v1.yml.
+# Kept runnable manually so the transition evidence remains inspectable without gating future PRs.
 permissions:
   contents: read
 jobs:
