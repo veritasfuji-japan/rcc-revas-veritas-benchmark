@@ -1,0 +1,14 @@
+{
+  "schema_version": "veritas.agentdojo-canonical-candidate-freeze.v0.5",
+  "status": "EXECUTION_GATE_CLOSED",
+  "base_main_sha": "83d6ef1dcb5bc174330319171b0bd4161ccb7c56",
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+  "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+  "promote_tasks": [2, 13, 15],
+  "keep_fail_closed_tasks": [11, 12, 14],
+  "historical_freeze": "contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.4.json",
+  "historical_freeze_unchanged": true,
+  "final_128_authorized": false,
+  "next_gate": "EXACT_PIN_BOUNDARY_VALIDATION"
+}
