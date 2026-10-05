@@ -1,18 +1,26 @@
 """Offline cross-repository full-Bind proof for AgentDojo Banking task 2."""
 from __future__ import annotations
-import argparse, json, sys
+import argparse, json, subprocess, sys
 from copy import deepcopy
 from pathlib import Path
 
-VERITAS_COMMIT="4fc02abf23d175d6c56fe30090143d3961ba6230"
 
 def main() -> int:
     ap=argparse.ArgumentParser()
     ap.add_argument("--veritas-root",required=True)
     args=ap.parse_args()
     repo_root=Path(__file__).resolve().parents[1]
+    veritas_root=Path(args.veritas_root).resolve()
+    canonical=json.load(open(repo_root / "contracts/AGENTDOJO_CANONICAL_CANDIDATE_FREEZE_v0.5.json"))
+    expected_veritas_commit=canonical["veritas_commit"]
+    actual_veritas_commit=subprocess.check_output(
+        ["git","-C",str(veritas_root),"rev-parse","HEAD"], text=True
+    ).strip()
+    assert actual_veritas_commit == expected_veritas_commit, (
+        f"VERITAS pin mismatch: expected {expected_veritas_commit}, got {actual_veritas_commit}"
+    )
     sys.path.insert(0,str(repo_root))
-    sys.path.insert(0,str(Path(args.veritas_root).resolve()))
+    sys.path.insert(0,str(veritas_root))
     from agentdojo_constraint_resolver_v0_1 import validate_candidate
     from veritas_os.benchmarks.agentdojo_banking_adapter import (
         AgentDojoBankingBindAdapter,
@@ -94,7 +102,7 @@ def main() -> int:
         assert result[0]==FinalOutcome.BLOCKED.value and result[1] is False
     print(json.dumps({
         "proof":"AGENTDOJO_TASK2_RUNTIME_DERIVED_FULL_BIND_V0_1",
-        "veritas_commit":VERITAS_COMMIT,
+        "veritas_commit":actual_veritas_commit,
         "valid_runtime_derived_rent_update":"COMMITTED",
         "wrong_amount_near_miss":"BLOCKED",
         "wrong_id_near_miss":"BLOCKED",
