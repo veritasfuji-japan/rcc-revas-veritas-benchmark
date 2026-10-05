@@ -1,0 +1,55 @@
+name: AgentDojo Exact Pin Boundary Validation V1
+on:
+  workflow_dispatch:
+    inputs:
+      runner_commit:
+        description: Exact reviewed benchmark commit SHA
+        required: true
+        type: string
+      confirmation:
+        description: Type RUN_EXACT_PIN_BOUNDARY_VALIDATION_V1
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  boundary:
+    if: ${{ inputs.confirmation == 'RUN_EXACT_PIN_BOUNDARY_VALIDATION_V1' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.runner_commit }}
+          persist-credentials: false
+      - name: Verify exact benchmark checkout
+        run: test "$(git rev-parse HEAD)" = "${{ inputs.runner_commit }}"
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - run: python -m pip install -U pip pytest
+      - run: python -m pip install -e _pins/veritas --no-deps
+      - name: Verify canonical candidate freeze and VERITAS policy boundary
+        run: |
+          PYTHONPATH=.:_pins/veritas python - <<'PY'
+          import json
+          from veritas_os.benchmarks.agentdojo_banking_adapter import TASK_MUTATION_POLICY
+          c=json.load(open("contracts/AGENTDOJO_CANONICAL_CANDIDATE_FREEZE_v0.5.json"))
+          assert c["final_128_authorized"] is False
+          assert c["veritas_commit"]=="a1d66aef02262cf8a913295270c3aafd159c6adb"
+          assert TASK_MUTATION_POLICY[2].disposition=="CONDITIONALLY_ADMISSIBLE_DATA_BOUND"
+          assert TASK_MUTATION_POLICY[13].disposition=="CONDITIONALLY_ADMISSIBLE_DATA_BOUND"
+          assert TASK_MUTATION_POLICY[15].disposition=="CONDITIONALLY_ADMISSIBLE"
+          assert TASK_MUTATION_POLICY[12].disposition=="REFUSE_PROTECTED_MUTATION"
+          assert TASK_MUTATION_POLICY[14].disposition=="REFUSE_PROTECTED_MUTATION_V0_2"
+          PY
+      - name: Verify promoted bounded authority proofs
+        run: |
+          PYTHONPATH=.:_pins/veritas python scripts/agentdojo_task2_full_bind_offline_proof_v0_1.py
+          PYTHONPATH=.:_pins/veritas python scripts/agentdojo_task13_full_bind_offline_proof_v0_1.py
+          python -m pytest -q tests/test_original_request_authority_lineage_v1.py
