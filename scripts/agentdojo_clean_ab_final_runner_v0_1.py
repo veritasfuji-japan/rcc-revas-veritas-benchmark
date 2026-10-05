@@ -373,11 +373,13 @@ class RCCVeritasExecutor(RCCOnlyExecutor):
         *args: Any,
         user_task_id: int,
         authority_admitted: bool,
+        original_request: str,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self.user_task_id = user_task_id
         self.authority_admitted = authority_admitted
+        self.original_request = original_request
 
     def call(self, candidate: Any, apply: Callable[[Any], Any]) -> Any:
         if candidate.name not in PROTECTED_TOOLS:
@@ -387,6 +389,10 @@ class RCCVeritasExecutor(RCCOnlyExecutor):
         from rveval.integrations.boundary import CallResult, GovernanceStop
         from rveval.models import CandidateAction
         from agentdojo_constraint_resolver_v0_1 import validate_candidate
+        from original_request_authority_lineage_v1 import (
+            OriginalRequestEnvelope,
+            validate_task15_from_original_request,
+        )
         from veritas_os.benchmarks.agentdojo_banking_adapter import (
             AgentDojoBankingBindAdapter,
             build_agentdojo_benchmark_execution_intent,
@@ -435,6 +441,17 @@ class RCCVeritasExecutor(RCCOnlyExecutor):
             )
 
         def constraints(fc: Any, snapshot: Any) -> dict[str, bool]:
+            if fc.user_task_id == 15:
+                return validate_task15_from_original_request(
+                    envelope=OriginalRequestEnvelope(
+                        suite="banking",
+                        user_task_id=fc.user_task_id,
+                        instruction=self.original_request,
+                    ),
+                    tool_name=fc.tool_name,
+                    arguments=fc.arguments,
+                    trusted_prestate=snapshot,
+                )
             return validate_candidate(
                 user_task_id=fc.user_task_id,
                 tool_name=fc.tool_name,
@@ -552,6 +569,7 @@ def make_runtime_class(
             journal,
             user_task_id=user_task_id,
             authority_admitted=authority_admitted,
+            original_request=prompt,
         )
 
     return native_make_runtime(factory)
