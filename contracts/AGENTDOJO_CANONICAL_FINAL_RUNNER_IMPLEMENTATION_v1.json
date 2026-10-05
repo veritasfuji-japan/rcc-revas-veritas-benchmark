@@ -1,0 +1,44 @@
+{
+  "schema_version": "veritas.agentdojo-canonical-final-runner-implementation.v1",
+  "status": "CANONICAL_RUNNER_FROZEN_EXECUTION_GATE_CLOSED",
+  "historical_baseline_sha": "b24f8c7617f38853fcc6e44326f90528f2249b92",
+  "canonicalization_base_sha": "b63bba86e9ed39e1a35493964c12da636364190a",
+  "pins": {
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "runner": {
+    "source": "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py",
+    "workflow": ".github/workflows/agentdojo-clean-ab-canonical-final-v1.yml",
+    "confirmation": "RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1"
+  },
+  "candidate_disposition": {
+    "promote_tasks": [
+      2,
+      13,
+      15
+    ],
+    "keep_fail_closed_tasks": [
+      11,
+      12,
+      14
+    ]
+  },
+  "execution_gate": "CLOSED",
+  "final_128_authorized": false,
+  "provider_execution_authorized": false,
+  "api_called_by_this_pr": false,
+  "automatic_execution": false,
+  "rerun_authorized": false,
+  "promotion_contract": "contracts/AGENTDOJO_FINAL_128_PROMOTION_v0.1.json",
+  "prior_human_authorization": "contracts/AGENTDOJO_FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_v1.json",
+  "prior_authorization_requires_rebind": true,
+  "claim_boundary": {
+    "new_result_claimed": false,
+    "same_corpus_is_held_out_validation": false,
+    "external_validation": false,
+    "production_readiness": false
+  }
+}
