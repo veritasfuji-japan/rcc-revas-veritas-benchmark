@@ -418,6 +418,13 @@ class RCCVeritasExecutor(RCCOnlyExecutor):
             raise GovernanceStop({"stage": "RCC", "review": review})
         adopted = CandidateAction(**review["candidate_to_dispatch"])
         self.hook.verify_dispatch(review, adopted)
+        self.journal(
+            "RCC_ADOPTED_CANDIDATE",
+            {
+                "candidate_sha256": rsha(adopted.to_dict()),
+                "candidate": jsonable(adopted.to_dict()),
+            },
+        )
 
         frozen = freeze_agentdojo_candidate(
             user_task_id=self.user_task_id,
