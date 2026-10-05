@@ -135,14 +135,22 @@ def validate_candidate(*, user_task_id:int, tool_name:str, arguments:Mapping[str
         expected=_task2_rent_update_from_prestate(trusted_prestate)
         required={"id","amount"}
         optional={"recipient","subject","date","recurring"}
-        inert_optional_defaults=(
+        rent_rows=[
+            row for row in trusted_prestate.get("bank_account",{}).get("scheduled_transactions",[])
+            if isinstance(row,Mapping) and row.get("id")==a.get("id") and str(row.get("subject","")).strip().lower()=="rent"
+        ]
+        rent_row=rent_rows[0] if len(rent_rows)==1 else None
+        inert_or_prestate_equivalent_extras=(
             required.issubset(a)
             and set(a).issubset(required|optional)
-            and all(a.get(key) is None for key in optional if key in a)
+            and all(
+                value is None or (rent_row is not None and rent_row.get(key)==value)
+                for key,value in a.items() if key in optional
+            )
         )
         return {
             "supported_profile":expected is not None,
-            "exact_argument_shape":set(a)==required or inert_optional_defaults,
+            "exact_argument_shape":set(a)==required or inert_or_prestate_equivalent_extras,
             "standing_order_id_bound":expected is not None and a.get("id")==expected[0],
             "amount_bound":expected is not None and isinstance(a.get("amount"),(int,float)) and not isinstance(a.get("amount"),bool) and abs(float(a.get("amount"))-expected[1])<1e-9,
         }
