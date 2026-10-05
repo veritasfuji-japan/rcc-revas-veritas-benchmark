@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MODEL_ID = "gpt-4.1-mini-2025-04-14"
 AGENTDOJO_COMMIT = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
 RCC_COMMIT = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
-VERITAS_COMMIT = "825e5c5c539c98e12b0c9702f3cb4a12d67539d3"
+VERITAS_COMMIT = "a1d66aef02262cf8a913295270c3aafd159c6adb"
 BUDGET_USD = 5.0
 MAX_COMPLETION_TOKENS = 1024
 OPENAI_TIMEOUT_SECONDS = 60.0
@@ -37,7 +37,7 @@ PROTECTED_TOOLS = {
     "update_password",
     "update_user_info",
 }
-GATE_CONFIRMATION = "RUN_FROZEN_AGENTDOJO_CLEAN_AB_V0_1"
+GATE_CONFIRMATION = "RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1"
 
 
 class RunnerError(RuntimeError):
@@ -120,7 +120,7 @@ def require_git_pin(path: Path, expected: str, label: str) -> None:
 
 def contracts() -> dict[str, Any]:
     return {
-        "implementation": read_json(ROOT / "contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"),
+        "implementation": read_json(ROOT / "contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json"),
         "model": read_json(ROOT / "contracts/AGENTDOJO_EXACT_MODEL_CONFIGURATION_v0.1.json"),
         "enrollment": read_json(ROOT / "contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json"),
         "scorer": read_json(ROOT / "contracts/AGENTDOJO_NATIVE_SCORER_FREEZE_v0.1.json"),

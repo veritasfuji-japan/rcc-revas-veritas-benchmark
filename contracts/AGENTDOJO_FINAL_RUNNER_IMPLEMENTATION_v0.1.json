@@ -4,7 +4,7 @@
   "pins": {
     "benchmark_harness_base": "c19a483c5260257d421119f37e87b8a92d10bd50",
     "ben_canonical_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
-    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "veritas_commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
     "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
     "model": "gpt-4.1-mini-2025-04-14"
   },
