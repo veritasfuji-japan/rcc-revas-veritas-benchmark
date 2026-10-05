@@ -1,0 +1,49 @@
+name: AgentDojo Historical Preservation and Canonical Runner Audit V1
+on:
+  pull_request:
+    paths:
+      - "scripts/agentdojo_clean_ab_final_runner_v0_1.py"
+      - ".github/workflows/agentdojo-clean-ab-final-v0_1.yml"
+      - "contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json"
+      - ".github/workflows/agentdojo-final-runner-implementation-audit-v0_1.yml"
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py"
+      - "contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json"
+      - ".github/workflows/agentdojo-clean-ab-canonical-final-v1.yml"
+      - ".github/workflows/agentdojo-historical-preservation-canonical-runner-audit-v1.yml"
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    env: {OPENAI_API_KEY: ""}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Verify historical artifacts against pre-mutation baseline
+        run: |
+          git fetch origin b24f8c7617f38853fcc6e44326f90528f2249b92
+          for p in scripts/agentdojo_clean_ab_final_runner_v0_1.py .github/workflows/agentdojo-clean-ab-final-v0_1.yml contracts/AGENTDOJO_FINAL_RUNNER_IMPLEMENTATION_v0.1.json .github/workflows/agentdojo-final-runner-implementation-audit-v0_1.yml; do
+            test "$(git show b24f8c7617f38853fcc6e44326f90528f2249b92:$p | sha256sum | cut -d' ' -f1)" = "$(sha256sum "$p" | cut -d' ' -f1)"
+          done
+      - name: Verify canonical boundary remains closed
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          c=json.load(open("contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json"))
+          s=Path("scripts/agentdojo_clean_ab_canonical_final_runner_v1.py").read_text()
+          w=Path(".github/workflows/agentdojo-clean-ab-canonical-final-v1.yml").read_text()
+          assert os.environ.get("OPENAI_API_KEY","")==""
+          assert c["pins"]["veritas_commit"]=="a1d66aef02262cf8a913295270c3aafd159c6adb"
+          assert c["execution_gate"]=="CLOSED"
+          assert c["final_128_authorized"] is False
+          assert c["provider_execution_authorized"] is False
+          assert c["prior_authorization_requires_rebind"] is True
+          assert c["automatic_execution"] is False and c["rerun_authorized"] is False
+          assert 'a1d66aef02262cf8a913295270c3aafd159c6adb' in s
+          assert '825e5c5c539c98e12b0c9702f3cb4a12d67539d3' not in s
+          assert 'AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json' in s
+          assert 'RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1' in s
+          assert 'EXECUTION_GATE_CLOSED' in w
+          assert 'CANONICAL_RUNNER_EXECUTION_WIRING_NOT_YET_ENABLED' in w
+          print("HISTORICAL_PRESERVATION_CANONICAL_RUNNER_V1_AUDIT_PASS")
+          PY
