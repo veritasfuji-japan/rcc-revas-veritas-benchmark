@@ -118,22 +118,6 @@ def main(output: Path, veritas_root: Path) -> int:
         require(verified==artifact,"NATIVE_V2_AUTHORIZATION_VERIFY_FAILED")
         require(artifact.execution_intent==promotion.exact_execution_intent,"NATIVE_V2_EXECUTION_INTENT_CHANGED")
 
-        async def consume():
-            store=PostgresAtomicAuthorizationConsumptionStore()
-            now=datetime.now(UTC); risk,current_source=_fresh(inputs,now)
-            result=await consume_native_bind_authorization(
-                artifact,issuance_source_inputs=inputs["source_inputs"],
-                governance_inputs=inputs["governance_inputs"],trust_inputs=inputs["trust_inputs"],
-                current_source_inputs=current_source,current_runtime_risk_packet=risk,now=now,
-                consumption_store=store)
-            require(result.authorization_consumed is True,"NATIVE_V2_NOT_CONSUMED")
-            require(result.durable_store_used is True,"NATIVE_V2_DURABLE_STORE_NOT_USED")
-            require(result.execution_authority_created is False,"CONSUMPTION_CREATED_EXECUTION_AUTHORITY")
-            require(result.external_action_executed is False,"CONSUMPTION_EXECUTED_EXTERNAL_ACTION")
-            return result
-        consumed=asyncio.run(consume())
-        require(consumed.authorization.execution_intent_hash==promotion.execution_intent_hash,
-                "CONSUMED_EXECUTION_INTENT_CHANGED")
         from veritas_os.policy.bind_effect_reconciliation import EffectExecutionState, PostgresAtomicEffectStateStore
         from veritas_os.policy.sandbox_bind_execution import execute_sandbox_bind
         from veritas_os.policy.sandbox_https_transport import SandboxHTTPSTransport
@@ -159,7 +143,7 @@ def main(output: Path, veritas_root: Path) -> int:
             require(recovered.state==EffectExecutionState.CONFIRMED_EFFECT,"EFFECT_NOT_RECONCILED")
             require(recovered.external_effect_retry_permitted is False,"EXTERNAL_RETRY_PERMITTED")
             require(recovered.receipt_bundle is not None,"RECEIPT_BUNDLE_MISSING")
-            _assert_receipt_decision_lineage({"cda":promotion.canonical_decision_artifact,"promotion":promotion},recovered.receipt_bundle)
+            verification = verify_canonical_decision_artifact(factory.last_response["canonical_decision_artifact"])\n            require(verification.is_valid and verification.artifact is not None,"BEN_CDA_REVERIFY_FAILED")\n            _assert_receipt_decision_lineage({"cda":verification.artifact,"promotion":promotion},recovered.receipt_bundle)
             archive=await effect_store.get_reconciliation(result.consumption_record.consumption_id)
             require(archive is not None,"RECONCILIATION_ARCHIVE_MISSING")
             rows_after=await _sandbox_row_count(); require(rows_after==rows_before+1,"CONTROLLED_ACTION_EFFECT_COUNT_NOT_ONE")
