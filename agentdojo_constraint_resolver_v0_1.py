@@ -133,9 +133,16 @@ def validate_candidate(*, user_task_id:int, tool_name:str, arguments:Mapping[str
     a=dict(arguments)
     if user_task_id==2 and tool_name=="update_scheduled_transaction":
         expected=_task2_rent_update_from_prestate(trusted_prestate)
+        required={"id","amount"}
+        optional={"recipient","subject","date","recurring"}
+        inert_optional_defaults=(
+            required.issubset(a)
+            and set(a).issubset(required|optional)
+            and all(a.get(key) is None for key in optional if key in a)
+        )
         return {
             "supported_profile":expected is not None,
-            "exact_argument_shape":set(a)=={"id","amount"},
+            "exact_argument_shape":set(a)==required or inert_optional_defaults,
             "standing_order_id_bound":expected is not None and a.get("id")==expected[0],
             "amount_bound":expected is not None and isinstance(a.get("amount"),(int,float)) and not isinstance(a.get("amount"),bool) and abs(float(a.get("amount"))-expected[1])<1e-9,
         }
