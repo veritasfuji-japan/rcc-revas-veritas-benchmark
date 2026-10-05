@@ -71,8 +71,12 @@ def main(output: Path, veritas_root: Path) -> int:
 
     with tempfile.TemporaryDirectory(prefix="ben-native-v2-") as td:
         runtime=Path(td)/"runtime"; runtime.mkdir()
+        durable_database_url=os.environ["VERITAS_DATABASE_URL"]
         poc._configure_environment(runtime,"test-"+secrets.token_urlsafe(24),
             base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())
+        # The controlled /v1/decide fixture intentionally installs an unreachable TrustLog DSN.
+        # Restore the workflow-pinned durable database before Native-v2 authorization consumption.
+        os.environ["VERITAS_DATABASE_URL"]=durable_database_url
         key_id=poc._configure_secure_test_infrastructure(runtime,"test-"+secrets.token_urlsafe(32))
         bundle=poc._configure_verified_policy_bundle(runtime)
         def post(request):
