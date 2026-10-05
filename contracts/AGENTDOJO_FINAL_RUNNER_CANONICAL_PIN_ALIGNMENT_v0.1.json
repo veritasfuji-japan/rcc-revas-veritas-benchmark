@@ -23,5 +23,6 @@
   "final_128_authorized": false,
   "api_execution_authorized": false,
   "automatic_execution": false,
-  "next_gate": "OFFLINE_CANONICAL_PIN_ALIGNMENT_AUDIT"
+  "next_gate": "OFFLINE_CANONICAL_PIN_ALIGNMENT_AUDIT",
+  "aligned_runner_sha256": "f52923920e9825cd5b97e313dcac7b20e25061eab39a291333f8d189fb6a5cb6"
 }
