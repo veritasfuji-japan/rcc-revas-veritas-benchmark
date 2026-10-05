@@ -169,11 +169,13 @@ def main(output: Path, veritas_root: Path) -> int:
         result=asyncio.run(execute_and_reconcile())
         consumed_result,dispatch,recovered,archive,governance_rechecks=result
         report={
+            "schema":"veritas.current-bind-action-capability-compatibility-proof.v1",
             "proof_round":"CANONICAL_WRAPPER_CURRENT_BIND_CAPABILITY_COMPATIBILITY_V1",
             "result":"PASS",
             "scope":"BOUNDED_LOCAL_ENGINEERING",
             "ben_canonical_pin":BEN_PIN,
             "veritas_pin":VERITAS_PIN,
+            "current_veritas_pin":VERITAS_PIN,
             "authorization_verified":True,
             "authorization_consumed":True,
             "pre_effect_ownership_acquired":True,
