@@ -17,14 +17,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: veritasfuji-japan/veritas_os
-          ref: 99bdb9e684f422a8f6ef083d3330dc9fd5346583
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
           path: _pins/veritas
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Verify exact VERITAS pin
-        run: test "$(git -C _pins/veritas rev-parse HEAD)" = "99bdb9e684f422a8f6ef083d3330dc9fd5346583"
+        run: test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
       - name: Install offline proof dependencies
         run: pip install pydantic cryptography PyYAML
       - name: Run task13 cross-repository offline proof
