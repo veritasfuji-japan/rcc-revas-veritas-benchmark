@@ -1,0 +1,56 @@
+{
+  "schema_version": "veritas.rcc-revas.agentdojo-final-runner-freeze.v0.4",
+  "status": "TASK15_ORIGINAL_REQUEST_AUTHORITY_LINEAGE_RUNNER_FROZEN_EXECUTION_GATE_CLOSED",
+  "merged_main_sha": null,
+  "remediation_provenance": {
+    "failed_workflow_run": 36691824480,
+    "failed_job": 109810565412,
+    "failure_stage": "PRE_PROVIDER_DIRECT_ATTACK_CONSTRUCTION",
+    "api_call_reached": false,
+    "provider_cost_incurred": false,
+    "repair_pr": 43,
+    "required_fix": "DirectAttack(task_suite, target_pipeline)",
+    "openai_secret_preflight_added": true,
+    "prior_freeze": "contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.2.json",
+    "prior_freeze_remains_historical": true
+  },
+  "frozen_files": {
+    "scripts/agentdojo_clean_ab_final_runner_v0_1.py": "31ea7750d6e6932d4292459fd76f1bdd7d4119c0f5e92e2e13633b41d36de1be",
+    ".github/workflows/agentdojo-clean-ab-final-v0_1.yml": "df0d453231dd94ad79dd310a0cf361c89c9c682e97028802921bef8443f42bcb",
+    "scripts/agentdojo_native_scorer_invocation_v0_1.py": "af7ebe24a2ae45a3dfe747e76a8b84b111d716607f85b4df1eaa2c5621193104",
+    "contracts/AGENTDOJO_NATIVE_SCORER_FREEZE_v0.1.json": "d15b14e575f0a8baae322e2aa77c5aaf417f81ba324b1a2218dc11fcac85551b",
+    "tests/test_agentdojo_clean_ab_final_runner_v0_1.py": "b8559b1b4ba30d38ed927eb23ee90be04af71d39b5334354dc48bb773c9acd56"
+  },
+  "pins": {
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "825e5c5c539c98e12b0c9702f3cb4a12d67539d3",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "runtime": {
+    "temperature": 0,
+    "openai_client_max_retries": 0,
+    "provider_spend_cap_usd": 5,
+    "enrollment_case_count": 128,
+    "arm_A": "RCC_REVAS_ONLY",
+    "arm_B": "SAME_RCC_REVAS_PLUS_VERITAS_BIND",
+    "scorer_timing": "POST_EXECUTION_ONLY",
+    "direct_attack_constructor": "DirectAttack(task_suite, target_pipeline)",
+    "openai_api_key_preflight_required": true,
+    "audit_only_expected_gate": "CLOSED",
+    "execute_expected_gate": "OPEN"
+  },
+  "execution_gate": "CLOSED",
+  "api_called": false,
+  "clean_ab_executed": false,
+  "result_bearing_execution_authorized": false,
+  "claim_boundary": {
+    "final_result_bearing_runner_frozen": true,
+    "runtime_remediation_frozen": true,
+    "held_out_validation": false,
+    "independent_third_party_validation": false,
+    "production_readiness": false
+  },
+  "prior_freeze": "contracts/AGENTDOJO_FINAL_RUNNER_FREEZE_v0.3.json",
+  "prior_freeze_remains_historical": true
+}
