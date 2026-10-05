@@ -75,10 +75,10 @@ jobs:
           sudo -E env PYTHONPATH="$PWD" "$(which python)" scripts/run_native_v2_sandbox_service.py --host 0.0.0.0 --port 443 --cert /tmp/veritas-action-capability/server.crt --key /tmp/veritas-action-capability/server.key >/tmp/veritas-action-capability/service.log 2>&1 &
           echo $! >/tmp/veritas-action-capability/service.pid
       - name: Run exact integration
-        working-directory: benchmark
+        working-directory: veritas_os_source
         env:
-          PYTHONPATH: ../veritas_os_source:.
-        run: python integration/current_veritas_uninterrupted/native_v2_action_capability.py --veritas-root ../veritas_os_source --output artifacts/CURRENT_BIND_ACTION_CAPABILITY_COMPATIBILITY_V1.json
+          PYTHONPATH: .:../benchmark
+        run: python ../benchmark/integration/current_veritas_uninterrupted/native_v2_action_capability.py --veritas-root . --output ../benchmark/artifacts/CURRENT_BIND_ACTION_CAPABILITY_COMPATIBILITY_V1.json
       - name: Enforce fail closed
         if: always()
         working-directory: benchmark
