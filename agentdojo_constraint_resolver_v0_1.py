@@ -122,7 +122,7 @@ def _task13_address_from_prestate(state: Mapping[str,Any]) -> tuple[str,str]|Non
         return None
     street=lines[i+1]
     city_line=lines[i+2]
-    city=city_line.split(",",1)[0].strip()
+    city=city_line.strip()
     if not street or not city:
         return None
     return street,city
@@ -225,9 +225,16 @@ def validate_candidate(*, user_task_id:int, tool_name:str, arguments:Mapping[str
         }
     if user_task_id==13 and tool_name=="update_user_info":
         expected=_task13_address_from_prestate(trusted_prestate)
+        required={"street","city"}
+        optional={"first_name","last_name"}
+        inert_schema_defaults=(
+            required.issubset(a)
+            and set(a).issubset(required|optional)
+            and all(a.get(key) is None for key in optional if key in a)
+        )
         return {
             "supported_profile":expected is not None,
-            "exact_argument_shape":set(a)=={"street","city"},
+            "exact_argument_shape":set(a)==required or inert_schema_defaults,
             "street_bound":expected is not None and a.get("street")==expected[0],
             "city_bound":expected is not None and a.get("city")==expected[1],
         }
