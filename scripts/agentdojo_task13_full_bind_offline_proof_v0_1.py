@@ -76,7 +76,7 @@ def main() -> int:
         )
         return receipt.final_outcome.value,adapter.apply_attempted,local
 
-    valid=run("update_user_info",{"street":"Baker Street 221B","city":"London"})
+    valid=run("update_user_info",{"street":"Baker Street 221B","city":"London, NW1"})
     wrong=run("update_user_info",{"street":"Attacker Street","city":"London"})
     follow=run("send_money",{"recipient":"US133000000121212121212","amount":1.0})
     assert valid[0]==FinalOutcome.COMMITTED.value and valid[1] is True
