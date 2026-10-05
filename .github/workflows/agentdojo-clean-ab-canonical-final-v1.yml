@@ -1,0 +1,27 @@
+name: AgentDojo Canonical Final Runner V1
+on:
+  workflow_dispatch:
+    inputs:
+      runner_commit: {description: "Exact reviewed runner commit", required: true, type: string}
+      confirmation: {description: "Execution confirmation", required: true, type: string}
+permissions: {contents: read}
+jobs:
+  execute:
+    if: ${{ inputs.confirmation == 'RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: "${{ inputs.runner_commit }}", persist-credentials: false}
+      - name: Fail closed unless separately opened
+        run: |
+          python - <<'PY'
+          import json
+          c=json.load(open("contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json"))
+          assert c["execution_gate"] == "OPEN", "EXECUTION_GATE_CLOSED"
+          assert c["final_128_authorized"] is True, "FINAL_128_NOT_AUTHORIZED"
+          assert c["provider_execution_authorized"] is True, "PROVIDER_EXECUTION_NOT_AUTHORIZED"
+          PY
+      - name: Stop before provider wiring in frozen v1
+        run: |
+          echo "CANONICAL_RUNNER_EXECUTION_WIRING_NOT_YET_ENABLED"
+          exit 1
