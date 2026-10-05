@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: "3.11.16"
       - run: python -m pip install -U pip pytest
-      - run: python -m pip install -e _pins/veritas --no-deps
+      - run: python -m pip install -e _pins/veritas
       - name: Verify canonical candidate freeze and VERITAS policy boundary
         run: |
           PYTHONPATH=.:_pins/veritas python - <<'PY'
