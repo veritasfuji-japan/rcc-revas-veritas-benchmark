@@ -29,7 +29,7 @@ jobs:
           set -euo pipefail
           test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
           python - <<'PY'
-          import json, os
+          import json, os, hashlib
           from pathlib import Path
           a=json.load(open("contracts/AGENTDOJO_FINAL_RUNNER_CANONICAL_PIN_ALIGNMENT_v0.1.json"))
           p=json.load(open("contracts/AGENTDOJO_FINAL_128_PROMOTION_v0.1.json"))
@@ -40,6 +40,8 @@ jobs:
           old="825e5c5c539c98e12b0c9702f3cb4a12d67539d3"
           assert os.environ.get("OPENAI_API_KEY","") == ""
           assert a["canonical_veritas_commit"] == p["pins"]["veritas_commit"] == i["pins"]["veritas_commit"] == pin
+          actual_runner_sha256=hashlib.sha256(Path("scripts/agentdojo_clean_ab_final_runner_v0_1.py").read_bytes()).hexdigest()
+          assert actual_runner_sha256 == a["aligned_runner_sha256"] == "f52923920e9825cd5b97e313dcac7b20e25061eab39a291333f8d189fb6a5cb6"
           assert f'VERITAS_COMMIT = "{pin}"' in src
           assert f"ref: {pin}" in wf
           assert old not in src
