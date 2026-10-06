@@ -1,0 +1,42 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v9-target-freeze.v1",
+  "status": "FROZEN_NOT_AUTHORIZED",
+  "exact_baseline_main_sha": "9f65043735e2472bdacb695200ac837f29986f4e",
+  "proof_evidence": {
+    "provider_free_preflight_run_id": 37489139209,
+    "provider_free_preflight_job_id": 112356919036,
+    "conclusion": "success"
+  },
+  "frozen_target": {
+    "runner": {
+      "path": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_4.py",
+      "git_blob_sha": "60697b86fc664420a190accf98489f123781940c"
+    },
+    "wrapper": {
+      "path": "scripts/final_128_real_provider_wrapper_v7.py",
+      "git_blob_sha": "5a853b3875bdd54c4f63ebe36d97e0cf112bb538"
+    },
+    "preflight_workflow": {
+      "path": ".github/workflows/final-128-v9-provider-free-preflight.yml",
+      "git_blob_sha": "9bb7b3f0c495932134e3467aa523a95992421f09"
+    },
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "authorization": {
+    "id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V9",
+    "issued": false,
+    "single_use": true,
+    "consumed": false
+  },
+  "dispatch": {
+    "provider_dispatch_authorized": false,
+    "manual_dispatch_authorized": false,
+    "provider_credential_access": false,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "next_gate": "V9_AUTHORIZATION_ISSUANCE_AFTER_FREEZE_AUDIT"
+}
