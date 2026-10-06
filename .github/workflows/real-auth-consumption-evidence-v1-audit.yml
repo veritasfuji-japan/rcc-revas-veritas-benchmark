@@ -1,0 +1,38 @@
+name: Real Auth Consumption Evidence V1 Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_REAL_AUTH_CONSUMPTION_EVIDENCE_v1.json"
+      - ".github/workflows/real-auth-consumption-evidence-v1-audit.yml"
+permissions:
+  contents: read
+jobs:
+  offline-evidence-audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Verify immutable consumption evidence semantics
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open("contracts/AGENTDOJO_REAL_AUTH_CONSUMPTION_EVIDENCE_v1.json"))
+          assert p["authorization_id"]=="AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2"
+          assert p["github_evidence"]["run_id"]==37425098013
+          assert p["github_evidence"]["job_id"]==112142857684
+          assert p["github_evidence"]["job_conclusion"]=="success"
+          r=p["observed_result"]
+          assert r["consumed"] is True
+          assert r["provider_boundary_reached"] is False
+          assert r["provider_credential_access"]==0
+          assert r["provider_api_calls"]==0
+          assert r["final_128_execution"]==0
+          s=p["semantics"]
+          assert s["authorization_is_burned"] is True
+          assert s["rerun_forbidden"] is True
+          assert s["reuse_for_final_128_forbidden"] is True
+          assert s["provider_execution_authority_created"] is False
+          PY
