@@ -1,0 +1,37 @@
+name: Final 128 Dependency Compatibility V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final-128-dependency-compatibility-v1.yml"
+      - "contracts/AGENTDOJO_FINAL_128_DEPENDENCY_COMPATIBILITY_v1.json"
+permissions: {contents: read}
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    env: {OPENAI_API_KEY: "", VERITAS_DATABASE_URL: ""}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Checkout exact external pins
+        run: |
+          git clone https://github.com/ethz-spylab/agentdojo.git _agentdojo
+          git -C _agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _veritas
+          git -C _veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+      - name: Install exact pins with compatible OpenAI client
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./_agentdojo"
+          pip install -e "./_veritas[postgresql,signing]"
+          pip install "openai>=1.59.7,<2"
+          pip check
+          python - <<'PY'
+          import openai, agentdojo, veritas_os
+          from openai import OpenAI
+          assert tuple(map(int, openai.__version__.split(".")[:2])) >= (1,59)
+          OpenAI(api_key="sk-test-not-real", max_retries=0, timeout=60.0)
+          from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore
+          print({"proof":"FINAL_128_DEPENDENCY_COMPATIBILITY_V1","openai":openai.__version__,"pip_check":"PASS","provider_calls":0})
+          PY
