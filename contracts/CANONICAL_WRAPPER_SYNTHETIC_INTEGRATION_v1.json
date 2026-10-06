@@ -1,0 +1,29 @@
+{
+  "schema_version": "veritas.canonical-wrapper-synthetic-integration.v1",
+  "status": "DESIGNED_SYNTHETIC_ONLY_REAL_POSTGRES_PROVIDER_DISABLED",
+  "rule_of_one": "Exercise the actual-wrapper validation shape and durable PostgreSQL consume-once path using only a synthetic authorization; exactly one of 32 contenders may reach the synthetic provider-boundary marker.",
+  "base_main_sha": "0000c255c40c42049662599af37072c19da6f2e0",
+  "real_authorization_id_forbidden": "AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2",
+  "synthetic_authorization_prefix": "synthetic:canonical-wrapper-integration:v1:",
+  "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+  "expected": {
+    "attempts": 32,
+    "winners": 1,
+    "losers": 31,
+    "authorization_rows": 1,
+    "boundary_markers": 1
+  },
+  "prohibited": {
+    "human_authorization_v2_consumption": true,
+    "openai_api_key_job_exposure": true,
+    "provider_credential_access": true,
+    "provider_api_calls": true,
+    "final_128_execution": true
+  },
+  "claim_boundary": {
+    "synthetic_only": true,
+    "provider_execution": false,
+    "final_128_execution": false,
+    "production_readiness": false
+  }
+}
