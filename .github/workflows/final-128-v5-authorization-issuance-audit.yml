@@ -1,4 +1,4 @@
-name: Final 128 V5 Authorization Issuance Audit
+name: Final 128 V5 Authorization State Audit
 on:
   pull_request:
     paths:
@@ -10,22 +10,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verify issued but non-dispatchable V5
+      - name: Verify valid V5 authorization state transition
         shell: python
         run: |
-          import json,subprocess
+          import json, subprocess
           from pathlib import Path
           a=json.loads(Path("contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v5.json").read_text())
-          assert a["authorization"]["id"]=="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V5"
-          assert a["authorization"]["issued"] is True
-          assert a["authorization"]["single_use"] is True
-          assert a["authorization"]["consumed"] is False
-          assert a["authorization"]["rerun_authorized"] is False
+          z=a["authorization"]
+          assert z["id"]=="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V5"
+          assert z["issued"] is True and z["single_use"] is True
+          assert z["consumed"] is False and z["rerun_authorized"] is False
           t=a["frozen_target"]
           for path,key in [(t["wrapper_path"],"wrapper_git_blob_sha"),(t["runner_path"],"runner_git_blob_sha"),(t["workflow_path"],"workflow_git_blob_sha")]:
               assert subprocess.check_output(["git","hash-object",path],text=True).strip()==t[key]
           assert a["cost_boundary"]["maximum_usd"]==5
-          assert a["cost_boundary"]["cost_confirmation_received"] is False
           d=a["dispatch"]
-          assert all(d[k] is False for k in ("provider_dispatch_authorized","manual_dispatch_authorized","provider_credential_access","provider_api_called","final_128_executed"))
-          print("PASS_FINAL_128_V5_AUTHORIZATION_ISSUANCE")
+          assert d["provider_credential_access"] is False
+          assert d["provider_api_called"] is False
+          assert d["final_128_executed"] is False
+          confirmed=a["cost_boundary"]["cost_confirmation_received"]
+          if confirmed:
+              assert a["human_confirmation"]["received"] is True
+              assert d["provider_dispatch_authorized"] is True
+              assert d["manual_dispatch_authorized"] is True
+              assert a["next_gate"]=="ONE_MANUAL_WORKFLOW_DISPATCH_WITH_CONFIRMATION_RUN_FINAL_128_V5_ONCE"
+              print("PASS_FINAL_128_V5_COST_CONFIRMED_STATE")
+          else:
+              assert d["provider_dispatch_authorized"] is False
+              assert d["manual_dispatch_authorized"] is False
+              print("PASS_FINAL_128_V5_ISSUED_AWAITING_CONFIRMATION_STATE")
