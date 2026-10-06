@@ -1,0 +1,27 @@
+name: Actual Canonical Dispatch Wrapper V1 Audit
+
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_ACTUAL_CANONICAL_DISPATCH_WRAPPER_v1.json"
+      - "scripts/actual_canonical_dispatch_wrapper_v1.py"
+      - ".github/workflows/actual-canonical-dispatch-wrapper-v1-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - name: Verify design remains non-executable
+        run: python scripts/actual_canonical_dispatch_wrapper_v1.py
