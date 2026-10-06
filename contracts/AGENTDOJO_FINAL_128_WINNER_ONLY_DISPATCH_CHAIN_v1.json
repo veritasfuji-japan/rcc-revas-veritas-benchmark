@@ -1,0 +1,33 @@
+{
+  "schema_version": "veritas.final-128-winner-only-dispatch-chain.v1",
+  "status": "IMPLEMENTED_OFFLINE_AUDIT_PROVIDER_DISABLED",
+  "rule_of_one": "Bind V3 atomic consume to a winner-only provider boundary and exact canonical runner invocation order, while making provider execution impossible in audit mode.",
+  "base_main_sha": "e73a4f1291ce733cd1122871e1fb9ff13a445e82",
+  "authorization": {
+    "id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V3",
+    "path": "contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v3.json"
+  },
+  "exact_runner": {
+    "path": "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py",
+    "git_blob_sha": "d1e5d7bfda41d7dcd9ee7e16a5b0e8dbba5cb89c"
+  },
+  "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+  "required_order": [
+    "validate_exact_target",
+    "atomic_consume",
+    "provider_credential_boundary",
+    "exact_canonical_runner"
+  ],
+  "failure_semantics": {
+    "duplicate_consume": "FAIL_CLOSED_BEFORE_PROVIDER",
+    "post_consume_failure": "AUTHORIZATION_REMAINS_BURNED_NO_RETRY"
+  },
+  "audit_mode": {
+    "database_access": false,
+    "provider_credential_access": false,
+    "provider_api_calls": false,
+    "final_128_execution": false
+  },
+  "execution_mode_present": false,
+  "next_gate": "SEPARATE_COST_BEARING_PROVIDER_DISPATCH_IMPLEMENTATION_AFTER_AUDIT"
+}

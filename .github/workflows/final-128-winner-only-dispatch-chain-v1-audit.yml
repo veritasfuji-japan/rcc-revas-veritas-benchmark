@@ -1,0 +1,30 @@
+name: Final 128 Winner-Only Dispatch Chain V1 Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_WINNER_ONLY_DISPATCH_CHAIN_v1.json"
+      - "scripts/final_128_winner_only_dispatch_chain_v1.py"
+      - ".github/workflows/final-128-winner-only-dispatch-chain-v1-audit.yml"
+permissions:
+  contents: read
+jobs:
+  offline-chain-audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Verify V3 winner-only dispatch chain structure
+        run: python scripts/final_128_winner_only_dispatch_chain_v1.py
+      - name: Verify provider execution is absent
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("scripts/final_128_winner_only_dispatch_chain_v1.py").read_text()
+          assert "OPENAI_API_KEY" not in s
+          assert "--execute" not in s
+          PY
