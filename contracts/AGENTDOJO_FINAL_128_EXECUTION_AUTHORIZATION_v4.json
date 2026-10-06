@@ -1,0 +1,66 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-execution-authorization.v4",
+  "status": "EXECUTION_AUTHORIZATION_ISSUED_PROVIDER_DISPATCH_AWAITS_EXPLICIT_COST_CONFIRMATION",
+  "rule_of_one": "Issue one new exact-target single-use authorization only after the atomic provider wrapper is frozen.",
+  "authorization": {
+    "id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V4",
+    "issued": true,
+    "single_use": true,
+    "consumed": false,
+    "automatic_execution": false,
+    "rerun_authorized": false
+  },
+  "predecessor": {
+    "v3_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V3",
+    "v3_disposition": "SUPERSEDED_UNCONSUMED_NOT_VALID_FOR_PROVIDER_DISPATCH"
+  },
+  "exact_target": {
+    "benchmark_commit": "29afd4976c5915c88a969954cc8dc7ebe7c73a80",
+    "wrapper_path": "scripts/final_128_atomic_provider_wrapper_v2.py",
+    "wrapper_git_blob_sha": "7499cae9d97ddeb2dbab8534ec01b173fe2c89d1",
+    "runner_path": "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py",
+    "runner_git_blob_sha": "d1e5d7bfda41d7dcd9ee7e16a5b0e8dbba5cb89c",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "benchmark": {
+    "case_count": 128,
+    "promote_tasks": [
+      2,
+      13,
+      15
+    ],
+    "fail_closed_tasks": [
+      11,
+      12,
+      14
+    ]
+  },
+  "cost_boundary": {
+    "maximum_usd": 5,
+    "explicit_human_cost_confirmation_required": true,
+    "cost_confirmation_received": false
+  },
+  "dispatch": {
+    "provider_dispatch_authorized": true,
+    "manual_dispatch_authorized": false,
+    "provider_credential_access": false,
+    "provider_api_called": false,
+    "final_128_executed": false
+  },
+  "execution_semantics": {
+    "atomic_consume_before_provider_credential": true,
+    "winner_only_provider_boundary": true,
+    "post_consume_failure_burns_authorization": true,
+    "no_automatic_retry": true,
+    "no_rerun": true
+  },
+  "next_gate": "EXPLICIT_HUMAN_COST_CONFIRMATION_THEN_SEPARATE_MANUAL_DISPATCH",
+  "claim_boundary": {
+    "same_corpus_not_held_out": true,
+    "external_validation": false,
+    "production_validation": false
+  }
+}
