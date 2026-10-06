@@ -1,0 +1,34 @@
+name: Final 128 V9 Provider-Free Preflight
+on:
+  pull_request:
+    paths:
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2_4.py"
+      - "scripts/final_128_real_provider_wrapper_v7.py"
+      - ".github/workflows/final-128-v9-provider-free-preflight.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Checkout exact RCC pin
+        run: |
+          mkdir -p _pins
+          git clone https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc fetch --depth=1 origin 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+      - name: Verify V9 runner RCC import path without provider
+        run: |
+          python - <<'PY'
+          import importlib.util, pathlib
+          p=pathlib.Path("scripts/agentdojo_clean_ab_canonical_final_runner_v2_4.py")
+          s=importlib.util.spec_from_file_location("v9runner",p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m)
+          g=m.load_rcc_gate(pathlib.Path("_pins/rcc"))
+          assert g is not None
+          print("PASS_V9_RUNNER_RCC_RUNTIME_PREFLIGHT")
+          PY
