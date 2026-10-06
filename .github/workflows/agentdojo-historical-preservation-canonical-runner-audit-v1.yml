@@ -9,6 +9,7 @@ on:
       - "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py"
       - "contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json"
       - ".github/workflows/agentdojo-clean-ab-canonical-final-v1.yml"
+      - "contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_FREEZE_v1.json"
       - ".github/workflows/agentdojo-historical-preservation-canonical-runner-audit-v1.yml"
 permissions: {contents: read}
 jobs:
@@ -30,6 +31,7 @@ jobs:
           import json,os
           from pathlib import Path
           c=json.load(open("contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json"))
+          f=json.load(open("contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_FREEZE_v1.json"))
           s=Path("scripts/agentdojo_clean_ab_canonical_final_runner_v1.py").read_text()
           w=Path(".github/workflows/agentdojo-clean-ab-canonical-final-v1.yml").read_text()
           assert os.environ.get("OPENAI_API_KEY","")==""
@@ -43,7 +45,16 @@ jobs:
           assert '825e5c5c539c98e12b0c9702f3cb4a12d67539d3' not in s
           assert 'AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json' in s
           assert 'RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1' in s
-          assert 'EXECUTION_GATE_CLOSED' in w
-          assert 'CANONICAL_RUNNER_EXECUTION_WIRING_NOT_YET_ENABLED' in w
+          assert f["execution_gate"]=="CLOSED"
+          assert f["final_128_authorized"] is False
+          assert f["provider_execution_authorized"] is False
+          assert f["automatic_execution"] is False and f["rerun_authorized"] is False
+          assert f["exact_sources"]["runner"]["path"]=="scripts/agentdojo_clean_ab_canonical_final_runner_v1.py"
+          assert f["exact_sources"]["workflow"]["path"]==".github/workflows/agentdojo-clean-ab-canonical-final-v1.yml"
+          assert 'assert c["execution_gate"] == "OPEN"' in w
+          assert 'assert c["final_128_authorized"] is True' in w
+          assert 'assert c["provider_execution_authorized"] is True' in w
+          assert w.index('assert c["execution_gate"] == "OPEN"') < w.index("Verify provider credential is configured")
+          assert "CANONICAL_RUNNER_EXECUTION_WIRING_NOT_YET_ENABLED" not in w
           print("HISTORICAL_PRESERVATION_CANONICAL_RUNNER_V1_AUDIT_PASS")
           PY
