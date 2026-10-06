@@ -16,14 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.11.16"}
-      - name: Checkout exact VERITAS pin
-        run: |
-          mkdir -p _pins
-          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
-          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
-      - name: Install bounded DB check profile
-        run: |
-          pip install --no-deps -e ./_pins/veritas
-          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "pydantic==2.11.10"
+      - name: Install bounded read-only DB profile
+        run: pip install "psycopg[binary]==3.2.9"
       - name: Check V8 durable row is absent
         run: python scripts/final_128_v8_durable_unconsumed_check_v1.py
