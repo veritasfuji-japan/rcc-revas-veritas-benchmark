@@ -1,0 +1,48 @@
+name: AgentDojo Final 128 Human Authorization Issuance V2 Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_v2.json"
+      - ".github/workflows/agentdojo-final-128-human-authorization-issuance-v2.yml"
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    env: {OPENAI_API_KEY: ""}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Verify exact single-use issuance and no dispatch
+        run: |
+          python - <<'PY'
+          import json,os,subprocess
+          p="contracts/AGENTDOJO_FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_v2.json"
+          c=json.load(open(p))
+          assert os.environ.get("OPENAI_API_KEY","")==""
+          assert c["issuance_base_main_sha"]=="7227435ca476c6d459fcb5a9fa1f320d8f7ba34b"
+          assert c["human_approval"]["approved"] is True
+          assert c["human_approval"]["single_use"] is True
+          assert c["human_approval"]["authorization_id"]=="AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2"
+          assert c["superseded_authorization_usable_for_dispatch"] is False
+          t=c["execution_target"]
+          assert t["benchmark_commit"]=="7227435ca476c6d459fcb5a9fa1f320d8f7ba34b"
+          assert subprocess.check_output(["git","rev-parse","HEAD:"+t["runner"]],text=True).strip()==t["runner_git_blob_sha"]
+          assert subprocess.check_output(["git","rev-parse","HEAD:"+t["workflow"]],text=True).strip()==t["workflow_git_blob_sha"]
+          f=c["freeze_contract"]
+          assert subprocess.check_output(["git","rev-parse","HEAD:"+f["path"]],text=True).strip()==f["git_blob_sha"]
+          assert t["veritas_commit"]=="a1d66aef02262cf8a913295270c3aafd159c6adb"
+          assert t["agentdojo_commit"]=="a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          assert t["rcc_revas_commit"]=="1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          assert t["model"]=="gpt-4.1-mini-2025-04-14"
+          assert c["candidate_disposition"]["promote_tasks"]==[2,13,15]
+          assert c["candidate_disposition"]["keep_fail_closed_tasks"]==[11,12,14]
+          s=c["authorization_state"]
+          assert s["issued"] is True and s["consumed"] is False
+          assert s["dispatch_performed"] is False
+          assert s["provider_api_called_by_this_pr"] is False
+          assert s["automatic_dispatch"] is False and s["rerun_authorized"] is False
+          assert c["execution_gate"]=="CLOSED"
+          assert c["provider_execution_authorized"] is False
+          assert c["provider_spend_cap_usd"]==5
+          print("FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_V2_AUDIT_PASS")
+          PY
