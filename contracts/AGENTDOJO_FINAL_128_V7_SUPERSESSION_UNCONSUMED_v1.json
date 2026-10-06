@@ -1,0 +1,21 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v7-supersession-unconsumed.v1",
+  "status": "SUPERSEDED_UNCONSUMED",
+  "rule_of_one": "V7_SUPERSESSION_UNCONSUMED_V1",
+  "baseline_main_sha": "d354655d1f26a3eb5495ea99b0823c7d7d867d13",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7",
+  "original_authorization_blob_sha": "6d226ad690cea0e4141bd34fdec097a554687f5d",
+  "disposition": {
+    "issued": true,
+    "consumed": false,
+    "provider_credential_access": false,
+    "provider_api_called": false,
+    "final_128_executed": false,
+    "superseded": true,
+    "rebind_authorized": false,
+    "retry_authorized": false,
+    "rerun_authorized": false
+  },
+  "execution_authorized": false,
+  "next_gate": "FREEZE_FRESH_V8_TARGET_BEFORE_NEW_AUTHORIZATION"
+}
