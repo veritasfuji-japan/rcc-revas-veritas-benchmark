@@ -19,8 +19,15 @@ def sha(s): return hashlib.sha256(s.encode()).hexdigest()
 def blob(p): return subprocess.run(["git","hash-object",str(ROOT/p)],check=True,capture_output=True,text=True).stdout.strip()
 def audit():
  assert blob(RUNNER)==RUNNER_BLOB
- assert not (ROOT/AUTH_PATH).exists(), "V5_MUST_NOT_EXIST_BEFORE_REAL_WRAPPER_FREEZE"
- return {"proof":"FINAL_128_REAL_PROVIDER_WRAPPER_V3","mode":"AUDIT_ONLY","v5_exists":False,
+ v5_exists=(ROOT/AUTH_PATH).exists()
+ if v5_exists:
+  a=json.loads((ROOT/AUTH_PATH).read_text())
+  assert a["authorization"]["id"]==AUTH_ID
+  assert a["authorization"]["issued"] is True
+  assert a["authorization"]["single_use"] is True
+  assert a["authorization"]["consumed"] is False
+  assert a["authorization"]["rerun_authorized"] is False
+ return {"proof":"FINAL_128_REAL_PROVIDER_WRAPPER_V3","mode":"AUDIT_ONLY","v5_exists":v5_exists,
  "database_write":0,"provider_credential_access":0,"provider_api_calls":0,"final_128_execution":0}
 async def execute(args):
  if not (ROOT/AUTH_PATH).exists(): raise SystemExit("V5_AUTHORIZATION_MISSING")
