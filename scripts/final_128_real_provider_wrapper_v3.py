@@ -30,8 +30,8 @@ async def execute(args):
  assert a["authorization"]["rerun_authorized"] is False
  assert a["dispatch"]["provider_dispatch_authorized"] is True
  assert a["cost_boundary"]["maximum_usd"]==5 and a["cost_boundary"]["cost_confirmation_received"] is True
- assert a["exact_target"]["wrapper_git_blob_sha"]==blob("scripts/final_128_real_provider_wrapper_v3.py")
- assert a["exact_target"]["runner_git_blob_sha"]==RUNNER_BLOB
+ assert a["frozen_target"]["wrapper_git_blob_sha"]==blob("scripts/final_128_real_provider_wrapper_v3.py")
+ assert a["frozen_target"]["runner_git_blob_sha"]==RUNNER_BLOB
  if args.confirmation!=CONFIRM: raise SystemExit("EXACT_V5_EXECUTION_CONFIRMATION_REQUIRED")
  from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore, build_authorization_consumption_record
  from veritas_os.storage.db import close_pool
