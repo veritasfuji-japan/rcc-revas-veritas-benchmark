@@ -1,0 +1,49 @@
+{
+  "schema_version": "veritas.actual-canonical-dispatch-wrapper.v1",
+  "status": "DESIGNED_FAIL_CLOSED_PROVIDER_DISPATCH_DISABLED",
+  "rule_of_one": "Only the unique durable PostgreSQL consumer of AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2 may cross the provider-credential boundary.",
+  "base_main_sha": "37929924e994276e05f71bc2ec97c6b1dd3966fa",
+  "authorization_contract": "contracts/AGENTDOJO_FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_v2.json",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2",
+  "authorization_contract_blob": "da3e14121a5c51d230126d11878ab9fb7032d1b6",
+  "freeze_contract": "contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_FREEZE_v1.json",
+  "freeze_contract_blob": "7b8e82b357f5be30eec62f44147877b392b6c18c",
+  "runner": {
+    "path": "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py",
+    "git_blob_sha": "d1e5d7bfda41d7dcd9ee7e16a5b0e8dbba5cb89c"
+  },
+  "pins": {
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "atomic_proof": {
+    "run_id": 37421460986,
+    "job_id": 112131518906,
+    "attempts": 32,
+    "winners": 1,
+    "losers": 31,
+    "authorization_rows": 1,
+    "synthetic_only": true
+  },
+  "dispatch_state": {
+    "actual_authorization_consumption_enabled": false,
+    "provider_credential_access_enabled": false,
+    "provider_execution_enabled": false,
+    "final_128_enabled": false,
+    "automatic_dispatch": false,
+    "rerun_authorized": false
+  },
+  "failure_semantics": {
+    "consume_failure": "FAIL_CLOSED_BEFORE_PROVIDER_CREDENTIAL",
+    "post_consume_failure": "AUTHORIZATION_REMAINS_CONSUMED_NO_AUTOMATIC_RETRY"
+  },
+  "next_gate": "IMPLEMENT_AND_AUDIT_EXACT_TARGET_VALIDATION_AND_REAL_AUTHORIZATION_CONSUMPTION_WITH_PROVIDER_STILL_DISABLED",
+  "claim_boundary": {
+    "actual_human_authorization_consumed": false,
+    "provider_api_called": false,
+    "final_128_executed": false,
+    "production_readiness": false
+  }
+}
