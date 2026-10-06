@@ -1,6 +1,6 @@
 {
   "schema_version": "veritas.agentdojo-final-128-dependency-compatibility.v1",
-  "status": "PROOF_PENDING",
+  "status": "BOUNDED_RUNTIME_PROFILE_PROOF_PENDING",
   "base_main_sha": "6c86bd4298b6d3bae87e9c6d778f66317c02d022",
   "pins": {
     "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
@@ -9,12 +9,15 @@
   },
   "compatibility_target": {
     "openai": ">=1.59.7,<2",
-    "reason": "AgentDojo requires >=1.59.7; verify pinned VERITAS runtime imports and atomic store remain usable without provider execution."
+    "reason": "AgentDojo requires >=1.59.7. VERITAS source remains exact-pinned but is installed --no-deps; only the exact Final-128 Bind, AgentDojo adapter, signing, and PostgreSQL atomic-store surfaces are explicitly dependency-provisioned and imported."
   },
   "proof_requirements": [
-    "pip check PASS",
+    "AgentDojo-compatible OpenAI >=1.59.7,<2",
     "OpenAI client constructible with max_retries=0",
     "VERITAS PostgreSQL atomic store importable",
+    "VERITAS Bind core importable",
+    "VERITAS AgentDojo banking adapter importable",
+    "cryptography and psycopg surfaces importable",
     "no provider call",
     "no database access"
   ],
@@ -23,5 +26,9 @@
     "provider_calls": 0,
     "database_access": 0,
     "final_128_execution": 0
+  },
+  "scope": {
+    "full_veritas_distribution_dependency_consistency_claimed": false,
+    "bounded_final_128_runtime_profile_only": true
   }
 }
