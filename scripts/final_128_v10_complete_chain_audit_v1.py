@@ -17,6 +17,10 @@ assert "AGENTDOJO_FINAL_128_V10_HUMAN_CONFIRMATION_v1.json" in w
 assert 'a["dispatch"]["provider_dispatch_authorized"] is True' in w
 assert 'c["authorization_git_blob_sha"]==a["_self_blob"]' in w
 assert "RUN_FINAL_128_V10_ONCE" in d and "final_128_real_provider_wrapper_v8.py --execute" in d
+assert 'openai==1.53.0' in d and 'pip check' in d and 'pip check' in p
+assert d.count('OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}') == 1
+execute_block=d.split("- name: Execute exact V10 chain",1)[1]
+assert 'OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}' in execute_block
 assert "actions/upload-artifact@v4" in d and "results/agentdojo-clean-ab-final-v10" in d
 assert 'OPENAI_API_KEY: ""' in p and 'VERITAS_DATABASE_URL: ""' in p
 assert "final_128_real_provider_wrapper_v8.py --provider-free-preflight" in p
