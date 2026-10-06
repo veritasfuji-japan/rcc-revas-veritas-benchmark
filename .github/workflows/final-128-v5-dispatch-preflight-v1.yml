@@ -1,0 +1,21 @@
+name: Final 128 V5 Dispatch Preflight V1
+on:
+  pull_request:
+    paths:
+      - "scripts/final_128_v5_dispatch_preflight_v1.py"
+      - ".github/workflows/final-128-v5-dispatch-preflight-v1.yml"
+permissions: {contents: read}
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Verify exact real dispatch chain without consuming V5
+        run: |
+          python -m py_compile scripts/final_128_real_provider_wrapper_v3.py scripts/agentdojo_clean_ab_canonical_final_runner_v2_1.py scripts/final_128_v5_dispatch_preflight_v1.py
+          python scripts/final_128_v5_dispatch_preflight_v1.py
