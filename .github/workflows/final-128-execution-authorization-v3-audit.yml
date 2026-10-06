@@ -1,0 +1,40 @@
+name: Final 128 Execution Authorization V3 Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v3.json"
+      - ".github/workflows/final-128-execution-authorization-v3-audit.yml"
+permissions:
+  contents: read
+jobs:
+  offline-authorization-audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Verify exact-target authorization and closed dispatch gate
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          p=json.load(open("contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v3.json"))
+          a=p["authorization"]; d=p["dispatch_state"]; t=p["exact_target"]
+          assert a["id"]=="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V3"
+          assert a["issued"] is True and a["single_use"] is True and a["consumed"] is False
+          assert a["rerun_authorized"] is False and a["automatic_execution"] is False
+          assert p["cost_boundary"]["maximum_usd"]==5
+          assert p["cost_boundary"]["provider_cost_confirmation_required"] is True
+          assert all(d[k] is False for k in d)
+          assert p["required_execution_semantics"]["atomic_consume_before_provider_credential"] is True
+          assert p["required_execution_semantics"]["winner_only_provider_boundary"] is True
+          assert p["required_execution_semantics"]["post_consume_failure_burns_authorization"] is True
+          def blob(path):
+              return subprocess.run(["git","hash-object",path],check=True,capture_output=True,text=True).stdout.strip()
+          assert blob(t["runner_path"])==t["runner_git_blob_sha"]
+          assert blob(t["workflow_path"])==t["workflow_git_blob_sha"]
+          e=json.load(open(p["prior_consumption_evidence"]["evidence_contract"]))
+          assert e["observed_result"]["consumed"] is True
+          assert e["semantics"]["reuse_for_final_128_forbidden"] is True
+          PY
