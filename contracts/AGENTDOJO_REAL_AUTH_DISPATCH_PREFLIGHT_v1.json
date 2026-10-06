@@ -1,0 +1,46 @@
+{
+  "schema_version": "veritas.real-auth-dispatch-preflight.v1",
+  "status": "IMPLEMENTED_AUDIT_ONLY_REAL_AUTH_NOT_CONSUMED",
+  "rule_of_one": "Validate the exact real Human Authorization V2 and frozen execution target offline, while keeping real authorization consumption and provider execution disabled.",
+  "base_main_sha": "8cd7b35a38cb52c56230db625a74b925b7da5c8f",
+  "authorization": {
+    "path": "contracts/AGENTDOJO_FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_v2.json",
+    "id": "AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2",
+    "git_blob_sha": "da3e14121a5c51d230126d11878ab9fb7032d1b6",
+    "required_issued": true,
+    "required_consumed": false
+  },
+  "freeze": {
+    "path": "contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_FREEZE_v1.json",
+    "git_blob_sha": "7b8e82b357f5be30eec62f44147877b392b6c18c"
+  },
+  "runner": {
+    "path": "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py",
+    "git_blob_sha": "d1e5d7bfda41d7dcd9ee7e16a5b0e8dbba5cb89c"
+  },
+  "pins": {
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "prerequisites": {
+    "atomic_postgres_run": 37421460986,
+    "synthetic_wrapper_run": 37423062147
+  },
+  "disabled": {
+    "database_access": true,
+    "real_authorization_consumption": true,
+    "provider_credential_access": true,
+    "provider_api": true,
+    "final_128": true,
+    "automatic_retry": true,
+    "rerun": true
+  },
+  "next_gate": "SEPARATE_REVIEWED_REAL_CONSUMPTION_DISPATCH_IMPLEMENTATION",
+  "claim_boundary": {
+    "real_authorization_consumed": false,
+    "provider_api_called": false,
+    "final_128_executed": false
+  }
+}
