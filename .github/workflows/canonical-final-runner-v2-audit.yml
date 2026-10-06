@@ -1,0 +1,32 @@
+name: Canonical Final Runner V2 Audit
+on:
+  pull_request:
+    paths:
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2.py"
+      - "contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_v2.json"
+      - ".github/workflows/canonical-final-runner-v2-audit.yml"
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env: {OPENAI_API_KEY: "", VERITAS_DATABASE_URL: ""}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Structural fail-closed audit
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path("scripts/agentdojo_clean_ab_canonical_final_runner_v2.py").read_text()
+          c=json.load(open("contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_v2.json"))
+          assert "AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json" not in p
+          assert "RUNTIME_DISPATCH_RECEIPT_MISSING" in p
+          assert "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V5" in p
+          assert "RUNTIME_DISPATCH_ATOMIC_WIN_REQUIRED" in p
+          assert c["current_state"]["v5_issued"] is False
+          assert c["current_state"]["provider_execution"] is False
+          assert c["current_state"]["final_128_execution"] is False
+          assert c["preserves"]["automatic_retry"] is False
+          print("PASS_RUNNER_V2_RUNTIME_RECEIPT_FAIL_CLOSED")
+          PY
