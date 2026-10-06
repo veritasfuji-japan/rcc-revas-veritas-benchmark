@@ -1,0 +1,89 @@
+name: Canonical Dispatch Atomic Consumption V1
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Exact confirmation token"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  real-postgres-atomic-consumption:
+    if: ${{ inputs.confirmation == 'RUN_SYNTHETIC_ATOMIC_CONSUMPTION_V1' }}
+    runs-on: ubuntu-latest
+    env:
+      VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+      VERITAS_DB_POOL_MIN_SIZE: "1"
+      VERITAS_DB_POOL_MAX_SIZE: "10"
+      VERITAS_DB_CONNECT_TIMEOUT: "10"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify exact checkout and proof contract
+        run: |
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          python - <<'PY'
+          import json
+          p=json.load(open("contracts/CANONICAL_DISPATCH_ATOMIC_CONSUMPTION_V1.json"))
+          assert p["veritas_commit"]=="a1d66aef02262cf8a913295270c3aafd159c6adb"
+          assert p["synthetic_authorization_only"] is True
+          assert p["provider_api_authorized"] is False
+          assert p["final_128_authorized"] is False
+          assert p["human_authorization_v2_consumption_authorized"] is False
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - name: Checkout exact VERITAS proof dependency
+        uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _veritas
+          persist-credentials: false
+      - name: Install bounded PostgreSQL proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check "psycopg[binary]" psycopg-pool
+          python -m pip install --disable-pip-version-check --no-deps ./_veritas
+      - name: Require configured real PostgreSQL secret
+        shell: bash
+        run: |
+          test -n "${VERITAS_DATABASE_URL}"
+          case "${VERITAS_DATABASE_URL}" in postgres://*|postgresql://*) ;; *) exit 1;; esac
+      - name: Create bounded consumption table if absent
+        shell: bash
+        run: |
+          python - <<'PY'
+          import asyncio
+          from veritas_os.storage.db import get_pool, close_pool
+          async def main():
+              pool=await get_pool()
+              async with pool.connection() as conn:
+                  await conn.execute("""
+                  CREATE TABLE IF NOT EXISTS bind_authorization_consumptions (
+                    consumption_id TEXT PRIMARY KEY,
+                    consumption_hash TEXT NOT NULL,
+                    authorization_id TEXT NOT NULL UNIQUE CHECK (btrim(authorization_id) <> ''),
+                    authorization_hash TEXT NOT NULL,
+                    idempotency_key TEXT NOT NULL UNIQUE CHECK (btrim(idempotency_key) <> ''),
+                    bind_context_hash TEXT NOT NULL,
+                    execution_intent_id TEXT NOT NULL,
+                    execution_intent_hash TEXT NOT NULL,
+                    consumed_at TIMESTAMPTZ NOT NULL,
+                    record JSON NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                  )
+                  """)
+                  await conn.execute("""CREATE INDEX IF NOT EXISTS ix_bind_authorization_consumptions_execution_intent_id ON bind_authorization_consumptions (execution_intent_id)""")
+                  await conn.commit()
+              await close_pool()
+          asyncio.run(main())
+          PY
+      - name: Run synthetic 32-way atomic consumption proof
+        run: python scripts/canonical_dispatch_atomic_consumption_v1.py
