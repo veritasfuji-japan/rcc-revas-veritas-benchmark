@@ -1,0 +1,22 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v8-chain.v1",
+  "status": "IMPLEMENTED_NOT_AUTHORIZED",
+  "rule_of_one": "FINAL_128_V8_EXECUTION_CHAIN_V1",
+  "runner": {
+    "path": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_3.py",
+    "git_blob_sha": "d3340adbd146fa1417980b182bf5d3cfaed15d5a"
+  },
+  "wrapper": {
+    "path": "scripts/final_128_real_provider_wrapper_v6.py",
+    "git_blob_sha": "85ffb9c333d595a87c52bd443c92410d2d8419eb"
+  },
+  "workflow": {
+    "path": ".github/workflows/final-128-v8-manual-dispatch.yml",
+    "git_blob_sha": "eab5f4fd7eb241615e19944f7a355666ffb2ad3a"
+  },
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V8",
+  "execution_authorized": false,
+  "provider_api_called": false,
+  "final_128_executed": false,
+  "next_gate": "SYNTHETIC_DURABLE_DB_PROOF_BEFORE_TARGET_FREEZE"
+}
