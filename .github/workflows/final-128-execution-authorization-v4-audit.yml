@@ -1,0 +1,40 @@
+name: Final 128 Execution Authorization V4 Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v4.json"
+      - ".github/workflows/final-128-execution-authorization-v4-audit.yml"
+permissions: {contents: read}
+jobs:
+  offline-v4-audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Verify exact V4 target and unopened manual cost gate
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          a=json.load(open("contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v4.json"))
+          x=a["authorization"]; t=a["exact_target"]; d=a["dispatch"]; c=a["cost_boundary"]
+          assert x["id"]=="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V4"
+          assert x["issued"] is True and x["single_use"] is True and x["consumed"] is False
+          assert x["automatic_execution"] is False and x["rerun_authorized"] is False
+          def blob(p): return subprocess.run(["git","hash-object",p],check=True,capture_output=True,text=True).stdout.strip()
+          assert blob(t["wrapper_path"])==t["wrapper_git_blob_sha"]
+          assert blob(t["runner_path"])==t["runner_git_blob_sha"]
+          assert c["maximum_usd"]==5
+          assert c["explicit_human_cost_confirmation_required"] is True
+          assert c["cost_confirmation_received"] is False
+          assert d["provider_dispatch_authorized"] is True
+          assert d["manual_dispatch_authorized"] is False
+          assert d["provider_credential_access"] is False
+          assert d["provider_api_called"] is False
+          assert d["final_128_executed"] is False
+          assert a["execution_semantics"]["atomic_consume_before_provider_credential"] is True
+          assert a["execution_semantics"]["winner_only_provider_boundary"] is True
+          assert a["execution_semantics"]["post_consume_failure_burns_authorization"] is True
+          PY
