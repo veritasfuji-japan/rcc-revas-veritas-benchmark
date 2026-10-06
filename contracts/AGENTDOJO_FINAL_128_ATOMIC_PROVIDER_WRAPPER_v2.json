@@ -1,0 +1,37 @@
+{
+  "schema_version": "veritas.final-128-atomic-provider-wrapper.v2",
+  "status": "IMPLEMENTED_FROZEN_AUDIT_ONLY_V4_NOT_ISSUED",
+  "base_main_sha": "725b0f5b02c035f9d531f975cab10f33a3063a52",
+  "wrapper": {
+    "path": "scripts/final_128_atomic_provider_wrapper_v2.py",
+    "git_blob_sha": "7499cae9d97ddeb2dbab8534ec01b173fe2c89d1"
+  },
+  "future_authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V4",
+  "required_order": [
+    "exact_v4_validation",
+    "postgres_atomic_consume_once",
+    "winner_only_provider_credential_check",
+    "exact_canonical_runner"
+  ],
+  "exact_runner": {
+    "path": "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py",
+    "git_blob_sha": "d1e5d7bfda41d7dcd9ee7e16a5b0e8dbba5cb89c"
+  },
+  "limits": {
+    "maximum_usd": 5,
+    "automatic_retry": false,
+    "rerun": false
+  },
+  "failure_semantics": {
+    "duplicate": "fail_closed_before_provider",
+    "post_consume_failure": "authorization_burned_no_retry"
+  },
+  "current_state": {
+    "v4_issued": false,
+    "database_access": false,
+    "provider_credential_access": false,
+    "provider_api_calls": false,
+    "final_128_execution": false
+  },
+  "next_gate": "ISSUE_V4_BOUND_TO_THIS_EXACT_WRAPPER_BLOB"
+}
