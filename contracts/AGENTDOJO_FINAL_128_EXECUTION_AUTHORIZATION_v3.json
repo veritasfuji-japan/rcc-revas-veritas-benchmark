@@ -1,0 +1,65 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-execution-authorization.v3",
+  "status": "EXECUTION_AUTHORIZATION_ISSUED_DISPATCH_NOT_AUTHORIZED",
+  "rule_of_one": "Issue one new exact-target single-use Final 128 execution authorization after the prior authorization was irreversibly consumed, while keeping provider dispatch as a separate gate.",
+  "supersedes_authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2",
+  "prior_consumption_evidence": {
+    "run_id": 37425098013,
+    "job_id": 112142857684,
+    "evidence_contract": "contracts/AGENTDOJO_REAL_AUTH_CONSUMPTION_EVIDENCE_v1.json"
+  },
+  "authorization": {
+    "id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V3",
+    "issued": true,
+    "single_use": true,
+    "consumed": false,
+    "rerun_authorized": false,
+    "automatic_execution": false
+  },
+  "exact_target": {
+    "benchmark_commit": "3b4c87c32406aa188ff0659c4393a4a7f2f56d6b",
+    "runner_path": "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py",
+    "runner_git_blob_sha": "d1e5d7bfda41d7dcd9ee7e16a5b0e8dbba5cb89c",
+    "workflow_path": ".github/workflows/agentdojo-clean-ab-canonical-final-v1.yml",
+    "workflow_git_blob_sha": "71945dd7514b00e683cfcf54eae4892e6d7dc488",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "benchmark": {
+    "case_count": 128,
+    "promote_tasks": [
+      2,
+      13,
+      15
+    ],
+    "fail_closed_tasks": [
+      11,
+      12,
+      14
+    ]
+  },
+  "cost_boundary": {
+    "maximum_usd": 5,
+    "provider_cost_confirmation_required": true
+  },
+  "dispatch_state": {
+    "provider_dispatch_authorized": false,
+    "provider_credential_access": false,
+    "provider_api_called": false,
+    "final_128_executed": false
+  },
+  "required_execution_semantics": {
+    "atomic_consume_before_provider_credential": true,
+    "winner_only_provider_boundary": true,
+    "post_consume_failure_burns_authorization": true,
+    "no_automatic_retry": true
+  },
+  "next_gate": "SEPARATE_PROVIDER_DISPATCH_IMPLEMENTATION_AND_AUDIT",
+  "claim_boundary": {
+    "same_corpus_not_held_out": true,
+    "external_validation": false,
+    "production_validation": false
+  }
+}
