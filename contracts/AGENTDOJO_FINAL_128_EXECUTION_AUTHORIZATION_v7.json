@@ -1,6 +1,6 @@
 {
   "schema_version": "veritas.agentdojo-final-128-execution-authorization.v7",
-  "status": "EXECUTION_AUTHORIZATION_ISSUED_AWAITS_EXPLICIT_COST_CONFIRMATION",
+  "status": "EXECUTION_AUTHORIZATION_ISSUED_COST_CONFIRMED_MANUAL_DISPATCH_AUTHORIZED",
   "authorization": {
     "id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7",
     "issued": true,
@@ -27,11 +27,11 @@
   "cost_boundary": {
     "maximum_usd": 5,
     "explicit_human_cost_confirmation_required": true,
-    "cost_confirmation_received": false
+    "cost_confirmation_received": true
   },
   "dispatch": {
-    "provider_dispatch_authorized": false,
-    "manual_dispatch_authorized": false,
+    "provider_dispatch_authorized": true,
+    "manual_dispatch_authorized": true,
     "provider_credential_access": false,
     "provider_api_called": false,
     "final_128_executed": false
@@ -44,5 +44,10 @@
     "retry_authorized": false,
     "rerun_authorized": false
   },
-  "next_gate": "EXPLICIT_HUMAN_COST_CONFIRMATION_REQUIRED"
+  "next_gate": "ONE_MANUAL_V7_DISPATCH_ONLY",
+  "human_confirmation": {
+    "received": true,
+    "scope": "Maximum USD 5 OpenAI API usage; consume V7 once; execute Canonical Final 128",
+    "source": "explicit_human_confirmation"
+  }
 }
