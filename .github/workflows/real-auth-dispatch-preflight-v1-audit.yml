@@ -1,0 +1,22 @@
+name: Real Auth Dispatch Preflight V1 Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_REAL_AUTH_DISPATCH_PREFLIGHT_v1.json"
+      - "scripts/real_auth_dispatch_preflight_v1.py"
+      - ".github/workflows/real-auth-dispatch-preflight-v1-audit.yml"
+permissions:
+  contents: read
+jobs:
+  offline-preflight:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Verify exact real authorization target remains unconsumed
+        run: python scripts/real_auth_dispatch_preflight_v1.py
