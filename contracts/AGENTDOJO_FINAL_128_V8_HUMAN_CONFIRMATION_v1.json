@@ -1,0 +1,19 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v8-human-confirmation.v1",
+  "status": "CONFIRMED_PRE_DISPATCH_AUDIT_REQUIRED",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V8",
+  "baseline_main_sha": "71139f26cd57108448cd3f89de0ad52c4ff07893",
+  "authorization_contract_blob_sha": "6a7ce278d1fa42f5badcec02a881ec6a7efa604a",
+  "confirmation": {
+    "received": true,
+    "max_usd": 5,
+    "single_consumption_only": true
+  },
+  "consumed": false,
+  "rerun_authorized": false,
+  "provider_credential_access": false,
+  "provider_api_called": false,
+  "final_128_executed": false,
+  "execution_must_not_start_before": "FINAL_V8_PRE_DISPATCH_AUDIT_SUCCESS",
+  "next_gate": "FINAL_V8_PRE_DISPATCH_AUDIT"
+}
