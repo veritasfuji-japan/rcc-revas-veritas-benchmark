@@ -1,0 +1,30 @@
+{
+  "schema": "veritas.canonical-dispatch-atomic-consumption-proof.v1",
+  "status": "DESIGNED_REAL_POSTGRES_PROOF_NOT_YET_EXECUTED",
+  "rule_of_one": "For one synthetic authorization, 32 concurrent consume attempts against one shared real PostgreSQL store yield exactly one durable winner and 31 losers.",
+  "benchmark_base_main_sha": "161db1f575bc9781db11278dde2820b670dca64e",
+  "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+  "secret_name": "VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL",
+  "runtime_mapping": "VERITAS_DATABASE_URL",
+  "synthetic_authorization_only": true,
+  "attempts": 32,
+  "expected_winners": 1,
+  "expected_losers": 31,
+  "expected_authorization_rows": 1,
+  "provider_credential_access_authorized": false,
+  "provider_api_authorized": false,
+  "final_128_authorized": false,
+  "human_authorization_v2_consumption_authorized": false,
+  "openai_api_key_exposed_to_job": false,
+  "migration_scope": "create bind_authorization_consumptions table and index only if absent",
+  "claim_boundaries": {
+    "proves_after_success": "shared-real-postgresql consume-once contention for synthetic authorization",
+    "does_not_prove": [
+      "final 128 execution",
+      "provider execution",
+      "held-out validation",
+      "external validation",
+      "production deployment"
+    ]
+  }
+}
