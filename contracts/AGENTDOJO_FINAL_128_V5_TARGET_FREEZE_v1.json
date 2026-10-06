@@ -1,0 +1,30 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v5-target-freeze.v1",
+  "status": "FROZEN_V5_NOT_ISSUED",
+  "frozen_main_sha": "7b525aff508974a2f49828ee35ab1941ca9b2c4f",
+  "exact_target": {
+    "wrapper_path": "scripts/final_128_real_provider_wrapper_v3.py",
+    "wrapper_git_blob_sha": "15bdde9c8235fbd2a464ec3a01a5ed5e0f58cda2",
+    "runner_path": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_1.py",
+    "runner_git_blob_sha": "d1f146cafbb649537fadaa3f593b7620918847fd",
+    "workflow_path": ".github/workflows/final-128-v5-manual-dispatch.yml",
+    "workflow_git_blob_sha": "9b3fcf57135c774bd5de6506ec9e8809d7cd0ee5",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "cost_boundary": {
+    "maximum_usd": 5,
+    "explicit_human_confirmation_required": true,
+    "confirmation_received": false
+  },
+  "current_state": {
+    "v5_issued": false,
+    "v5_consumed": false,
+    "provider_dispatch_authorized": false,
+    "provider_api_called": false,
+    "final_128_executed": false
+  },
+  "next_gate": "ISSUE_FRESH_V5_BOUND_TO_FROZEN_TARGET"
+}
