@@ -7,7 +7,7 @@ gate contract to OPEN. Scoring is a separate post-execution phase.
 """
 from __future__ import annotations
 
-import argparse
+import argparse, sys
 import base64
 import copy
 import hashlib
