@@ -1,0 +1,26 @@
+{
+  "schema_version": "veritas.wrapper-v3-synthetic-integration.v1",
+  "status": "IMPLEMENTED_MANUAL_PROOF_PENDING",
+  "base_main_sha": "f52ba45b277ebbbdd0bf37bbeaaf34e415fb93a9",
+  "runner_v2_blob_sha": "8fbbe1e82e59ec2b5cdfa04c83fb805a83181b79",
+  "authorization": {
+    "real_v5_issued": false,
+    "synthetic_only": true,
+    "attempts": 32
+  },
+  "required_result": {
+    "winners": 1,
+    "losers": 31,
+    "runner_v2_preflight": true,
+    "provider_credential_access": 0,
+    "provider_api_calls": 0,
+    "final_128_execution": 0,
+    "human_v5_authorization_consumed": false
+  },
+  "claim_boundary": {
+    "provider_disabled": true,
+    "real_postgresql_required": true,
+    "real_v5_not_used": true,
+    "final_128_result_claimed": false
+  }
+}
