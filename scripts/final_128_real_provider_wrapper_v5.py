@@ -13,7 +13,7 @@ AUTH_PATH="contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v7.json"
 AUTH_ID="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7"
 CONFIRM="RUN_FINAL_128_V7_ONCE"
 RUNNER="scripts/agentdojo_clean_ab_canonical_final_runner_v2_2.py"
-RUNNER_BLOB="undefined"
+RUNNER_BLOB="f3f76bc1f615b834b220b452607be2fbf6c67edd"
 RECEIPT_SCHEMA="veritas.agentdojo-final-128-runtime-dispatch-receipt.v1"
 def sha(s): return hashlib.sha256(s.encode()).hexdigest()
 def blob(p): return subprocess.run(["git","hash-object",str(ROOT/p)],check=True,capture_output=True,text=True).stdout.strip()
