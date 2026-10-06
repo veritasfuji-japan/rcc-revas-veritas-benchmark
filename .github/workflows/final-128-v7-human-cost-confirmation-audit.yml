@@ -1,0 +1,23 @@
+name: Final 128 V7 Human Cost Confirmation Audit
+on: [pull_request]
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify explicit V7 confirmation without execution
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          x=json.loads(Path("contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v7.json").read_text())
+          a=x["authorization"]; c=x["cost_boundary"]; d=x["dispatch"]; h=x["human_confirmation"]
+          assert a["id"]=="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7"
+          assert a["issued"] is True and a["single_use"] is True and a["consumed"] is False and a["rerun_authorized"] is False
+          assert c["maximum_usd"]==5 and c["explicit_human_cost_confirmation_required"] is True and c["cost_confirmation_received"] is True
+          assert h["received"] is True and h["source"]=="explicit_human_confirmation"
+          assert d["provider_dispatch_authorized"] is True and d["manual_dispatch_authorized"] is True
+          assert d["provider_credential_access"] is False and d["provider_api_called"] is False and d["final_128_executed"] is False
+          assert x["next_gate"]=="ONE_MANUAL_V7_DISPATCH_ONLY"
+          print("PASS_FINAL_128_V7_HUMAN_COST_CONFIRMATION")
