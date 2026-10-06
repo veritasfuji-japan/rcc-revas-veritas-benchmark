@@ -1,0 +1,18 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v8-synthetic-durable-proof.v1",
+  "status": "IMPLEMENTED_NOT_EXECUTED",
+  "rule_of_one": "V8_SYNTHETIC_DURABLE_DB_RECEIPT_V1",
+  "baseline_main_sha": "b23a83c6acef0e0989793c5c1a05fdddf738318c",
+  "authorization_prefix": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V8_SYNTHETIC_",
+  "concurrency": 4,
+  "expected": {
+    "winners": 1,
+    "losers": 3,
+    "durable_rows": 1,
+    "provider_credential_access": 0,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "execution_authorized": false,
+  "next_gate": "RUN_SYNTHETIC_DURABLE_DB_PROOF_THEN_FREEZE_EXACT_V8_TARGET"
+}
