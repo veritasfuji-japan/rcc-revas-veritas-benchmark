@@ -27,8 +27,8 @@ jobs:
           assert c["cost_confirmation_received"] in (False, True)
           assert d["provider_credential_access"] is False and d["provider_api_called"] is False and d["final_128_executed"] is False
           if c["cost_confirmation_received"]:
-          assert d["provider_dispatch_authorized"] is True and d["manual_dispatch_authorized"] is True
+              assert d["provider_dispatch_authorized"] is True and d["manual_dispatch_authorized"] is True
           else:
-          assert d["provider_dispatch_authorized"] is False and d["manual_dispatch_authorized"] is False
+              assert d["provider_dispatch_authorized"] is False and d["manual_dispatch_authorized"] is False
           assert x["next_gate"] in ("EXPLICIT_HUMAN_COST_CONFIRMATION_REQUIRED","ONE_MANUAL_V6_DISPATCH_ONLY")
           print("PASS_FINAL_128_V6_AUTHORIZATION_ISSUANCE")
