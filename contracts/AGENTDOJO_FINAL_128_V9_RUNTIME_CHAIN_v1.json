@@ -1,0 +1,22 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v9-runtime-chain.v1",
+  "status": "IMPLEMENTED_NOT_AUTHORIZED",
+  "baseline_main_sha": "b82e0fd7f80b5d0bced7443c156becc6bc8a2800",
+  "v8_disposition": "BURNED_NEVER_REUSE",
+  "runner": {
+    "path": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_4.py",
+    "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V9"
+  },
+  "wrapper": {
+    "path": "scripts/final_128_real_provider_wrapper_v7.py"
+  },
+  "rcc": {
+    "commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "runtime_src": "external-eval/v0.3.9/src"
+  },
+  "authorization_issued": false,
+  "provider_credential_access": 0,
+  "provider_api_calls": 0,
+  "final_128_execution": 0,
+  "next_gate": "PROVIDER_FREE_PREFLIGHT_SUCCESS_THEN_V9_EXACT_TARGET_FREEZE"
+}
