@@ -1,0 +1,19 @@
+name: Final 128 V9 Authorization Issuance Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v9.json"
+      - "scripts/final_128_v9_authorization_issuance_audit_v1.py"
+      - ".github/workflows/final-128-v9-authorization-issuance-audit.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - run: python scripts/final_128_v9_authorization_issuance_audit_v1.py
