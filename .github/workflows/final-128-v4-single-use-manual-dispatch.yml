@@ -48,8 +48,11 @@ jobs:
           mkdir -p _pins
           git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
           git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
-          git clone https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git _pins/rcc
-          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git init _pins/rcc
+          git -C _pins/rcc remote add origin https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git
+          git -C _pins/rcc fetch --no-tags --depth=1 origin 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git -C _pins/rcc checkout --detach FETCH_HEAD
+          test "$(git -C _pins/rcc rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
           git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
           git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
       - name: Install frozen dependencies
