@@ -1,0 +1,27 @@
+name: Final 128 V5 Frozen Target Schema Regression
+on:
+  pull_request:
+    paths:
+      - "scripts/final_128_real_provider_wrapper_v3.py"
+      - ".github/workflows/final-128-v5-frozen-target-schema-regression.yml"
+permissions: {contents: read}
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Rule-of-One schema repair
+        shell: python
+        run: |
+          import ast
+          from pathlib import Path
+          p=Path("scripts/final_128_real_provider_wrapper_v3.py")
+          src=p.read_text()
+          ast.parse(src)
+          assert 'a["frozen_target"]["wrapper_git_blob_sha"]' in src
+          assert 'a["frozen_target"]["runner_git_blob_sha"]' in src
+          assert 'a["exact_target"]' not in src
+          # Guard ordering: target checks remain before store construction / consume.
+          assert src.index('a["frozen_target"]["wrapper_git_blob_sha"]') < src.index("PostgresAtomicAuthorizationConsumptionStore()")
+          assert src.index('a["frozen_target"]["runner_git_blob_sha"]') < src.index("PostgresAtomicAuthorizationConsumptionStore()")
+          print("PASS_V5_FROZEN_TARGET_SCHEMA_REGRESSION")

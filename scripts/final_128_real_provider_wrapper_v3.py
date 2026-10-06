@@ -19,8 +19,15 @@ def sha(s): return hashlib.sha256(s.encode()).hexdigest()
 def blob(p): return subprocess.run(["git","hash-object",str(ROOT/p)],check=True,capture_output=True,text=True).stdout.strip()
 def audit():
  assert blob(RUNNER)==RUNNER_BLOB
- assert not (ROOT/AUTH_PATH).exists(), "V5_MUST_NOT_EXIST_BEFORE_REAL_WRAPPER_FREEZE"
- return {"proof":"FINAL_128_REAL_PROVIDER_WRAPPER_V3","mode":"AUDIT_ONLY","v5_exists":False,
+ v5_exists=(ROOT/AUTH_PATH).exists()
+ if v5_exists:
+  a=json.loads((ROOT/AUTH_PATH).read_text())
+  assert a["authorization"]["id"]==AUTH_ID
+  assert a["authorization"]["issued"] is True
+  assert a["authorization"]["single_use"] is True
+  assert a["authorization"]["consumed"] is False
+  assert a["authorization"]["rerun_authorized"] is False
+ return {"proof":"FINAL_128_REAL_PROVIDER_WRAPPER_V3","mode":"AUDIT_ONLY","v5_exists":v5_exists,
  "database_write":0,"provider_credential_access":0,"provider_api_calls":0,"final_128_execution":0}
 async def execute(args):
  if not (ROOT/AUTH_PATH).exists(): raise SystemExit("V5_AUTHORIZATION_MISSING")
@@ -30,8 +37,8 @@ async def execute(args):
  assert a["authorization"]["rerun_authorized"] is False
  assert a["dispatch"]["provider_dispatch_authorized"] is True
  assert a["cost_boundary"]["maximum_usd"]==5 and a["cost_boundary"]["cost_confirmation_received"] is True
- assert a["exact_target"]["wrapper_git_blob_sha"]==blob("scripts/final_128_real_provider_wrapper_v3.py")
- assert a["exact_target"]["runner_git_blob_sha"]==RUNNER_BLOB
+ assert a["frozen_target"]["wrapper_git_blob_sha"]==blob("scripts/final_128_real_provider_wrapper_v3.py")
+ assert a["frozen_target"]["runner_git_blob_sha"]==RUNNER_BLOB
  if args.confirmation!=CONFIRM: raise SystemExit("EXACT_V5_EXECUTION_CONFIRMATION_REQUIRED")
  from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore, build_authorization_consumption_record
  from veritas_os.storage.db import close_pool
