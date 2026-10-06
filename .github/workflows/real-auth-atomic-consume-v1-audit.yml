@@ -1,0 +1,30 @@
+name: Real Auth Atomic Consume V1 Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_REAL_AUTH_ATOMIC_CONSUME_IMPLEMENTATION_v1.json"
+      - "scripts/real_auth_atomic_consume_v1.py"
+      - ".github/workflows/real-auth-atomic-consume-v1-audit.yml"
+permissions:
+  contents: read
+jobs:
+  audit-only:
+    runs-on: ubuntu-latest
+    env:
+      VERITAS_DATABASE_URL: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Audit implementation without consumption
+        run: python scripts/real_auth_atomic_consume_v1.py
+      - name: Assert provider execution absent
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("scripts/real_auth_atomic_consume_v1.py").read_text()
+          assert "OPENAI_API_KEY" not in s
+          assert "provider_api_calls\":0" in s
+          PY

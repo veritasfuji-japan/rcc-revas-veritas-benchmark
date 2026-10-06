@@ -1,0 +1,27 @@
+{
+  "schema_version": "veritas.real-auth-atomic-consume-implementation.v1",
+  "status": "IMPLEMENTED_AUDIT_ONLY_EXECUTION_DISABLED",
+  "rule_of_one": "Implement the exact real Human Authorization V2 PostgreSQL consume-once path, while making real consumption impossible in PR/audit mode and keeping provider execution absent.",
+  "base_main_sha": "6ab90915e99e1996fde84598962e81131bdcdf05",
+  "authorization": {
+    "id": "AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2",
+    "path": "contracts/AGENTDOJO_FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_v2.json",
+    "required_issued": true,
+    "required_consumed": false
+  },
+  "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+  "implementation": {
+    "default_mode": "audit",
+    "consume_mode_requires_exact_confirmation": "CONSUME_REAL_AUTH_V2_ONCE",
+    "consume_mode_requires_postgres": true,
+    "provider_code_present": false
+  },
+  "audit_state": {
+    "database_access": false,
+    "real_authorization_consumed": false,
+    "provider_credential_access": false,
+    "provider_api_calls": false,
+    "final_128_execution": false
+  },
+  "next_gate": "REVIEW_EXACT_IMPLEMENTATION_BEFORE_ANY_REAL_CONSUMPTION"
+}
