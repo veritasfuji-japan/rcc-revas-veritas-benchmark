@@ -1,0 +1,22 @@
+name: Final 128 V8 Runtime Authorization Alignment Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v8.json"
+      - "contracts/AGENTDOJO_FINAL_128_V8_HUMAN_CONFIRMATION_v1.json"
+      - "scripts/final_128_v8_runtime_auth_alignment_audit_v1.py"
+      - "scripts/final_128_real_provider_wrapper_v6.py"
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2_3.py"
+      - ".github/workflows/final-128-v8-manual-dispatch.yml"
+      - ".github/workflows/final-128-v8-runtime-auth-alignment-audit.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Audit exact V8 runtime authorization alignment
+        run: python scripts/final_128_v8_runtime_auth_alignment_audit_v1.py
