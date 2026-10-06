@@ -1,0 +1,42 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-execution-authorization.v9",
+  "status": "EXECUTION_AUTHORIZATION_ISSUED_AWAITING_HUMAN_COST_CONFIRMATION",
+  "authorization": {
+    "id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V9",
+    "issued": true,
+    "single_use": true,
+    "consumed": false,
+    "automatic_execution": false,
+    "rerun_authorized": false
+  },
+  "frozen_target": {
+    "freeze_contract": "contracts/AGENTDOJO_FINAL_128_V9_TARGET_FREEZE_v1.json",
+    "freeze_git_blob_sha": "888bbe77fefb1dfa2509c4226a1f9d10ba8ef28d",
+    "exact_freeze_merged_main_sha": "9378fe432309d2ac501544c6a0f32327f969b16d",
+    "runner_git_blob_sha": "60697b86fc664420a190accf98489f123781940c",
+    "wrapper_git_blob_sha": "5a853b3875bdd54c4f63ebe36d97e0cf112bb538",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "cost_boundary": {
+    "maximum_usd": 5,
+    "explicit_human_confirmation_required": true,
+    "explicit_human_confirmation_received": false
+  },
+  "dispatch": {
+    "provider_dispatch_authorized": false,
+    "manual_dispatch_authorized": false,
+    "provider_credential_access": false,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "failure_semantics": {
+    "atomic_consume_before_credential": true,
+    "post_consume_failure_burns_authorization": true,
+    "retry_authorized": false,
+    "rerun_authorized": false
+  },
+  "next_gate": "EXPLICIT_HUMAN_COST_CONFIRMATION_FOR_V9"
+}
