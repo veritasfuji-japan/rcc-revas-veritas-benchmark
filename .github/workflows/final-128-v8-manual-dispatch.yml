@@ -1,0 +1,46 @@
+name: Final 128 V8 Manual Dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Exact one-time V8 confirmation
+        required: true
+        type: string
+permissions: {contents: read}
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    env:
+      VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Require exact human confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: test "$CONFIRMATION" = "RUN_FINAL_128_V8_ONCE"
+      - name: Checkout exact external pins
+        run: |
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc fetch --depth=1 origin 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+      - name: Install bounded Final-128 runtime profile
+        run: |
+          pip install -e ./_pins/agentdojo
+          pip install --no-deps -e ./_pins/veritas
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai>=1.59.7,<2"
+      - name: Execute exact V8 winner-only chain
+        run: python scripts/final_128_real_provider_wrapper_v6.py --execute --confirmation RUN_FINAL_128_V8_ONCE --agentdojo-root _pins/agentdojo --rcc-root _pins/rcc --veritas-root _pins/veritas --output-dir results/agentdojo-clean-ab-final-v8
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agentdojo-clean-ab-final-v8-${{ github.run_id }}
+          path: results/agentdojo-clean-ab-final-v8
+          if-no-files-found: warn
