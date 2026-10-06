@@ -1,0 +1,33 @@
+{
+  "schema_version": "veritas.agentdojo-canonical-final-runner.v2",
+  "status": "IMPLEMENTED_AUDIT_ONLY_RUNTIME_RECEIPT_REQUIRED",
+  "base_main_sha": "eab98c8736d04b7c43fb02b006c32a31c8002e53",
+  "rule_of_one": "Remove dependence on the legacy static CLOSED implementation gate without opening it; execution requires a winner-only V5 runtime dispatch receipt.",
+  "preserves": {
+    "runner_v1_unchanged": true,
+    "model": "gpt-4.1-mini-2025-04-14",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "budget_usd": 5,
+    "automatic_retry": false,
+    "case_count": 128
+  },
+  "runtime_gate": {
+    "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V5",
+    "receipt_required": true,
+    "atomic_consumption_won_required": true,
+    "single_use_required": true,
+    "rerun_authorized": false
+  },
+  "current_state": {
+    "v5_issued": false,
+    "provider_execution": false,
+    "final_128_execution": false
+  },
+  "dependency_requirement": {
+    "agentdojo_openai_minimum": "1.59.7",
+    "must_be_resolved_before_provider_dispatch": true
+  },
+  "next_gate": "AUDIT_RUNNER_V2_THEN_FREEZE_WRAPPER_V3_BEFORE_V5"
+}
