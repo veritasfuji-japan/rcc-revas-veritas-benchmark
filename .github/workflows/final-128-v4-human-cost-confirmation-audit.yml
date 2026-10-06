@@ -1,0 +1,31 @@
+name: Final 128 V4 Human Cost Confirmation Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_V4_HUMAN_COST_CONFIRMATION_v1.json"
+      - ".github/workflows/final-128-v4-human-cost-confirmation-audit.yml"
+permissions: {contents: read}
+jobs:
+  offline-audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: |
+          python - <<'PY'
+          import json, subprocess
+          c=json.load(open("contracts/AGENTDOJO_FINAL_128_V4_HUMAN_COST_CONFIRMATION_v1.json"))
+          a=json.load(open("contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v4.json"))
+          assert c["confirmation"]["received"] is True
+          assert c["confirmation"]["maximum_openai_api_spend_usd"]==5
+          assert c["confirmation"]["rerun_authorized"] is False
+          assert c["confirmation"]["automatic_retry_authorized"] is False
+          assert c["authorization_id"]==a["authorization"]["id"]
+          assert a["authorization"]["consumed"] is False
+          def blob(p): return subprocess.run(["git","hash-object",p],check=True,capture_output=True,text=True).stdout.strip()
+          assert blob(c["exact_target"]["wrapper_path"])==c["exact_target"]["wrapper_git_blob_sha"]
+          assert all(v is False for v in c["execution_state"].values())
+          PY
