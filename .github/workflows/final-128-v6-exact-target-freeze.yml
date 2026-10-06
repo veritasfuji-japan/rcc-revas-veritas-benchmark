@@ -1,0 +1,30 @@
+name: Final 128 V6 Exact Target Freeze
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_V6_TARGET_FREEZE_v1.json"
+      - ".github/workflows/final-128-v6-exact-target-freeze.yml"
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen exact V6 target
+        shell: python
+        run: |
+          import json,subprocess
+          from pathlib import Path
+          x=json.loads(Path("contracts/AGENTDOJO_FINAL_128_V6_TARGET_FREEZE_v1.json").read_text())
+          assert x["status"]=="FROZEN_V6_NOT_ISSUED"
+          t=x["exact_target"]
+          for path,key in [(t["wrapper_path"],"wrapper_git_blob_sha"),(t["runner_path"],"runner_git_blob_sha"),(t["workflow_path"],"workflow_git_blob_sha")]:
+              assert subprocess.check_output(["git","hash-object",path],text=True).strip()==t[key]
+          a=x["authorization"]
+          assert a["issued"] is False and a["consumed"] is False
+          assert a["single_use"] is True and a["rerun_authorized"] is False
+          assert x["cost_boundary"]["maximum_usd"]==5
+          assert x["cost_boundary"]["cost_confirmation_received"] is False
+          d=x["dispatch"]
+          assert all(d[k] is False for k in ("provider_dispatch_authorized","provider_credential_access","provider_api_called","final_128_executed"))
+          print("PASS_FINAL_128_V6_EXACT_TARGET_FREEZE")
