@@ -1,0 +1,28 @@
+name: Final 128 V6 Human Cost Confirmation Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v6.json"
+      - ".github/workflows/final-128-v6-human-cost-confirmation-audit.yml"
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify explicit V6 confirmation
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          x=json.loads(Path("contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v6.json").read_text())
+          a=x["authorization"]; c=x["cost_boundary"]; d=x["dispatch"]
+          assert a["id"]=="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V6"
+          assert a["issued"] is True and a["single_use"] is True and a["consumed"] is False
+          assert a["rerun_authorized"] is False
+          assert c["maximum_usd"]==5 and c["cost_confirmation_received"] is True
+          assert d["provider_dispatch_authorized"] is True and d["manual_dispatch_authorized"] is True
+          assert d["provider_credential_access"] is False and d["provider_api_called"] is False and d["final_128_executed"] is False
+          assert x["human_confirmation"]["received"] is True
+          assert x["next_gate"]=="ONE_MANUAL_V6_DISPATCH_ONLY"
+          print("PASS_FINAL_128_V6_HUMAN_COST_CONFIRMATION")
