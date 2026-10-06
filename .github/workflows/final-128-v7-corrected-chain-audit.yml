@@ -19,11 +19,11 @@ jobs:
           assert 'RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V2_2' in r
           assert 'AUTH_ID="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7"' in w
           assert 'RUNNER="scripts/agentdojo_clean_ab_canonical_final_runner_v2_2.py"' in w
-          assert 'RUNNER_BLOB="undefined"' in w
+          assert 'RUNNER_BLOB="f3f76bc1f615b834b220b452607be2fbf6c67edd"' in w
           def blob(p): return subprocess.check_output(["git","hash-object",p],text=True).strip()
-          assert blob("scripts/agentdojo_clean_ab_canonical_final_runner_v2_2.py")=="undefined"
-          assert blob("scripts/final_128_real_provider_wrapper_v5.py")=="undefined"
-          assert blob(".github/workflows/final-128-v7-manual-dispatch-v2.yml")=="undefined"
+          assert blob("scripts/agentdojo_clean_ab_canonical_final_runner_v2_2.py")=="f3f76bc1f615b834b220b452607be2fbf6c67edd"
+          assert blob("scripts/final_128_real_provider_wrapper_v5.py")=="c8f06deb6a9f479b65d5ca5a82e6ea51c24de3e7"
+          assert blob(".github/workflows/final-128-v7-manual-dispatch-v2.yml")=="b1c849f0f86de2467cae8a538ca320713d8d2e7f"
           assert c["execution_authorized"] is False and c["existing_v7_authorization_requires_rebind"] is True
           assert c["defect"]["v7_consumed"] is False and c["defect"]["provider_api_called"] is False and c["defect"]["final_128_executed"] is False
           print("PASS_FINAL_128_V7_CORRECTED_CHAIN")
