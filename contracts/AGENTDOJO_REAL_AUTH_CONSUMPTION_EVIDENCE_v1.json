@@ -1,0 +1,32 @@
+{
+  "schema_version": "veritas.real-auth-consumption-evidence.v1",
+  "status": "CONSUMPTION_EVIDENCE_RECORDED_PROVIDER_NOT_EXECUTED",
+  "rule_of_one": "Record the exact successful one-time consumption of Human Authorization V2 without creating or implying provider execution authority.",
+  "evidence_base_main_sha": "c4725b59f2c7de5f8256d343c2e783ff344585b2",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2",
+  "github_evidence": {
+    "run_id": 37425098013,
+    "job_id": 112142857684,
+    "job_conclusion": "success"
+  },
+  "observed_result": {
+    "consumed": true,
+    "proof": "REAL_AUTH_ATOMIC_CONSUME_V1",
+    "provider_boundary_reached": false,
+    "provider_credential_access": 0,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "semantics": {
+    "authorization_is_burned": true,
+    "rerun_forbidden": true,
+    "reuse_for_final_128_forbidden": true,
+    "provider_execution_authority_created": false
+  },
+  "next_gate": "NEW_EXACT_TARGET_EXECUTION_AUTHORIZATION_BOUND_TO_WINNER_ONLY_PROVIDER_DISPATCH",
+  "claim_boundary": {
+    "provider_execution": false,
+    "final_128_execution": false,
+    "production_validation": false
+  }
+}
