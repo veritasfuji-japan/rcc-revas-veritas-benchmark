@@ -49,8 +49,7 @@ jobs:
           persist-credentials: false
       - name: Install bounded PostgreSQL proof dependencies
         run: |
-          python -m pip install --disable-pip-version-check "psycopg[binary]" psycopg-pool
-          python -m pip install --disable-pip-version-check --no-deps ./_veritas
+          python -m pip install --disable-pip-version-check "./_veritas[postgresql]"
       - name: Require configured real PostgreSQL secret
         shell: bash
         run: |
