@@ -1,0 +1,27 @@
+name: Final 128 V4 Manual Dispatch Audit
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final-128-v4-single-use-manual-dispatch.yml"
+      - ".github/workflows/final-128-v4-manual-dispatch-audit.yml"
+permissions: {contents: read}
+jobs:
+  offline-audit:
+    runs-on: ubuntu-latest
+    env: {OPENAI_API_KEY: "", VERITAS_DATABASE_URL: ""}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path(".github/workflows/final-128-v4-single-use-manual-dispatch.yml").read_text()
+          assert "workflow_dispatch:" in s
+          assert "RUN_FINAL_128_V4_ONCE" in s
+          assert "cancel-in-progress: false" in s
+          assert "VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL" in s
+          assert "secrets.OPENAI_API_KEY" in s
+          assert "final_128_atomic_provider_wrapper_v2.py" in s
+          assert "--execute" in s
+          assert "retention-days: 90" in s
+          PY

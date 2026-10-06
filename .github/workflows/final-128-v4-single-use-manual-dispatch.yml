@@ -1,0 +1,80 @@
+name: Final 128 V4 Single-Use Manual Dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      runner_commit:
+        description: Exact merged-main commit to execute
+        required: true
+        type: string
+      confirmation:
+        description: Exact one-time V4 execution confirmation
+        required: true
+        type: string
+permissions: {contents: read}
+concurrency:
+  group: agentdojo-final-128-v4-single-use
+  cancel-in-progress: false
+jobs:
+  dispatch-once:
+    if: ${{ inputs.confirmation == 'RUN_FINAL_128_V4_ONCE' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.runner_commit }}
+          persist-credentials: false
+      - name: Verify exact checkout and authorization/cost evidence
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ inputs.runner_commit }}"
+          python - <<'PY'
+          import json, subprocess
+          a=json.load(open("contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v4.json"))
+          c=json.load(open("contracts/AGENTDOJO_FINAL_128_V4_HUMAN_COST_CONFIRMATION_v1.json"))
+          assert a["authorization"]["id"]=="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V4"
+          assert a["authorization"]["issued"] is True and a["authorization"]["single_use"] is True
+          assert a["authorization"]["consumed"] is False
+          assert c["confirmation"]["received"] is True
+          assert c["confirmation"]["maximum_openai_api_spend_usd"]==5
+          assert c["confirmation"]["rerun_authorized"] is False
+          def blob(p): return subprocess.run(["git","hash-object",p],check=True,capture_output=True,text=True).stdout.strip()
+          assert blob(a["exact_target"]["wrapper_path"])==a["exact_target"]["wrapper_git_blob_sha"]
+          assert blob(a["exact_target"]["runner_path"])==a["exact_target"]["runner_git_blob_sha"]
+          PY
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Checkout exact external pins
+        run: |
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+      - name: Install frozen dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./_pins/agentdojo"
+          pip install "cryptography==50.0.1"
+          pip install -e "./_pins/veritas[postgresql,signing]"
+      - name: Execute atomic winner-only Final 128 exactly once
+        env:
+          VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python scripts/final_128_atomic_provider_wrapper_v2.py \
+            --execute \
+            --confirmation RUN_FINAL_128_V4_ONCE \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --output-dir results/agentdojo-clean-ab-final-v4
+      - name: Retain evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentdojo-final-128-v4-evidence
+          path: results/agentdojo-clean-ab-final-v4
+          if-no-files-found: warn
+          retention-days: 90
