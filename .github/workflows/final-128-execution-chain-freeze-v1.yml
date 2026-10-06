@@ -1,0 +1,34 @@
+name: Final 128 Execution Chain Freeze V1
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_EXECUTION_CHAIN_FREEZE_v1.json"
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2_1.py"
+      - "scripts/final_128_atomic_provider_wrapper_v3_synthetic.py"
+      - ".github/workflows/wrapper-v3-synthetic-integration-v1.yml"
+      - ".github/workflows/final-128-execution-chain-freeze-v1.yml"
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen Git blobs and closed execution state
+        shell: python
+        run: |
+          import json, subprocess
+          from pathlib import Path
+          c=json.loads(Path("contracts/AGENTDOJO_FINAL_128_EXECUTION_CHAIN_FREEZE_v1.json").read_text())
+          for k in ("runner","synthetic_wrapper","proof_workflow"):
+              x=c["execution_chain"][k]
+              got=subprocess.check_output(["git","hash-object",x["path"]],text=True).strip()
+              assert got==x["git_blob_sha"], (k,got,x["git_blob_sha"])
+          s=c["current_state"]
+          assert s["v5_authorization_issued"] is False
+          assert s["v5_authorization_consumed"] is False
+          assert s["provider_execution_authorized"] is False
+          assert s["provider_api_calls"]==0
+          assert s["final_128_executed"] is False
+          g=c["durable_gate"]
+          assert all(g[k] is True for k in ("postgres_read_only_verification_required","consumption_id_exact_match","consumption_hash_exact_match","single_use_enforced","verification_before_provider_credential_access"))
+          print("PASS_FINAL_128_EXECUTION_CHAIN_FREEZE_V1")

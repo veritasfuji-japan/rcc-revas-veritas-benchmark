@@ -1,0 +1,58 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-execution-chain-freeze.v1",
+  "status": "FROZEN_PROVIDER_EXECUTION_NOT_AUTHORIZED",
+  "frozen_from_main_sha": "e056ffc77fe4e9a55ac12980d54ad57c32c94d12",
+  "proof_run": {
+    "run_id": 37441611832,
+    "job_id": 112196456234,
+    "result": "SUCCESS",
+    "classification": "DURABLE_DB_RECEIPT_ANTI_FORGERY_V1_CLOSED_SUCCESS"
+  },
+  "execution_chain": {
+    "runner": {
+      "path": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_1.py",
+      "git_blob_sha": "d1f146cafbb649537fadaa3f593b7620918847fd"
+    },
+    "synthetic_wrapper": {
+      "path": "scripts/final_128_atomic_provider_wrapper_v3_synthetic.py",
+      "git_blob_sha": "6f8a34123c61620654489f1fefe07bbed2c4db6b"
+    },
+    "proof_workflow": {
+      "path": ".github/workflows/wrapper-v3-synthetic-integration-v1.yml",
+      "git_blob_sha": "90ad78f33762d61dace1a9e755b5ed3cac799be6"
+    }
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb"
+  },
+  "model": {
+    "id": "gpt-4.1-mini-2025-04-14",
+    "temperature": 0,
+    "max_retries": 0,
+    "provider_spend_cap_usd": 5
+  },
+  "durable_gate": {
+    "postgres_read_only_verification_required": true,
+    "consumption_id_exact_match": true,
+    "consumption_hash_exact_match": true,
+    "consumption_state": "CONSUMED",
+    "single_use_enforced": true,
+    "verification_before_provider_credential_access": true
+  },
+  "current_state": {
+    "v5_authorization_issued": false,
+    "v5_authorization_consumed": false,
+    "provider_execution_authorized": false,
+    "provider_api_calls": 0,
+    "final_128_executed": false
+  },
+  "claim_boundary": {
+    "same_agentdojo_corpus": true,
+    "held_out_validation": false,
+    "independent_third_party_validation": false,
+    "production_readiness": false
+  },
+  "next_gate": "CREATE_AND_FREEZE_REAL_WRAPPER_AND_DISPATCH_WORKFLOW_THEN_ISSUE_FRESH_V5"
+}
