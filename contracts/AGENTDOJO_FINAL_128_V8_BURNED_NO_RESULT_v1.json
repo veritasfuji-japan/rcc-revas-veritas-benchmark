@@ -1,0 +1,29 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v8-burned-no-result.v1",
+  "status": "CONSUMED_BURNED_FINAL_128_NOT_COMPLETED",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V8",
+  "exact_pre_dispatch_main_sha": "7057c9b18463a4ed07170bfccb171dc506f1788d",
+  "dispatch_evidence": {
+    "workflow_run_id": 37486065624,
+    "job_id": 112346254963,
+    "conclusion": "failure",
+    "failure_type": "RUNTIME_DEPENDENCY_IMPORT_FAILURE",
+    "failure": "ModuleNotFoundError: No module named 'rveval'",
+    "failure_boundary": "Runner v2.3 load_rcc_gate / rveval.integrations.rcc_external import"
+  },
+  "disposition": {
+    "authorization_consumed": true,
+    "authorization_burned": true,
+    "rerun_authorized": false,
+    "final_128_completed": false,
+    "final_result_claimed": false,
+    "artifact_present": false
+  },
+  "evidence_semantics": {
+    "single_use_failure_burns_authorization": true,
+    "v8_must_never_be_reused": true,
+    "provider_api_call_count": "NOT_CLAIMED_FROM_THIS_EVIDENCE",
+    "next_execution_requires_fresh_authorization": true
+  },
+  "next_gate": "REPAIR_RCC_RUNTIME_IMPORT_THEN_FREEZE_FRESH_V9_TARGET"
+}
