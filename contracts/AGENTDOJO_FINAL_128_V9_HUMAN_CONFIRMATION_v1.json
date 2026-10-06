@@ -1,0 +1,21 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v9-human-confirmation.v1",
+  "status": "HUMAN_COST_CONFIRMATION_RECEIVED_NOT_DISPATCHED",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V9",
+  "authorization_git_blob_sha": "a727b00580a3f2763403ed484fc2c8b8aef4a8ef",
+  "exact_authorization_merged_main_sha": "44575671ec261ef25499bcffe382de02a8a5b547",
+  "confirmation": {
+    "received": true,
+    "exact_text": "最大5米ドルのOpenAI API利用を伴うCanonical Final 128を、V9を1回だけconsumeして実行することを承認します",
+    "maximum_usd": 5,
+    "single_consumption_only": true,
+    "rerun_authorized": false
+  },
+  "state_at_confirmation": {
+    "consumed": false,
+    "provider_credential_access": false,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "next_gate": "FINAL_V9_PRE_DISPATCH_AUDIT_AND_DURABLE_UNCONSUMED_CHECK"
+}
