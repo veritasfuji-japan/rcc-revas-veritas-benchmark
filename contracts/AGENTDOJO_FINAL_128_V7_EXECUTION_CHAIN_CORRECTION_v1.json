@@ -14,7 +14,10 @@
     "wrapper_path": "scripts/final_128_real_provider_wrapper_v5.py",
     "runner_path": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_2.py",
     "workflow_path": ".github/workflows/final-128-v7-manual-dispatch-v2.yml",
-    "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7"
+    "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7",
+    "runner_git_blob_sha": "f3f76bc1f615b834b220b452607be2fbf6c67edd",
+    "wrapper_git_blob_sha": "c8f06deb6a9f479b65d5ca5a82e6ea51c24de3e7",
+    "workflow_git_blob_sha": "b1c849f0f86de2467cae8a538ca320713d8d2e7f"
   },
   "execution_authorized": false,
   "existing_v7_authorization_requires_rebind": true,
