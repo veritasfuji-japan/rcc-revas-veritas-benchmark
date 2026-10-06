@@ -1,0 +1,26 @@
+name: Final 128 V7 Supersession Unconsumed Audit
+on: [pull_request]
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify V7 superseded without execution
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          c=json.loads(Path("contracts/AGENTDOJO_FINAL_128_V7_SUPERSESSION_UNCONSUMED_v1.json").read_text())
+          d=c["disposition"]
+          assert c["status"]=="SUPERSEDED_UNCONSUMED"
+          assert d["issued"] is True and d["consumed"] is False
+          assert d["provider_credential_access"] is False
+          assert d["provider_api_called"] is False
+          assert d["final_128_executed"] is False
+          assert d["superseded"] is True
+          assert d["rebind_authorized"] is False
+          assert d["retry_authorized"] is False
+          assert d["rerun_authorized"] is False
+          assert c["execution_authorized"] is False
+          print("PASS_V7_SUPERSESSION_UNCONSUMED_V1")
