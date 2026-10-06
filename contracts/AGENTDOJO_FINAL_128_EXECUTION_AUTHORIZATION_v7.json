@@ -1,0 +1,48 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-execution-authorization.v7",
+  "status": "EXECUTION_AUTHORIZATION_ISSUED_AWAITS_EXPLICIT_COST_CONFIRMATION",
+  "authorization": {
+    "id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7",
+    "issued": true,
+    "single_use": true,
+    "consumed": false,
+    "automatic_execution": false,
+    "rerun_authorized": false
+  },
+  "frozen_target": {
+    "freeze_contract": "contracts/AGENTDOJO_FINAL_128_V7_TARGET_FREEZE_v1.json",
+    "freeze_contract_git_blob_sha": "66a2d2697dd474d640c5af3eb1e15afdd729f343",
+    "freeze_merged_main_sha": "8b9ae9f07287ffb1886e2476865e8088b4487c3d",
+    "wrapper_path": "scripts/final_128_real_provider_wrapper_v4.py",
+    "wrapper_git_blob_sha": "6af5ef007cef5eba3ac295a8f5fa56a789147568",
+    "runner_path": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_1.py",
+    "runner_git_blob_sha": "d1f146cafbb649537fadaa3f593b7620918847fd",
+    "workflow_path": ".github/workflows/final-128-v7-manual-dispatch.yml",
+    "workflow_git_blob_sha": "8b80a6afdd5f7410d16e74c799b5fd641c47f45a",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "cost_boundary": {
+    "maximum_usd": 5,
+    "explicit_human_cost_confirmation_required": true,
+    "cost_confirmation_received": false
+  },
+  "dispatch": {
+    "provider_dispatch_authorized": false,
+    "manual_dispatch_authorized": false,
+    "provider_credential_access": false,
+    "provider_api_called": false,
+    "final_128_executed": false
+  },
+  "single_use_semantics": {
+    "atomic_consume_before_credential_access": true,
+    "durable_readback_required": true,
+    "runner_durable_db_reverification_required": true,
+    "post_consume_failure_burns_authorization": true,
+    "retry_authorized": false,
+    "rerun_authorized": false
+  },
+  "next_gate": "EXPLICIT_HUMAN_COST_CONFIRMATION_REQUIRED"
+}
