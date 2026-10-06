@@ -1,0 +1,30 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v8-runtime-auth-alignment.v1",
+  "status": "IMPLEMENTED_NOT_EXECUTED",
+  "rule_of_one": "FINAL_128_V8_RUNTIME_AUTHORIZATION_ALIGNMENT_V1",
+  "baseline_main_sha": "0a5da3c780faa3a3d2a77681a1feb539303f184e",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V8",
+  "prior_authorization_blob_sha": "6a7ce278d1fa42f5badcec02a881ec6a7efa604a",
+  "aligned_authorization_blob_sha": "5a6c2ed96cbc7f9207a8036cb49504842bf92937",
+  "defect": {
+    "type": "RUNTIME_SCHEMA_MISMATCH",
+    "summary": "Wrapper v6 expects nested authorization, dispatch, cost_boundary, and frozen_target fields while the prior V8 record used a flat schema.",
+    "effect_if_dispatched": "Fail closed before durable consume."
+  },
+  "unchanged_scope": {
+    "freeze_contract_blob_sha": "780a1873757c4f69ae66d7ba9d5c7bd5c714ccb9",
+    "runner_blob_sha": "d3340adbd146fa1417980b182bf5d3cfaed15d5a",
+    "wrapper_blob_sha": "85ffb9c333d595a87c52bd443c92410d2d8419eb",
+    "workflow_blob_sha": "eab5f4fd7eb241615e19944f7a355666ffb2ad3a",
+    "human_confirmation_blob_sha": "c18a49ad7325f76905878ffa633d67afa12d28bf",
+    "maximum_usd": 5,
+    "single_consumption_only": true
+  },
+  "execution_state": {
+    "consumed": false,
+    "provider_credential_access": false,
+    "provider_api_called": false,
+    "final_128_executed": false
+  },
+  "next_gate": "RUNTIME_ALIGNMENT_AUDIT_THEN_DURABLE_UNCONSUMED_CHECK"
+}
