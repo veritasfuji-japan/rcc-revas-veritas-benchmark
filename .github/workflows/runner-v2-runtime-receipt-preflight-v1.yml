@@ -1,0 +1,27 @@
+name: Runner V2 Runtime Receipt Preflight V1
+on:
+  pull_request:
+    paths:
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2.py"
+      - ".github/workflows/runner-v2-runtime-receipt-preflight-v1.yml"
+permissions: {contents: read}
+jobs:
+  structural:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and prove repaired CLI wiring
+        env: {OPENAI_API_KEY: "", VERITAS_DATABASE_URL: ""}
+        run: |
+          python -m py_compile scripts/agentdojo_clean_ab_canonical_final_runner_v2.py
+          python - <<'PY'
+          import ast, pathlib
+          p=pathlib.Path("scripts/agentdojo_clean_ab_canonical_final_runner_v2.py")
+          s=p.read_text(); ast.parse(s)
+          assert '"--runtime-dispatch-receipt"' in s
+          assert '"--preflight-runtime-receipt"' in s
+          assert "runtime_dispatch_receipt=args.runtime_dispatch_receipt" in s
+          assert 'c["execution_gate"] != "OPEN"' not in s
+          assert "verify_runtime_dispatch_receipt(args.runtime_dispatch_receipt)" in s
+          print({"proof":"RUNNER_V2_RUNTIME_RECEIPT_PREFLIGHT_V1","cli_wired":True,"legacy_open_gate_removed":True,"provider_calls":0,"database_access":0,"final_128_execution":0})
+          PY

@@ -895,6 +895,7 @@ def build_parser() -> argparse.ArgumentParser:
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument("--audit-only", action="store_true")
     mode.add_argument("--execute", action="store_true")
+    mode.add_argument("--preflight-runtime-receipt", action="store_true")
     p.add_argument("--agentdojo-root", type=Path, required=True)
     p.add_argument("--rcc-root", type=Path, required=True)
     p.add_argument("--veritas-root", type=Path, required=True)
@@ -904,6 +905,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("results/agentdojo-clean-ab-final-v0_1"),
     )
     p.add_argument("--confirmation")
+    p.add_argument("--runtime-dispatch-receipt", type=Path)
     return p
 
 
@@ -922,9 +924,17 @@ def main() -> int:
         )
         return 0
 
-    c = contracts()["implementation"]
-    if c["execution_gate"] != "OPEN":
-        raise RunnerError("EXECUTION_GATE_CLOSED")
+    if args.runtime_dispatch_receipt is None:
+        raise RunnerError("RUNTIME_DISPATCH_RECEIPT_MISSING")
+    receipt = verify_runtime_dispatch_receipt(args.runtime_dispatch_receipt)
+    require_git_pin(args.agentdojo_root, AGENTDOJO_COMMIT, "AGENTDOJO")
+    require_git_pin(args.rcc_root, RCC_COMMIT, "RCC")
+    require_git_pin(args.veritas_root, VERITAS_COMMIT, "VERITAS")
+    cases = assert_frozen_configuration(contracts(), expected_execution_gate="RUNTIME_RECEIPT_ONLY")
+    verify_authority_fixture()
+    if args.preflight_runtime_receipt:
+        print(json.dumps({"status":"PASS_RUNNER_V2_RUNTIME_RECEIPT_PREFLIGHT","authorization_id":receipt["authorization_id"],"case_count":len(cases),"provider_api_calls":0,"final_128_execution":0}, sort_keys=True))
+        return 0
     if args.confirmation != GATE_CONFIRMATION:
         raise RunnerError("EXPLICIT_HUMAN_EXECUTION_CONFIRMATION_REQUIRED")
     if args.output_dir.exists():
@@ -936,6 +946,7 @@ def main() -> int:
         agentdojo_root=args.agentdojo_root,
         rcc_root=args.rcc_root,
         veritas_root=args.veritas_root,
+        runtime_dispatch_receipt=args.runtime_dispatch_receipt,
     )
     print(json.dumps(summary, indent=2))
     return 0 if summary["scores"]["valid_for_comparison"] else 2
