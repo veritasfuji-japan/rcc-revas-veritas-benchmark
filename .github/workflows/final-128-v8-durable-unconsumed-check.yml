@@ -1,0 +1,22 @@
+name: Final 128 V8 Durable Unconsumed Check
+on:
+  pull_request:
+    paths:
+      - "scripts/final_128_v8_durable_unconsumed_check_v1.py"
+      - ".github/workflows/final-128-v8-durable-unconsumed-check.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Install bounded read-only DB profile
+        run: pip install "psycopg[binary]==3.2.9"
+      - name: Check V8 durable row is absent
+        run: python scripts/final_128_v8_durable_unconsumed_check_v1.py
