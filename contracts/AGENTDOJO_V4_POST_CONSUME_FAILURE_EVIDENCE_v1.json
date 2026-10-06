@@ -1,0 +1,31 @@
+{
+  "schema_version": "veritas.agentdojo-v4-post-consume-failure-evidence.v1",
+  "status": "RUN_FAILURE_RECORDED_DURABLE_DB_CONFIRMATION_PENDING",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V4",
+  "github_evidence": {
+    "run_id": 37432678496,
+    "job_id": 112166977263,
+    "conclusion": "failure",
+    "failure": "RunnerError: EXECUTION_GATE_CLOSED"
+  },
+  "observed_execution_path": {
+    "exact_checkout": true,
+    "external_pins": true,
+    "dependencies": true,
+    "atomic_wrapper_step_entered": true,
+    "canonical_runner_reached": true,
+    "final_128_result_artifact": false
+  },
+  "fail_closed_disposition": {
+    "treat_v4_as_burned_pending_db_confirmation": true,
+    "rerun_forbidden": true,
+    "provider_result_claimed": false,
+    "final_128_result_claimed": false
+  },
+  "dependency_warning": {
+    "agentdojo_requires": "openai>=1.59.7",
+    "observed_veritas_install": "openai==1.53.0",
+    "must_resolve_before_next_execution": true
+  },
+  "next_gate": "READ_ONLY_POSTGRES_CONFIRMATION_OF_EXACTLY_ONE_V4_CONSUMPTION_ROW"
+}

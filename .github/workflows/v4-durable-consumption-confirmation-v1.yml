@@ -1,0 +1,25 @@
+name: V4 Durable Consumption Confirmation V1
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        required: true
+        type: string
+permissions: {contents: read}
+jobs:
+  read-only-confirm:
+    if: ${{ inputs.confirmation == 'CONFIRM_V4_DURABLE_CONSUMPTION_READ_ONLY' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - run: |
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _veritas
+          git -C _veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          pip install -e "./_veritas[postgresql,signing]"
+      - name: Read-only confirm exact V4 durable row
+        env:
+          VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+        run: python scripts/v4_durable_consumption_confirmation_v1.py
