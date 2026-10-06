@@ -1,0 +1,18 @@
+{
+  "schema_version": "veritas.real-auth-single-use-manual-gate.v1",
+  "status": "MANUAL_GATE_DEFINED_NOT_EXECUTED",
+  "rule_of_one": "Define a separate exact-main manual gate that may consume the already-issued real Human Authorization V2 once, while provider credentials and Final 128 execution remain impossible.",
+  "baseline_main_sha": "2c862de312dc1919f42bfe43f932b9a0f5d17c10",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2",
+  "consume_script": "scripts/real_auth_atomic_consume_v1.py",
+  "exact_confirmation": "CONSUME_REAL_AUTH_V2_ONCE",
+  "required_database_secret": "VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL",
+  "provider_secret_available_to_job": false,
+  "final_128_execution_available": false,
+  "automatic_execution": false,
+  "rerun_authorized": false,
+  "executed_by_this_contract": false,
+  "authorization_consumed_by_this_contract": false,
+  "provider_api_called": false,
+  "next_gate": "EXPLICIT_HUMAN_DECISION_TO_RUN_THIS_MANUAL_CONSUMPTION_GATE"
+}

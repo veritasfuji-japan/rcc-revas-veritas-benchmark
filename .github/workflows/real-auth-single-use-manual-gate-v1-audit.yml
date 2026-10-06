@@ -1,0 +1,35 @@
+name: Real Auth Single-Use Manual Gate V1 Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_REAL_AUTH_SINGLE_USE_MANUAL_GATE_v1.json"
+      - ".github/workflows/real-auth-single-use-manual-gate-v1.yml"
+      - ".github/workflows/real-auth-single-use-manual-gate-v1-audit.yml"
+permissions:
+  contents: read
+jobs:
+  offline-audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Verify manual-only, provider-disabled gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.load(open("contracts/AGENTDOJO_REAL_AUTH_SINGLE_USE_MANUAL_GATE_v1.json"))
+          w=Path(".github/workflows/real-auth-single-use-manual-gate-v1.yml").read_text()
+          assert p["executed_by_this_contract"] is False
+          assert p["authorization_consumed_by_this_contract"] is False
+          assert p["provider_secret_available_to_job"] is False
+          assert p["final_128_execution_available"] is False
+          assert "workflow_dispatch:" in w
+          assert "VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL" in w
+          assert "OPENAI_API_KEY" not in w
+          assert "agentdojo_clean_ab_canonical_final_runner_v1.py" not in w
+          assert "--consume --confirmation CONSUME_REAL_AUTH_V2_ONCE" in w
+          PY
