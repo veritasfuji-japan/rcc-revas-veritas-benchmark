@@ -1,0 +1,42 @@
+{
+  "schema_version": "veritas.final-128-atomic-provider-wrapper-freeze.v1",
+  "status": "WRAPPER_DESIGNED_EXECUTION_DISABLED",
+  "rule_of_one": "Freeze the exact winner-only provider-dispatch wrapper target before issuing the authorization that may execute it.",
+  "base_main_sha": "aaa78103bdc83687367dfbbba31af5793c5a0eb6",
+  "important_correction": "V3 was issued before this wrapper existed and is bound to the older canonical workflow blob; V3 MUST NOT be retargeted or consumed for this wrapper.",
+  "v3": {
+    "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V3",
+    "disposition": "SUPERSEDE_UNCONSUMED_DO_NOT_USE_FOR_PROVIDER_DISPATCH"
+  },
+  "future_authorization": {
+    "required_new_id": true,
+    "suggested_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V4"
+  },
+  "chain": [
+    "validate_new_exact_authorization",
+    "postgres_atomic_consume_once",
+    "winner_only_provider_credential_step",
+    "exact_frozen_canonical_runner"
+  ],
+  "pins": {
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "canonical_runner_blob": "d1e5d7bfda41d7dcd9ee7e16a5b0e8dbba5cb89c",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "limits": {
+    "maximum_usd": 5,
+    "automatic_retry": false,
+    "rerun": false,
+    "case_count": 128
+  },
+  "current_state": {
+    "execution_enabled": false,
+    "database_access": false,
+    "provider_credential_access": false,
+    "provider_api_calls": false,
+    "final_128_execution": false
+  },
+  "next_gate": "FREEZE_EXACT_WRAPPER_THEN_ISSUE_NEW_V4_AUTHORIZATION_BOUND_TO_ITS_EXACT_BLOB"
+}
