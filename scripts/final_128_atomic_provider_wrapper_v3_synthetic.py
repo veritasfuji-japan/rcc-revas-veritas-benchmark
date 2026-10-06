@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 AUTH_ID_PREFIX="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V5_SYNTHETIC"
-RUNNER="scripts/agentdojo_clean_ab_canonical_final_runner_v2.py"
+RUNNER="scripts/agentdojo_clean_ab_canonical_final_runner_v2_1.py"
 RUNNER_BLOB="8fbbe1e82e59ec2b5cdfa04c83fb805a83181b79"
 SCHEMA="veritas.agentdojo-final-128-runtime-dispatch-receipt.v1"
 
@@ -44,7 +44,7 @@ async def main_async(a):
  # provider-disabled runner gate test; no real V5 authorization exists/consumes.
  receipt={"schema_version":SCHEMA,"authorization_id":"AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V5",
  "atomic_consumption_won":True,"single_use":True,"rerun_authorized":False,"provider_spend_cap_usd":5.0,
- "synthetic_source_authorization_id":auth_id,"consumption_record_hash":h(json.dumps(rec,sort_keys=True,default=str)),
+ "synthetic_source_authorization_id":auth_id,"durable_authorization_id":auth_id,"consumption_id":rec.consumption_id,"consumption_hash":rec.consumption_hash,
  "runner_git_blob_sha":RUNNER_BLOB}
  with tempfile.TemporaryDirectory() as d:
   p=Path(d)/"receipt.json"; p.write_text(json.dumps(receipt,sort_keys=True))
