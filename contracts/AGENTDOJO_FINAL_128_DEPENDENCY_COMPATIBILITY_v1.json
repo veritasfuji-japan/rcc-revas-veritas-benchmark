@@ -1,0 +1,27 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-dependency-compatibility.v1",
+  "status": "PROOF_PENDING",
+  "base_main_sha": "6c86bd4298b6d3bae87e9c6d778f66317c02d022",
+  "pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "python": "3.11.16"
+  },
+  "compatibility_target": {
+    "openai": ">=1.59.7,<2",
+    "reason": "AgentDojo requires >=1.59.7; verify pinned VERITAS runtime imports and atomic store remain usable without provider execution."
+  },
+  "proof_requirements": [
+    "pip check PASS",
+    "OpenAI client constructible with max_retries=0",
+    "VERITAS PostgreSQL atomic store importable",
+    "no provider call",
+    "no database access"
+  ],
+  "execution_state": {
+    "v5_issued": false,
+    "provider_calls": 0,
+    "database_access": 0,
+    "final_128_execution": 0
+  }
+}
