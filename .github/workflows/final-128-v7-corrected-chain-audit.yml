@@ -1,0 +1,29 @@
+name: Final 128 V7 Corrected Chain Audit
+on: [pull_request]
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify V7 semantic compatibility and no execution
+        shell: python
+        run: |
+          import json,subprocess
+          from pathlib import Path
+          r=Path("scripts/agentdojo_clean_ab_canonical_final_runner_v2_2.py").read_text()
+          w=Path("scripts/final_128_real_provider_wrapper_v5.py").read_text()
+          c=json.loads(Path("contracts/AGENTDOJO_FINAL_128_V7_EXECUTION_CHAIN_CORRECTION_v1.json").read_text())
+          assert "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7" in r
+          assert "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V5" not in r
+          assert 'RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V2_2' in r
+          assert 'AUTH_ID="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7"' in w
+          assert 'RUNNER="scripts/agentdojo_clean_ab_canonical_final_runner_v2_2.py"' in w
+          assert 'RUNNER_BLOB="undefined"' in w
+          def blob(p): return subprocess.check_output(["git","hash-object",p],text=True).strip()
+          assert blob("scripts/agentdojo_clean_ab_canonical_final_runner_v2_2.py")=="undefined"
+          assert blob("scripts/final_128_real_provider_wrapper_v5.py")=="undefined"
+          assert blob(".github/workflows/final-128-v7-manual-dispatch-v2.yml")=="undefined"
+          assert c["execution_authorized"] is False and c["existing_v7_authorization_requires_rebind"] is True
+          assert c["defect"]["v7_consumed"] is False and c["defect"]["provider_api_called"] is False and c["defect"]["final_128_executed"] is False
+          print("PASS_FINAL_128_V7_CORRECTED_CHAIN")
