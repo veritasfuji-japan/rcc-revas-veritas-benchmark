@@ -30,8 +30,9 @@ jobs:
       - name: Install exact runtime
         run: |
           pip install -e ./_pins/agentdojo
-          pip install --no-deps -e ./_pins/veritas
-          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai>=1.59.7,<2"
+          pip install -e ./_pins/veritas
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai==1.53.0"
+          pip check
       - name: Traverse V10 execute validation to consume boundary
         run: python scripts/final_128_real_provider_wrapper_v8.py --provider-free-preflight
       - name: Verify Runner V10 imports and exact pins provider-free
