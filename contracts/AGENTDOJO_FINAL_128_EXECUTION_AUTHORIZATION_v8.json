@@ -1,36 +1,59 @@
 {
   "schema_version": "veritas.agentdojo-final-128-execution-authorization.v8",
-  "status": "EXECUTION_AUTHORIZATION_ISSUED_COST_CONFIRMATION_REQUIRED",
-  "rule_of_one": "FINAL_128_V8_SINGLE_USE_AUTHORIZATION_V1",
-  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V8",
-  "issued": true,
-  "single_use": true,
-  "consumed": false,
-  "rerun_authorized": false,
-  "automatic_execution_authorized": false,
-  "frozen_target": {
-    "freeze_contract_path": "contracts/AGENTDOJO_FINAL_128_V8_TARGET_FREEZE_v1.json",
-    "freeze_contract_blob_sha": "780a1873757c4f69ae66d7ba9d5c7bd5c714ccb9",
-    "freeze_merged_main_sha": "c33f44f8aa7dc07ee313de8eeb7795bf1592d010",
-    "runner_blob_sha": "d3340adbd146fa1417980b182bf5d3cfaed15d5a",
-    "wrapper_blob_sha": "85ffb9c333d595a87c52bd443c92410d2d8419eb",
-    "workflow_blob_sha": "eab5f4fd7eb241615e19944f7a355666ffb2ad3a"
+  "status": "EXECUTION_AUTHORIZATION_ISSUED_COST_CONFIRMED_MANUAL_DISPATCH_AUTHORIZED",
+  "authorization": {
+    "id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V8",
+    "issued": true,
+    "single_use": true,
+    "consumed": false,
+    "automatic_execution": false,
+    "rerun_authorized": false
   },
-  "synthetic_proof": {
-    "run_id": 37472069186,
-    "job_id": 112297829310,
-    "result": "SUCCESS"
+  "frozen_target": {
+    "freeze_contract": "contracts/AGENTDOJO_FINAL_128_V8_TARGET_FREEZE_v1.json",
+    "freeze_contract_git_blob_sha": "780a1873757c4f69ae66d7ba9d5c7bd5c714ccb9",
+    "freeze_merged_main_sha": "c33f44f8aa7dc07ee313de8eeb7795bf1592d010",
+    "wrapper_path": "scripts/final_128_real_provider_wrapper_v6.py",
+    "wrapper_git_blob_sha": "85ffb9c333d595a87c52bd443c92410d2d8419eb",
+    "runner_path": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_3.py",
+    "runner_git_blob_sha": "d3340adbd146fa1417980b182bf5d3cfaed15d5a",
+    "workflow_path": ".github/workflows/final-128-v8-manual-dispatch.yml",
+    "workflow_git_blob_sha": "eab5f4fd7eb241615e19944f7a355666ffb2ad3a",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14"
   },
   "cost_boundary": {
-    "currency": "USD",
-    "maximum": 5,
-    "human_confirmation_required": true,
-    "human_confirmation_received": false
+    "maximum_usd": 5,
+    "explicit_human_cost_confirmation_required": true,
+    "cost_confirmation_received": true
   },
-  "provider_dispatch_authorized": false,
-  "manual_dispatch_authorized": false,
-  "provider_credential_access": false,
-  "provider_api_called": false,
-  "final_128_executed": false,
-  "next_gate": "RECEIVE_FRESH_EXPLICIT_V8_MAX_5_USD_HUMAN_CONFIRMATION"
+  "dispatch": {
+    "provider_dispatch_authorized": true,
+    "manual_dispatch_authorized": true,
+    "provider_credential_access": false,
+    "provider_api_called": false,
+    "final_128_executed": false
+  },
+  "single_use_semantics": {
+    "atomic_consume_before_credential_access": true,
+    "durable_readback_required": true,
+    "runner_durable_db_reverification_required": true,
+    "post_consume_failure_burns_authorization": true,
+    "retry_authorized": false,
+    "rerun_authorized": false
+  },
+  "confirmation_evidence": {
+    "contract_path": "contracts/AGENTDOJO_FINAL_128_V8_HUMAN_CONFIRMATION_v1.json",
+    "contract_git_blob_sha": "c18a49ad7325f76905878ffa633d67afa12d28bf",
+    "received": true,
+    "maximum_usd": 5,
+    "single_consumption_only": true
+  },
+  "correction_provenance": {
+    "prior_authorization_blob_sha": "6a7ce278d1fa42f5badcec02a881ec6a7efa604a",
+    "reason": "Align the issued V8 authorization record with the frozen Wrapper v6 runtime schema after the final pre-dispatch inspection found a structural mismatch. Exact execution target and human-approved cost/single-use scope are unchanged."
+  },
+  "next_gate": "FINAL_V8_RUNTIME_ALIGNMENT_AUDIT_THEN_DURABLE_UNCONSUMED_CHECK"
 }
