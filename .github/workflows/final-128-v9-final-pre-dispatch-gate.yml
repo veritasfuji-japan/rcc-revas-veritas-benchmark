@@ -1,0 +1,24 @@
+name: Final 128 V9 Final Pre-Dispatch Gate
+on:
+  pull_request:
+    paths:
+      - "scripts/final_128_v9_final_pre_dispatch_gate_v1.py"
+      - "scripts/final_128_v9_static_pre_dispatch_audit_v1.py"
+      - ".github/workflows/final-128-v9-final-pre-dispatch-gate.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    env:
+      VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - run: pip install "psycopg[binary]==3.2.9"
+      - name: Static exact-chain audit
+        run: python scripts/final_128_v9_static_pre_dispatch_audit_v1.py
+      - name: Real durable V9 unconsumed check
+        run: python scripts/final_128_v9_final_pre_dispatch_gate_v1.py
