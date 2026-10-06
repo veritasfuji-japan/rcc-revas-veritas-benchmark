@@ -1,0 +1,27 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v4-human-cost-confirmation.v1",
+  "status": "EXPLICIT_HUMAN_COST_AND_EXECUTION_CONFIRMATION_RECORDED",
+  "rule_of_one": "Record explicit human approval for one V4 consumption and one Final 128 execution with maximum OpenAI API spend of USD 5.",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V4",
+  "confirmation": {
+    "received": true,
+    "source": "human_operator_explicit_chat_confirmation",
+    "approved_action": "Consume V4 exactly once and execute Final 128 exactly once",
+    "maximum_openai_api_spend_usd": 5,
+    "rerun_authorized": false,
+    "automatic_retry_authorized": false
+  },
+  "exact_target": {
+    "authorization_contract": "contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v4.json",
+    "wrapper_path": "scripts/final_128_atomic_provider_wrapper_v2.py",
+    "wrapper_git_blob_sha": "7499cae9d97ddeb2dbab8534ec01b173fe2c89d1",
+    "runner_git_blob_sha": "d1e5d7bfda41d7dcd9ee7e16a5b0e8dbba5cb89c"
+  },
+  "execution_state": {
+    "v4_consumed": false,
+    "provider_credential_access": false,
+    "provider_api_called": false,
+    "final_128_executed": false
+  },
+  "next_gate": "MERGE_CONFIRMATION_EVIDENCE_THEN_CREATE_SEPARATE_MANUAL_DISPATCH_WORKFLOW"
+}
