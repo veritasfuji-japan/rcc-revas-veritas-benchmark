@@ -1,0 +1,31 @@
+name: Final 128 Atomic Provider Wrapper Freeze V1 Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_ATOMIC_PROVIDER_WRAPPER_FREEZE_v1.json"
+      - "scripts/final_128_atomic_provider_wrapper_freeze_v1.py"
+      - ".github/workflows/final-128-atomic-provider-wrapper-freeze-v1-audit.yml"
+permissions:
+  contents: read
+jobs:
+  offline-freeze-audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - run: python scripts/final_128_atomic_provider_wrapper_freeze_v1.py
+      - name: Prove no execution surface in freeze script
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("scripts/final_128_atomic_provider_wrapper_freeze_v1.py").read_text()
+          assert "OPENAI_API_KEY" not in s
+          assert "VERITAS_DATABASE_URL" not in s
+          assert "consume_once(" not in s
+          assert "--execute" not in s
+          PY
