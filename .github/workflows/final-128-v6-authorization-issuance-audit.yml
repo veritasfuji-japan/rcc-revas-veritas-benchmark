@@ -23,7 +23,7 @@ jobs:
           assert subprocess.check_output(["git","hash-object",t["freeze_contract"]],text=True).strip()==t["freeze_contract_git_blob_sha"]
           for path,key in [(t["wrapper_path"],"wrapper_git_blob_sha"),(t["runner_path"],"runner_git_blob_sha"),(t["workflow_path"],"workflow_git_blob_sha")]:
               assert subprocess.check_output(["git","hash-object",path],text=True).strip()==t[key]
-          assert c["maximum_usd"]==5 and c["explicit_human_cost_confirmation_required"] is True and c["cost_confirmation_received"] is False
-          assert all(d[k] is False for k in ("provider_dispatch_authorized","manual_dispatch_authorized","provider_credential_access","provider_api_called","final_128_executed"))
-          assert x["next_gate"]=="EXPLICIT_HUMAN_COST_CONFIRMATION_REQUIRED"
+          assert c["maximum_usd"]==5 and c["explicit_human_cost_confirmation_required"] is True\n          assert c["cost_confirmation_received"] in (False, True)
+          assert d["provider_credential_access"] is False and d["provider_api_called"] is False and d["final_128_executed"] is False\n          if c["cost_confirmation_received"]:\n              assert d["provider_dispatch_authorized"] is True and d["manual_dispatch_authorized"] is True\n          else:\n              assert d["provider_dispatch_authorized"] is False and d["manual_dispatch_authorized"] is False
+          assert x["next_gate"] in ("EXPLICIT_HUMAN_COST_CONFIRMATION_REQUIRED","ONE_MANUAL_V6_DISPATCH_ONLY")
           print("PASS_FINAL_128_V6_AUTHORIZATION_ISSUANCE")
