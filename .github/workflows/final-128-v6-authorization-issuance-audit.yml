@@ -1,0 +1,29 @@
+name: Final 128 V6 Authorization Issuance Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v6.json"
+      - ".github/workflows/final-128-v6-authorization-issuance-audit.yml"
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify V6 issuance remains non-dispatching
+        shell: python
+        run: |
+          import json,subprocess
+          from pathlib import Path
+          x=json.loads(Path("contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v6.json").read_text())
+          a=x["authorization"]; t=x["frozen_target"]; c=x["cost_boundary"]; d=x["dispatch"]
+          assert a["id"]=="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V6"
+          assert a["issued"] is True and a["single_use"] is True and a["consumed"] is False
+          assert a["automatic_execution"] is False and a["rerun_authorized"] is False
+          assert subprocess.check_output(["git","hash-object",t["freeze_contract"]],text=True).strip()==t["freeze_contract_git_blob_sha"]
+          for path,key in [(t["wrapper_path"],"wrapper_git_blob_sha"),(t["runner_path"],"runner_git_blob_sha"),(t["workflow_path"],"workflow_git_blob_sha")]:
+              assert subprocess.check_output(["git","hash-object",path],text=True).strip()==t[key]
+          assert c["maximum_usd"]==5 and c["explicit_human_cost_confirmation_required"] is True and c["cost_confirmation_received"] is False
+          assert all(d[k] is False for k in ("provider_dispatch_authorized","manual_dispatch_authorized","provider_credential_access","provider_api_called","final_128_executed"))
+          assert x["next_gate"]=="EXPLICIT_HUMAN_COST_CONFIRMATION_REQUIRED"
+          print("PASS_FINAL_128_V6_AUTHORIZATION_ISSUANCE")
