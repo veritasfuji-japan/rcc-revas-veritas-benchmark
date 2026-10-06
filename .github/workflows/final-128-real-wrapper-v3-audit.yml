@@ -23,7 +23,7 @@ jobs:
           import json
           x=json.load(open("/tmp/audit.json"))
           assert x["mode"]=="AUDIT_ONLY"
-          assert x["v5_exists"] is False
+          assert x["v5_exists"] is True
           assert x["database_write"]==0
           assert x["provider_credential_access"]==0
           assert x["provider_api_calls"]==0
