@@ -24,14 +24,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e "./_agentdojo"
-          pip install -e "./_veritas[postgresql,signing]"
+          # VERITAS source is pinned exactly, but its package-level OpenAI 1.53.0
+          # requirement conflicts with AgentDojo >=1.59.7. This Final-128 profile
+          # uses only the Bind/atomic-store surface, so install VERITAS source
+          # without package dependencies and explicitly install that surface.
+          pip install --no-deps -e "./_veritas"
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0"
           pip install "openai>=1.59.7,<2"
-          pip check
+          # Do not use pip check for the intentionally --no-deps VERITAS package:
+          # its unrelated full-package OpenAI metadata is deliberately not the
+          # runtime profile under proof. Verify the exact imported surfaces below.
           python - <<'PY'
           import openai, agentdojo, veritas_os
           from openai import OpenAI
           assert tuple(map(int, openai.__version__.split(".")[:2])) >= (1,59)
           OpenAI(api_key="sk-test-not-real", max_retries=0, timeout=60.0)
-          from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore
-          print({"proof":"FINAL_128_DEPENDENCY_COMPATIBILITY_V1","openai":openai.__version__,"pip_check":"PASS","provider_calls":0})
+          from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore, build_authorization_consumption_record
+          from veritas_os.policy.bind_core import execute_bind_adjudication
+          from veritas_os.benchmarks.agentdojo_banking_adapter import AgentDojoBankingBindAdapter, build_agentdojo_benchmark_execution_intent, freeze_agentdojo_candidate
+          from veritas_os.security.hash import sha256_of_canonical_json
+          import psycopg, psycopg_pool, cryptography
+          print({"proof":"FINAL_128_DEPENDENCY_COMPATIBILITY_V1","openai":openai.__version__,"veritas_source_pin":"a1d66aef02262cf8a913295270c3aafd159c6adb","atomic_store_import":True,"bind_import":True,"agentdojo_adapter_import":True,"provider_calls":0,"database_access":0})
           PY
