@@ -1,0 +1,74 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-human-authorization-issuance.v2",
+  "status": "HUMAN_AUTHORIZATION_ISSUED_DISPATCH_GATE_CLOSED",
+  "rule_of_one": "Issue one exact-target single-use human authorization while keeping provider dispatch and cost-bearing execution separate.",
+  "supersedes_contract": "contracts/AGENTDOJO_FINAL_128_HUMAN_AUTHORIZATION_ISSUANCE_v1.json",
+  "superseded_authorization_usable_for_dispatch": false,
+  "human_approval": {
+    "approved": true,
+    "approval_source": "human_operator_explicit_chat_confirmation",
+    "approval_context": "Proceed with issuance for the post-freeze canonical target only; do not dispatch or call the provider in this PR.",
+    "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_SINGLE_USE_V2",
+    "single_use": true
+  },
+  "issuance_base_main_sha": "7227435ca476c6d459fcb5a9fa1f320d8f7ba34b",
+  "freeze_contract": {
+    "path": "contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_FREEZE_v1.json",
+    "git_blob_sha": "7b8e82b357f5be30eec62f44147877b392b6c18c"
+  },
+  "execution_target": {
+    "benchmark_commit": "7227435ca476c6d459fcb5a9fa1f320d8f7ba34b",
+    "runner": "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py",
+    "runner_git_blob_sha": "d1e5d7bfda41d7dcd9ee7e16a5b0e8dbba5cb89c",
+    "workflow": ".github/workflows/agentdojo-clean-ab-canonical-final-v1.yml",
+    "workflow_git_blob_sha": "71945dd7514b00e683cfcf54eae4892e6d7dc488",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "model": "gpt-4.1-mini-2025-04-14"
+  },
+  "candidate_disposition": {
+    "promote_tasks": [
+      2,
+      13,
+      15
+    ],
+    "keep_fail_closed_tasks": [
+      11,
+      12,
+      14
+    ]
+  },
+  "authorization_state": {
+    "issued": true,
+    "consumed": false,
+    "consumed_by_run": null,
+    "consumed_by_job": null,
+    "dispatch_performed": false,
+    "provider_api_called_by_this_pr": false,
+    "automatic_dispatch": false,
+    "rerun_authorized": false
+  },
+  "execution_preconditions": {
+    "exact_benchmark_commit_required": true,
+    "exact_runner_blob_required": true,
+    "exact_workflow_blob_required": true,
+    "exact_freeze_contract_required": true,
+    "exact_external_pins_required": true,
+    "prior_consumption_must_be_false": true,
+    "separate_manual_dispatch_required": true,
+    "explicit_cost_confirmation_required_before_dispatch": true
+  },
+  "execution_gate": "CLOSED",
+  "provider_execution_authorized": false,
+  "provider_spend_cap_usd": 5,
+  "next_gate": "EXPLICIT_HUMAN_COST_CONFIRMATION_AND_SEPARATE_SINGLE_USE_DISPATCH",
+  "claim_boundary": {
+    "authorization_issuance_is_execution": false,
+    "final_result_exists": false,
+    "same_corpus_is_held_out_validation": false,
+    "independent_third_party_validation": false,
+    "external_validation": false,
+    "production_readiness": false
+  }
+}
