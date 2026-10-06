@@ -1,0 +1,22 @@
+name: Final 128 V7 Exact Target Freeze
+on: [pull_request]
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact frozen V7 target
+        shell: python
+        run: |
+          import json,subprocess
+          from pathlib import Path
+          x=json.loads(Path("contracts/AGENTDOJO_FINAL_128_V7_TARGET_FREEZE_v1.json").read_text())
+          assert x["status"]=="FROZEN_V7_NOT_ISSUED"
+          t=x["exact_target"]; a=x["authorization"]; c=x["cost_boundary"]; d=x["dispatch"]
+          for p,k in [(t["wrapper_path"],"wrapper_git_blob_sha"),(t["runner_path"],"runner_git_blob_sha"),(t["workflow_path"],"workflow_git_blob_sha")]:
+              assert subprocess.check_output(["git","hash-object",p],text=True).strip()==t[k]
+          assert a["issued"] is False and a["consumed"] is False and a["single_use"] is True and a["rerun_authorized"] is False
+          assert c["maximum_usd"]==5 and c["cost_confirmation_received"] is False
+          assert all(d[k] is False for k in ("provider_dispatch_authorized","provider_credential_access","provider_api_called","final_128_executed"))
+          print("PASS_FINAL_128_V7_EXACT_TARGET_FREEZE")
