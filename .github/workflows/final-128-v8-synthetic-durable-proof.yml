@@ -1,0 +1,38 @@
+name: Final 128 V8 Synthetic Durable DB Proof
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    env:
+      VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - name: Checkout exact external pins
+        run: |
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc fetch --depth=1 origin 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+      - name: Install bounded proof profile
+        run: |
+          pip install -e ./_pins/agentdojo
+          pip install --no-deps -e ./_pins/veritas
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai>=1.59.7,<2"
+      - name: Prove V8 synthetic durable receipt
+        env:
+          OPENAI_API_KEY: ""
+        run: |
+          python scripts/final_128_v8_synthetic_durable_proof_v1.py \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas
