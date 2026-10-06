@@ -1,0 +1,16 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v5-supersession.v1",
+  "status": "V5_SUPERSEDED_UNCONSUMED",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V5",
+  "original_authorization_contract": "contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v5.json",
+  "original_authorization_blob": "658bc5d5b2750a14be8e1fed4d51fcb9398acb81",
+  "failed_dispatch_run": 37449394652,
+  "failure_classification": "PRE_CONSUME_TARGET_SCHEMA_MISMATCH",
+  "consumed": false,
+  "rerun_authorized": false,
+  "provider_api_result_claimed": false,
+  "final_128_result_claimed": false,
+  "superseded": true,
+  "replacement_authorization_required": true,
+  "note": "V5 remains immutable evidence for the originally authorized target. It must not be reused or rerun."
+}
