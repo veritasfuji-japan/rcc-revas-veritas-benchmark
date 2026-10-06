@@ -1,27 +1,99 @@
 name: AgentDojo Canonical Final Runner V1
+
 on:
   workflow_dispatch:
     inputs:
-      runner_commit: {description: "Exact reviewed runner commit", required: true, type: string}
-      confirmation: {description: "Execution confirmation", required: true, type: string}
-permissions: {contents: read}
+      runner_commit:
+        description: Exact reviewed canonical runner commit SHA
+        required: true
+        type: string
+      confirmation:
+        description: Type RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
 jobs:
-  execute:
+  canonical-final-clean-ab:
     if: ${{ inputs.confirmation == 'RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1' }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
-        with: {ref: "${{ inputs.runner_commit }}", persist-credentials: false}
-      - name: Fail closed unless separately opened
+      - name: Check out exact reviewed canonical runner
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.runner_commit }}
+          persist-credentials: false
+
+      - name: Verify exact checkout and authorization gates
         run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ inputs.runner_commit }}"
           python - <<'PY'
           import json
           c=json.load(open("contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json"))
           assert c["execution_gate"] == "OPEN", "EXECUTION_GATE_CLOSED"
           assert c["final_128_authorized"] is True, "FINAL_128_NOT_AUTHORIZED"
           assert c["provider_execution_authorized"] is True, "PROVIDER_EXECUTION_NOT_AUTHORIZED"
+          assert c["automatic_execution"] is False
+          assert c["rerun_authorized"] is False
           PY
-      - name: Stop before provider wiring in frozen v1
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: _pins/rcc
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+
+      - run: python -m pip install -U pip
+      - run: python -m pip install -e _pins/agentdojo cryptography==50.0.1
+      - run: python -m pip install -e '_pins/rcc/external-eval/v0.3.9[crypto]'
+      - run: python -m pip install -e _pins/veritas --no-deps
+
+      - name: Verify provider credential is configured
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          echo "CANONICAL_RUNNER_EXECUTION_WIRING_NOT_YET_ENABLED"
-          exit 1
+          set -euo pipefail
+          test -n "$OPENAI_API_KEY" || { echo "OPENAI_API_KEY_MISSING"; exit 1; }
+
+      - name: Execute frozen canonical 128-case Clean A/B once
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          PYTHONPATH=.:_pins/veritas python scripts/agentdojo_clean_ab_canonical_final_runner_v1.py \
+            --execute \
+            --confirmation RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1 \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --output-dir results/agentdojo-clean-ab-canonical-final-v1
+
+      - name: Upload retained evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentdojo-clean-ab-canonical-final-v1-${{ inputs.runner_commit }}
+          path: results/agentdojo-clean-ab-canonical-final-v1/
+          if-no-files-found: error
