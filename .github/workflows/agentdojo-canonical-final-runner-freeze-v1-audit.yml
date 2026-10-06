@@ -1,0 +1,64 @@
+name: AgentDojo Canonical Final Runner Freeze V1 Audit
+on:
+  pull_request:
+    paths:
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py"
+      - ".github/workflows/agentdojo-clean-ab-canonical-final-v1.yml"
+      - "contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json"
+      - "contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_FREEZE_v1.json"
+      - ".github/workflows/agentdojo-canonical-final-runner-freeze-v1-audit.yml"
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    env:
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Offline exact-source and closed-gate audit
+        run: |
+          python - <<'PY'
+          import json, os, subprocess
+          f=json.load(open("contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_FREEZE_v1.json"))
+          i=json.load(open("contracts/AGENTDOJO_CANONICAL_FINAL_RUNNER_IMPLEMENTATION_v1.json"))
+          assert os.environ.get("OPENAI_API_KEY","")==""
+          assert f["freeze_source_base_sha"]=="62fa0d49267b62750be6b784fa5caf8ec5c32dde"
+          for k in ("runner","workflow"):
+              s=f["exact_sources"][k]
+              got=subprocess.check_output(["git","rev-parse","HEAD:"+s["path"]],text=True).strip()
+              assert got==s["git_blob_sha"], (k,got,s["git_blob_sha"])
+          assert f["pins"]["agentdojo_commit"]=="a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          assert f["pins"]["rcc_revas_commit"]=="1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          assert f["pins"]["veritas_commit"]=="a1d66aef02262cf8a913295270c3aafd159c6adb"
+          assert f["pins"]["model"]=="gpt-4.1-mini-2025-04-14"
+          assert f["model_configuration"]["temperature"]==0.0
+          assert f["model_configuration"]["automatic_retry"] is False
+          assert f["model_configuration"]["fallback_model"] is None
+          assert f["model_configuration"]["openai_client_max_retries"]==0
+          assert f["provider_spend_cap_usd"]==5
+          assert f["case_count"]==128
+          assert f["candidate_disposition"]["promote_tasks"]==[2,13,15]
+          assert f["candidate_disposition"]["keep_fail_closed_tasks"]==[11,12,14]
+          assert f["execution_gate"]=="CLOSED"
+          assert f["final_128_authorized"] is False
+          assert f["provider_execution_authorized"] is False
+          assert f["automatic_execution"] is False and f["rerun_authorized"] is False
+          assert f["provider_api_called_by_this_freeze"] is False
+          assert f["final_128_executed_by_this_freeze"] is False
+          assert i["execution_gate"]=="CLOSED"
+          assert i["final_128_authorized"] is False
+          assert i["provider_execution_authorized"] is False
+          w=open(f["exact_sources"]["workflow"]["path"]).read()
+          gate=w.index('assert c["execution_gate"] == "OPEN"')
+          credential=w.index("Verify provider credential is configured")
+          execute=w.index("Execute frozen canonical 128-case Clean A/B once")
+          assert gate < credential < execute
+          assert "a1d66aef02262cf8a913295270c3aafd159c6adb" in w
+          assert "RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1" in w
+          r=open(f["exact_sources"]["runner"]["path"]).read()
+          assert 'MODEL_ID = "gpt-4.1-mini-2025-04-14"' in r
+          assert 'OPENAI_MAX_RETRIES = 0' in r
+          assert 'BUDGET_USD = 5.0' in r
+          print("CANONICAL_FINAL_RUNNER_FREEZE_V1_AUDIT_PASS")
+          PY

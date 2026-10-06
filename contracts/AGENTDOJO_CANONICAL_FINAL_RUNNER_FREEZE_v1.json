@@ -1,0 +1,60 @@
+{
+  "schema_version": "veritas.agentdojo-canonical-final-runner-freeze.v1",
+  "status": "FROZEN_EXECUTION_GATE_CLOSED",
+  "freeze_source_base_sha": "62fa0d49267b62750be6b784fa5caf8ec5c32dde",
+  "exact_sources": {
+    "runner": {
+      "path": "scripts/agentdojo_clean_ab_canonical_final_runner_v1.py",
+      "git_blob_sha": "d1e5d7bfda41d7dcd9ee7e16a5b0e8dbba5cb89c"
+    },
+    "workflow": {
+      "path": ".github/workflows/agentdojo-clean-ab-canonical-final-v1.yml",
+      "git_blob_sha": "71945dd7514b00e683cfcf54eae4892e6d7dc488"
+    }
+  },
+  "pins": {
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc_revas_commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "python": "3.11.16",
+    "cryptography": "50.0.1"
+  },
+  "model_configuration": {
+    "temperature": 0,
+    "automatic_retry": false,
+    "fallback_model": null,
+    "openai_client_max_retries": 0
+  },
+  "provider_spend_cap_usd": 5,
+  "case_count": 128,
+  "candidate_disposition": {
+    "promote_tasks": [
+      2,
+      13,
+      15
+    ],
+    "keep_fail_closed_tasks": [
+      11,
+      12,
+      14
+    ]
+  },
+  "confirmation_token": "RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1",
+  "execution_gate": "CLOSED",
+  "final_128_authorized": false,
+  "provider_execution_authorized": false,
+  "automatic_execution": false,
+  "rerun_authorized": false,
+  "provider_api_called_by_this_freeze": false,
+  "final_128_executed_by_this_freeze": false,
+  "authorization_rebind": "contracts/AGENTDOJO_FINAL_128_CANONICAL_AUTHORIZATION_REBIND_v2.json",
+  "next_gate": "SEPARATE_HUMAN_AUTHORIZATION_ISSUANCE_AFTER_FREEZE_MERGE",
+  "claim_boundary": {
+    "same_corpus_is_held_out_validation": false,
+    "independent_third_party_validation": false,
+    "external_validation": false,
+    "production_readiness": false,
+    "new_result_claimed": false
+  }
+}
