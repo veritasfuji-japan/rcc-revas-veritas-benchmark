@@ -1,0 +1,36 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-execution-authorization.v8",
+  "status": "EXECUTION_AUTHORIZATION_ISSUED_COST_CONFIRMATION_REQUIRED",
+  "rule_of_one": "FINAL_128_V8_SINGLE_USE_AUTHORIZATION_V1",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V8",
+  "issued": true,
+  "single_use": true,
+  "consumed": false,
+  "rerun_authorized": false,
+  "automatic_execution_authorized": false,
+  "frozen_target": {
+    "freeze_contract_path": "contracts/AGENTDOJO_FINAL_128_V8_TARGET_FREEZE_v1.json",
+    "freeze_contract_blob_sha": "780a1873757c4f69ae66d7ba9d5c7bd5c714ccb9",
+    "freeze_merged_main_sha": "c33f44f8aa7dc07ee313de8eeb7795bf1592d010",
+    "runner_blob_sha": "d3340adbd146fa1417980b182bf5d3cfaed15d5a",
+    "wrapper_blob_sha": "85ffb9c333d595a87c52bd443c92410d2d8419eb",
+    "workflow_blob_sha": "eab5f4fd7eb241615e19944f7a355666ffb2ad3a"
+  },
+  "synthetic_proof": {
+    "run_id": 37472069186,
+    "job_id": 112297829310,
+    "result": "SUCCESS"
+  },
+  "cost_boundary": {
+    "currency": "USD",
+    "maximum": 5,
+    "human_confirmation_required": true,
+    "human_confirmation_received": false
+  },
+  "provider_dispatch_authorized": false,
+  "manual_dispatch_authorized": false,
+  "provider_credential_access": false,
+  "provider_api_called": false,
+  "final_128_executed": false,
+  "next_gate": "RECEIVE_FRESH_EXPLICIT_V8_MAX_5_USD_HUMAN_CONFIRMATION"
+}
