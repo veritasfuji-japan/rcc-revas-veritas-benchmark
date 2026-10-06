@@ -1,0 +1,23 @@
+name: Final 128 V6 Supersession V7 Chain Audit
+on: [pull_request]
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify V6 superseded and V7 chain isolated
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          s=json.loads(Path("contracts/AGENTDOJO_FINAL_128_V6_SUPERSESSION_v1.json").read_text())
+          assert s["status"]=="V6_SUPERSEDED_UNCONSUMED" and s["consumed"] is False and s["rerun_authorized"] is False
+          w=Path("scripts/final_128_real_provider_wrapper_v4.py").read_text()
+          y=Path(".github/workflows/final-128-v7-manual-dispatch.yml").read_text()
+          assert "AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v7.json" in w
+          assert "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V7" in w
+          assert "RUN_FINAL_128_V7_ONCE" in w and "RUN_FINAL_128_V7_ONCE" in y
+          assert "AUTHORIZATION_v5.json" not in w and "EXECUTION_V5" not in w
+          assert "V5 Manual Dispatch" not in y
+          print("PASS_V6_SUPERSESSION_V7_EXECUTION_CHAIN")
