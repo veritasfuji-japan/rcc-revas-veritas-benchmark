@@ -1,0 +1,29 @@
+name: Final 128 V5 Supersession Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_V5_SUPERSESSION_v1.json"
+      - ".github/workflows/final-128-v5-supersession-audit.yml"
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify V5 superseded unconsumed
+        shell: python
+        run: |
+          import json,subprocess
+          from pathlib import Path
+          x=json.loads(Path("contracts/AGENTDOJO_FINAL_128_V5_SUPERSESSION_v1.json").read_text())
+          assert x["status"]=="V5_SUPERSEDED_UNCONSUMED"
+          assert x["authorization_id"]=="AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V5"
+          assert x["consumed"] is False
+          assert x["rerun_authorized"] is False
+          assert x["superseded"] is True
+          assert x["replacement_authorization_required"] is True
+          assert x["provider_api_result_claimed"] is False
+          assert x["final_128_result_claimed"] is False
+          actual=subprocess.check_output(["git","hash-object",x["original_authorization_contract"]],text=True).strip()
+          assert actual==x["original_authorization_blob"]
+          print("PASS_FINAL_128_V5_SUPERSESSION")
