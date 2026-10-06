@@ -1,0 +1,35 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v9-supersession-unconsumed.v1",
+  "status": "SUPERSEDED_UNCONSUMED_NO_PROVIDER_EXECUTION",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V9",
+  "exact_pre_supersession_main_sha": "66120088e7d10d958ae25574dba5a1128fa3f3ac",
+  "evidence": {
+    "final_pre_dispatch_run_id": 37495010153,
+    "final_pre_dispatch_job_id": 112377198035,
+    "durable_row": 0,
+    "provider_credential_access": 0,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "defects": [
+    {
+      "code": "WRAPPER_V7_RUNNER_BLOB_UNDEFINED",
+      "detail": "Frozen wrapper v7 sets RUNNER_BLOB to literal undefined, so its runner blob assertion cannot validate the frozen Runner v2.4."
+    },
+    {
+      "code": "WRAPPER_V7_WRONG_WRAPPER_TARGET_CHECK",
+      "detail": "Frozen wrapper v7 execute path compares authorization frozen wrapper blob against final_128_real_provider_wrapper_v6.py instead of frozen wrapper v7."
+    }
+  ],
+  "disposition": {
+    "issued": true,
+    "human_confirmation_received": true,
+    "consumed": false,
+    "superseded": true,
+    "rebind_authorized": false,
+    "retry_authorized": false,
+    "rerun_authorized": false,
+    "provider_dispatch_authorized": false
+  },
+  "next_gate": "BUILD_AND_PROVIDER_FREE_PREFLIGHT_FRESH_V10_CHAIN_BEFORE_FREEZE_OR_AUTHORIZATION"
+}
