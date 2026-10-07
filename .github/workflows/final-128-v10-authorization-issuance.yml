@@ -1,0 +1,18 @@
+name: Final 128 V10 Authorization Issuance Audit
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v10.json"
+      - "scripts/final_128_v10_authorization_issuance_audit_v1.py"
+      - ".github/workflows/final-128-v10-authorization-issuance.yml"
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/final_128_v10_authorization_issuance_audit_v1.py
