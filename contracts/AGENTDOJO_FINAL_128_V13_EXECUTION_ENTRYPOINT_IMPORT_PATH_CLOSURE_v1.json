@@ -1,0 +1,50 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v13-execution-entrypoint-import-path-closure.v1",
+  "status": "ENTRYPOINT_IMPORT_PATH_CLOSED_PRE_AUTHORIZATION",
+  "base_main_sha": "9373b9fa1a273c2762f7ac7e59922322175bb7b1",
+  "prior_terminal_disposition": {
+    "path": "contracts/AGENTDOJO_FINAL_128_V12_TERMINAL_DISPOSITION_v1.json",
+    "git_blob_sha": "f755fd00f7ffd8f9a5294866ac38005268b180f1",
+    "status": "CONSUMED_PHASE1_PHASE2_FAILED_AFTER_PROVIDER_CLIENT_CONSTRUCTION_PRE_PROVIDER_API_NO_FINAL_RESULT"
+  },
+  "candidate_runner": {
+    "path": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_8.py",
+    "git_blob_sha": "c745679a71aed17f01357d6dce49cfdd679a5c7c",
+    "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V13",
+    "gate_confirmation": "RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V2_8"
+  },
+  "supporting_blobs": {
+    "integration": "c1e26ae453c15e7732cca959030ab833d23174bf",
+    "frozen_openai_adapter": "53a79d9a3f4a55c24ebb4a51f2edbd6542b81105",
+    "locked_requirements_emitter": "4d414d26a33656edb4a674963e3df96d59e74391"
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "agentdojo_pyproject_git_blob_sha": "71930851807e5f0e23f084b652c0908f06a36138",
+    "agentdojo_uv_lock_git_blob_sha": "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_os": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "python": "3.11.16"
+  },
+  "closure": {
+    "entrypoint_invocation": "python scripts/agentdojo_clean_ab_canonical_final_runner_v2_8.py --entrypoint-import-preflight",
+    "repo_root_injected_on_sys_path": true,
+    "integration_import_via_scripts_namespace": true,
+    "banking_suite_v1_2_2_load_required": true,
+    "rcc_gate_construction_required": true,
+    "pipeline_construction_required": true,
+    "direct_attack_construction_required": true,
+    "case_loop_must_not_be_entered": true
+  },
+  "execution_state": {
+    "authorization_issued": false,
+    "human_confirmation_received": false,
+    "database_write": 0,
+    "durable_consume": 0,
+    "provider_credential_access": 0,
+    "provider_client_constructed": 0,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "next_rule_of_one": "V13_RUNTIME_TARGET_CONSTRUCTION_AND_EXACT_FREEZE_BEFORE_NEW_AUTHORIZATION"
+}
