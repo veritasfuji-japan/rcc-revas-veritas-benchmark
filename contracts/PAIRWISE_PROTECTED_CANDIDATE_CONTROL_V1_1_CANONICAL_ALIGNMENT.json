@@ -1,0 +1,71 @@
+{
+  "schema_version": "veritas.pairwise-protected-candidate-control-canonical-alignment.v1",
+  "status": "SUPERSEDES_V1_CANDIDATE_HASH_PAYLOAD_ONLY",
+  "rule_of_one": "PAIRWISE_PROTECTED_CANDIDATE_CONTROL_V1_1_CANONICAL_ALIGNMENT",
+  "base_main_sha": "751b6b1cf036cdf0d78204ea574b4f202137062d",
+  "source_v1": {
+    "contract_path": "contracts/PAIRWISE_PROTECTED_CANDIDATE_CONTROL_V1.json",
+    "contract_git_blob_sha": "f19f5e50e7a596db06770b6c3007b1e74144019a",
+    "implementation_path": "scripts/pairwise_protected_candidate_control_v1.py",
+    "implementation_git_blob_sha": "daffd0308a3cd60563d00006bd899fa8ae86ebad",
+    "preserved_findings": [
+      "V13 raw utility delta is not a pure false-block measure.",
+      "Pair identity requires same case, proposal ordinal, immediate pre-state, function, normalized arguments, and candidate.",
+      "Independent A/B model generation is not valid for candidate-level treatment attribution.",
+      "Policy semantics and safety invariants remain unchanged."
+    ]
+  },
+  "corrected_implementation": {
+    "path": "scripts/pairwise_protected_candidate_control_v1_1.py",
+    "git_blob_sha": "be113ebc85a78a52af3c168f9256fce28d3eaf9b"
+  },
+  "exact_rcc_pin": {
+    "commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "candidate_model_path": "external-eval/v0.3.9/src/rveval/models.py",
+    "candidate_model_git_blob_sha": "3fe4da0462c60184838f31b2e8dbcbb62b2f99d9",
+    "canonical_path": "external-eval/v0.3.9/src/rveval/canonical.py",
+    "canonical_git_blob_sha": "dc672bb78bedae318b07e9098ccdb56dc9c9e14b"
+  },
+  "issue": {
+    "classification": "HASH_PAYLOAD_SHAPE_MISMATCH_NOT_PAIRING_LOGIC_FAILURE",
+    "v1_payload_shape": [
+      "kind",
+      "name",
+      "arguments"
+    ],
+    "rcc_candidateaction_to_dict_shape": [
+      "kind",
+      "name",
+      "arguments",
+      "content",
+      "metadata"
+    ],
+    "consequence": "V1 internal pair equality was deterministic, but its candidate_sha256 was not identical to rveval.canonical.sha_json(CandidateAction.to_dict()). Therefore V1 candidate hashes must not be used as RCC-interoperable candidate identifiers."
+  },
+  "corrected_hash_rule": {
+    "payload": {
+      "kind": "tool_call",
+      "name": "<protected function>",
+      "arguments": "<Pydantic-normalized arguments>",
+      "content": null,
+      "metadata": {}
+    },
+    "canonical_profile": "rveval.python-finite-json.v2",
+    "requirement": "candidate_sha256 MUST equal rveval.canonical.sha_json(CandidateAction.to_dict()) for the exact same candidate."
+  },
+  "scope": {
+    "changes_candidate_hash_payload_only": true,
+    "changes_pairing_fields": false,
+    "changes_policy_semantics": false,
+    "changes_resolver_semantics": false,
+    "provider_execution": false,
+    "database_access": false,
+    "final_128_execution": false
+  },
+  "replay_requirement": {
+    "v1_hash_interoperability_accepted": false,
+    "v1_1_required_for_replay_harness": true,
+    "replay_harness_must_bind_candidate_to_rcc_hash": true
+  },
+  "next_rule_of_one": "PAIRWISE_PROTECTED_CANDIDATE_REPLAY_HARNESS_V1"
+}
