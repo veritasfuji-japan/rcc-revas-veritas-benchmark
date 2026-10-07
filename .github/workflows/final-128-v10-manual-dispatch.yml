@@ -29,10 +29,11 @@ jobs:
           git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
       - name: Install exact runtime
         run: |
-          pip install -e ./_pins/agentdojo
-          pip install -e ./_pins/veritas
-          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai==1.53.0"
-          pip check
+          pip install --no-deps -e ./_pins/agentdojo
+          pip install --no-deps -e ./_pins/veritas
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python -c "import agentdojo, openai, pydantic, idna; print('PASS_V10_BOUNDED_RUNTIME_IMPORTS')"
+          python -c "from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore; print('PASS_V10_CONSUMPTION_STORE_IMPORT')"
       - name: Execute exact V10 chain
         env:
           VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
