@@ -1,0 +1,29 @@
+name: Final 128 V11 Manual Dispatch Template
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Exact V11 confirmation
+        required: true
+        type: string
+permissions: {contents: read}
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Phase 1 durable consume
+        env:
+          VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+          OPENAI_API_KEY: ""
+        run: |
+          echo "V11 template: consume implementation intentionally not enabled before authorization"
+          exit 1
+      - name: Phase 2 provider execution
+        if: success()
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+        run: |
+          echo "V11 template: provider execution intentionally not enabled before authorization"
+          exit 1
