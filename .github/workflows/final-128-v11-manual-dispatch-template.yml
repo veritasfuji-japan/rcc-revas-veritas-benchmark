@@ -12,18 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Phase 1 durable consume
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: V11 shared real-dispatch entrypoint
         env:
-          VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+          # Intentionally blank before authorization/freeze. Future enabling must
+          # preserve the consume/provider credential separation proved separately.
           OPENAI_API_KEY: ""
+          VERITAS_DATABASE_URL: ""
+          V11_CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          echo "V11 template: consume implementation intentionally not enabled before authorization"
-          exit 1
-      - name: Phase 2 provider execution
-        if: success()
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
-        run: |
-          echo "V11 template: provider execution intentionally not enabled before authorization"
-          exit 1
+          python scripts/final_128_real_provider_wrapper_v9.py --real-dispatch
