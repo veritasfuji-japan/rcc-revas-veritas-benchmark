@@ -116,5 +116,9 @@
     "human_confirmation_reuse_prohibited": true,
     "rerun_authorized": false
   },
-  "next_rule_of_one": "INDEPENDENT_REVIEWER_ATTESTATION_V1"
+  "next_rule_of_one": "INDEPENDENT_REVIEWER_ATTESTATION_V1",
+  "reviewer_packet_document": {
+    "path": "docs/AGENTDOJO_FINAL_128_INDEPENDENT_EXTERNAL_REPLICATION_HANDOFF_V1.md",
+    "git_blob_sha": "bd9843bfe2c5c29613f8b802e65e3f712e7e8b9f"
+  }
 }
