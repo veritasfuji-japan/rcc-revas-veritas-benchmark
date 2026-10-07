@@ -1,0 +1,105 @@
+name: Pairwise Protected Candidate Replay Harness V1
+on:
+  pull_request:
+    paths:
+      - "contracts/PAIRWISE_PROTECTED_CANDIDATE_REPLAY_HARNESS_V1.json"
+      - "scripts/pairwise_protected_candidate_replay_harness_v1.py"
+      - "scripts/pairwise_protected_candidate_replay_result_audit_v1.py"
+      - ".github/workflows/pairwise-protected-candidate-replay-harness-v1.yml"
+permissions:
+  contents: read
+  actions: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      GH_TOKEN: ${{ github.token }}
+      V13_ARTIFACT_ZIP: /tmp/agentdojo-clean-ab-final-v13-37585673492.zip
+      DISCOVERY_REPLAY_ARTIFACT_ZIP: /tmp/pairwise-protected-candidate-replay-v1-37600062157.zip
+      CURRENT_REPLAY_RESULT: results/pairwise-protected-candidate-replay-v1.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+
+      - name: Verify replay contract and exact local source blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object contracts/PAIRWISE_PROTECTED_CANDIDATE_REPLAY_HARNESS_V1.json)" = "3d19e8cb1b543b78d1584392bbfcd48e849d1787"
+          test "$(git hash-object scripts/pairwise_protected_candidate_replay_harness_v1.py)" = "da9bb510eee5253c3e04e625d182e767c346733c"
+          test "$(git hash-object scripts/pairwise_protected_candidate_control_v1_1.py)" = "be113ebc85a78a52af3c168f9256fce28d3eaf9b"
+          test "$(git hash-object scripts/agentdojo_clean_ab_canonical_final_runner_v2_8.py)" = "c745679a71aed17f01357d6dce49cfdd679a5c7c"
+          test "$(git hash-object agentdojo_constraint_resolver_v0_1.py)" = "edbf513e67efa8719de3a1193a5f3ba937afdf52"
+          test "$(git hash-object original_request_authority_lineage_v1.py)" = "f0d2017d9832d584123678568a1b7ceadcd04a80"
+          echo PASS_REPLAY_LOCAL_SOURCE_PINS
+
+      - name: Checkout exact external pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo hash-object pyproject.toml)" = "71930851807e5f0e23f084b652c0908f06a36138"
+          test "$(git -C _pins/agentdojo hash-object uv.lock)" = "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3"
+
+      - name: Install exact provider-free replay runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo
+          pip install --no-deps -e ./_pins/veritas
+          pip install "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output .pairwise_replay_agentdojo_locked_direct.txt
+          pip install -r .pairwise_replay_agentdojo_locked_direct.txt
+
+      - name: Download exact V13 artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/$GITHUB_REPOSITORY/actions/artifacts/11466539107/zip > "$V13_ARTIFACT_ZIP"
+          test "$(sha256sum "$V13_ARTIFACT_ZIP" | awk '{print $1}')" = "9fbb2a1614c237e92c4239bb5d60f83d40d33b81e0092d3f82958931969c9e7a"
+          echo PASS_REPLAY_EXACT_V13_ARTIFACT
+
+      - name: Run provider-free controlled replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python scripts/pairwise_protected_candidate_replay_harness_v1.py \
+            --artifact "$V13_ARTIFACT_ZIP" \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --output results/pairwise-protected-candidate-replay-v1.json \
+            | tee results/pairwise-protected-candidate-replay-v1.log
+
+      - name: Download frozen discovery replay artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/$GITHUB_REPOSITORY/actions/artifacts/11472665588/zip > "$DISCOVERY_REPLAY_ARTIFACT_ZIP"
+          test "$(sha256sum "$DISCOVERY_REPLAY_ARTIFACT_ZIP" | awk '{print $1}')" = "f57ac927b0d298bafb006318cf58c41c687d854b9f505a15807c9a0d0ce04de4"
+          echo PASS_REPLAY_DISCOVERY_ARTIFACT_DOWNLOAD
+
+      - name: Audit frozen replay result and reproduction
+        run: python scripts/pairwise_protected_candidate_replay_result_audit_v1.py
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pairwise-protected-candidate-replay-v1-${{ github.run_id }}
+          path: |
+            .pairwise_replay_agentdojo_locked_direct.txt
+            results/pairwise-protected-candidate-replay-v1.json
+            results/pairwise-protected-candidate-replay-v1.log
+          if-no-files-found: error
