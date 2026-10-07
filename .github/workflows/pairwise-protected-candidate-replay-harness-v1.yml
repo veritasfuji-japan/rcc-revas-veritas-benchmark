@@ -4,6 +4,7 @@ on:
     paths:
       - "contracts/PAIRWISE_PROTECTED_CANDIDATE_REPLAY_HARNESS_V1.json"
       - "scripts/pairwise_protected_candidate_replay_harness_v1.py"
+      - "scripts/pairwise_protected_candidate_replay_result_audit_v1.py"
       - ".github/workflows/pairwise-protected-candidate-replay-harness-v1.yml"
 permissions:
   contents: read
@@ -16,6 +17,8 @@ jobs:
       VERITAS_DATABASE_URL: ""
       GH_TOKEN: ${{ github.token }}
       V13_ARTIFACT_ZIP: /tmp/agentdojo-clean-ab-final-v13-37585673492.zip
+      DISCOVERY_REPLAY_ARTIFACT_ZIP: /tmp/pairwise-protected-candidate-replay-v1-37600062157.zip
+      CURRENT_REPLAY_RESULT: results/pairwise-protected-candidate-replay-v1.json
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
@@ -26,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object contracts/PAIRWISE_PROTECTED_CANDIDATE_REPLAY_HARNESS_V1.json)" = "da7bddcacdc3a51e1e43ba3572b23692edbe0690"
+          test "$(git hash-object contracts/PAIRWISE_PROTECTED_CANDIDATE_REPLAY_HARNESS_V1.json)" = "3d19e8cb1b543b78d1584392bbfcd48e849d1787"
           test "$(git hash-object scripts/pairwise_protected_candidate_replay_harness_v1.py)" = "da9bb510eee5253c3e04e625d182e767c346733c"
           test "$(git hash-object scripts/pairwise_protected_candidate_control_v1_1.py)" = "be113ebc85a78a52af3c168f9256fce28d3eaf9b"
           test "$(git hash-object scripts/agentdojo_clean_ab_canonical_final_runner_v2_8.py)" = "c745679a71aed17f01357d6dce49cfdd679a5c7c"
@@ -80,6 +83,17 @@ jobs:
             --veritas-root _pins/veritas \
             --output results/pairwise-protected-candidate-replay-v1.json \
             | tee results/pairwise-protected-candidate-replay-v1.log
+
+      - name: Download frozen discovery replay artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/$GITHUB_REPOSITORY/actions/artifacts/11472665588/zip > "$DISCOVERY_REPLAY_ARTIFACT_ZIP"
+          test "$(sha256sum "$DISCOVERY_REPLAY_ARTIFACT_ZIP" | awk '{print $1}')" = "f57ac927b0d298bafb006318cf58c41c687d854b9f505a15807c9a0d0ce04de4"
+          echo PASS_REPLAY_DISCOVERY_ARTIFACT_DOWNLOAD
+
+      - name: Audit frozen replay result and reproduction
+        run: python scripts/pairwise_protected_candidate_replay_result_audit_v1.py
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
