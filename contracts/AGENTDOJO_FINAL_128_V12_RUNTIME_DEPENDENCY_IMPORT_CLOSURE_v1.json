@@ -1,0 +1,50 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v12-runtime-dependency-import-closure.v1",
+  "status": "PROVIDER_FREE_IMPORT_CLOSURE_CANDIDATE",
+  "rule_of_one": "V12_RUNTIME_DEPENDENCY_IMPORT_CLOSURE_BEFORE_NEW_AUTHORIZATION",
+  "v11_terminal_disposition": {
+    "path": "contracts/AGENTDOJO_FINAL_128_V11_TERMINAL_DISPOSITION_v1.json",
+    "git_blob_sha": "025712b1fa18eade71998410f67a105401ee7bdf",
+    "reuse_prohibited": true
+  },
+  "source_pins": {
+    "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "agentdojo_pyproject_git_blob_sha": "71930851807e5f0e23f084b652c0908f06a36138",
+    "agentdojo_uv_lock_git_blob_sha": "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3",
+    "veritas_os_commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "python": "3.11.16"
+  },
+  "preserved_runtime_pins": {
+    "openai": "1.109.1",
+    "pydantic": "2.11.10",
+    "idna": "3.15",
+    "httpx": "0.28.1",
+    "requests": "2.34.2",
+    "pyyaml": "6.0.3",
+    "psycopg": "3.2.9",
+    "psycopg_pool": "3.2.6",
+    "alembic": "1.18.4",
+    "cryptography": "50.0.0"
+  },
+  "required_provider_free_assertions": [
+    "OPENAI_API_KEY absent",
+    "ANTHROPIC_API_KEY absent",
+    "COHERE_API_KEY absent",
+    "GOOGLE_API_KEY absent",
+    "VERITAS_DATABASE_URL absent",
+    "AgentDojo direct runtime dependencies resolved from exact pinned uv.lock",
+    "agentdojo.attacks.baseline_attacks imports successfully",
+    "agentdojo.task_suite.load_suites imports successfully",
+    "banking suite v1.2.2 loads successfully",
+    "no provider client constructor is reached",
+    "no durable consumption occurs",
+    "no provider API call occurs",
+    "no Final 128 execution occurs"
+  ],
+  "authorization_issued": false,
+  "human_confirmation_received": false,
+  "durable_consume": 0,
+  "provider_credential_access": 0,
+  "provider_api_calls": 0,
+  "final_128_execution": 0
+}
