@@ -1,0 +1,15 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v12-human-confirmation.v1",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V12",
+  "authorization_git_blob_sha": "5011d3def553f88a132ccb068a55b5953a32aa23",
+  "exact_confirmation": "最大5米ドルのOpenAI API利用を伴うCanonical Final 128を、V12を1回だけconsumeして実行することを承認します",
+  "confirmation": {
+    "received": true,
+    "maximum_usd": 5,
+    "single_consumption_only": true,
+    "rerun_authorized": false
+  },
+  "provider_dispatch_authorized": true,
+  "manual_dispatch_authorized": true,
+  "note": "This confirmation is valid only for the exact V12 authorization blob above and does not authorize any rerun or authorization reuse."
+}
