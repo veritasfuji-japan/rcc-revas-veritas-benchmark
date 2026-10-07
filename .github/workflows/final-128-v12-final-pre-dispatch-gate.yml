@@ -1,0 +1,84 @@
+name: Final 128 V12 Final Pre-Dispatch Gate
+on:
+  pull_request:
+    paths:
+      - "scripts/final_128_v12_static_pre_dispatch_audit_v1.py"
+      - "scripts/final_128_v12_final_pre_dispatch_gate_v1.py"
+      - ".github/workflows/final-128-v12-final-pre-dispatch-gate.yml"
+permissions: {contents: read}
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    env:
+      VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+      OPENAI_API_KEY: ""
+      PRE_DISPATCH_BASE_MAIN_SHA: "da53464a9f2a19cd4e8ff8a45158553a592a66e3"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.16"}
+
+      - name: Verify exact V12 chain and empty execution workspace
+        run: python scripts/final_128_v12_static_pre_dispatch_audit_v1.py
+
+      - name: Re-verify exact V12 human confirmation binding
+        env:
+          VERITAS_DATABASE_URL: ""
+        run: python scripts/final_128_v12_human_confirmation_audit_v1.py
+
+      - name: Checkout exact external pins
+        env:
+          VERITAS_DATABASE_URL: ""
+        run: |
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc fetch --depth=1 origin 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo hash-object pyproject.toml)" = "71930851807e5f0e23f084b652c0908f06a36138"
+          test "$(git -C _pins/agentdojo hash-object uv.lock)" = "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3"
+
+      - name: Install exact V12 pre-dispatch runtime
+        env:
+          VERITAS_DATABASE_URL: ""
+        run: |
+          pip install --no-deps -e ./_pins/agentdojo
+          pip install --no-deps -e ./_pins/veritas
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py             --lock _pins/agentdojo/uv.lock             --output .v12_agentdojo_locked_direct.txt
+          pip install -r .v12_agentdojo_locked_direct.txt
+
+      - name: Re-prove provider-free dependency import closure
+        env:
+          VERITAS_DATABASE_URL: ""
+          ANTHROPIC_API_KEY: ""
+          COHERE_API_KEY: ""
+          GOOGLE_API_KEY: ""
+          GCP_PROJECT: ""
+          GCP_LOCATION: ""
+        run: python scripts/final_128_v12_runtime_dependency_import_closure_v1.py
+
+      - name: Re-traverse actual V12 shared flow to provider boundary
+        env:
+          VERITAS_DATABASE_URL: ""
+        run: |
+          python scripts/final_128_real_provider_wrapper_v10.py             --provider-free-preflight             --confirmation RUN_FINAL_128_V12_ONCE             --receipt-path .v12_handoff/provider_free_v12_dispatch_receipt.json
+
+      - name: Verify durable V12 authorization is still unconsumed
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p results
+          python scripts/final_128_v12_final_pre_dispatch_gate_v1.py | tee results/v12-final-pre-dispatch-db.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: final-128-v12-final-pre-dispatch-${{ github.run_id }}
+          path: |
+            .v12_agentdojo_locked_direct.txt
+            results/v12-runtime-dependency-import-closure.json
+            results/v12-final-pre-dispatch-db.json
+          if-no-files-found: error
