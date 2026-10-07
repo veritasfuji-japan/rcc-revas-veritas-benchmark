@@ -1,0 +1,48 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v13-runtime-target-construction.v1",
+  "status": "RUNTIME_TARGET_CONSTRUCTED_PRE_FREEZE",
+  "rule_of_one": "V13_RUNTIME_TARGET_CONSTRUCTION_BEFORE_EXACT_FREEZE",
+  "base_main_sha": "e9928a00ad793c0f04ae2e4bae24396fdb875260",
+  "prior_evidence": {
+    "v12_terminal_disposition_git_blob_sha": "f755fd00f7ffd8f9a5294866ac38005268b180f1",
+    "v13_entrypoint_import_closure_contract_git_blob_sha": "bf3e8bd19a58ad52979bb1f62660b823ceeea82e",
+    "v13_entrypoint_import_closure_run_id": 37580263940,
+    "v13_entrypoint_import_closure_job_id": 112658060781,
+    "v13_entrypoint_import_closure_artifact_id": 11464755625,
+    "v13_entrypoint_import_closure_artifact_zip_sha256": "6b53fc1b2ae5ad853ce5a40bc3e8d117350e13a33896a82207e4ce6b6be3a07a"
+  },
+  "candidate_runtime_blobs": {
+    "runner_v2_8": "c745679a71aed17f01357d6dce49cfdd679a5c7c",
+    "wrapper_v11": "43a68f5f06f887bc8915518d5c054008ac0a6e26",
+    "manual_dispatch_workflow_v13": "b8a3dc7529efb0122a84f576de782fd9124d6d5d",
+    "runtime_dependency_import_closure_v13": "d8b7649f4cb1fe5809bd295633172e6da6e25681",
+    "locked_requirements_emitter": "4d414d26a33656edb4a674963e3df96d59e74391"
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "agentdojo_pyproject_git_blob_sha": "71930851807e5f0e23f084b652c0908f06a36138",
+    "agentdojo_uv_lock_git_blob_sha": "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_os": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "python": "3.11.16"
+  },
+  "required_order": [
+    "exact runtime install",
+    "provider-free dependency import closure",
+    "provider-free actual runner entrypoint import closure",
+    "provider-free shared control-flow preflight",
+    "durable consume",
+    "receipt handoff",
+    "provider credential availability",
+    "provider execution"
+  ],
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V13",
+  "authorization_issued": false,
+  "human_confirmation_received": false,
+  "durable_consume": 0,
+  "provider_credential_access": 0,
+  "provider_client_constructed": 0,
+  "provider_api_calls": 0,
+  "final_128_execution": 0
+}
