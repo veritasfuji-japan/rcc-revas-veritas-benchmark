@@ -194,7 +194,7 @@ assert head == "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
 banking_client = dojo / "src/agentdojo/default_suites/v1/tools/banking_client.py"
 task_v1 = dojo / "src/agentdojo/default_suites/v1/banking/user_tasks.py"
 task_v111 = dojo / "src/agentdojo/default_suites/v1_1_1/banking/user_tasks.py"
-assert git_blob_external := subprocess.run(
+git_blob_external = subprocess.run(
     ["git", "-C", str(dojo), "hash-object", str(banking_client.relative_to(dojo))],
     check=True, capture_output=True, text=True
 ).stdout.strip()
