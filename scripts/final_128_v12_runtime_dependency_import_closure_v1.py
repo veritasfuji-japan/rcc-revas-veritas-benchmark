@@ -43,22 +43,34 @@ assert git(agentdojo_root, "hash-object", "uv.lock") == AGENTDOJO_UV_LOCK_BLOB
 class ProviderClientConstructionReached(RuntimeError):
     pass
 
-def deny_provider_client(*args, **kwargs):
-    raise ProviderClientConstructionReached("PROVIDER_CLIENT_CONSTRUCTION_REACHED_DURING_IMPORT_CLOSURE")
+class DenyProviderClient:
+    def __init__(self, *args, **kwargs):
+        raise ProviderClientConstructionReached(
+            "PROVIDER_CLIENT_CONSTRUCTION_REACHED_DURING_IMPORT_CLOSURE"
+        )
 
 # Import SDK modules only, then fail closed if AgentDojo import/load attempts to
-# instantiate any provider client.
+# instantiate any provider client. Use classes rather than functions so runtime
+# type-union annotations remain valid during module import.
 import openai
 import anthropic
 import cohere
 from google import genai
 
-openai.OpenAI = deny_provider_client
-anthropic.Anthropic = deny_provider_client
-cohere.Client = deny_provider_client
+openai.OpenAI = DenyProviderClient
+if hasattr(openai, "AsyncOpenAI"):
+    openai.AsyncOpenAI = DenyProviderClient
+anthropic.Anthropic = DenyProviderClient
+if hasattr(anthropic, "AsyncAnthropic"):
+    anthropic.AsyncAnthropic = DenyProviderClient
+cohere.Client = DenyProviderClient
 if hasattr(cohere, "ClientV2"):
-    cohere.ClientV2 = deny_provider_client
-genai.Client = deny_provider_client
+    cohere.ClientV2 = DenyProviderClient
+if hasattr(cohere, "AsyncClient"):
+    cohere.AsyncClient = DenyProviderClient
+if hasattr(cohere, "AsyncClientV2"):
+    cohere.AsyncClientV2 = DenyProviderClient
+genai.Client = DenyProviderClient
 
 baseline = importlib.import_module("agentdojo.attacks.baseline_attacks")
 load_suites = importlib.import_module("agentdojo.task_suite.load_suites")
