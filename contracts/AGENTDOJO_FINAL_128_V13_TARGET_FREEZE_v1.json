@@ -1,0 +1,102 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v13-target-freeze.v1",
+  "status": "FROZEN_SOURCE_TARGET_PRE_AUTHORIZATION_READY",
+  "authorization_ready": true,
+  "frozen_from_main_sha": "bc185fcfbc0025b2d29f6e4e323907e396edc6e1",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V13",
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "agentdojo_pyproject_git_blob_sha": "71930851807e5f0e23f084b652c0908f06a36138",
+    "agentdojo_uv_lock_git_blob_sha": "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_os": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "python": "3.11.16"
+  },
+  "frozen_blobs": {
+    "runner_v2_8": "c745679a71aed17f01357d6dce49cfdd679a5c7c",
+    "wrapper_v11": "43a68f5f06f887bc8915518d5c054008ac0a6e26",
+    "manual_dispatch_workflow": "b8a3dc7529efb0122a84f576de782fd9124d6d5d",
+    "locked_requirements_emitter": "4d414d26a33656edb4a674963e3df96d59e74391",
+    "runtime_dependency_import_closure": "d8b7649f4cb1fe5809bd295633172e6da6e25681",
+    "entrypoint_import_closure_audit": "cffbec3dcc7aac4acb4600049f420e498cb3cee5",
+    "entrypoint_import_closure_workflow": "e600f166772f2b6a700619b4ec9580c8a907d7e4",
+    "runtime_target_construction_audit": "be503464b443135067f5a947f1b7bdc612a0ec43",
+    "runtime_target_construction_workflow": "910f3285f56876c3b43cc7cdbf93a4e3fe83ab25",
+    "exact_model_configuration": "59a77c03f7e98a6d8a5fa9b78ba356cfc12ff92d"
+  },
+  "evidence_blobs": {
+    "v12_terminal_disposition": "f755fd00f7ffd8f9a5294866ac38005268b180f1",
+    "v13_entrypoint_import_closure_contract": "bf3e8bd19a58ad52979bb1f62660b823ceeea82e",
+    "v13_runtime_target_construction_contract": "b008c586a2669f87e326bf12ea7963c7d32b9c9f"
+  },
+  "bounded_runtime": {
+    "openai": "1.109.1",
+    "pydantic": "2.11.10",
+    "idna": "3.15",
+    "httpx": "0.28.1",
+    "requests": "2.34.2",
+    "pyyaml": "6.0.3",
+    "psycopg": "3.2.9",
+    "psycopg_pool": "3.2.6",
+    "alembic": "1.18.4",
+    "cryptography": "50.0.0"
+  },
+  "agentdojo_locked_direct_runtime": {
+    "anthropic": "0.50.0",
+    "click": "8.1.8",
+    "cohere": "5.15.0",
+    "deepdiff": "8.6.1",
+    "docstring-parser": "0.16",
+    "google-genai": "1.15.0",
+    "langchain": "0.3.24",
+    "openai": "1.109.1",
+    "pydantic": "2.11.10",
+    "python-dotenv": "1.1.0",
+    "pyyaml": "6.0.3",
+    "rich": "14.0.0",
+    "tenacity": "9.1.2",
+    "typing-extensions": "4.13.2"
+  },
+  "execution_paths": {
+    "receipt_path": ".v13_handoff/v13_dispatch_receipt.json",
+    "output_dir": "results/agentdojo-clean-ab-final-v13",
+    "artifact_name_template": "agentdojo-clean-ab-final-v13-${github.run_id}"
+  },
+  "pre_authorization_evidence": {
+    "entrypoint_import_closure_run": 37580263940,
+    "entrypoint_import_closure_job": 112658060781,
+    "entrypoint_import_closure_artifact_id": 11464755625,
+    "entrypoint_import_closure_artifact_zip_sha256": "6b53fc1b2ae5ad853ce5a40bc3e8d117350e13a33896a82207e4ce6b6be3a07a",
+    "runtime_target_construction_run": 37581123508,
+    "runtime_target_construction_job": 112660783250,
+    "runtime_target_construction_artifact_id": 11464772186,
+    "runtime_target_construction_artifact_zip_sha256": "a5a385f3352efbc79047c3d5ffb8358131a024ace836045b01d7012c75c18902"
+  },
+  "execution_state": {
+    "authorization_issued": false,
+    "human_confirmation_received": false,
+    "durable_consume": 0,
+    "provider_credential_access": 0,
+    "provider_client_constructed": 0,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "reproducibility_observations": {
+    "actions_checkout_ref": "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+    "actions_setup_python_ref": "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+    "actions_upload_artifact_ref": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+    "mutable_major_action_refs_remain_in_v13_runtime": false
+  },
+  "closed_pre_authorization_controls": [
+    "V13_RUNTIME_DEPENDENCY_IMPORT_CLOSURE",
+    "V13_EXECUTION_ENTRYPOINT_IMPORT_PATH_CLOSURE",
+    "V13_PRECONSUME_SHARED_CONTROL_FLOW_GATE",
+    "V13_PRECONSUME_GATE_ORDER",
+    "V13_RUNTIME_COMPONENT_SELF_BINDING",
+    "V13_IMMUTABLE_GITHUB_ACTION_REFS",
+    "V12_REUSE_PROHIBITION_PRESERVED"
+  ],
+  "authorization_blockers": [],
+  "invariant": "ANY_CHANGE_TO_A_FROZEN_V13_COMPONENT_REQUIRES_A_NEW_V13_TARGET_FREEZE; V13_AUTHORIZATION_ISSUANCE_REQUIRES_AUTHORIZATION_READY_TRUE_AND_ZERO_AUTHORIZATION_BLOCKERS"
+}
