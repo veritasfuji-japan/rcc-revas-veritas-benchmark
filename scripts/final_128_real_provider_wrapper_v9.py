@@ -26,6 +26,7 @@ AUTH_ID = "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V11"
 CONFIRM = "RUN_FINAL_128_V11_ONCE"
 RUNNER = "scripts/agentdojo_clean_ab_canonical_final_runner_v2_6.py"
 RUNNER_BLOB = "f30e09f27186ecb06df01099118f4e28c0a560fc"
+MANUAL_DISPATCH_WORKFLOW = ".github/workflows/final-128-v11-manual-dispatch-template.yml"
 RUNNER_CONFIRM = "RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V2_6"
 RECEIPT_SCHEMA = "veritas.agentdojo-final-128-runtime-dispatch-receipt.v1"
 
@@ -50,8 +51,17 @@ def blob(path: Path | str) -> str:
     ).stdout.strip()
 
 
+def runtime_component_blobs() -> dict[str, str]:
+    return {
+        "runner_git_blob_sha": blob(RUNNER),
+        "wrapper_git_blob_sha": blob(Path(__file__)),
+        "manual_dispatch_workflow_git_blob_sha": blob(MANUAL_DISPATCH_WORKFLOW),
+    }
+
+
 def validate_runtime_contract(a: dict[str, Any], c: dict[str, Any], confirmation: str) -> None:
-    assert blob(RUNNER) == RUNNER_BLOB
+    components = runtime_component_blobs()
+    assert components["runner_git_blob_sha"] == RUNNER_BLOB
     assert a["authorization"] == {
         "id": AUTH_ID,
         "issued": True,
@@ -64,7 +74,13 @@ def validate_runtime_contract(a: dict[str, Any], c: dict[str, Any], confirmation
         "manual_dispatch_authorized": True,
     }
     assert a["cost_boundary"]["maximum_usd"] == 5
-    assert a["frozen_target"]["runner_git_blob_sha"] == RUNNER_BLOB
+    assert a["frozen_target"] == {
+        "runner_git_blob_sha": RUNNER_BLOB,
+        "wrapper_git_blob_sha": components["wrapper_git_blob_sha"],
+        "manual_dispatch_workflow_git_blob_sha": components[
+            "manual_dispatch_workflow_git_blob_sha"
+        ],
+    }
     assert c["authorization_id"] == AUTH_ID
     assert c["authorization_git_blob_sha"] == a["_self_blob"]
     assert c["confirmation"] == {
@@ -78,6 +94,7 @@ def validate_runtime_contract(a: dict[str, Any], c: dict[str, Any], confirmation
 
 def synthetic_contracts() -> tuple[dict[str, Any], dict[str, Any]]:
     synthetic_blob = "V11_SYNTHETIC_AUTH_BLOB"
+    components = runtime_component_blobs()
     a = {
         "_self_blob": synthetic_blob,
         "authorization": {
@@ -92,7 +109,13 @@ def synthetic_contracts() -> tuple[dict[str, Any], dict[str, Any]]:
             "manual_dispatch_authorized": True,
         },
         "cost_boundary": {"maximum_usd": 5},
-        "frozen_target": {"runner_git_blob_sha": RUNNER_BLOB},
+        "frozen_target": {
+            "runner_git_blob_sha": RUNNER_BLOB,
+            "wrapper_git_blob_sha": components["wrapper_git_blob_sha"],
+            "manual_dispatch_workflow_git_blob_sha": components[
+                "manual_dispatch_workflow_git_blob_sha"
+            ],
+        },
     }
     c = {
         "authorization_id": AUTH_ID,
@@ -139,6 +162,13 @@ def verify_receipt_handoff(receipt: dict[str, Any], *, provider_free: bool) -> N
         raise SystemExit("V11_RECEIPT_BUDGET_MISMATCH")
     if r.get("runner_git_blob_sha") != RUNNER_BLOB:
         raise SystemExit("V11_RECEIPT_RUNNER_BINDING_MISMATCH")
+    components = runtime_component_blobs()
+    if r.get("wrapper_git_blob_sha") != components["wrapper_git_blob_sha"]:
+        raise SystemExit("V11_RECEIPT_WRAPPER_BINDING_MISMATCH")
+    if r.get("manual_dispatch_workflow_git_blob_sha") != components[
+        "manual_dispatch_workflow_git_blob_sha"
+    ]:
+        raise SystemExit("V11_RECEIPT_MANUAL_DISPATCH_WORKFLOW_BINDING_MISMATCH")
     expected_phase = (
         "V11_PROVIDER_FREE_CONSUME_SURROGATE"
         if provider_free
@@ -167,6 +197,10 @@ async def consume_phase(a: dict[str, Any], *, provider_free: bool) -> dict[str, 
                 "provider_spend_cap_usd": 5.0,
                 "authorization_git_blob_sha": a["_self_blob"],
                 "runner_git_blob_sha": RUNNER_BLOB,
+                "wrapper_git_blob_sha": a["frozen_target"]["wrapper_git_blob_sha"],
+                "manual_dispatch_workflow_git_blob_sha": a["frozen_target"][
+                    "manual_dispatch_workflow_git_blob_sha"
+                ],
                 "phase_marker": "V11_PROVIDER_FREE_CONSUME_SURROGATE",
                 "consumption_id": "PROVIDER_FREE_SURROGATE_NOT_DURABLE",
                 "consumption_hash": "PROVIDER_FREE_SURROGATE_NOT_DURABLE",
@@ -221,6 +255,10 @@ async def consume_phase(a: dict[str, Any], *, provider_free: bool) -> dict[str, 
             "provider_spend_cap_usd": 5.0,
             "authorization_git_blob_sha": a["_self_blob"],
             "runner_git_blob_sha": RUNNER_BLOB,
+            "wrapper_git_blob_sha": a["frozen_target"]["wrapper_git_blob_sha"],
+            "manual_dispatch_workflow_git_blob_sha": a["frozen_target"][
+                "manual_dispatch_workflow_git_blob_sha"
+            ],
             "phase_marker": "V11_DURABLE_CONSUME_SUCCESS",
             "consumption_id": rec.consumption_id,
             "consumption_hash": rec.consumption_hash,
@@ -276,6 +314,7 @@ async def execute_control_flow(args: argparse.Namespace) -> int:
                     "status": "PASS_V11_SHARED_EXECUTION_CONTROL_FLOW_TO_PROVIDER_CREDENTIAL_BOUNDARY",
                     "shared_entrypoint": "execute_control_flow",
                     "runtime_contract_validated": True,
+                    "runtime_component_self_binding_validated": True,
                     "consume_handoff_kind": "provider_free_surrogate_not_durable_db_receipt",
                     "receipt_verified": True,
                     "stopped_before_provider_credential": True,
