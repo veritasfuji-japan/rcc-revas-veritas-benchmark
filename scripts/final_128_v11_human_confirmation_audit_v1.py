@@ -35,9 +35,9 @@ assert a["cost_boundary"]["maximum_usd"] == 5
 assert c["schema_version"] == "veritas.agentdojo-final-128-v11-human-confirmation.v1"
 assert c["authorization_id"] == AUTH_ID
 assert c["authorization_git_blob_sha"] == AUTH_BLOB
+assert c["exact_confirmation"] == EXPECTED_TEXT
 assert c["confirmation"] == {
     "received": True,
-    "exact_confirmation": EXPECTED_TEXT,
     "maximum_usd": 5,
     "single_consumption_only": True,
     "rerun_authorized": False,
@@ -55,25 +55,18 @@ spec.loader.exec_module(module)
 
 runtime_auth = dict(a)
 runtime_auth["_self_blob"] = blob(A)
-runtime_confirmation = {
-    "authorization_id": c["authorization_id"],
-    "authorization_git_blob_sha": c["authorization_git_blob_sha"],
-    "confirmation": {
-        "received": c["confirmation"]["received"],
-        "maximum_usd": c["confirmation"]["maximum_usd"],
-        "single_consumption_only": c["confirmation"]["single_consumption_only"],
-        "rerun_authorized": c["confirmation"]["rerun_authorized"],
-    },
-}
+
+# Critical regression guard: pass the real confirmation contract itself,
+# not a normalized projection that could hide a schema mismatch.
 module.validate_runtime_contract(
     runtime_auth,
-    runtime_confirmation,
+    c,
     module.CONFIRM,
 )
 
 print("PASS_V11_HUMAN_CONFIRMATION")
 print("PASS_V11_HUMAN_CONFIRMATION_EXACT_AUTHORIZATION_BINDING")
-print("PASS_V11_HUMAN_CONFIRMATION_EXACT_RUNTIME_VALIDATOR")
+print("PASS_V11_HUMAN_CONFIRMATION_REAL_FILE_RUNTIME_VALIDATOR")
 print(f"authorization_git_blob_sha={AUTH_BLOB}")
 print(f"human_confirmation_git_blob_sha={blob(C)}")
 print("durable_consume=0")
