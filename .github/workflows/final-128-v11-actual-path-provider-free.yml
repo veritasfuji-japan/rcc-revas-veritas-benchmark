@@ -1,0 +1,24 @@
+name: Final 128 V11 Actual Path Provider-Free
+on:
+  pull_request:
+    paths:
+      - "scripts/final_128_real_provider_wrapper_v9.py"
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2_6.py"
+      - "scripts/final_128_v11_credential_boundary_audit_v1.py"
+      - ".github/workflows/final-128-v11-manual-dispatch-template.yml"
+      - ".github/workflows/final-128-v11-actual-path-provider-free.yml"
+permissions: {contents: read}
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Traverse shared V11 execution control flow to credential boundary
+        run: python scripts/final_128_real_provider_wrapper_v9.py --provider-free-preflight
+      - name: Audit shared provider-free and future real control-flow semantics
+        run: python scripts/final_128_v11_credential_boundary_audit_v1.py
