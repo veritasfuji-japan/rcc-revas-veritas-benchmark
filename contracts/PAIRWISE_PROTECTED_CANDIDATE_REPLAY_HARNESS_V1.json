@@ -1,6 +1,6 @@
 {
   "schema_version": "veritas.pairwise-protected-candidate-replay-harness.v1",
-  "status": "HARNESS_FROZEN_PENDING_OBSERVED_REPLAY_RESULT",
+  "status": "OBSERVED_REPLAY_RESULT_FROZEN",
   "rule_of_one": "PAIRWISE_PROTECTED_CANDIDATE_REPLAY_HARNESS_V1",
   "base_main_sha": "911f5ae0d8fc941b8c0e59331786b1fd643341bc",
   "source_control": {
@@ -88,6 +88,33 @@
       "production readiness"
     ]
   },
-  "observed_result": null,
-  "next_rule_of_one_if_passed": "CONTROLLED_GOVERNANCE_TREATMENT_DELTA_ANALYSIS_V1"
+  "observed_result": {
+    "discovery_run_id": 37600062157,
+    "discovery_job_id": 112721969849,
+    "discovery_head_sha": "1fefb8adaf74abc7e2919a4aedb0ccb83a433145",
+    "artifact_id": 11472665588,
+    "artifact_name": "pairwise-protected-candidate-replay-v1-37600062157",
+    "artifact_zip_sha256": "f57ac927b0d298bafb006318cf58c41c687d854b9f505a15807c9a0d0ce04de4",
+    "result_json_sha256": "42d06e1498a34de8796f6f92054b6225e5f7803eeb64bb8b96e936be47c11dcd",
+    "result_log_sha256": "3f4e3287454238fc5a1336ed42025c9a1132afd9c0aeb202dbb21d8bab58c4cd",
+    "mutation_relevant_replay_count": 81,
+    "source_selection": {
+      "A": 78,
+      "B": 3
+    },
+    "disposition_pairs": {
+      "COMMITTED->COMMITTED": 12,
+      "COMMITTED->VERITAS_BLOCKED": 69
+    },
+    "infrastructure_errors": 0,
+    "rcc_upstream_disposition_divergences": 0,
+    "provider_execution": 0,
+    "database_access": 0,
+    "scorer_or_gold_access": 0
+  },
+  "next_rule_of_one_if_passed": "CONTROLLED_GOVERNANCE_TREATMENT_DELTA_ANALYSIS_V1",
+  "observed_interpretation": {
+    "candidate_level_treatment_delta": "For 69/81 frozen first-protected proposals, RCC-only committed the exact candidate while RCC+VERITAS blocked the exact same candidate from the exact same immediate pre-state. For 12/81, both committed.",
+    "caution": "This is a candidate-level governance treatment result, not an end-to-end utility result. It does not show that all 69 blocks are false positives; authority validity must be analyzed separately without using scorer/gold truth to create authority."
+  }
 }
