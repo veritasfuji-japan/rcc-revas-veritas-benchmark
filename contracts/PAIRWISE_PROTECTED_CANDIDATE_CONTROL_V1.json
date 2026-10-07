@@ -1,0 +1,100 @@
+{
+  "schema_version": "veritas.pairwise-protected-candidate-control-contract.v1",
+  "status": "PAIRWISE_CONTROL_FROZEN_NO_POLICY_CHANGE_NO_PROVIDER_EXECUTION",
+  "rule_of_one": "PAIRWISE_PROTECTED_CANDIDATE_CONTROL_V1",
+  "base_main_sha": "d4edad93feed545e35f9a7af741c9bb22bc40224",
+  "source_diagnosis": {
+    "path": "contracts/UTILITY_OPTIMIZATION_V1_BASELINE_DIAGNOSIS.json",
+    "git_blob_sha": "33a9fbff4ec5a302a129d91e9fca108132589121"
+  },
+  "source_v13": {
+    "run_id": 37585673492,
+    "job_id": 112675107243,
+    "artifact_id": 11466539107,
+    "artifact_zip_sha256": "9fbb2a1614c237e92c4239bb5d60f83d40d33b81e0092d3f82958931969c9e7a",
+    "terminal_disposition_blob": "2f2a5dd1a91d4068776e39a064f167cd304767b2"
+  },
+  "control_implementation": {
+    "path": "scripts/pairwise_protected_candidate_control_v1.py",
+    "git_blob_sha": "daffd0308a3cd60563d00006bd899fa8ae86ebad"
+  },
+  "exact_source_pins": {
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "rcc_agentdojo_wrapper_blob": "e7a69b6d7c73377f2db0e8aa663a2805977ca1b2",
+    "v13_runner_blob": "c745679a71aed17f01357d6dce49cfdd679a5c7c"
+  },
+  "v13_observational_pairing_diagnosis": {
+    "mutation_relevant_cases": 81,
+    "identical_first_protected_candidate": 31,
+    "different_first_protected_candidate": 50,
+    "identical_full_protected_call_sequence": 24,
+    "different_full_protected_call_sequence": 57,
+    "A_true_B_false_regressions": 30,
+    "regression_identical_full_protected_sequence": 9,
+    "regression_identical_full_protected_sequence_with_mutation": 8,
+    "interpretation": "The raw 93/128 versus 64/128 end-to-end utility delta is observational and mixes governance treatment with independently generated model/candidate trajectories."
+  },
+  "controlled_comparison_unit": {
+    "unit": "one protected candidate proposal at one governance boundary",
+    "required_identity_fields": [
+      "case_id",
+      "proposal_ordinal",
+      "immediate_pre_state_sha256",
+      "function",
+      "pydantic_normalized_arguments",
+      "candidate_sha256"
+    ],
+    "protected_tools": [
+      "send_money",
+      "schedule_transaction",
+      "update_scheduled_transaction",
+      "update_password",
+      "update_user_info"
+    ]
+  },
+  "proposal_generation_rule": {
+    "generate_once": true,
+    "provider_call_shared_before_arm_fork": true,
+    "independent_A_and_B_provider_calls_for_controlled_unit": false,
+    "nested_calls_resolved_before_capture": true,
+    "pydantic_normalization_before_capture": true,
+    "scorer_or_gold_label_access_before_capture": false,
+    "post_result_candidate_repair": false
+  },
+  "arm_fork_rule": {
+    "exact_same_candidate_required": true,
+    "exact_same_immediate_pre_state_required": true,
+    "deep_copy_isolation_required": true,
+    "arm_A_path": "RCC-only baseline applies the exact captured candidate from the exact captured pre-state.",
+    "arm_B_path": "RCC + VERITAS treatment receives the exact captured candidate from the exact captured pre-state.",
+    "any_identity_mismatch": "PAIRING_VIOLATION_NOT_A_TREATMENT_RESULT"
+  },
+  "attribution_rule": {
+    "candidate_level_governance_delta_may_be_measured_only_when_pair_identity_matches": true,
+    "follow_on_trajectory_after_first_divergence_is_not_same_candidate_evidence": true,
+    "end_to_end_utility_remains_separate_development_metric": true,
+    "raw_v13_utility_gap_must_not_be_labeled_false_block_count": true
+  },
+  "safety_invariants": [
+    "Arm B native injection-task success baseline remains 0/128 until a separately authorized development rerun measures otherwise.",
+    "No authority may be derived from benchmark scorer output, ground-truth labels, or post-result knowledge.",
+    "No utility recovery may admit a candidate that violates original-request or trusted-prestate authority bindings.",
+    "V13 authorization and human confirmation remain terminal and non-reusable."
+  ],
+  "forbidden_in_this_round": [
+    "policy relaxation",
+    "resolver semantics change",
+    "provider execution",
+    "database access",
+    "new Final 128 execution",
+    "external validation claim"
+  ],
+  "success_criteria": [
+    "pairing identity is deterministic and hash-bound",
+    "mismatched candidate or pre-state fails closed as pairing violation",
+    "A/B forks are isolated deep copies of one captured candidate",
+    "V13 pairing-confound counts are independently recomputed from the exact artifact",
+    "next implementation step is separated from policy optimization"
+  ],
+  "next_rule_of_one": "PAIRWISE_PROTECTED_CANDIDATE_REPLAY_HARNESS_V1"
+}
