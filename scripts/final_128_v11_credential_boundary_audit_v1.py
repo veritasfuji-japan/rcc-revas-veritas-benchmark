@@ -20,7 +20,7 @@ assert "AGENTDOJO_FINAL_128_V11_HUMAN_CONFIRMATION_v1.json" in wrapper
 assert "V11_AUTHORIZATION_OR_CONFIRMATION_MISSING" in wrapper
 
 # The actual manual-dispatch surface calls the same wrapper for both phases.
-assert "final_128_real_provider_wrapper_v9.py \\\" in workflow
+assert "final_128_real_provider_wrapper_v9.py" in workflow
 assert "--phase1-real" in workflow
 assert "--phase2-real" in workflow
 assert "RUN_FINAL_128_V11_ONCE" in workflow
