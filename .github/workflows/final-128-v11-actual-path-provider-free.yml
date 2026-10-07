@@ -4,6 +4,8 @@ on:
     paths:
       - "scripts/final_128_real_provider_wrapper_v9.py"
       - "scripts/agentdojo_clean_ab_canonical_final_runner_v2_6.py"
+      - "scripts/final_128_v11_credential_boundary_audit_v1.py"
+      - ".github/workflows/final-128-v11-manual-dispatch-template.yml"
       - ".github/workflows/final-128-v11-actual-path-provider-free.yml"
 permissions: {contents: read}
 jobs:
@@ -18,3 +20,5 @@ jobs:
         with: {python-version: "3.11.16"}
       - name: Traverse shared V11 execution control flow to credential boundary
         run: python scripts/final_128_real_provider_wrapper_v9.py --provider-free-preflight
+      - name: Audit shared provider-free and future real control-flow semantics
+        run: python scripts/final_128_v11_credential_boundary_audit_v1.py
