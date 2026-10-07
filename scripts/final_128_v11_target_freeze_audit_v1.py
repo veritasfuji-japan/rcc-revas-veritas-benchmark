@@ -8,7 +8,7 @@ d = json.loads(F.read_text())
 
 assert d["status"] == "FROZEN_SOURCE_TARGET_PRE_AUTHORIZATION_WITH_BLOCKERS"
 assert d["authorization_ready"] is False
-assert d["frozen_from_main_sha"] == "74cb7ce323904440bd9e135df2570376a3130d17"
+assert d["frozen_from_main_sha"] == "cc7301a40da1e6965cceac8a298f1990a30eccd8"
 assert d["authorization_id"] == "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V11"
 
 paths = {
@@ -59,16 +59,22 @@ assert not Path("contracts/AGENTDOJO_FINAL_128_V11_HUMAN_CONFIRMATION_v1.json").
 wrapper = Path(paths["wrapper_v9"]).read_text()
 manual = Path(paths["manual_dispatch_workflow"]).read_text()
 
-# Explicitly preserve the two known blockers rather than silently overclaiming.
-assert 'a["frozen_target"]["wrapper_git_blob_sha"]' not in wrapper
-assert 'a["frozen_target"]["manual_dispatch_workflow_git_blob_sha"]' not in wrapper
+assert '"wrapper_git_blob_sha"' in wrapper
+assert '"manual_dispatch_workflow_git_blob_sha"' in wrapper
+assert "runtime_component_blobs" in wrapper
+assert "V11_RECEIPT_WRAPPER_BINDING_MISMATCH" in wrapper
+assert "V11_RECEIPT_MANUAL_DISPATCH_WORKFLOW_BINDING_MISMATCH" in wrapper
+assert d["closed_pre_authorization_controls"] == ["V11_RUNTIME_COMPONENT_SELF_BINDING"]
+
+# The remaining blocker is preserved explicitly rather than silently overclaiming.
 assert "actions/checkout@v4" in manual
 assert "actions/setup-python@v5" in manual
 assert "actions/upload-artifact@v4" in manual
 assert d["reproducibility_observations"]["mutable_major_action_refs_remain"] is True
-assert len(d["authorization_blockers"]) == 2
+assert len(d["authorization_blockers"]) == 1
+assert d["authorization_blockers"][0]["code"] == "V11_MUTABLE_GITHUB_ACTION_REFS_REMAIN"
 
 print("PASS_V11_EXACT_SOURCE_TARGET_FREEZE")
+print("PASS_V11_RUNTIME_COMPONENT_SELF_BINDING_SOURCE_CLOSURE")
 print("V11_AUTHORIZATION_READY=false")
-print("BLOCKER_V11_RUNTIME_COMPONENT_SELF_BINDING_NOT_CLOSED")
 print("BLOCKER_V11_MUTABLE_GITHUB_ACTION_REFS_REMAIN")
