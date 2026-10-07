@@ -1,0 +1,121 @@
+{
+  "schema_version": "veritas.task4-trusted-execution-date-runner-integration.v1",
+  "status": "PROSPECTIVE_CONTROLLED_NATIVE_RUNNER_INTEGRATION_PROVIDER_FREE",
+  "rule_of_one": "TASK4_TRUSTED_EXECUTION_DATE_RUNNER_INTEGRATION_V1",
+  "central_invariant": "Issue authenticated harness date before invoking one generator; capture the native-normalized first candidate once; retain rejected candidates in the common A/B population; preserve common RCC review before treatment and RCC-only A; require B's date profile after RCC, at native Bind constraints and final native dispatch without bypassing existing governance gates.",
+  "base_main_sha": "b9ea508e06ae35db28a00fd730d1f818ae9e118f",
+  "prior_round": {
+    "pr": 207,
+    "contract_blob": "faef166fc6f4c55c3e345e9b9b50e3ff240a164f",
+    "implementation_blob": "4eb8646b18cae7130c217fa3a04d05a3d71756d3",
+    "assumptions_and_bounded_date_policy_inherited": true
+  },
+  "source_blobs": {
+    "contracts/TASK4_TRUSTED_EXECUTION_DATE_PROFILE_V1.json": "faef166fc6f4c55c3e345e9b9b50e3ff240a164f",
+    "task4_trusted_execution_date_profile_v1.py": "4eb8646b18cae7130c217fa3a04d05a3d71756d3",
+    "agentdojo_constraint_resolver_v0_1.py": "edbf513e67efa8719de3a1193a5f3ba937afdf52",
+    "original_request_authority_lineage_v1.py": "f0d2017d9832d584123678568a1b7ceadcd04a80",
+    "scripts/pairwise_protected_candidate_control_v1_1.py": "be113ebc85a78a52af3c168f9256fce28d3eaf9b",
+    "scripts/agentdojo_clean_ab_canonical_final_runner_v2_8.py": "c745679a71aed17f01357d6dce49cfdd679a5c7c",
+    "scripts/pairwise_protected_candidate_replay_harness_v1.py": "da9bb510eee5253c3e04e625d182e767c346733c",
+    "scripts/final_128_v12_locked_agentdojo_requirements_v1.py": "4d414d26a33656edb4a674963e3df96d59e74391",
+    "task4_trusted_execution_date_runner_integration_v1.py": "7a4c6335f6bda0fdb3f4afb373c31de80d747670",
+    "tests/test_task4_trusted_execution_date_runner_integration_v1.py": "35b484da5947c4a867b63e822f02c8b371ead442"
+  },
+  "external_pins": {
+    "agentdojo": {
+      "repository": "ethz-spylab/agentdojo",
+      "commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+      "source_blobs": {
+        "pyproject.toml": "71930851807e5f0e23f084b652c0908f06a36138",
+        "uv.lock": "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3",
+        "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+        "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5"
+      }
+    },
+    "rcc": {
+      "repository": "effacermonexistence/rcc-revas-veritas-benchmark",
+      "commit": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+      "source_blobs": {
+        "external-eval/v0.3.9/src/rveval/integrations/agentdojo.py": "e7a69b6d7c73377f2db0e8aa663a2805977ca1b2",
+        "external-eval/v0.3.9/src/rveval/native_hook.py": "ea56cdd1be9c633fff5047ef2091c13d5c905102",
+        "external-eval/v0.3.9/src/rveval/models.py": "3fe4da0462c60184838f31b2e8dbcbb62b2f99d9"
+      }
+    },
+    "veritas": {
+      "repository": "veritasfuji-japan/veritas_os",
+      "commit": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+      "source_blobs": {
+        "veritas_os/benchmarks/agentdojo_banking_adapter.py": "c2c66b9186cf065132bc50a4b769874d04a78dc6",
+        "veritas_os/policy/bind_core/core.py": "0f64201e2599495ce4e3991348aa320995716ffc"
+      }
+    }
+  },
+  "integration_boundary": {
+    "scope": "Task4 immediate refund, pinned AgentDojo send_money simulator only; additive controlled-candidate runner, separate from frozen v2.8 Final128 CLI.",
+    "generation": "The callable receives the original request, detached pre-state and independently issued execution date, never a key, issuer or model/scorer-selected clock. Exactly one invocation per case/proposal; no automatic retry or candidate repair.",
+    "normalization": "Exact native argument shape, Pydantic normalization, RCC CandidateAction full shape, immutable common capture, Pairwise Protected Candidate Control V1.1 identity.",
+    "eligibility_refusal_population": "V1 profile stores a first candidate before checking its date/refund bindings. Only the two documented eligibility refusals are retained for A/B; context authentication, scope, freshness and structural failures abort capture. No candidate repair or exclusion based on B eligibility.",
+    "pairing_identity": "SHA256(control_identity_sha256, authenticated date_context_digest, candidate_sha256), additional to the unchanged V1.1 control identity; shared by both arms.",
+    "arm_a": "Native RCC-only review and dispatch with common candidate/pre-state integrity. B date eligibility, date expiry and refund predicates do not gate A.",
+    "arm_b": "Retained date/refund refusal yields zero native dispatch; eligible capture is reverified after RCC, in native Bind constraints and at the actual native effect sink.",
+    "date_gap_composition": "Only supported_profile/date_authority_present in the exact pre-existing Task4 resolver schema are fulfilled by a successfully verified V1 date context and exact candidate/pre-state. Recipient/amount checks remain unchanged; resolver schema drift fails closed.",
+    "native_governance_gates": [
+      "RCC review and adopted-candidate verification",
+      "independently verified benchmark Authority fixture",
+      "Task4 known, preregistered conditional mutation policy",
+      "candidate-bound ExecutionIntent",
+      "native Bind state-drift and runtime-risk checks",
+      "authority/constraint/risk recheck before adapter apply",
+      "date/candidate/live pre-state recheck at the native dispatch sink",
+      "exact one-record native ledger transition and postcondition receipt"
+    ],
+    "direct_callback_bypass": "Effect callback rejects outside an admitted apply scope; retained adapter.apply rejects outside active native Bind. One arm attempt per capture, one native sink attempt; no durable exactly-once claim.",
+    "native_bind_timestamps": "Existing Bind wall-clock timestamp semantics are retained; date-profile clock is a separate authenticated metadata source. Synthetic date-clock fixtures do not attest physical time.",
+    "trust_boundary": "Trusted Python harness owns generator selection, request/state provenance, session keys, registry, code and policy configuration. HMAC/labels/hashes cannot establish clock truth or user authenticity. No arbitrary trusted-Python compromise protection is claimed.",
+    "fault_probes": "Positive path uses actual pinned native RCC/Bind/AgentDojo implementations. Explicit negative fault probes replace only the boundary being attacked; they are development tests, not independent validation."
+  },
+  "offline_proof": {
+    "native_test_cases": 41,
+    "positive_same_candidate_pairs": 1,
+    "ineligible_same_candidate_pairs_retained": 6,
+    "expected_positive_native_dispatch_per_arm": 1,
+    "expected_ineligible_native_dispatch_a": 1,
+    "expected_ineligible_native_dispatch_b": 0,
+    "concurrent_arm_attempts": 16,
+    "concurrent_arm_committed": 1,
+    "concurrent_arm_rejected": 15,
+    "pytest_version": "9.1.1",
+    "pydantic_version": "2.11.10",
+    "clock_fixture": "Harness-owned 2031-07-08 UTC; independent of historical incoming date 2005-02-03 and observed/gold dates.",
+    "provider_clients_database_network_and_scorer_functions_blocked_during_tests": true,
+    "infrastructure_or_post_dispatch_integrity_failure_counted_as_safety_success": false
+  },
+  "claim_boundary": {
+    "actual_generator_callback_ordering_proven": true,
+    "real_provider_generation_ordering_proven": false,
+    "controlled_native_bind_and_final_dispatch_integration_proven": true,
+    "full_128_case_trajectory_runner_integrated": false,
+    "historical_8_task4_candidates_recovered": false,
+    "utility_recovery_proven": false,
+    "injection_success_remeasured": false,
+    "independent_external_validation": false,
+    "held_out_validation": false,
+    "production_authority_or_clock_attestation_proven": false
+  },
+  "historical_and_execution_boundary": {
+    "v13_authorization_reuse": 0,
+    "v13_human_confirmation_reuse": 0,
+    "v13_rerun": 0,
+    "frozen_final128_runner_changed": false,
+    "historical_candidates_or_results_rewritten": false,
+    "old_resolver_relaxed": false,
+    "safe_to_relax_existing_runner_now": 0,
+    "provider_execution": 0,
+    "database_access": 0,
+    "scorer_or_gold_derived_authority": 0,
+    "external_effect": 0,
+    "native_in_memory_simulator_mutations": true
+  },
+  "next_rule_of_one": "TASK4_PROSPECTIVE_CONTROLLED_TRAJECTORY_INTEGRATION_V1"
+}
