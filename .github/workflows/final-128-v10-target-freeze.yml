@@ -1,0 +1,17 @@
+name: Final 128 V10 Exact Target Freeze
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_V10_TARGET_FREEZE_v1.json"
+      - "scripts/final_128_v10_target_freeze_audit_v1.py"
+      - ".github/workflows/final-128-v10-target-freeze.yml"
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/final_128_v10_target_freeze_audit_v1.py
