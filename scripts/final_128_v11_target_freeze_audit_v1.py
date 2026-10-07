@@ -6,10 +6,11 @@ from pathlib import Path
 F = Path("contracts/AGENTDOJO_FINAL_128_V11_TARGET_FREEZE_v1.json")
 d = json.loads(F.read_text())
 
-assert d["status"] == "FROZEN_SOURCE_TARGET_PRE_AUTHORIZATION_WITH_BLOCKERS"
-assert d["authorization_ready"] is False
-assert d["frozen_from_main_sha"] == "cc7301a40da1e6965cceac8a298f1990a30eccd8"
+assert d["status"] == "FROZEN_SOURCE_TARGET_PRE_AUTHORIZATION_READY"
+assert d["authorization_ready"] is True
+assert d["frozen_from_main_sha"] == "434f2467f5342b589e4972f23ddf388b12246e92"
 assert d["authorization_id"] == "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V11"
+assert d["authorization_blockers"] == []
 
 paths = {
     "runner_v2_6": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_6.py",
@@ -52,29 +53,59 @@ assert d["execution_state"] == {
     "provider_api_calls": 0,
     "final_128_execution": 0,
 }
-
 assert not Path("contracts/AGENTDOJO_FINAL_128_EXECUTION_AUTHORIZATION_v11.json").exists()
 assert not Path("contracts/AGENTDOJO_FINAL_128_V11_HUMAN_CONFIRMATION_v1.json").exists()
 
 wrapper = Path(paths["wrapper_v9"]).read_text()
-manual = Path(paths["manual_dispatch_workflow"]).read_text()
-
 assert '"wrapper_git_blob_sha"' in wrapper
 assert '"manual_dispatch_workflow_git_blob_sha"' in wrapper
 assert "runtime_component_blobs" in wrapper
 assert "V11_RECEIPT_WRAPPER_BINDING_MISMATCH" in wrapper
 assert "V11_RECEIPT_MANUAL_DISPATCH_WORKFLOW_BINDING_MISMATCH" in wrapper
-assert d["closed_pre_authorization_controls"] == ["V11_RUNTIME_COMPONENT_SELF_BINDING"]
 
-# The remaining blocker is preserved explicitly rather than silently overclaiming.
-assert "actions/checkout@v4" in manual
-assert "actions/setup-python@v5" in manual
-assert "actions/upload-artifact@v4" in manual
-assert d["reproducibility_observations"]["mutable_major_action_refs_remain"] is True
-assert len(d["authorization_blockers"]) == 1
-assert d["authorization_blockers"][0]["code"] == "V11_MUTABLE_GITHUB_ACTION_REFS_REMAIN"
+CHECKOUT = "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+SETUP = "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"
+UPLOAD = "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+workflow_paths = [
+    paths["manual_dispatch_workflow"],
+    paths["actual_path_provider_free_workflow"],
+    paths["credential_boundary_provider_free_workflow"],
+    paths["corrected_chain_provider_free_workflow"],
+]
+for path in workflow_paths:
+    text = Path(path).read_text()
+    assert "actions/checkout@v4" not in text, path
+    assert "actions/setup-python@v5" not in text, path
+    assert "actions/upload-artifact@v4" not in text, path
+    assert CHECKOUT in text, path
+
+manual = Path(paths["manual_dispatch_workflow"]).read_text()
+actual = Path(paths["actual_path_provider_free_workflow"]).read_text()
+corrected = Path(paths["corrected_chain_provider_free_workflow"]).read_text()
+assert SETUP in manual
+assert SETUP in actual
+assert SETUP in corrected
+assert UPLOAD in manual
+
+assert d["reproducibility_observations"] == {
+    "actions_checkout_ref": CHECKOUT,
+    "actions_setup_python_ref": SETUP,
+    "actions_upload_artifact_ref": UPLOAD,
+    "mutable_major_action_refs_remain": False,
+}
+assert d["closed_pre_authorization_controls"] == [
+    "V11_RUNTIME_COMPONENT_SELF_BINDING",
+    "V11_IMMUTABLE_GITHUB_ACTION_REFS",
+]
 
 print("PASS_V11_EXACT_SOURCE_TARGET_FREEZE")
 print("PASS_V11_RUNTIME_COMPONENT_SELF_BINDING_SOURCE_CLOSURE")
-print("V11_AUTHORIZATION_READY=false")
-print("BLOCKER_V11_MUTABLE_GITHUB_ACTION_REFS_REMAIN")
+print("PASS_V11_IMMUTABLE_GITHUB_ACTION_REFS")
+print("V11_AUTHORIZATION_READY=true")
+print("authorization_blockers=0")
+print("authorization_issued=0")
+print("human_confirmation=0")
+print("database_write=0")
+print("provider_credential_access=0")
+print("provider_api_calls=0")
+print("final_128_execution=0")
