@@ -1,0 +1,44 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v11-terminal-disposition.v1",
+  "status": "CONSUMED_PHASE1_PHASE2_FAILED_PRE_PROVIDER_API_NO_FINAL_RESULT",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V11",
+  "authorization_reuse_prohibited": true,
+  "rerun_authorized": false,
+  "execution": {
+    "run_id": 37573318265,
+    "job_id": 112636597872,
+    "main_sha": "074809c5f814d80d59a44e9cd3fa84dfcc829c84",
+    "phase1": "SUCCESS_DURABLE_CONSUME_AND_RECEIPT",
+    "phase2": "FAILED_BEFORE_PROVIDER_CLIENT_CONSTRUCTION",
+    "failure": "ModuleNotFoundError: No module named 'anthropic'",
+    "final_128_result_available": false
+  },
+  "exact_blobs": {
+    "authorization": "f40f316eb40faa957454e6060682a49426295769",
+    "human_confirmation": "81151fb0e5dbde27524f1f1f02ddaab408686c41",
+    "runner_v2_6": "f30e09f27186ecb06df01099118f4e28c0a560fc",
+    "wrapper_v9": "7b9611265879cdb7938cdf7ce9e284b3ad921a2b",
+    "manual_dispatch_workflow": "c14e8e639ee6d24279b36c245b5bd13a7c7c49d2"
+  },
+  "durable_consumption": {
+    "row_count_after_run": 1,
+    "atomic_consumption_won": true,
+    "consumption_id": "labac:v1:sha256:881e864b51ef8e799ccc6ab88e2b7ef9ae3a04820db21cd8f191a2bb6da555fe",
+    "consumption_hash": "881e864b51ef8e799ccc6ab88e2b7ef9ae3a04820db21cd8f191a2bb6da555fe"
+  },
+  "receipt_evidence": {
+    "artifact_id": 11460953440,
+    "artifact_name": "agentdojo-clean-ab-final-v11-37573318265",
+    "artifact_zip_sha256": "d1f2abdd5e373d5e3a0ba0d80df86f2353fbd6ffb5c449126f759340fa5e0457",
+    "receipt_file_sha256": "27fd561c5e9cf6764b1a41a543387efab3b14d0b491e41657d5ece9b5e6c9b1e",
+    "receipt_canonical_sha256": "41804e6d69ba1c21c89a7d45a25421457ebf8549a79d7e1626995776c2635375",
+    "phase_marker": "V11_DURABLE_CONSUME_SUCCESS"
+  },
+  "provider_boundary": {
+    "credential_available_in_phase2_process": true,
+    "provider_client_constructed": false,
+    "provider_api_calls": 0,
+    "basis": "runner execute_all imports agentdojo.attacks.baseline_attacks before build_openai_client; traceback failed at that import"
+  },
+  "next_rule_of_one": "V12_RUNTIME_DEPENDENCY_IMPORT_CLOSURE_BEFORE_NEW_AUTHORIZATION"
+}
