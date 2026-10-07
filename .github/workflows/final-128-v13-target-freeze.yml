@@ -1,0 +1,85 @@
+name: Final 128 V13 Exact Runtime Freeze
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_V13_TARGET_FREEZE_v1.json"
+      - "scripts/final_128_v13_target_freeze_audit_v1.py"
+      - ".github/workflows/final-128-v13-target-freeze.yml"
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2_8.py"
+      - "scripts/final_128_real_provider_wrapper_v11.py"
+      - ".github/workflows/final-128-v13-manual-dispatch-template.yml"
+      - "scripts/final_128_v12_locked_agentdojo_requirements_v1.py"
+      - "scripts/final_128_v13_runtime_dependency_import_closure_v1.py"
+      - "scripts/final_128_v13_execution_entrypoint_import_path_closure_audit_v1.py"
+      - ".github/workflows/final-128-v13-execution-entrypoint-import-path-closure.yml"
+      - "scripts/final_128_v13_runtime_target_construction_audit_v1.py"
+      - ".github/workflows/final-128-v13-runtime-target-construction.yml"
+      - "contracts/AGENTDOJO_EXACT_MODEL_CONFIGURATION_v0.1.json"
+permissions: {contents: read}
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      COHERE_API_KEY: ""
+      GOOGLE_API_KEY: ""
+      GCP_PROJECT: ""
+      GCP_LOCATION: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.16"}
+
+      - name: Checkout exact external pins
+        run: |
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc fetch --depth=1 origin 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo hash-object pyproject.toml)" = "71930851807e5f0e23f084b652c0908f06a36138"
+          test "$(git -C _pins/agentdojo hash-object uv.lock)" = "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3"
+
+      - name: Install exact frozen V13 runtime
+        run: |
+          pip install --no-deps -e ./_pins/agentdojo
+          pip install --no-deps -e ./_pins/veritas
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py             --lock _pins/agentdojo/uv.lock             --output .v13_agentdojo_locked_direct.txt
+          pip install -r .v13_agentdojo_locked_direct.txt
+          python -c "from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore; print('PASS_V13_FREEZE_CONSUMPTION_STORE_IMPORT')"
+
+      - name: Re-run V13 runtime target construction audit
+        run: python scripts/final_128_v13_runtime_target_construction_audit_v1.py
+
+      - name: Re-prove V13 dependency import closure
+        run: python scripts/final_128_v13_runtime_dependency_import_closure_v1.py
+
+      - name: Re-traverse actual V13 runner entrypoint
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p results
+          python scripts/agentdojo_clean_ab_canonical_final_runner_v2_8.py             --entrypoint-import-preflight             --agentdojo-root _pins/agentdojo             --rcc-root _pins/rcc             --veritas-root _pins/veritas             | tee results/v13-freeze-entrypoint-preflight.json
+
+      - name: Re-traverse actual V13 shared flow to provider boundary
+        run: |
+          python scripts/final_128_real_provider_wrapper_v11.py             --provider-free-preflight             --confirmation RUN_FINAL_128_V13_ONCE             --receipt-path .v13_handoff/provider_free_v13_dispatch_receipt.json
+
+      - name: Verify exact V13 freeze and zero blockers
+        run: python scripts/final_128_v13_target_freeze_audit_v1.py
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: final-128-v13-exact-runtime-freeze-${{ github.run_id }}
+          path: |
+            .v13_agentdojo_locked_direct.txt
+            results/v13-runtime-target-construction.json
+            results/v13-runtime-dependency-import-closure.json
+            results/v13-freeze-entrypoint-preflight.json
+          if-no-files-found: error
