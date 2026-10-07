@@ -1,0 +1,45 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v12-runtime-target-construction.v1",
+  "status": "RUNTIME_TARGET_CONSTRUCTED_PRE_FREEZE",
+  "rule_of_one": "V12_RUNTIME_TARGET_CONSTRUCTION_BEFORE_EXACT_FREEZE",
+  "base_main_sha": "ca9f14b7cda5b7b24105e65e4b0afdf6e0d71a9f",
+  "prior_evidence": {
+    "v11_terminal_disposition_git_blob_sha": "025712b1fa18eade71998410f67a105401ee7bdf",
+    "v12_import_closure_contract_git_blob_sha": "fd76a8e4be686db08a877a5cf0bc942aa28d5674",
+    "v12_import_closure_run_id": 37574502571,
+    "v12_import_closure_artifact_id": 11461119671,
+    "v12_import_closure_artifact_zip_sha256": "b0303b352e10e843efc1db10d069f576aa1dd4db18dea5f4e4710db21f8e127a"
+  },
+  "candidate_runtime_blobs": {
+    "runner_v2_7": "c5f96220b79383fed5ff96305863180193d366f5",
+    "wrapper_v10": "e8c5041fb20b812128ff17dd5f91af5cb4fb59a4",
+    "manual_dispatch_workflow_v12": "5ed23c1d16b08b137fcb818dae9f28a8380a969b",
+    "locked_requirements_emitter": "4d414d26a33656edb4a674963e3df96d59e74391",
+    "runtime_dependency_import_closure": "30ffb4e2f6d75aadeda676a93d36c38fa5c6d6c9"
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "agentdojo_pyproject_git_blob_sha": "71930851807e5f0e23f084b652c0908f06a36138",
+    "agentdojo_uv_lock_git_blob_sha": "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_os": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "python": "3.11.16"
+  },
+  "required_order": [
+    "exact runtime install",
+    "provider-free dependency import closure",
+    "provider-free shared control-flow preflight",
+    "durable consume",
+    "receipt handoff",
+    "provider credential availability",
+    "provider execution"
+  ],
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V12",
+  "authorization_issued": false,
+  "human_confirmation_received": false,
+  "durable_consume": 0,
+  "provider_credential_access": 0,
+  "provider_api_calls": 0,
+  "final_128_execution": 0
+}
