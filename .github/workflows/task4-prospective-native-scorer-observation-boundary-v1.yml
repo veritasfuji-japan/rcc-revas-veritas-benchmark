@@ -1,0 +1,96 @@
+name: Task4 Prospective Native Scorer Observation Boundary V1
+on:
+  pull_request:
+    paths:
+      - "contracts/TASK4_PROSPECTIVE_NATIVE_SCORER_OBSERVATION_BOUNDARY_V1.json"
+      - "task4_prospective_native_scorer_observation_boundary_v1.py"
+      - "tests/test_task4_prospective_native_scorer_observation_boundary_v1.py"
+      - "scripts/task4_prospective_native_scorer_observation_boundary_audit_v1.py"
+      - ".github/workflows/task4-prospective-native-scorer-observation-boundary-v1.yml"
+      - "task4_frozen_provider_transport_date_context_binding_v1.py"
+      - "tests/test_task4_frozen_provider_transport_date_context_binding_v1.py"
+      - "scripts/task4_frozen_provider_transport_date_context_binding_audit_v1.py"
+      - "contracts/TASK4_FROZEN_PROVIDER_TRANSPORT_DATE_CONTEXT_BINDING_V1.json"
+      - "scripts/agentdojo_native_scorer_invocation_v0_1.py"
+      - "scripts/agentdojo_final_runner_integration_v0_1.py"
+      - "task4_prospective_controlled_trajectory_integration_v1.py"
+      - "tests/test_task4_prospective_controlled_trajectory_integration_v1.py"
+      - "scripts/task4_prospective_controlled_trajectory_audit_v1.py"
+      - "contracts/TASK4_PROSPECTIVE_CONTROLLED_TRAJECTORY_INTEGRATION_V1.json"
+      - "scripts/agentdojo_openai_frozen_adapter_v0_1.py"
+      - "task4_trusted_execution_date_profile_v1.py"
+      - "contracts/TASK4_TRUSTED_EXECUTION_DATE_PROFILE_V1.json"
+      - "agentdojo_constraint_resolver_v0_1.py"
+      - "original_request_authority_lineage_v1.py"
+      - "scripts/pairwise_protected_candidate_control_v1_1.py"
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2_8.py"
+      - "scripts/pairwise_protected_candidate_replay_harness_v1.py"
+      - "scripts/final_128_v12_locked_agentdojo_requirements_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - "contracts/TASK4_PROSPECTIVE_NATIVE_SCORER_OBSERVATION_BOUNDARY_V1.json"
+      - "task4_prospective_native_scorer_observation_boundary_v1.py"
+      - "tests/test_task4_prospective_native_scorer_observation_boundary_v1.py"
+      - "scripts/task4_prospective_native_scorer_observation_boundary_audit_v1.py"
+      - ".github/workflows/task4-prospective-native-scorer-observation-boundary-v1.yml"
+permissions:
+  contents: read
+jobs:
+  native-scorer-observation:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify immutable integration proof sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object contracts/TASK4_PROSPECTIVE_NATIVE_SCORER_OBSERVATION_BOUNDARY_V1.json)" = "6a12bb8158a3eb172e09e733f5510edd75eb7d6e"
+          test "$(git hash-object scripts/task4_prospective_native_scorer_observation_boundary_audit_v1.py)" = "7b37d12d186f2764cd7d6b2ff35ffc5b74160f25"
+          echo PASS_TASK4_DATE_RUNNER_LOCAL_SOURCE_PINS
+      - name: Checkout exact native runtime pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+      - name: Install pinned provider-free native proof runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install "pytest==9.1.1" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output /tmp/task4-date-runner-locked-direct.txt
+          pip install -r /tmp/task4-date-runner-locked-direct.txt
+      - name: Audit post-completion native scores and zero feedback
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          cp /tmp/task4-date-runner-locked-direct.txt results/task4-date-runner-locked-direct.txt
+          pip freeze > results/task4-date-runner-dependency-observation.txt
+          python scripts/task4_prospective_native_scorer_observation_boundary_audit_v1.py \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --output-dir results \
+            | tee results/task4-prospective-native-scorer-observation-boundary-v1.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: task4-prospective-native-scorer-observation-boundary-v1-${{ github.run_id }}
+          path: results/task4-*
+          if-no-files-found: error
