@@ -68,9 +68,9 @@ assert a["external_pins"] == f["external_pins"]
 
 assert c["authorization_id"] == AUTH_ID
 assert c["authorization_git_blob_sha"] == AUTH_BLOB
+assert c["exact_confirmation"] == EXACT_APPROVAL
 assert c["confirmation"] == {
     "received": True,
-    "exact_confirmation": EXACT_APPROVAL,
     "maximum_usd": 5,
     "single_consumption_only": True,
     "rerun_authorized": False,
