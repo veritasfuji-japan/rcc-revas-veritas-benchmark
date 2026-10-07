@@ -1,0 +1,33 @@
+name: Final 128 V11 Exact Source Target Freeze
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_V11_TARGET_FREEZE_v1.json"
+      - "scripts/final_128_v11_target_freeze_audit_v1.py"
+      - ".github/workflows/final-128-v11-target-freeze.yml"
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2_6.py"
+      - "scripts/final_128_real_provider_wrapper_v9.py"
+      - ".github/workflows/final-128-v11-manual-dispatch-template.yml"
+      - ".github/workflows/final-128-v11-actual-path-provider-free.yml"
+      - "scripts/final_128_v11_credential_boundary_audit_v1.py"
+      - "scripts/final_128_v11_credential_boundary_v1.py"
+      - ".github/workflows/final-128-v11-credential-boundary-provider-free.yml"
+      - ".github/workflows/final-128-v11-corrected-chain-provider-free.yml"
+      - "contracts/AGENTDOJO_EXACT_MODEL_CONFIGURATION_v0.1.json"
+permissions: {contents: read}
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.16"}
+      - name: Re-run shared provider-free V11 control flow
+        run: python scripts/final_128_real_provider_wrapper_v9.py --provider-free-preflight
+      - name: Re-run shared control-flow and credential-boundary semantics
+        run: python scripts/final_128_v11_credential_boundary_audit_v1.py
+      - name: Verify exact source target freeze and blockers
+        run: python scripts/final_128_v11_target_freeze_audit_v1.py
