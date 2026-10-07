@@ -1,0 +1,55 @@
+name: Final 128 V12 Runtime Dependency Import Closure
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_V12_RUNTIME_DEPENDENCY_IMPORT_CLOSURE_v1.json"
+      - "scripts/final_128_v12_locked_agentdojo_requirements_v1.py"
+      - "scripts/final_128_v12_runtime_dependency_import_closure_v1.py"
+      - ".github/workflows/final-128-v12-runtime-dependency-import-closure.yml"
+permissions: {contents: read}
+jobs:
+  import-closure:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      COHERE_API_KEY: ""
+      GOOGLE_API_KEY: ""
+      GCP_PROJECT: ""
+      GCP_LOCATION: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.16"}
+      - name: Checkout exact external pins
+        run: |
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo hash-object pyproject.toml)" = "71930851807e5f0e23f084b652c0908f06a36138"
+          test "$(git -C _pins/agentdojo hash-object uv.lock)" = "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3"
+      - name: Install preserved bounded runtime
+        run: |
+          pip install --no-deps -e ./_pins/agentdojo
+          pip install --no-deps -e ./_pins/veritas
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+      - name: Derive exact AgentDojo direct runtime dependencies from pinned lock
+        run: |
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output .v12_agentdojo_locked_direct.txt
+          cat .v12_agentdojo_locked_direct.txt
+      - name: Install exact locked AgentDojo direct runtime dependencies
+        run: pip install -r .v12_agentdojo_locked_direct.txt
+      - name: Prove provider-free import closure
+        run: python scripts/final_128_v12_runtime_dependency_import_closure_v1.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: final-128-v12-runtime-dependency-import-closure-${{ github.run_id }}
+          path: |
+            .v12_agentdojo_locked_direct.txt
+            results/v12-runtime-dependency-import-closure.json
+          if-no-files-found: error
