@@ -1,0 +1,77 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v11-target-freeze.v1",
+  "status": "FROZEN_SOURCE_TARGET_PRE_AUTHORIZATION_WITH_BLOCKERS",
+  "authorization_ready": false,
+  "frozen_from_main_sha": "74cb7ce323904440bd9e135df2570376a3130d17",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V11",
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_os": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "python": "3.11.16"
+  },
+  "frozen_blobs": {
+    "runner_v2_6": "f30e09f27186ecb06df01099118f4e28c0a560fc",
+    "wrapper_v9": "053cbed0152474f55a20915d686911a9b38d6ff5",
+    "manual_dispatch_workflow": "bf551d57c10de6e5fe107a462f10404b8fb8640a",
+    "actual_path_provider_free_workflow": "987f17a87d91d8187a7856c5add56f6fd55c9493",
+    "credential_boundary_semantic_audit": "917bfdfc64bd85c894ac155b7cb3abe2e568ea3b",
+    "credential_boundary_provider_free_helper": "2b32d7ec44b0d1bf4921a6d50bee5c3e633c31d4",
+    "credential_boundary_provider_free_workflow": "c7fe3e2bee748a95845a3016025dccf0831357cc",
+    "corrected_chain_provider_free_workflow": "2a20d194c8e4613f731e7656ecac6ec7d165695c",
+    "exact_model_configuration": "59a77c03f7e98a6d8a5fa9b78ba356cfc12ff92d"
+  },
+  "bounded_runtime": {
+    "openai": "1.109.1",
+    "pydantic": "2.11.10",
+    "idna": "3.15",
+    "httpx": "0.28.1",
+    "requests": "2.34.2",
+    "pyyaml": "6.0.3",
+    "psycopg": "3.2.9",
+    "psycopg_pool": "3.2.6",
+    "alembic": "1.18.4",
+    "cryptography": "50.0.0"
+  },
+  "execution_paths": {
+    "receipt_path": ".v11_handoff/v11_dispatch_receipt.json",
+    "output_dir": "results/agentdojo-clean-ab-final-v11",
+    "artifact_name_template": "agentdojo-clean-ab-final-v11-${github.run_id}"
+  },
+  "pre_authorization_evidence": {
+    "actual_path_provider_free_run": 37562486278,
+    "actual_path_provider_free_job": 112602669409,
+    "credential_boundary_provider_free_run": 37562486284,
+    "credential_boundary_provider_free_job": 112602669626,
+    "corrected_chain_provider_free_run": 37562486302
+  },
+  "execution_state": {
+    "authorization_issued": false,
+    "human_confirmation_received": false,
+    "durable_consume": 0,
+    "provider_credential_access": 0,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "reproducibility_observations": {
+    "actions_checkout_ref": "actions/checkout@v4",
+    "actions_checkout_observed_resolution": "11d5960a326750d5838078e36cf38b85af677262",
+    "actions_setup_python_ref": "actions/setup-python@v5",
+    "actions_setup_python_observed_resolution": "a26af69be951a213d495a4c3e4e4022e16d87065",
+    "actions_upload_artifact_ref": "actions/upload-artifact@v4",
+    "actions_upload_artifact_observed_resolution": "ea165f8d65b6e75b540449e92b4886f43607fa02",
+    "mutable_major_action_refs_remain": true
+  },
+  "authorization_blockers": [
+    {
+      "code": "V11_RUNTIME_COMPONENT_SELF_BINDING_NOT_CLOSED",
+      "detail": "The runtime validator pins runner v2.6 but does not yet require the authorization to bind the exact wrapper v9 and actual manual-dispatch workflow blobs."
+    },
+    {
+      "code": "V11_MUTABLE_GITHUB_ACTION_REFS_REMAIN",
+      "detail": "Frozen workflow source still references mutable GitHub Actions major tags; observed resolutions are recorded but not execution-enforced by commit SHA."
+    }
+  ],
+  "invariant": "ANY_CHANGE_TO_A_FROZEN_COMPONENT_REQUIRES_A_NEW_V11_TARGET_FREEZE; V11_AUTHORIZATION_ISSUANCE_IS_PROHIBITED_WHILE_AUTHORIZATION_READY_IS_FALSE"
+}
