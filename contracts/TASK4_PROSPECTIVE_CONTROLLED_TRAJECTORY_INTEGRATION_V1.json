@@ -1,0 +1,78 @@
+{
+  "schema_version": "veritas.task4-prospective-controlled-trajectory-integration.v1",
+  "rule_of_one": "TASK4_PROSPECTIVE_CONTROLLED_TRAJECTORY_INTEGRATION_V1",
+  "status": "BOUNDED_PROVIDER_FREE_NATIVE_TRAJECTORY_INTEGRATION",
+  "base_main_sha": "f1280351eddc8eca3be978b549e6c6788ecc79c4",
+  "central_invariant": "An independently issued date precedes the first generation query; common native RCC-governed read-only history precedes one immutable protected candidate; both arms receive that candidate/pre-state; actual native result and arm-local state feed terminal generation without another effect or retry.",
+  "source_blobs": {
+    "contracts/TASK4_TRUSTED_EXECUTION_DATE_RUNNER_INTEGRATION_V1.json": "523186c47e72dad4802b099cb60ab07c0f80c609",
+    "scripts/task4_trusted_execution_date_runner_integration_audit_v1.py": "6a298dd1f661af0b8604c9ecc0c1275e7106e6a7",
+    "task4_trusted_execution_date_runner_integration_v1.py": "7a4c6335f6bda0fdb3f4afb373c31de80d747670",
+    "tests/test_task4_trusted_execution_date_runner_integration_v1.py": "35b484da5947c4a867b63e822f02c8b371ead442",
+    "task4_prospective_controlled_trajectory_integration_v1.py": "ca52e9272575eacfe20364c517144f97e68c6571",
+    "tests/test_task4_prospective_controlled_trajectory_integration_v1.py": "e46ded3750f767fbfdaf13f3855e4c2dea269b3c"
+  },
+  "external_pins_inherited_from_pr208": true,
+  "agentdojo_pipeline_source_blobs": {
+    "src/agentdojo/agent_pipeline/basic_elements.py": "10bd59ba7de73de58478ff0ff7a1408253b501ec",
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489"
+  },
+  "trajectory_profile": {
+    "scope": "Exact Task4 request, pinned AgentDojo banking simulator, native AgentDojo-compatible generation query seam; not the frozen Final128 CLI.",
+    "date_issuance": "The unchanged #208 prepare method issues context before the generator wrapper starts. Its date becomes a trusted system metadata message before the first native-compatible generation query.",
+    "common_prefix": "Native SystemMessage/InitQuery, bounded generation queries and ToolsExecutor; six fixed read-only tools only, through pinned RCCOnlyExecutor and governed FunctionsRuntime. Every read must leave immediate pre-state unchanged.",
+    "protected_capture": "First send_money proposal ends the common prefix; unchanged #208 native normalization/capture retains both eligible and ineligible candidates. No scorer/gold access, repair or eligibility filtering.",
+    "native_dispatch": "Reuse the exact #208 _DateExecutor via pinned RCC governed FunctionsRuntime on each arm's detached pre-state, and reserve the same runner arm-attempt registry. A remains RCC-only; B keeps authenticated date, Authority, policy, drift, risk and final dispatch checks.",
+    "protected_tool_result": "Use the actual native run_function return tuple, actual GovernanceStop/date refusal and native tool_result_to_str to append a native ChatToolResultMessage. No result inferred from scores, expected outcomes or an artificial success string.",
+    "continuation": "One separate generation query per arm sees its own actual tool result and post-state; accepts terminal text only. Additional tool/effect requests fail closed and preserve any preceding effect as an explicit partial execution, never a safety success.",
+    "generation_runtime": "Advertises pinned native tools, but run_function rejects all execution. Detached environment/history are supplied; rewritten history, replacement runtime/environment and observed state/tool-map mutation are rejected.",
+    "batch_and_nested_calls": "Unsupported in this bounded single-tool message profile; reject before native execution.",
+    "query_limits": "At most eight common generation queries, then one terminal query per arm; no automatic retry, fallback or second refund.",
+    "date_ttl": "One issued context covers the state-preserving prefix; the V1 profile revalidates authentication/freshness at capture and B dispatch. Expiry aborts capture or refuses B; it never permits repairing the candidate.",
+    "pairing_evidence": "Same common history hash, proposal ordinal, immediate pre-state, normalized candidate hash and authenticated-context/control pairing identity; identical protected RCC review before B treatment.",
+    "measurement_boundary": "Candidate-level treatment evidence is the fixed protected candidate. Independent continuation queries can vary and are explicitly excluded from a candidate-only treatment claim. No utility/security measurement is produced here."
+  },
+  "trust_assumptions": [
+    "Inherit #207/#208 trusted harness key/clock ownership, original request and structured state provenance, code/policy integrity and pinned native simulator scope.",
+    "The supplied generation element is trusted Python transport code; model/tool contents cannot access issuer/session keys/registry or execute arbitrary Python. No arbitrary callback-code compromise protection is claimed.",
+    "Fixture generation is scripted, provider-free development evidence, not independent external or held-out validation and not physical-time attestation."
+  ],
+  "offline_proof": {
+    "trajectory_tests": 23,
+    "prior_native_boundary_tests": 41,
+    "positive_same_candidate_trajectories": 1,
+    "ineligible_same_candidate_trajectories_retained": 5,
+    "positive_common_generation_queries": 3,
+    "positive_continuation_queries": 2,
+    "positive_native_read_calls": 2,
+    "positive_native_refund_per_arm": 1,
+    "ineligible_native_refund_a": 1,
+    "ineligible_native_refund_b": 0,
+    "pytest_version": "9.1.1",
+    "provider_clients_network_database_and_scorer_guards_inherited": true
+  },
+  "claim_boundary": {
+    "bounded_native_task4_trajectory_connected": true,
+    "real_provider_transport_exercised": false,
+    "all_agentdojo_trajectories_supported": false,
+    "full_final128_cli_changed": false,
+    "utility_recovery_proven": false,
+    "injection_success_remeasured": false,
+    "historical_8_task4_candidates_recovered": false,
+    "external_or_held_out_validation": false,
+    "production_readiness_or_durable_exactly_once_proven": false,
+    "safe_to_relax_existing_runner_now": 0
+  },
+  "execution_boundary": {
+    "provider_execution": 0,
+    "database_access_in_this_dedicated_proof": 0,
+    "scorer_or_gold_derived_authority": 0,
+    "candidate_repair": 0,
+    "external_effect": 0,
+    "native_in_memory_simulator_effects": true,
+    "v13_rerun_authorization_or_confirmation_reuse": 0,
+    "frozen_resolver_runner_and_prior_contracts_changed": false
+  },
+  "next_rule_of_one": "TASK4_FROZEN_PROVIDER_TRANSPORT_DATE_CONTEXT_BINDING_V1"
+}
