@@ -2,9 +2,9 @@
   "schema_version": "veritas.agentdojo-final-128-v11-human-confirmation.v1",
   "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V11",
   "authorization_git_blob_sha": "f40f316eb40faa957454e6060682a49426295769",
+  "exact_confirmation": "最大5米ドルのOpenAI API利用を伴うCanonical Final 128を、V11を1回だけconsumeして実行することを承認します",
   "confirmation": {
     "received": true,
-    "exact_confirmation": "最大5米ドルのOpenAI API利用を伴うCanonical Final 128を、V11を1回だけconsumeして実行することを承認します",
     "maximum_usd": 5,
     "single_consumption_only": true,
     "rerun_authorized": false
