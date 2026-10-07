@@ -36,7 +36,14 @@
     "raw_protected_call_sequence_equal": 71,
     "raw_protected_call_sequence_different": 57,
     "regression_raw_sequence_equal": 9,
-    "regression_raw_sequence_different": 21
+    "regression_raw_sequence_different": 21,
+    "mutation_relevant_cases": 81,
+    "mutation_relevant_first_protected_candidate_equal": 31,
+    "mutation_relevant_first_protected_candidate_different": 50,
+    "mutation_relevant_full_protected_sequence_equal": 24,
+    "mutation_relevant_full_protected_sequence_different": 57,
+    "regression_same_protected_sequence_with_mutation": 8,
+    "regression_same_protected_sequence_read_only": 1
   },
   "regression_classification": {
     "MODEL_OR_TRAJECTORY_VARIANCE": {
@@ -112,10 +119,27 @@
     "raw_target_utility_at_least": 93
   },
   "arithmetic_observation": {
-    "unresolved_regressions_requiring_new_proof": 17,
-    "current_B_utility_plus_all_17_if_every_one_became_success": 81,
-    "additional_successes_still_needed_to_reach_93": 12,
-    "interpretation": "Even perfect recovery of the currently identified unresolved A>B regression candidates would not by itself reach 93/128; candidate-generation/trajectory quality or additional authority-valid successes must also improve."
+    "raw_gap_to_A_baseline": 29,
+    "model_or_trajectory_variance_cases": 3,
+    "authority_protective_block_cases": 10,
+    "unresolved_send_money_parameter_authority_cases": 10,
+    "unresolved_conditional_predicate_cases": 7,
+    "interpretation": "The 30 A>B regressions are heterogeneous. Raw utility parity cannot be obtained safely by treating all 30 as false blocks; candidate-generation quality, pairing control, and separately proven authority semantics must be improved."
   },
-  "next_rule_of_one": "TASK14_DETERMINISTIC_SUSPICIOUSNESS_PREDICATE_V1"
+  "next_rule_of_one": "PAIRWISE_PROTECTED_CANDIDATE_CONTROL_V1",
+  "measurement_diagnosis": {
+    "conclusion": "RAW_A_VS_B_UTILITY_DELTA_IS_NOT_A_PURE_VERITAS_FALSE_BLOCK_MEASURE",
+    "basis": [
+      "Arm A and Arm B perform separate provider/model calls for each case.",
+      "Only 24/81 mutation-relevant cases have an identical full protected-call sequence across arms.",
+      "Only 9/30 A-utility-true/B-utility-false regressions have an identical protected-call sequence; one of those nine is a read-only case with no protected mutation.",
+      "Therefore policy relaxation based directly on 93/128 versus 64/128 would mix governance effects with model/candidate trajectory variance."
+    ],
+    "required_before_optimization_scoring": [
+      "freeze a paired protected-candidate comparison rule",
+      "separate proposal-generation variance from governance disposition variance",
+      "preserve exact pre-state and candidate identity at the governance boundary",
+      "do not use scorer/gold labels to construct or repair candidates"
+    ]
+  }
 }
