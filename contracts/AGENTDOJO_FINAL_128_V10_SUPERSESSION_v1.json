@@ -1,0 +1,11 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v10-supersession.v1",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V10",
+  "status": "SUPERSEDED_UNCONSUMED",
+  "superseded_by": "V11",
+  "reason": "Runtime authorization schema mismatch detected before dispatch.",
+  "v10_authorization_blob": "67456b53e0016e82bdf06a3b6bd76fd1c60e316d",
+  "v10_confirmation_blob": "a5d3b982cf5776bd4329875bd6c586ecdd6e851d",
+  "real_dispatch_performed": false,
+  "reuse_permitted": false
+}
