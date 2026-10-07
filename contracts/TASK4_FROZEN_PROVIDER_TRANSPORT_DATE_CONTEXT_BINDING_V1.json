@@ -1,0 +1,63 @@
+{
+  "base_main": "360815e1e9de7316a59eab31a6ca4b82ea8f3ef1",
+  "bounds": {
+    "SDK_retry_configuration": "not proven for a real injected SDK client; no SDK client constructed",
+    "batch_or_nested_or_extra_effect": "fail closed under unchanged trajectory",
+    "common_queries_max": 8,
+    "continuation_queries_per_arm": 1,
+    "failed_transport_retry": "prohibited",
+    "protected_candidates": 1
+  },
+  "central_invariant": "Owned pre-generation date metadata reaches the frozen request unchanged; the returned native proposal is captured without repair and each continuation request carries its own actual result.",
+  "claims": {
+    "held_out_validation": false,
+    "historical_task4_recovery_proven": false,
+    "injection_success_remeasured": false,
+    "production_readiness": false,
+    "provider_free_native_codec_transport_connected": true,
+    "real_provider_run": false,
+    "safe_to_relax_existing_runner_now": 0,
+    "utility_recovery_proven": false,
+    "v13_reuse": 0
+  },
+  "inherited_runtime_pins": "Reproduce unchanged #209 audit, including all #208 and upstream source pins and native proof.",
+  "native_codec_source": {
+    "blob": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "path": "src/agentdojo/agent_pipeline/llms/openai_llm.py"
+  },
+  "next_rule_of_one": "TASK4_PROSPECTIVE_NATIVE_SCORER_OBSERVATION_BOUNDARY_V1",
+  "next_scope": "Observe native task/scorer results after authority decisions in isolated development fixtures; never derive authority or repair candidates from scoring; no real API run.",
+  "offline_proof": {
+    "positive_paired_trajectories": 1,
+    "prior_native_boundary_tests": 41,
+    "prior_trajectory_tests": 23,
+    "recorded_requests_positive": 5,
+    "refused_paired_trajectories": 3,
+    "transport_tests": 13
+  },
+  "rule_of_one": "TASK4_FROZEN_PROVIDER_TRANSPORT_DATE_CONTEXT_BINDING_V1",
+  "schema_version": "veritas.task4-frozen-provider-transport-date-context-binding.v1",
+  "source_blobs": {
+    "contracts/TASK4_PROSPECTIVE_CONTROLLED_TRAJECTORY_INTEGRATION_V1.json": "802965bff0d9aea6bfbcecc459cb05ea96b5a832",
+    "scripts/agentdojo_openai_frozen_adapter_v0_1.py": "53a79d9a3f4a55c24ebb4a51f2edbd6542b81105",
+    "scripts/task4_prospective_controlled_trajectory_audit_v1.py": "781c81ee980afa5c350909980088418765fa5d68",
+    "task4_frozen_provider_transport_date_context_binding_v1.py": "acc656ac485b325f228671a39ce78862f81fb670",
+    "tests/test_task4_frozen_provider_transport_date_context_binding_v1.py": "8da27972d62025ace29b1435154a10dbf3e6fb98"
+  },
+  "transport": {
+    "adapter_attempts": 1,
+    "client_constructed": false,
+    "client_injected": "Recording fake only in this proof",
+    "credentials_accessed": false,
+    "model": "gpt-4.1-mini-2025-04-14",
+    "native_codecs": [
+      "_message_to_openai",
+      "_function_to_openai",
+      "_openai_to_assistant_message"
+    ],
+    "native_system_wire_role": "developer",
+    "retrying_native_request_helper_used": false,
+    "temperature": 0.0
+  },
+  "trusted_boundary": "The unchanged #209 trajectory owns request/history and issues date before first generation query. This seam preserves metadata, not authenticates date authority independently. Unchanged #208 runner verifies signed owned context at candidate capture and B execution. Arbitrary Python/client compromise is outside the bounded proof."
+}
