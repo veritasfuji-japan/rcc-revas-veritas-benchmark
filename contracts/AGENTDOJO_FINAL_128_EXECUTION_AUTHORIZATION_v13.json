@@ -1,0 +1,45 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-execution-authorization.v13",
+  "issuance_base_main_sha": "839a14cfc2ddd676f632fa2a7def984797be8166",
+  "freeze_contract": {
+    "path": "contracts/AGENTDOJO_FINAL_128_V13_TARGET_FREEZE_v1.json",
+    "git_blob_sha": "331c3b4ea26d19e3d4926b22ff93f6f581c8ff84",
+    "authorization_ready": true,
+    "authorization_blockers": 0
+  },
+  "authorization": {
+    "id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V13",
+    "issued": true,
+    "single_use": true,
+    "consumed": false,
+    "rerun_authorized": false
+  },
+  "dispatch": {
+    "provider_dispatch_authorized": true,
+    "manual_dispatch_authorized": true
+  },
+  "cost_boundary": {
+    "maximum_usd": 5,
+    "currency": "USD"
+  },
+  "frozen_target": {
+    "runner_git_blob_sha": "c745679a71aed17f01357d6dce49cfdd679a5c7c",
+    "wrapper_git_blob_sha": "43a68f5f06f887bc8915518d5c054008ac0a6e26",
+    "manual_dispatch_workflow_git_blob_sha": "b8a3dc7529efb0122a84f576de782fd9124d6d5d"
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "agentdojo_pyproject_git_blob_sha": "71930851807e5f0e23f084b652c0908f06a36138",
+    "agentdojo_uv_lock_git_blob_sha": "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_os": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "python": "3.11.16"
+  },
+  "human_confirmation": {
+    "required": true,
+    "received": false,
+    "contract_path": "contracts/AGENTDOJO_FINAL_128_V13_HUMAN_CONFIRMATION_v1.json"
+  },
+  "note": "Issuance alone does not permit execution. Fresh V13 human confirmation bound to this exact authorization blob is required before durable consume or provider access."
+}
