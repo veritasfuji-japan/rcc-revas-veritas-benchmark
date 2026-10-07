@@ -1,0 +1,25 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-execution-authorization.v10",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V10",
+  "issued": true,
+  "single_use": true,
+  "consumed": false,
+  "rerun_authorized": false,
+  "provider_dispatch_authorized": true,
+  "manual_dispatch_authorized": true,
+  "maximum_usd": 5,
+  "human_confirmation_required": true,
+  "human_confirmation_received": false,
+  "explicit_human_confirmation_received": false,
+  "cost_confirmation_received": false,
+  "frozen_target": {
+    "freeze_contract_path": "contracts/AGENTDOJO_FINAL_128_V10_TARGET_FREEZE_v1.json",
+    "freeze_contract_git_blob_sha": "5feb1cb77cdeddcb7da56555112606645dc2d540",
+    "frozen_main_sha": "454fc4cd32f8833785569518e5ebf8ed938569aa",
+    "runner_git_blob_sha": "da86e5cb4ed44a1fb4cf991eade9cfc67ba92806",
+    "wrapper_git_blob_sha": "18a48037f0e19a4e97d4e3d072f16b1dddb27f26",
+    "manual_dispatch_workflow_git_blob_sha": "a9b7125197379be1e55d9dccae275ed80577f315"
+  },
+  "model": "gpt-4.1-mini-2025-04-14",
+  "note": "Issuance alone does not authorize execution. Exact V10 human confirmation remains required before any consume or provider access."
+}
