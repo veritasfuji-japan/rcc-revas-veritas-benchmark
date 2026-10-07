@@ -1,0 +1,86 @@
+name: Final 128 V12 Manual Dispatch Template
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Exact one-time V12 confirmation
+        required: true
+        type: string
+permissions: {contents: read}
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.16"}
+      - name: Require exact V12 confirmation
+        env:
+          CONFIRMATION: "${{ inputs.confirmation }}"
+        run: test "$CONFIRMATION" = "RUN_FINAL_128_V12_ONCE"
+
+      - name: Checkout exact external pins
+        run: |
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc fetch --depth=1 origin 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo hash-object pyproject.toml)" = "71930851807e5f0e23f084b652c0908f06a36138"
+          test "$(git -C _pins/agentdojo hash-object uv.lock)" = "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3"
+
+      - name: Install exact V12 runtime
+        run: |
+          pip install --no-deps -e ./_pins/agentdojo
+          pip install --no-deps -e ./_pins/veritas
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py             --lock _pins/agentdojo/uv.lock             --output .v12_agentdojo_locked_direct.txt
+          pip install -r .v12_agentdojo_locked_direct.txt
+          python -c "from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore; print('PASS_V12_CONSUMPTION_STORE_IMPORT')"
+
+      - name: Pre-consume runtime dependency import closure
+        env:
+          OPENAI_API_KEY: ""
+          ANTHROPIC_API_KEY: ""
+          COHERE_API_KEY: ""
+          GOOGLE_API_KEY: ""
+          GCP_PROJECT: ""
+          GCP_LOCATION: ""
+          VERITAS_DATABASE_URL: ""
+        run: python scripts/final_128_v12_runtime_dependency_import_closure_v1.py
+
+      - name: Pre-consume shared control-flow provider-boundary preflight
+        env:
+          OPENAI_API_KEY: ""
+          VERITAS_DATABASE_URL: ""
+        run: |
+          python scripts/final_128_real_provider_wrapper_v10.py             --provider-free-preflight             --confirmation RUN_FINAL_128_V12_ONCE             --receipt-path .v12_handoff/provider_free_v12_dispatch_receipt.json
+
+      - name: Phase 1 durable consume and receipt
+        env:
+          VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+          OPENAI_API_KEY: ""
+        run: |
+          python scripts/final_128_real_provider_wrapper_v10.py             --phase1-real             --confirmation RUN_FINAL_128_V12_ONCE             --receipt-path .v12_handoff/v12_dispatch_receipt.json
+
+      - name: Phase 2 receipt verification and provider execution
+        if: success()
+        env:
+          VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python scripts/final_128_real_provider_wrapper_v10.py             --phase2-real             --confirmation RUN_FINAL_128_V12_ONCE             --receipt-path .v12_handoff/v12_dispatch_receipt.json             --agentdojo-root _pins/agentdojo             --rcc-root _pins/rcc             --veritas-root _pins/veritas             --output-dir results/agentdojo-clean-ab-final-v12
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: agentdojo-clean-ab-final-v12-${{ github.run_id }}
+          path: |
+            results/agentdojo-clean-ab-final-v12
+            results/v12-runtime-dependency-import-closure.json
+            .v12_agentdojo_locked_direct.txt
+            .v12_handoff/v12_dispatch_receipt.json
+          if-no-files-found: warn
