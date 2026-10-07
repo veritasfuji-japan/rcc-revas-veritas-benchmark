@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -198,6 +199,7 @@ assert observed["regression_identical_full_protected_sequence_with_mutation"] ==
 spec = importlib.util.spec_from_file_location("pair_control", CONTROL)
 mod = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
+sys.modules[spec.name] = mod
 spec.loader.exec_module(mod)
 
 pre = "0" * 64
