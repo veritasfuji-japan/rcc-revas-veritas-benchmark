@@ -1,0 +1,65 @@
+name: Controlled Governance Treatment Delta Analysis V1
+on:
+  pull_request:
+    paths:
+      - "contracts/CONTROLLED_GOVERNANCE_TREATMENT_DELTA_ANALYSIS_V1.json"
+      - "scripts/controlled_governance_treatment_delta_analysis_audit_v1.py"
+      - ".github/workflows/controlled-governance-treatment-delta-analysis-v1.yml"
+permissions:
+  contents: read
+  actions: read
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      GH_TOKEN: ${{ github.token }}
+      REPLAY_ARTIFACT_ZIP: /tmp/pairwise-protected-candidate-replay-v1-37600425291.zip
+      VERITAS_ROOT: _pins/veritas
+      AGENTDOJO_ROOT: _pins/agentdojo
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+
+      - name: Verify local analysis source pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object contracts/CONTROLLED_GOVERNANCE_TREATMENT_DELTA_ANALYSIS_V1.json)" = "309976fa35aeec486aa20fdf4d05ffc631f10e8b"
+          test "$(git hash-object contracts/PAIRWISE_PROTECTED_CANDIDATE_REPLAY_HARNESS_V1.json)" = "3d19e8cb1b543b78d1584392bbfcd48e849d1787"
+          test "$(git hash-object agentdojo_constraint_resolver_v0_1.py)" = "edbf513e67efa8719de3a1193a5f3ba937afdf52"
+          echo PASS_CONTROLLED_DELTA_LOCAL_SOURCE_PINS
+
+      - name: Checkout exact authority and benchmark sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins
+          git clone https://github.com/veritasfuji-japan/veritas_os.git "$VERITAS_ROOT"
+          git -C "$VERITAS_ROOT" checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          git clone https://github.com/ethz-spylab/agentdojo.git "$AGENTDOJO_ROOT"
+          git -C "$AGENTDOJO_ROOT" checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+
+      - name: Download exact controlled replay artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/$GITHUB_REPOSITORY/actions/artifacts/11472402060/zip > "$REPLAY_ARTIFACT_ZIP"
+          test "$(sha256sum "$REPLAY_ARTIFACT_ZIP" | awk '{print $1}')" = "449443501266eea9aa83ab08f261740acf2296787483a80853469c6a02684b95"
+          echo PASS_CONTROLLED_DELTA_EXACT_REPLAY_ARTIFACT
+
+      - name: Audit controlled governance treatment delta classification
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python scripts/controlled_governance_treatment_delta_analysis_audit_v1.py             | tee results/controlled-governance-treatment-delta-analysis-v1.log
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: controlled-governance-treatment-delta-analysis-v1-${{ github.run_id }}
+          path: results/controlled-governance-treatment-delta-analysis-v1.log
+          if-no-files-found: error
