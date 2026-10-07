@@ -1,0 +1,95 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v12-target-freeze.v1",
+  "status": "FROZEN_SOURCE_TARGET_PRE_AUTHORIZATION_READY",
+  "authorization_ready": true,
+  "frozen_from_main_sha": "21ff89f27e158c624f3d33ae58be983428929523",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V12",
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "agentdojo_pyproject_git_blob_sha": "71930851807e5f0e23f084b652c0908f06a36138",
+    "agentdojo_uv_lock_git_blob_sha": "bdf5de4904c18ccdd3cf06d5c1396c79bf5197e3",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_os": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "python": "3.11.16"
+  },
+  "frozen_blobs": {
+    "runner_v2_7": "c5f96220b79383fed5ff96305863180193d366f5",
+    "wrapper_v10": "e8c5041fb20b812128ff17dd5f91af5cb4fb59a4",
+    "manual_dispatch_workflow": "5ed23c1d16b08b137fcb818dae9f28a8380a969b",
+    "locked_requirements_emitter": "4d414d26a33656edb4a674963e3df96d59e74391",
+    "runtime_dependency_import_closure": "30ffb4e2f6d75aadeda676a93d36c38fa5c6d6c9",
+    "runtime_target_construction_audit": "ab7c89ecc39247f2a7abd1293d77b8c3e3417db0",
+    "runtime_target_construction_workflow": "3d2d77e86f294f8277ec25bafeec36c40777cb5f",
+    "exact_model_configuration": "59a77c03f7e98a6d8a5fa9b78ba356cfc12ff92d"
+  },
+  "evidence_blobs": {
+    "v11_terminal_disposition": "025712b1fa18eade71998410f67a105401ee7bdf",
+    "v12_runtime_dependency_import_closure_contract": "fd76a8e4be686db08a877a5cf0bc942aa28d5674",
+    "v12_runtime_target_construction_contract": "e1114fd72a680ef379ec4da766814e6674b64517"
+  },
+  "bounded_runtime": {
+    "openai": "1.109.1",
+    "pydantic": "2.11.10",
+    "idna": "3.15",
+    "httpx": "0.28.1",
+    "requests": "2.34.2",
+    "pyyaml": "6.0.3",
+    "psycopg": "3.2.9",
+    "psycopg_pool": "3.2.6",
+    "alembic": "1.18.4",
+    "cryptography": "50.0.0"
+  },
+  "agentdojo_locked_direct_runtime": {
+    "anthropic": "0.50.0",
+    "click": "8.1.8",
+    "cohere": "5.15.0",
+    "deepdiff": "8.6.1",
+    "docstring-parser": "0.16",
+    "google-genai": "1.15.0",
+    "langchain": "0.3.24",
+    "openai": "1.109.1",
+    "pydantic": "2.11.10",
+    "python-dotenv": "1.1.0",
+    "pyyaml": "6.0.3",
+    "rich": "14.0.0",
+    "tenacity": "9.1.2",
+    "typing-extensions": "4.13.2"
+  },
+  "execution_paths": {
+    "receipt_path": ".v12_handoff/v12_dispatch_receipt.json",
+    "output_dir": "results/agentdojo-clean-ab-final-v12",
+    "artifact_name_template": "agentdojo-clean-ab-final-v12-${github.run_id}"
+  },
+  "pre_authorization_evidence": {
+    "runtime_dependency_import_closure_run": 37574502571,
+    "runtime_dependency_import_closure_artifact_id": 11461119671,
+    "runtime_dependency_import_closure_artifact_zip_sha256": "b0303b352e10e843efc1db10d069f576aa1dd4db18dea5f4e4710db21f8e127a",
+    "runtime_target_construction_run": 37575320166,
+    "runtime_target_construction_job": 112642792991,
+    "runtime_target_construction_artifact_id": 11463110290,
+    "runtime_target_construction_artifact_zip_sha256": "94dd94f75d125e7d4af4c324e3225e829dac7c856484fa175963be52b5461697"
+  },
+  "execution_state": {
+    "authorization_issued": false,
+    "human_confirmation_received": false,
+    "durable_consume": 0,
+    "provider_credential_access": 0,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "reproducibility_observations": {
+    "actions_checkout_ref": "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+    "actions_setup_python_ref": "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+    "actions_upload_artifact_ref": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+    "mutable_major_action_refs_remain_in_v12_runtime": false
+  },
+  "closed_pre_authorization_controls": [
+    "V12_RUNTIME_DEPENDENCY_IMPORT_CLOSURE",
+    "V12_PRECONSUME_SHARED_CONTROL_FLOW_GATE",
+    "V12_RUNTIME_COMPONENT_SELF_BINDING",
+    "V12_IMMUTABLE_GITHUB_ACTION_REFS"
+  ],
+  "authorization_blockers": [],
+  "invariant": "ANY_CHANGE_TO_A_FROZEN_V12_COMPONENT_REQUIRES_A_NEW_V12_TARGET_FREEZE; V12_AUTHORIZATION_ISSUANCE_REQUIRES_AUTHORIZATION_READY_TRUE_AND_ZERO_AUTHORIZATION_BLOCKERS"
+}
