@@ -1,0 +1,34 @@
+name: Utility Optimization V1 Baseline
+on:
+  pull_request:
+    paths:
+      - "contracts/AGENTDOJO_FINAL_128_UTILITY_OPTIMIZATION_V1_BASELINE.json"
+      - "contracts/AGENTDOJO_FINAL_128_V13_UTILITY_REGRESSION_MANIFEST_v1.json"
+      - "scripts/final_128_utility_optimization_v1_baseline_audit.py"
+      - ".github/workflows/utility-optimization-v1-baseline.yml"
+permissions:
+  contents: read
+  actions: read
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      GH_TOKEN: ${{ github.token }}
+      V13_ARTIFACT_ZIP: /tmp/agentdojo-clean-ab-final-v13-37585673492.zip
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with: {python-version: "3.11.16"}
+
+      - name: Download exact V13 baseline artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/$GITHUB_REPOSITORY/actions/artifacts/11466539107/zip > "$V13_ARTIFACT_ZIP"
+          test "$(sha256sum "$V13_ARTIFACT_ZIP" | awk '{print $1}')" = "9fbb2a1614c237e92c4239bb5d60f83d40d33b81e0092d3f82958931969c9e7a"
+          echo PASS_UTILITY_BASELINE_EXACT_ARTIFACT
+
+      - name: Audit utility optimization V1 baseline
+        run: python scripts/final_128_utility_optimization_v1_baseline_audit.py
