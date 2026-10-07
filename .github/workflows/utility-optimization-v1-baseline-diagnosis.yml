@@ -4,6 +4,7 @@ on:
     paths:
       - "contracts/UTILITY_OPTIMIZATION_V1_BASELINE_DIAGNOSIS.json"
       - "scripts/utility_optimization_v1_baseline_diagnosis_audit.py"
+      - "scripts/utility_optimization_v1_baseline_diagnosis_audit_v2.py"
       - ".github/workflows/utility-optimization-v1-baseline-diagnosis.yml"
 permissions:
   contents: read
@@ -45,4 +46,4 @@ jobs:
           echo PASS_UTILITY_DIAGNOSIS_EXACT_V13_ARTIFACT
 
       - name: Audit utility optimization baseline diagnosis
-        run: python scripts/utility_optimization_v1_baseline_diagnosis_audit.py
+        run: python scripts/utility_optimization_v1_baseline_diagnosis_audit_v2.py
