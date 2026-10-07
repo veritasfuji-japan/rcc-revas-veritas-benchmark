@@ -1,0 +1,54 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v12-terminal-disposition.v1",
+  "status": "CONSUMED_PHASE1_PHASE2_FAILED_AFTER_PROVIDER_CLIENT_CONSTRUCTION_PRE_PROVIDER_API_NO_FINAL_RESULT",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V12",
+  "authorization_reuse_prohibited": true,
+  "rerun_authorized": false,
+  "execution": {
+    "run_id": 37578740418,
+    "job_id": 112653380230,
+    "main_sha": "ef49e6a66f2ff93036622ed2cae53b2986b6212d",
+    "phase1": "SUCCESS_DURABLE_CONSUME_AND_RECEIPT",
+    "phase2": "FAILED_AFTER_PROVIDER_CLIENT_CONSTRUCTION_PRE_PROVIDER_API",
+    "failure": "ModuleNotFoundError: No module named 'scripts'",
+    "failure_location": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_7.py:293 in build_pipeline import FrozenAgentDojoOpenAIPipeline",
+    "final_128_result_available": false
+  },
+  "exact_blobs": {
+    "authorization": "5011d3def553f88a132ccb068a55b5953a32aa23",
+    "human_confirmation": "bb050e4dda41fec98b2efb6942339d394fd2b40e",
+    "freeze": "54089a67b81161118cafbe16c228a5ddaf77a39f",
+    "runner_v2_7": "c5f96220b79383fed5ff96305863180193d366f5",
+    "wrapper_v10": "e8c5041fb20b812128ff17dd5f91af5cb4fb59a4",
+    "manual_dispatch_workflow": "5ed23c1d16b08b137fcb818dae9f28a8380a969b"
+  },
+  "durable_consumption": {
+    "row_count_after_run": 1,
+    "atomic_consumption_won": true,
+    "consumption_id": "labac:v1:sha256:3d44f0d7bf3cead6a0197060293839a8d08de90bb7c8ba608b7b3fa737a12242",
+    "consumption_hash": "3d44f0d7bf3cead6a0197060293839a8d08de90bb7c8ba608b7b3fa737a12242"
+  },
+  "receipt_evidence": {
+    "artifact_id": 11464055454,
+    "artifact_name": "agentdojo-clean-ab-final-v12-37578740418",
+    "artifact_zip_sha256": "a292e0b1dfddb2cd6783ee242f5dd051126e0a7fbbff58e3af69bdea01bd74a0",
+    "receipt_file_sha256": "c36f9722b562e6fee5b7ebc9c53b1b1cbef1a26c5c262bf8f53bf7da47904765",
+    "receipt_canonical_sha256": "f065dd3178ac000504a57b4f5f7f73f74c5cce848c230f25316130619732a1f2",
+    "phase_marker": "V12_DURABLE_CONSUME_SUCCESS"
+  },
+  "provider_boundary": {
+    "credential_available_in_phase2_process": true,
+    "credential_read_by_runner": true,
+    "provider_client_constructed": true,
+    "provider_api_calls": 0,
+    "case_loop_entered": false,
+    "basis": "Python evaluates build_openai_client(ledger) before entering build_pipeline(...). build_openai_client reads OPENAI_API_KEY and constructs openai.OpenAI. build_pipeline then fails importing scripts.agentdojo_final_runner_integration_v0_1 before the case loop. The runner's provider API call site exists only in BudgetedCompletions.create via base.create, which is not reached before this traceback."
+  },
+  "output_evidence": {
+    "execution_records_present": false,
+    "native_scores_present": false,
+    "summary_present": false,
+    "artifact_file_count": 2
+  },
+  "next_rule_of_one": "V13_EXECUTION_ENTRYPOINT_IMPORT_PATH_CLOSURE_BEFORE_NEW_AUTHORIZATION"
+}
