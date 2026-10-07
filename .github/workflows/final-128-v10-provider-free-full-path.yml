@@ -1,0 +1,41 @@
+name: Final 128 V10 Provider-Free Full-Path Preflight
+on:
+  pull_request:
+    paths:
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2_5.py"
+      - "scripts/final_128_real_provider_wrapper_v8.py"
+      - ".github/workflows/final-128-v10-manual-dispatch.yml"
+      - ".github/workflows/final-128-v10-provider-free-full-path.yml"
+permissions: {contents: read}
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11.16"}
+      - name: Checkout exact external pins
+        run: |
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc fetch --depth=1 origin 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+      - name: Install exact runtime
+        run: |
+          pip install --no-deps -e ./_pins/agentdojo
+          pip install --no-deps -e ./_pins/veritas
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python -c "import agentdojo, openai, pydantic, idna; print('PASS_V10_BOUNDED_RUNTIME_IMPORTS')"
+          python -c "from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore; print('PASS_V10_CONSUMPTION_STORE_IMPORT')"
+      - name: Traverse V10 execute validation to consume boundary
+        run: python scripts/final_128_real_provider_wrapper_v8.py --provider-free-preflight
+      - name: Verify Runner V10 imports and exact pins provider-free
+        run: |
+          python scripts/agentdojo_clean_ab_canonical_final_runner_v2_5.py --audit-only --agentdojo-root _pins/agentdojo --rcc-root _pins/rcc --veritas-root _pins/veritas
