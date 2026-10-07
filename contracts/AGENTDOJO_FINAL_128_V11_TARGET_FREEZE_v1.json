@@ -2,7 +2,7 @@
   "schema_version": "veritas.agentdojo-final-128-v11-target-freeze.v1",
   "status": "FROZEN_SOURCE_TARGET_PRE_AUTHORIZATION_WITH_BLOCKERS",
   "authorization_ready": false,
-  "frozen_from_main_sha": "74cb7ce323904440bd9e135df2570376a3130d17",
+  "frozen_from_main_sha": "cc7301a40da1e6965cceac8a298f1990a30eccd8",
   "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V11",
   "external_pins": {
     "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
@@ -13,7 +13,7 @@
   },
   "frozen_blobs": {
     "runner_v2_6": "f30e09f27186ecb06df01099118f4e28c0a560fc",
-    "wrapper_v9": "053cbed0152474f55a20915d686911a9b38d6ff5",
+    "wrapper_v9": "7b9611265879cdb7938cdf7ce9e284b3ad921a2b",
     "manual_dispatch_workflow": "bf551d57c10de6e5fe107a462f10404b8fb8640a",
     "actual_path_provider_free_workflow": "987f17a87d91d8187a7856c5add56f6fd55c9493",
     "credential_boundary_semantic_audit": "917bfdfc64bd85c894ac155b7cb3abe2e568ea3b",
@@ -63,11 +63,10 @@
     "actions_upload_artifact_observed_resolution": "ea165f8d65b6e75b540449e92b4886f43607fa02",
     "mutable_major_action_refs_remain": true
   },
+  "closed_pre_authorization_controls": [
+    "V11_RUNTIME_COMPONENT_SELF_BINDING"
+  ],
   "authorization_blockers": [
-    {
-      "code": "V11_RUNTIME_COMPONENT_SELF_BINDING_NOT_CLOSED",
-      "detail": "The runtime validator pins runner v2.6 but does not yet require the authorization to bind the exact wrapper v9 and actual manual-dispatch workflow blobs."
-    },
     {
       "code": "V11_MUTABLE_GITHUB_ACTION_REFS_REMAIN",
       "detail": "Frozen workflow source still references mutable GitHub Actions major tags; observed resolutions are recorded but not execution-enforced by commit SHA."
