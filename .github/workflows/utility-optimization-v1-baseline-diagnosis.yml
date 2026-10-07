@@ -1,0 +1,48 @@
+name: Utility Optimization V1 Baseline Diagnosis
+on:
+  pull_request:
+    paths:
+      - "contracts/UTILITY_OPTIMIZATION_V1_BASELINE_DIAGNOSIS.json"
+      - "scripts/utility_optimization_v1_baseline_diagnosis_audit.py"
+      - ".github/workflows/utility-optimization-v1-baseline-diagnosis.yml"
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnosis:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      GH_TOKEN: ${{ github.token }}
+      V13_ARTIFACT_ZIP: /tmp/agentdojo-clean-ab-final-v13-37585673492.zip
+      AGENTDOJO_ROOT: _pins/agentdojo
+      RCC_ROOT: _pins/rcc
+      VERITAS_ROOT: _pins/veritas
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+
+      - name: Checkout exact external pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone https://github.com/ethz-spylab/agentdojo.git "$AGENTDOJO_ROOT"
+          git -C "$AGENTDOJO_ROOT" checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git "$RCC_ROOT"
+          git -C "$RCC_ROOT" checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git "$VERITAS_ROOT"
+          git -C "$VERITAS_ROOT" checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+
+      - name: Download exact V13 result artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/$GITHUB_REPOSITORY/actions/artifacts/11466539107/zip > "$V13_ARTIFACT_ZIP"
+          test "$(sha256sum "$V13_ARTIFACT_ZIP" | awk '{print $1}')" = "9fbb2a1614c237e92c4239bb5d60f83d40d33b81e0092d3f82958931969c9e7a"
+          echo PASS_UTILITY_DIAGNOSIS_EXACT_V13_ARTIFACT
+
+      - name: Audit utility optimization baseline diagnosis
+        run: python scripts/utility_optimization_v1_baseline_diagnosis_audit.py
