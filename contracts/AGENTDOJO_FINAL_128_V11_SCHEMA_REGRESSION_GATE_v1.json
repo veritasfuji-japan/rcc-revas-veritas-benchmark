@@ -1,0 +1,29 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v11-schema-regression-gate.v1",
+  "status": "PRE_IMPLEMENTATION_FROZEN",
+  "predecessor": "V10",
+  "v10_failure": "Issued authorization used flat fields while frozen Wrapper v8 required nested authorization/dispatch/cost_boundary fields.",
+  "required_v11_authorization_shape": {
+    "authorization": {
+      "id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V11",
+      "issued": true,
+      "single_use": true,
+      "consumed": false,
+      "rerun_authorized": false
+    },
+    "dispatch": {
+      "provider_dispatch_authorized": true,
+      "manual_dispatch_authorized": true
+    },
+    "cost_boundary": {
+      "maximum_usd": 5
+    },
+    "frozen_target": {
+      "runner_git_blob_sha": "EXACT_NON_PLACEHOLDER"
+    }
+  },
+  "invariant": "NO_V11_AUTHORIZATION_ISSUANCE_UNTIL_THE_EXACT_RUNTIME_VALIDATOR_ACCEPTS_THE_CANONICAL_V11_AUTHORIZATION_SHAPE_PROVIDER_FREE",
+  "provider_credential_access": 0,
+  "provider_api_calls": 0,
+  "final_128_execution": 0
+}
