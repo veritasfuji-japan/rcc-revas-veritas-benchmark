@@ -1,0 +1,49 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-v10-target-freeze.v1",
+  "status": "FROZEN_PRE_AUTHORIZATION",
+  "frozen_from_main_sha": "b2fa8c28e4d0e319e52ff6619983bdadcaa7971b",
+  "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V10",
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_os": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "python": "3.11.16"
+  },
+  "frozen_blobs": {
+    "runner_v2_5": "da86e5cb4ed44a1fb4cf991eade9cfc67ba92806",
+    "wrapper_v8": "18a48037f0e19a4e97d4e3d072f16b1dddb27f26",
+    "manual_dispatch_workflow": "a9b7125197379be1e55d9dccae275ed80577f315",
+    "provider_free_full_path_workflow": "1bb926ba7471813ced797d24b9a03b8bbacfe43f",
+    "complete_chain_semantic_audit": "f53ff2e893ee9ad2b9f07e380b0a08bb2bebc31d",
+    "complete_chain_audit_workflow": "9bc5e2668fa68538fe11ddee3772b6caf48f0242"
+  },
+  "bounded_runtime": {
+    "installation_profile": "explicit bounded execution dependencies; AgentDojo and VERITAS editable installs use --no-deps",
+    "openai": "1.109.1",
+    "pydantic": "2.11.10",
+    "idna": "3.15",
+    "httpx": "0.28.1",
+    "requests": "2.34.2",
+    "pyyaml": "6.0.3",
+    "psycopg": "3.2.9",
+    "psycopg_pool": "3.2.6",
+    "alembic": "1.18.4",
+    "cryptography": "50.0.0"
+  },
+  "pre_authorization_evidence": {
+    "provider_free_run": 37550979484,
+    "provider_free_job": 112566117653,
+    "semantic_audit_run": 37550979457,
+    "semantic_audit_job": 112566117591
+  },
+  "execution_state": {
+    "authorization_issued": false,
+    "human_confirmation_received": false,
+    "durable_consume": 0,
+    "provider_credential_access": 0,
+    "provider_api_calls": 0,
+    "final_128_execution": 0
+  },
+  "invariant": "ANY_CHANGE_TO_A_FROZEN_EFFECT_BEARING_COMPONENT_REQUIRES_A_NEW_TARGET_FREEZE_BEFORE_V10_AUTHORIZATION"
+}
