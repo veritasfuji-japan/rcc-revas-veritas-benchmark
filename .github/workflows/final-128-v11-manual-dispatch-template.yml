@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: Exact V11 confirmation
+        description: Exact one-time V11 confirmation
         required: true
         type: string
 permissions: {contents: read}
@@ -14,12 +14,55 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.11.16"}
-      - name: V11 shared real-dispatch entrypoint
+      - name: Require exact V11 confirmation
         env:
-          # Intentionally blank before authorization/freeze. Future enabling must
-          # preserve the consume/provider credential separation proved separately.
-          OPENAI_API_KEY: ""
-          VERITAS_DATABASE_URL: ""
-          V11_CONFIRMATION: ${{ inputs.confirmation }}
+          CONFIRMATION: "${{ inputs.confirmation }}"
+        run: test "$CONFIRMATION" = "RUN_FINAL_128_V11_ONCE"
+      - name: Checkout exact external pins
         run: |
-          python scripts/final_128_real_provider_wrapper_v9.py --real-dispatch
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc fetch --depth=1 origin 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+      - name: Install exact runtime
+        run: |
+          pip install --no-deps -e ./_pins/agentdojo
+          pip install --no-deps -e ./_pins/veritas
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.2.6" "alembic==1.18.4" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python -c "import agentdojo, openai, pydantic, idna; print('PASS_V11_BOUNDED_RUNTIME_IMPORTS')"
+          python -c "from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore; print('PASS_V11_CONSUMPTION_STORE_IMPORT')"
+      - name: Phase 1 durable consume and receipt
+        env:
+          VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+          OPENAI_API_KEY: ""
+        run: |
+          python scripts/final_128_real_provider_wrapper_v9.py \
+            --phase1-real \
+            --confirmation RUN_FINAL_128_V11_ONCE \
+            --receipt-path .v11_handoff/v11_dispatch_receipt.json
+      - name: Phase 2 receipt verification and provider execution
+        if: success()
+        env:
+          VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python scripts/final_128_real_provider_wrapper_v9.py \
+            --phase2-real \
+            --confirmation RUN_FINAL_128_V11_ONCE \
+            --receipt-path .v11_handoff/v11_dispatch_receipt.json \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --output-dir results/agentdojo-clean-ab-final-v11
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agentdojo-clean-ab-final-v11-${{ github.run_id }}
+          path: |
+            results/agentdojo-clean-ab-final-v11
+            .v11_handoff/v11_dispatch_receipt.json
+          if-no-files-found: warn
