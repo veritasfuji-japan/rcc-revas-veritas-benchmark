@@ -1,0 +1,120 @@
+{
+  "schema_version": "veritas.agentdojo-final-128-independent-external-replication-handoff.v1",
+  "status": "HANDOFF_READY_NOT_YET_INDEPENDENTLY_REPLICATED",
+  "rule_of_one": "INDEPENDENT_EXTERNAL_REPLICATION_HANDOFF_V1",
+  "handoff_base_main_sha": "2f909150262692a7adcd11b162053de62885d0bd",
+  "source_evidence": {
+    "terminal_disposition": {
+      "path": "contracts/AGENTDOJO_FINAL_128_V13_TERMINAL_DISPOSITION_v1.json",
+      "git_blob_sha": "2f2a5dd1a91d4068776e39a064f167cd304767b2"
+    },
+    "post_execution_analysis_boundary": {
+      "path": "contracts/AGENTDOJO_FINAL_128_V13_POST_EXECUTION_ANALYSIS_BOUNDARY_v1.json",
+      "git_blob_sha": "6b78872b42ffae12ccd54b1802146b8a96a76469"
+    },
+    "source_run": {
+      "run_id": 37585673492,
+      "job_id": 112675107243,
+      "run_attempt": 1,
+      "event": "workflow_dispatch",
+      "head_branch": "main",
+      "main_sha": "2454ba69818d1a46b910f33fab9b57017cd7a83e"
+    },
+    "artifact": {
+      "artifact_id": 11466539107,
+      "artifact_name": "agentdojo-clean-ab-final-v13-37585673492",
+      "artifact_zip_sha256": "9fbb2a1614c237e92c4239bb5d60f83d40d33b81e0092d3f82958931969c9e7a",
+      "expires_at": "2027-01-05T07:10:01Z",
+      "expected_file_count": 5
+    }
+  },
+  "exact_execution_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas_os": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "python": "3.11.16",
+    "runner_git_blob_sha": "c745679a71aed17f01357d6dce49cfdd679a5c7c",
+    "wrapper_git_blob_sha": "43a68f5f06f887bc8915518d5c054008ac0a6e26",
+    "manual_dispatch_workflow_git_blob_sha": "b8a3dc7529efb0122a84f576de782fd9124d6d5d"
+  },
+  "expected_observed_result": {
+    "case_count": 128,
+    "arm_record_count": 256,
+    "execution_errors": 0,
+    "same_initial_prestate_count": 128,
+    "arm_A_utility_true": 93,
+    "arm_A_injection_task_success_true": 20,
+    "arm_B_utility_true": 64,
+    "arm_B_injection_task_success_true": 0,
+    "pairwise_A_true_B_false": 30,
+    "pairwise_A_false_B_true": 1,
+    "provider_calls": 820,
+    "estimated_cost_usd": 0.3221684
+  },
+  "reviewer_track_A_evidence_only": {
+    "purpose": "Independent recomputation of the already completed V13 result artifact without provider execution.",
+    "provider_execution_allowed": false,
+    "database_access_required": false,
+    "openai_api_key_required": false,
+    "required_steps": [
+      "retrieve exact source run metadata",
+      "retrieve exact artifact before expiry",
+      "verify artifact ZIP SHA-256",
+      "verify expected artifact members",
+      "recompute summary counts from native_scores.jsonl and execution_records.jsonl",
+      "verify claim boundary and V13 reuse prohibition",
+      "emit reviewer attestation bound to the exact artifact SHA-256"
+    ],
+    "claim_if_passed": "Independent evidence recomputation of the same V13 artifact only."
+  },
+  "reviewer_track_B_same_corpus_new_execution": {
+    "purpose": "Independent same-corpus rerun by a distinct operator.",
+    "v13_authorization_reuse_allowed": false,
+    "v13_human_confirmation_reuse_allowed": false,
+    "new_versioned_authorization_required": true,
+    "new_single_use_consumption_required": true,
+    "fresh_operator_confirmation_required": true,
+    "exact_source_pins_required": true,
+    "frozen_scoring_and_pairing_required": true,
+    "provider_spend_cap_must_be_explicit": true,
+    "claim_if_passed": "Independent same-corpus execution replication only; still not held-out generalization."
+  },
+  "reviewer_track_C_held_out_execution": {
+    "purpose": "Independent execution on a corpus not previously exposed to the development loop.",
+    "new_frozen_corpus_required": true,
+    "new_versioned_authorization_required": true,
+    "new_single_use_consumption_required": true,
+    "fresh_operator_confirmation_required": true,
+    "independent_operator_preferred": true,
+    "frozen_scoring_and_pairing_required": true,
+    "claim_if_passed": "Held-out evidence only within the newly frozen corpus and assumptions."
+  },
+  "operator_independence_attestation": {
+    "required_for_independent_claim": true,
+    "minimum_fields": [
+      "reviewer_name_or_pseudonymous_identifier",
+      "organization_or_independence_context",
+      "date_utc",
+      "source_commit",
+      "artifact_sha256_or_new_execution_artifact_sha256",
+      "commands_or_workflow_used",
+      "result",
+      "known_deviations",
+      "claim_boundary_acknowledgement"
+    ]
+  },
+  "prohibited_claims_before_external_replication": [
+    "independent third-party validation completed",
+    "held-out generalization proven",
+    "production readiness proven",
+    "universal zero-injection-success guarantee"
+  ],
+  "v13_reuse_prohibition": {
+    "authorization_id": "AGENTDOJO_CANONICAL_FINAL_128_EXECUTION_V13",
+    "authorization_reuse_prohibited": true,
+    "human_confirmation_reuse_prohibited": true,
+    "rerun_authorized": false
+  },
+  "next_rule_of_one": "INDEPENDENT_REVIEWER_ATTESTATION_V1"
+}
