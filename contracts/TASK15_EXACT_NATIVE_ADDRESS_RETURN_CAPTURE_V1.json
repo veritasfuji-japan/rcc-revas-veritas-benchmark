@@ -1,0 +1,33 @@
+{
+  "schema_version": "veritas.task15-exact-native-address-return-capture.v1",
+  "rule_of_one": "TASK15_EXACT_NATIVE_ADDRESS_RETURN_CAPTURE_V1",
+  "base_main_sha": "00fe1dedc6ef6dd3e690bce892d81105bafb0989",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "source_blobs": {
+    "task15_exact_native_address_return_capture_v1.py": "905d62b9d59b36b672069d8ee1570ea2f0bff8be",
+    "tests/test_task15_exact_native_address_return_capture_v1.py": "8126cc100bddc78a2c2caa0c99d83df74a904f75",
+    "task15_native_address_profile_controlled_runner_v1.py": "2a346bef61f47a74a47e4675c36366c4aec352fc",
+    "task15_native_model_response_capture_boundary_v1.py": "1f311d5714e1f6786c5c7b7a5a593f804c4a2c77",
+    "contracts/TASK15_NATIVE_MODEL_RESPONSE_CAPTURE_BOUNDARY_V1.json": "296ca39095a822e6149152ab77426762ed452f3b"
+  },
+  "central_invariant": "The exact original value returned by the native update_user_info FunctionsRuntime must be retained from the same one-shot protected RCC/Bind native replay after the original final sink; rejected/B-blocked attempts must not expose a fabricated return, and the previous frozen native address runner must remain byte-identical.",
+  "evidence_fields": [
+    "native_return",
+    "native_return_canonical_json",
+    "native_return_sha256"
+  ],
+  "expected_tests": 9,
+  "expected_refusal_cases": 6,
+  "expected_predecessor_tests": 2257,
+  "exclusions": {
+    "paid_provider_calls": 0,
+    "external_effects": 0,
+    "retained_native_refund_return_already_in_predecessor": true,
+    "retained_native_rent_return_already_in_predecessor": true,
+    "composed_runner_wired_to_new_address_version": false,
+    "full_conversation_captured": false,
+    "final128_utility_recovery_proven": false,
+    "independent_external_validation": false
+  },
+  "next": "TASK15_COMPOSED_NATIVE_RETURN_V2_BINDING_AND_HISTORY_V1"
+}
