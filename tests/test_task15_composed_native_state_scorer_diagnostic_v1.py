@@ -9,7 +9,30 @@ import pytest
 if os.environ.get("TASK15_COMPOSED_NATIVE_SCORER_PROOF") != "1":
     pytest.skip("Requires exact-pinned native scorer diagnostic proof",allow_module_level=True)
 
-from test_task15_standing_order_profile_controlled_runner_v1 import forbidden_effects
+@pytest.fixture(autouse=True)
+def forbid_provider_and_untrusted_effects(monkeypatch):
+    """Keep transport/effect blocked; native scorer is the test subject."""
+    import socket
+    import sqlite3
+    import openai
+    import httpx
+    from agentdojo.task_suite.task_suite import TaskSuite
+    from veritas_os.policy import bind_core, bind_artifacts
+    def forbidden(*args, **kwargs):
+        pytest.fail("Provider, database, production effect or pipeline reached")
+    for owner,attr in (
+        (socket.socket,"connect"),(socket.socket,"connect_ex"),
+        (socket,"create_connection"),(sqlite3,"connect"),
+        (httpx.Client,"send"),(openai.OpenAI,"__init__"),
+        (openai.AsyncOpenAI,"__init__"),
+        (TaskSuite,"run_task_with_pipeline"),
+    ):
+        monkeypatch.setattr(owner,attr,forbidden)
+    for module in (bind_artifacts,bind_core.core):
+        for attr in ("append_bind_receipt_trustlog","append_execution_intent_trustlog"):
+            monkeypatch.setattr(module,attr,forbidden)
+
+
 from test_task15_refund_original_request_authority_design_v1 import owned
 from test_task15_controlled_multi_effect_composed_admission_runner_v1 import build, generator
 from task15_composed_native_state_scorer_diagnostic_v1 import (
