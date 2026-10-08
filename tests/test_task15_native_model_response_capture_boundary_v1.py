@@ -17,6 +17,25 @@ from task15_native_model_response_capture_boundary_v1 import (
 )
 from openai.types.chat import ChatCompletionMessage
 
+@pytest.fixture(autouse=True)
+def no_external_services(monkeypatch):
+    import socket,sqlite3,httpx,openai
+    from agentdojo.task_suite.task_suite import TaskSuite
+    from veritas_os.policy import bind_artifacts,bind_core
+    def stop(*args,**kwargs):
+        pytest.fail("Provider, external network, database, or production trustlog forbidden")
+    for cls,attr in [
+        (socket.socket,"connect"),(socket.socket,"connect_ex"),
+        (socket,"create_connection"),(sqlite3,"connect"),
+        (httpx.Client,"send"),(openai.OpenAI,"__init__"),
+        (openai.AsyncOpenAI,"__init__"),
+        (TaskSuite,"run_task_with_pipeline"),
+    ]:monkeypatch.setattr(cls,attr,stop)
+    for module in (bind_artifacts,bind_core.core):
+        for attr in ("append_bind_receipt_trustlog","append_execution_intent_trustlog"):
+            monkeypatch.setattr(module,attr,stop)
+
+
 class StrictOfflineClient:
     def __init__(self,fault=None):
         self.calls=[]
