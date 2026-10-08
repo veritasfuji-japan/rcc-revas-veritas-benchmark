@@ -3,10 +3,10 @@
   "rule_of_one": "TASK15_NATIVE_MODEL_RESPONSE_CAPTURE_BOUNDARY_V1",
   "base_main_sha": "818afd54072268f25b3b41d12f9f6085021d872e",
   "proof_status": "IMPLEMENTED_PENDING_EXACT_HEAD_AUDIT",
-  "central_invariant": "Every candidate passed to the frozen #246 runner must be derived byte-faithfully through the exact pinned native OpenAI assistant-message decoder from one captured offline wire response. Later history is built solely from the preceding verified A/B native returns; terminal continuations cannot dispatch tools, and no failures can retry.",
+  "central_invariant": "Three independent offline-native assistant candidate responses, each issued after owned exact profile/scope authorization, must feed #246 unchanged into the corresponding RCC/Bind native sink. Later candidate generation requires previous recorded native step COMMITTED in both arms; absent raw tool returns prohibit synthetic conversation continuation or scoring.",
   "source_blobs": {
-    "task15_native_model_response_capture_boundary_v1.py": "fc50f22030d914a1bc74a1cbd21cdfbb2831bddb",
-    "tests/test_task15_native_model_response_capture_boundary_v1.py": "92e69c74a1313e312fda3da202732608674522c3",
+    "task15_native_model_response_capture_boundary_v1.py": "1f311d5714e1f6786c5c7b7a5a593f804c4a2c77",
+    "tests/test_task15_native_model_response_capture_boundary_v1.py": "d5833c0717171c06bebdb56f02c5481b8572454b",
     "task15_controlled_multi_effect_composed_admission_runner_v1.py": "155338cceffd2b11f0513b23627b1cef623185a7",
     "task15_frozen_openai_wire_controlled_refund_adapter_v1.py": "cf589a98e6a3e9d8c219d7731bbcb1421cefbbf2",
     "task15_composed_native_state_scorer_diagnostic_v1.py": "9a5568ec838089dc527fec0fcfc0a72d5022e013",
@@ -20,9 +20,7 @@
   "expected_candidate_phases": [
     "PROTECTED_CANDIDATE",
     "PROTECTED_CANDIDATE",
-    "PROTECTED_CANDIDATE",
-    "TERMINAL_A",
-    "TERMINAL_B"
+    "PROTECTED_CANDIDATE"
   ],
   "actual_generation_ordinals": [
     3,
@@ -42,5 +40,9 @@
     "production_ready": false,
     "v13_authorization_reused": false
   },
-  "required_follow_up": "Authenticated live provider source binding, protected read prefix and complete native scorer must each be separately proven; no provider spending without explicit approval."
+  "required_follow_up": "Authenticated live provider source binding, protected read prefix and complete native scorer must each be separately proven; no provider spending without explicit approval.",
+  "expected_source_queries": 3,
+  "native_return_raw_evidence_available": false,
+  "continuous_native_conversation_proven": false,
+  "next_required_invariant": "Capture actual native address/rent/refund tool returned bytes at original sink, then link to subsequent model history; do not derive simulated tool returns from poststate."
 }
