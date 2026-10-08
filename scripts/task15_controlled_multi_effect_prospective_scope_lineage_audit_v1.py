@@ -12,8 +12,8 @@ from original_request_authority_lineage_v1 import OriginalRequestEnvelope
 from task15_controlled_multi_effect_prospective_scope_lineage_v1 import *
 NAME='task15-controlled-multi-effect-prospective-scope-lineage-v1'
 CONTRACT=ROOT/('contracts/'+RULE+'.json')
-EXPECTED_CONTRACT="7c49d748a6e7aefc927fd849d79385d326488880"
-TESTS=81
+EXPECTED_CONTRACT="45a781424daedc9d6ce13fae6a63f481075b3dc9"
+TESTS=89
 NOW=datetime(2030,1,2,12,0,30,tzinfo=timezone.utc)
 
 def restore(row):

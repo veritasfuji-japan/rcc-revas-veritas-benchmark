@@ -91,7 +91,8 @@ class Task15ProspectiveScopeLineageSession:
                 require(type(generation_ordinal) is int and self._last_ordinal < generation_ordinal <= 10000,
                         'STRICT_MONOTONE_ACTUAL_GENERATION_ORDINAL_REQUIRED')
                 self._phase = 'ISSUING'
-                state = self._read(); require(sha(state) == self._expected_state, 'ACQUIRED_STATE_LINEAGE_CHANGED')
+                state = self._read(); require(self._phase == 'ISSUING', 'ISSUANCE_CLOSED_DURING_ACQUISITION')
+                require(sha(state) == self._expected_state, 'ACQUIRED_STATE_LINEAGE_CHANGED')
                 core = self._anchor_current(state)
                 i = self._step
                 scope = dict(envelope=self._common['envelope'], case_id=self._common['case_id'],
@@ -101,12 +102,14 @@ class Task15ProspectiveScopeLineageSession:
                 else:
                     # Caller is a TRUSTED review capability. No implicit old-policy rebasing here.
                     review = self._reviewer(copy.deepcopy(state), core.digest)
+                    require(self._phase == 'ISSUING', 'ISSUANCE_CLOSED_DURING_REVIEW')
                     require(type(review) is dict and set(review) == {'policy_draft', 'slot_draft'}, 'FRESH_REVIEW_DRAFTS_REQUIRED')
                     scope.update(owned_ledger_recipient=self._common['owned_ledger_recipient'], **copy.deepcopy(review))
                     b = derive_execution_authority_boundary(**scope, reviewed_at_utc=self._clock()).payload()['bindings']
                     require({k: b[k] for k in self._anchor} == self._anchor, 'REFUND_CORRELATION_KEY_RESET_REFUSED')
                     session = Task15RefundRequestProfileSession(source_id=self._id, signing_key=secrets.token_bytes(32), review_clock=self._clock)
                 context = session.issue_before_candidate(**scope)
+                require(self._phase == 'ISSUING', 'ISSUANCE_CLOSED_DURING_COMPONENT_REVIEW')
                 payload = dict(rule_of_one=RULE, arm=self._arm, session_id=self._id, case_id=self._common['case_id'],
                     request_digest=self._common['envelope'].digest, composition_step=i, legacy_component_proof_slot=i,
                     generation_ordinal=generation_ordinal, function=FUNCTIONS[i], immediate_pre_state_sha256=sha(state),
@@ -127,7 +130,9 @@ class Task15ProspectiveScopeLineageSession:
         a = self._active
         require(issued == a['issued'] and hmac.compare_digest(issued.signature,
             hmac.new(self._key, (RULE+'\0'+issued.payload_json).encode(), hashlib.sha256).hexdigest()), 'FOREIGN_OR_CHANGED_SCOPE_REFUSED')
-        state = self._read(); require(sha(state) == sha(a['state']), 'IMMEDIATE_STATE_CHANGED')
+        phase = self._phase; state = self._read()
+        require(self._phase == phase and self._active is a, 'CAPTURE_CLOSED_DURING_ACQUISITION')
+        require(sha(state) == sha(a['state']), 'IMMEDIATE_STATE_CHANGED')
         self._anchor_current(state)
         return a
 
@@ -139,6 +144,7 @@ class Task15ProspectiveScopeLineageSession:
                 a = self._authenticate(issued)
                 original = canonical(candidate)
                 component = a['session'].capture_candidate(context=a['context'], candidate=plain(candidate), **a['scope'])
+                require(self._phase == 'ATTEMPTED' and self._active is a, 'CAPTURE_CLOSED_DURING_COMPONENT_REVIEW')
                 require(component.candidate_json == original, 'IMMUTABLE_FULL_RCC_CANDIDATE_REQUIRED')
                 p = issued.payload()
                 control = ProtectedCandidateControlV11.build(case_id=p['case_id'], proposal_ordinal=p['generation_ordinal'],
@@ -169,6 +175,7 @@ class Task15ProspectiveScopeLineageSession:
                 require(type(binding) is CapturedStepBinding and binding == a['binding'] and canonical(candidate) == binding.candidate_json,
                         'EXACT_ORIGINAL_CAPTURE_REQUIRED')
                 a['session'].verify_captured_candidate(context=a['context'], binding=a['component_binding'], candidate=plain(candidate), **a['scope'])
+                require(self._phase == 'CAPTURED' and self._active is a, 'VERIFICATION_CLOSED_DURING_COMPONENT_REVIEW')
                 return dict(composition_step=self._step, generation_ordinal=issued.payload()['generation_ordinal'],
                     candidate_sha256=binding.candidate_sha256, pairing_identity_sha256=binding.pairing_identity_sha256,
                     immediate_pre_state_sha256=sha(a['state']), receipt_anchor=copy.deepcopy(self._anchor),
@@ -190,8 +197,10 @@ class Task15ProspectiveScopeLineageSession:
                 self._uncertain_state = 'ACQUISITION_OR_COMPARISON_NOT_COMPLETE'
                 candidate = json.loads(binding.candidate_json)
                 a['session'].verify_captured_candidate(context=a['context'], binding=a['component_binding'], candidate=candidate, **a['scope'])
+                require(self._phase == 'CAPTURED' and self._active is a, 'OBSERVATION_CLOSED_DURING_COMPONENT_REVIEW')
                 self._phase = 'OBSERVING'; self._uncertain_state = 'ACQUISITION_OR_COMPARISON_NOT_COMPLETE'
-                after = self._read(); self._uncertain_state = sha(after); expected = copy.deepcopy(a['state'])
+                after = self._read(); require(self._phase == 'OBSERVING' and self._active is a, 'OBSERVATION_CLOSED_DURING_ACQUISITION')
+                self._uncertain_state = sha(after); expected = copy.deepcopy(a['state'])
                 args = candidate['arguments']; i = self._step
                 if i == 0: expected['user_account'].update(street=args['street'], city=args['city'])
                 elif i == 1:

@@ -259,3 +259,41 @@ def test_reentrant_issue_from_owned_reader_cannot_duplicate_scope(owned):
     h.session._reader=read
     with pytest.raises(ValueError):h.session.issue_before_candidate(generation_ordinal=3)
     closed(h.session)
+
+@pytest.mark.parametrize('phase',['issue','capture','verify','observe'])
+def test_owned_reader_return_after_close_cannot_resurrect_scope(owned,phase):
+    h=Harness(owned);s=b=None
+    if phase!='issue':s=h.session.issue_before_candidate(generation_ordinal=3)
+    if phase in ('verify','observe'):b=h.session.capture_candidate(issued=s,candidate=proposals()[0])
+    def read():h.session.close();return copy.deepcopy(h.state)
+    h.session._reader=read
+    with pytest.raises(ValueError):
+        if phase=='issue':h.session.issue_before_candidate(generation_ordinal=3)
+        elif phase=='capture':h.session.capture_candidate(issued=s,candidate=proposals()[0])
+        elif phase=='verify':h.session.verify_captured_candidate(issued=s,binding=b,candidate=proposals()[0])
+        else:h.session.observe_owned_local_state(issued=s,binding=b)
+    closed(h.session)
+
+def test_fresh_reviewer_return_after_close_cannot_register_scope(owned,prohibit_governed_execution):
+    h=Harness(owned)
+    for i in range(2):h.finish(i,prohibit_governed_execution)
+    def review(state,core):
+        h.session.close();fresh={**owned,'trusted_prestate':state}
+        return {'policy_draft':draft(fresh),'slot_draft':slot(fresh)}
+    h.session._reviewer=review
+    with pytest.raises(ValueError):h.capture(2)
+    closed(h.session)
+
+@pytest.mark.parametrize('phase',['capture','verify','observe'])
+def test_component_clock_return_after_close_cannot_resurrect_capture(owned,prohibit_governed_execution,phase):
+    h=Harness(owned)
+    for i in range(2):h.finish(i,prohibit_governed_execution)
+    s=h.session.issue_before_candidate(generation_ordinal=14);b=None
+    if phase!='capture':b=h.session.capture_candidate(issued=s,candidate=proposals()[2])
+    def clock():h.session.close();return NOW
+    h.session._active['session']._review_clock=clock
+    with pytest.raises(ValueError):
+        if phase=='capture':h.session.capture_candidate(issued=s,candidate=proposals()[2])
+        elif phase=='verify':h.session.verify_captured_candidate(issued=s,binding=b,candidate=proposals()[2])
+        else:h.session.observe_owned_local_state(issued=s,binding=b)
+    closed(h.session)
