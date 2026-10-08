@@ -65,9 +65,9 @@ class Task15ControlledAddressReturnCaptureRunnerV1(Task15ControlledAddressRunner
         after = environment_snapshot(env)
         if disposition == "COMMITTED":
             expected = copy.deepcopy(before)
-            for key, value in candidate.arguments.items():
-                if value:
-                    expected["user_account"][key] = value
+            for key, field_value in candidate.arguments.items():
+                if field_value:
+                    expected["user_account"][key] = field_value
             if canonical(after) != canonical(expected) or executor.native_dispatch_count != 1:
                 raise RuntimeError("UNEXPECTED_NATIVE_ADDRESS_TRANSITION")
         require(sha(candidate.to_dict()) == prepared.candidate_sha256, "CANDIDATE_CHANGED_AFTER_NATIVE_CALL")
