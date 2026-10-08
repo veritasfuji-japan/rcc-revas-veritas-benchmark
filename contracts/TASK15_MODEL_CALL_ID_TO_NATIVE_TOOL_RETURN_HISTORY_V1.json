@@ -4,7 +4,7 @@
   "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
   "predecessor_main_sha": "33183aaaddeac50d1cbba1a84acc2d470dd54760",
   "source_blobs": {
-    "task15_model_callid_native_return_history_v1.py": "52f1d782fc26e92ee61d0a068a0e0b75c2dfa1a4",
+    "task15_model_callid_native_return_history_v1.py": "54554bf6f0cb10f2e5bca05001e943c236f4ae60",
     "tests/test_task15_model_callid_native_return_history_v1.py": "018753e48c9473c31ead747b804d9302a3335b06",
     "task15_native_model_response_capture_boundary_v1.py": "1f311d5714e1f6786c5c7b7a5a593f804c4a2c77",
     "task15_composed_native_return_binding_v1.py": "a91d3a34d1ed5c12b4e8e620fdd8715fae20743d",
