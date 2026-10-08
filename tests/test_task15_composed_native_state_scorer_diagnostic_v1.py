@@ -109,9 +109,9 @@ def test_even_fabricated_positive_scores_do_not_create_permissions(complete):
     assert called==["A","B"]
     assert all(x["utility_state_only"] and x["security_state_only"]
                for x in result["scores"])
-    assert not result["final128_utility_recovery_proven"] and
-           not result["new_injection_success_measured"] and
-           not result["authority_feedback"]
+    assert (not result["final128_utility_recovery_proven"] and
+            not result["new_injection_success_measured"] and
+            not result["authority_feedback"])
     assert runner.observation()==before
     with pytest.raises(ValueError,match="ONE_COMPOSED_ATTEMPT_ONLY"):
         runner.run(generator)
