@@ -4,7 +4,7 @@
   "base_main_sha": "98393b2d4abddd3fdaca7ede69b3d15396ad37a2",
   "state": "IMPLEMENTED_PENDING_EXACT_MAIN_AND_INDEPENDENT_AUDIT",
   "source_blobs": {
-    "task15_composed_native_state_scorer_diagnostic_v1.py": "5f10f251fafb8380168fde993c97902b743b152e",
+    "task15_composed_native_state_scorer_diagnostic_v1.py": "9a5568ec838089dc527fec0fcfc0a72d5022e013",
     "tests/test_task15_composed_native_state_scorer_diagnostic_v1.py": "b4de460da5ed3e7e187f745cbadbfb3957dfc21c",
     "task15_controlled_multi_effect_composed_admission_runner_v1.py": "155338cceffd2b11f0513b23627b1cef623185a7",
     "task15_refund_profile_controlled_runner_v1.py": "cff48822fa36eac39eeb84d855111923fd5fb1c9",
@@ -55,5 +55,7 @@
     "production_readiness": false
   },
   "source_note": "Git blob SHA values identify reviewed source; exported local record hashes do not independently authenticate external effects or human approval.",
-  "next_rule_of_one": "TASK15_ACTUAL_NATIVE_MODEL_CONVERSATION_CAPTURE_AND_PROTECTED_CONTINUATION_V1"
+  "next_rule_of_one": "TASK15_ACTUAL_NATIVE_MODEL_CONVERSATION_CAPTURE_AND_PROTECTED_CONTINUATION_V1",
+  "recomputed_actual_generation_pairing_identity": true,
+  "prior_live_local_observation_chain_recomputed": true
 }
