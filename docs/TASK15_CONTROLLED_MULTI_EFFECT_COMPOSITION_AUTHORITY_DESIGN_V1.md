@@ -1,0 +1,15 @@
+# Task15 controlled multi-effect composition authority design V1
+
+This round is an inert composition specification, not an executable composed runner. It combines the frozen request-derived address, unique rent target, and controlled refund scope without changing any earlier validator, issuer, Bind path, runner or scorer.
+
+The fixed address → rent → refund order is conservative runner policy. Each effect has a distinct scope. Earlier success never grants later permission. The design projects native state changes for review; predictions cannot replace acquired immediate state. Initial component checks refer to the initial snapshot only. The initial refund metadata draft refuses later state after address/rent changes; it must never be automatically rewritten or reused as authority. A future trusted composition issuer must register fresh per-arm, per-step scope from acquired current state before the first candidate and preserve the receipt key across scope renewal.
+
+Every candidate-level A/B comparison requires one captured full RCC candidate and identical immediate pre-state. Step numbers here are design labels, not generation ordinals. If actual arm states diverge, the next comparison must stop or be labelled as independent trajectory behavior; no divergent later call is controlled treatment evidence. Independent full-trajectory utility evaluation requires a later runner and completed-own-history observer.
+
+The lifecycle model checks gate order and per-step single use. Labels never establish runtime RCC, Bind, final sink, consumption, native effects or pairing. Pre-consumption stop closes the current step. Post-consumption/dispatch failure remains UNKNOWN. Earlier observed model steps remain recorded, spent steps never reset, and later steps cannot resume automatically. Cancel, rollback, compensation and retry require separate authority and proof; none is implemented here. Stateless repetition of a model does not establish real consumption or global duplicate exclusion.
+
+Two detached native semantic probes reproduce three effects each on fresh local environment copies. They validate field/state projection, not governed execution, external bank settlement, full trajectory Utility or a new injection trial. The new design itself has zero native dispatches, issuer/store operations, scorer calls, provider calls and database access. The fixture guard also forbids scorer/gold, network and trustlog/adjudication access. All prior 1903 dedicated tests and report identities are reproduced separately.
+
+Caller-owned request/principal/current complete ledger/friend/clock/policy acquisition remains a trust assumption. No original registry or external authenticity, durable global single use, restart persistence, reconciliation, production readiness, held-out result or Utility recovery is established. V13 authorization and human confirmation remain consumed and are never reused.
+
+Next Rule-of-One: `TASK15_CONTROLLED_MULTI_EFFECT_PROSPECTIVE_SCOPE_LINEAGE_V1` — fresh per-step scope issuance, immediate-state lineage, receipt-key preservation and terminal closure before composing native dispatch.
