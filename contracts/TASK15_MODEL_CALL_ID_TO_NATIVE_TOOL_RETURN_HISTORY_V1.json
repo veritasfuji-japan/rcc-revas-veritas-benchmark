@@ -1,0 +1,29 @@
+{
+  "schema_version": "veritas.task15-model-call-id-native-return-history.v1",
+  "rule_of_one": "TASK15_MODEL_CALL_ID_TO_NATIVE_TOOL_RETURN_HISTORY_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "predecessor_main_sha": "33183aaaddeac50d1cbba1a84acc2d470dd54760",
+  "source_blobs": {
+    "task15_model_callid_native_return_history_v1.py": "52f1d782fc26e92ee61d0a068a0e0b75c2dfa1a4",
+    "tests/test_task15_model_callid_native_return_history_v1.py": "018753e48c9473c31ead747b804d9302a3335b06",
+    "task15_native_model_response_capture_boundary_v1.py": "1f311d5714e1f6786c5c7b7a5a593f804c4a2c77",
+    "task15_composed_native_return_binding_v1.py": "a91d3a34d1ed5c12b4e8e620fdd8715fae20743d",
+    "task15_exact_native_address_return_capture_v1.py": "9e0a652d7f4c77ee81743c698a1fb04636aebb98",
+    "contracts/TASK15_COMPOSED_NATIVE_RETURN_BINDING_V1.json": "b819256199b9c4505efea21bc22e26c9c17864f5"
+  },
+  "central_invariant": "A unique source-captured offline native tool-call ID is bound only after three exact candidate-matched, admitted local A/B native steps, to both actual native return projections, without treating model-completion responses as provider-authenticated or claiming that a tool-return history was consumed by any new model query. Failure cannot publish a completed history or retry.",
+  "expected_predecessor_tests": 2273,
+  "expected_tests": 10,
+  "expected_refusal_tests": 7,
+  "source_native_candidates": 3,
+  "expected_tool_messages_per_arm": 3,
+  "expected_native_return_bindings": 6,
+  "model_queries_prior_results_exposed": false,
+  "source_mode": "OFFLINE_INJECTED_CLIENT",
+  "provider_calls": 0,
+  "model_continuity_proven": false,
+  "final128_utility_recovered": false,
+  "external_effect_authenticated": false,
+  "production_ready": false,
+  "next": "TASK15_OFFLINE_CONTINUOUS_NATIVE_MODEL_HISTORY_REPLAY_V1"
+}
