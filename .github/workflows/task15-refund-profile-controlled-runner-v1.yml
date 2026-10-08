@@ -149,7 +149,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object contracts/TASK15_REFUND_PROFILE_CONTROLLED_RUNNER_V1.json)" = "44ca1b89b3ae46e8964621545ff888b6c4ff5fb8"
+          test "$(git hash-object contracts/TASK15_REFUND_PROFILE_CONTROLLED_RUNNER_V1.json)" = "460d19cff79928292db5b6df371688c711ac0473"
           test "$(git hash-object scripts/task15_refund_profile_controlled_runner_audit_v1.py)" = "944f9b1f1709b618e338206421abcfb357207a5a"
           echo PASS_TASK15_REFUND_DESIGN_LOCAL_SOURCE_PINS
       - name: Checkout exact native runtime pins
