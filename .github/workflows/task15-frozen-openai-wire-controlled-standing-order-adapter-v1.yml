@@ -1,0 +1,170 @@
+name: Task15 Frozen OpenAI Wire Controlled Standing Order Adapter V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task15-frozen-openai-wire-controlled-standing-order-adapter-v1.yml"
+      - ".github/workflows/task15-prospective-controlled-standing-order-trajectory-v1.yml"
+      - ".github/workflows/task15-standing-order-profile-controlled-runner-v1.yml"
+      - "agentdojo_constraint_resolver_v0_1.py"
+      - "contracts/CONTROLLED_CANDIDATE_BINDING_MISMATCH_CAUSE_DECOMPOSITION_V1.json"
+      - "contracts/CONTROLLED_GOVERNANCE_TREATMENT_DELTA_ANALYSIS_V1.json"
+      - "contracts/PAIRWISE_PROTECTED_CANDIDATE_REPLAY_HARNESS_V1.json"
+      - "contracts/TASK15_FROZEN_OPENAI_WIRE_CONTROLLED_ADDRESS_ADAPTER_V1.json"
+      - "contracts/TASK15_FROZEN_OPENAI_WIRE_CONTROLLED_STANDING_ORDER_ADAPTER_V1.json"
+      - "contracts/TASK15_NATIVE_ADDRESS_PROFILE_CONTROLLED_RUNNER_V1.json"
+      - "contracts/TASK15_NATIVE_ADDRESS_REQUEST_PROFILE_ISSUANCE_V1.json"
+      - "contracts/TASK15_ORIGINAL_REQUEST_NATIVE_ADDRESS_FIELD_MAPPING_V1.json"
+      - "contracts/TASK15_PROSPECTIVE_CONTROLLED_ADDRESS_TRAJECTORY_V1.json"
+      - "contracts/TASK15_PROSPECTIVE_CONTROLLED_STANDING_ORDER_TRAJECTORY_V1.json"
+      - "contracts/TASK15_PROSPECTIVE_NATIVE_SCORER_OBSERVATION_BOUNDARY_V1.json"
+      - "contracts/TASK15_STANDING_ORDER_ORIGINAL_REQUEST_AUTHORITY_DESIGN_V1.json"
+      - "contracts/TASK15_STANDING_ORDER_PROFILE_CONTROLLED_RUNNER_V1.json"
+      - "contracts/TASK15_STANDING_ORDER_REQUEST_PROFILE_ISSUANCE_V1.json"
+      - "contracts/TASK6_TRUSTED_SCHEDULE_DATE_POLICY_DESIGN_V1.json"
+      - "docs/CONTROLLED_CANDIDATE_BINDING_MISMATCH_CAUSE_DECOMPOSITION_V1.md"
+      - "docs/TASK15_FROZEN_OPENAI_WIRE_CONTROLLED_ADDRESS_ADAPTER_V1.md"
+      - "docs/TASK15_FROZEN_OPENAI_WIRE_CONTROLLED_STANDING_ORDER_ADAPTER_V1.md"
+      - "docs/TASK15_NATIVE_ADDRESS_PROFILE_CONTROLLED_RUNNER_V1.md"
+      - "docs/TASK15_NATIVE_ADDRESS_REQUEST_PROFILE_ISSUANCE_V1.md"
+      - "docs/TASK15_ORIGINAL_REQUEST_NATIVE_ADDRESS_FIELD_MAPPING_V1.md"
+      - "docs/TASK15_PROSPECTIVE_CONTROLLED_ADDRESS_TRAJECTORY_V1.md"
+      - "docs/TASK15_PROSPECTIVE_CONTROLLED_STANDING_ORDER_TRAJECTORY_V1.md"
+      - "docs/TASK15_PROSPECTIVE_NATIVE_SCORER_OBSERVATION_BOUNDARY_V1.md"
+      - "docs/TASK15_STANDING_ORDER_ORIGINAL_REQUEST_AUTHORITY_DESIGN_V1.md"
+      - "docs/TASK15_STANDING_ORDER_PROFILE_CONTROLLED_RUNNER_V1.md"
+      - "docs/TASK15_STANDING_ORDER_REQUEST_PROFILE_ISSUANCE_V1.md"
+      - "fixtures/agentdojo_authority_v0_1/SHA256SUMS.json"
+      - "fixtures/agentdojo_authority_v0_1/authority_fixture.json"
+      - "fixtures/agentdojo_authority_v0_1/public_key.raw.b64"
+      - "fixtures/agentdojo_authority_v0_1/revocations.json"
+      - "fixtures/agentdojo_authority_v0_1/signer_policy.json"
+      - "original_request_authority_lineage_v1.py"
+      - "scripts/agentdojo_clean_ab_canonical_final_runner_v2_8.py"
+      - "scripts/agentdojo_final_runner_integration_v0_1.py"
+      - "scripts/agentdojo_native_scorer_invocation_v0_1.py"
+      - "scripts/agentdojo_openai_frozen_adapter_v0_1.py"
+      - "scripts/controlled_candidate_binding_mismatch_cause_decomposition_audit_v1.py"
+      - "scripts/controlled_governance_treatment_delta_analysis_audit_v1.py"
+      - "scripts/final_128_v12_locked_agentdojo_requirements_v1.py"
+      - "scripts/pairwise_protected_candidate_control_v1_1.py"
+      - "scripts/pairwise_protected_candidate_replay_harness_v1.py"
+      - "scripts/task15_frozen_openai_wire_controlled_address_adapter_audit_v1.py"
+      - "scripts/task15_frozen_openai_wire_controlled_standing_order_adapter_audit_v1.py"
+      - "scripts/task15_native_address_profile_controlled_runner_audit_v1.py"
+      - "scripts/task15_native_address_request_profile_issuance_audit_v1.py"
+      - "scripts/task15_original_request_native_address_field_mapping_audit_v1.py"
+      - "scripts/task15_prospective_controlled_address_trajectory_audit_v1.py"
+      - "scripts/task15_prospective_controlled_standing_order_trajectory_audit_v1.py"
+      - "scripts/task15_prospective_native_scorer_observation_boundary_audit_v1.py"
+      - "scripts/task15_standing_order_original_request_authority_design_audit_v1.py"
+      - "scripts/task15_standing_order_profile_controlled_runner_audit_v1.py"
+      - "scripts/task15_standing_order_request_profile_issuance_audit_v1.py"
+      - "scripts/task4_send_money_execution_date_authority_audit_v1.py"
+      - "task15_frozen_openai_wire_controlled_address_adapter_v1.py"
+      - "task15_frozen_openai_wire_controlled_standing_order_adapter_v1.py"
+      - "task15_native_address_profile_controlled_runner_v1.py"
+      - "task15_native_address_request_profile_issuance_v1.py"
+      - "task15_original_request_native_address_field_mapping_v1.py"
+      - "task15_prospective_controlled_address_trajectory_v1.py"
+      - "task15_prospective_controlled_standing_order_trajectory_v1.py"
+      - "task15_prospective_native_scorer_observation_boundary_v1.py"
+      - "task15_standing_order_original_request_authority_design_v1.py"
+      - "task15_standing_order_profile_controlled_runner_v1.py"
+      - "task15_standing_order_request_profile_issuance_v1.py"
+      - "tests/test_task15_frozen_openai_wire_controlled_address_adapter_v1.py"
+      - "tests/test_task15_frozen_openai_wire_controlled_standing_order_adapter_v1.py"
+      - "tests/test_task15_native_address_profile_controlled_runner_v1.py"
+      - "tests/test_task15_native_address_request_profile_issuance_v1.py"
+      - "tests/test_task15_original_request_native_address_field_mapping_v1.py"
+      - "tests/test_task15_prospective_controlled_address_trajectory_v1.py"
+      - "tests/test_task15_prospective_controlled_standing_order_trajectory_v1.py"
+      - "tests/test_task15_prospective_native_scorer_observation_boundary_v1.py"
+      - "tests/test_task15_standing_order_original_request_authority_design_v1.py"
+      - "tests/test_task15_standing_order_profile_controlled_runner_v1.py"
+      - "tests/test_task15_standing_order_request_profile_issuance_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - "contracts/TASK15_FROZEN_OPENAI_WIRE_CONTROLLED_STANDING_ORDER_ADAPTER_V1.json"
+      - "task15_frozen_openai_wire_controlled_standing_order_adapter_v1.py"
+      - "tests/test_task15_frozen_openai_wire_controlled_standing_order_adapter_v1.py"
+      - "scripts/task15_frozen_openai_wire_controlled_standing_order_adapter_audit_v1.py"
+      - "docs/TASK15_FROZEN_OPENAI_WIRE_CONTROLLED_STANDING_ORDER_ADAPTER_V1.md"
+      - ".github/workflows/task15-frozen-openai-wire-controlled-standing-order-adapter-v1.yml"
+permissions:
+  contents: read
+  actions: read
+jobs:
+  standing-order-wire:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      GH_TOKEN: ${{ github.token }}
+      REPLAY_ARTIFACT_ZIP: /tmp/source-controlled-replay-v1.zip
+      V13_ARTIFACT_ZIP: /tmp/source-v13-execution-records.zip
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify immutable integration proof sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object contracts/TASK15_FROZEN_OPENAI_WIRE_CONTROLLED_STANDING_ORDER_ADAPTER_V1.json)" = "cbd52be4f3249b092c5ef4971e263d8282cf923d"
+          test "$(git hash-object scripts/task15_frozen_openai_wire_controlled_standing_order_adapter_audit_v1.py)" = "c46b6ca3f22e494c73cf3bd62ad28a10a7826041"
+          echo PASS_TASK15_STANDING_ORDER_WIRE_LOCAL_SOURCE_PINS
+      - name: Checkout exact native runtime pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+      - name: Install pinned provider-free native proof runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install "pytest==9.1.1" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output /tmp/task15-standing-order-wire-locked-direct.txt
+          pip install -r /tmp/task15-standing-order-wire-locked-direct.txt
+          pip install "pydantic==2.11.10" "pydantic-core==2.33.2" "annotated-types==0.8.0" "typing-extensions==4.13.2" "typing-inspection==0.4.2" "docstring-parser==0.16" "pytest==9.1.1" "iniconfig==2.3.1" "packaging==25.0" "pluggy==1.6.0" "pygments==2.21.0"
+      - name: Download existing immutable evidence only
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/$GITHUB_REPOSITORY/actions/artifacts/11472402060/zip > "$REPLAY_ARTIFACT_ZIP"
+          test "$(sha256sum "$REPLAY_ARTIFACT_ZIP" | awk '{print $1}')" = "449443501266eea9aa83ab08f261740acf2296787483a80853469c6a02684b95"
+          gh api repos/$GITHUB_REPOSITORY/actions/artifacts/11466539107/zip > "$V13_ARTIFACT_ZIP"
+          test "$(sha256sum "$V13_ARTIFACT_ZIP" | awk '{print $1}')" = "9fbb2a1614c237e92c4239bb5d60f83d40d33b81e0092d3f82958931969c9e7a"
+      - name: Audit frozen native wire histories, exact rent capture and failure closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          cp /tmp/task15-standing-order-wire-locked-direct.txt results/task15-standing-order-wire-locked-direct.txt
+          pip freeze > results/task15-standing-order-wire-dependency-observation.txt
+          python scripts/task15_frozen_openai_wire_controlled_standing_order_adapter_audit_v1.py \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --replay-artifact "$REPLAY_ARTIFACT_ZIP" \
+            --v13-artifact "$V13_ARTIFACT_ZIP" \
+            --output-dir results \
+            | tee results/task15-frozen-openai-wire-controlled-standing-order-adapter-v1.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: task15-frozen-openai-wire-controlled-standing-order-adapter-v1-${{ github.run_id }}
+          path: |
+            results/task15-*
+            results/controlled-*
+          if-no-files-found: error
