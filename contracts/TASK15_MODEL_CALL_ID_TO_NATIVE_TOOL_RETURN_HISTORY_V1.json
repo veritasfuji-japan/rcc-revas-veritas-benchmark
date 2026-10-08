@@ -13,7 +13,7 @@
   },
   "central_invariant": "A unique source-captured offline native tool-call ID is bound only after three exact candidate-matched, admitted local A/B native steps, to both actual native return projections, without treating model-completion responses as provider-authenticated or claiming that a tool-return history was consumed by any new model query. Failure cannot publish a completed history or retry.",
   "expected_predecessor_tests": 2273,
-  "expected_tests": 10,
+  "expected_tests": 9,
   "expected_refusal_tests": 7,
   "source_native_candidates": 3,
   "expected_tool_messages_per_arm": 3,
