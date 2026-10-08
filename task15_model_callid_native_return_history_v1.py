@@ -69,6 +69,14 @@ class Task15OfflineModelCallIdNativeReturnHistoryV1(Task15OfflineNativeModelCapt
         bindings=[]
         seen=set()
         for i,(rec,row,native) in enumerate(zip(self._responses,rows,local)):
+            displayed=result["source_candidate_events"][i]
+            require(type(displayed) is dict
+                    and displayed["step"]==rec["step"]
+                    and displayed["ordinal"]==rec["ordinal"]
+                    and displayed["call_id"]==rec["call_id"]
+                    and displayed["candidate_sha256"]==rec["candidate_sha256"]
+                    and displayed["source_assistant_sha256"]==rec["source_assistant_sha256"],
+                    "FROZEN_SOURCE_EVENT_PROVENANCE_CHANGED")
             require(type(rec["call_id"]) is str and rec["call_id"] not in seen
                     and 0<len(rec["call_id"])<=200
                     and rec["call_id"].isascii() and rec["call_id"].isprintable(),
