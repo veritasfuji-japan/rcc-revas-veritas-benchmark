@@ -4,7 +4,7 @@
   "rule_of_one": "TASK15_CONTROLLED_MULTI_EFFECT_COMPOSED_ADMISSION_RUNNER_V1",
   "base_main_sha": "1377a545fc365b077f13427e1e80e94d7d2e8809",
   "source_blobs": {
-    "task15_controlled_multi_effect_composed_admission_runner_v1.py": "e7f07640a5ec1b800ecf484bfa068106886c9441",
+    "task15_controlled_multi_effect_composed_admission_runner_v1.py": "dc86006bc2efa99c85ddf27744c32b520e8313fc",
     "tests/test_task15_controlled_multi_effect_composed_admission_runner_v1.py": "6d9e6f39dc251413a6936f61c7051ed9f86076dd",
     "contracts/TASK15_CONTROLLED_MULTI_EFFECT_COMPOSED_ADMISSION_BOUNDARY_V1.json": "d2a94bb0ab706509bc979d005a4eaae6cd2d6454",
     "task15_controlled_multi_effect_composed_admission_boundary_v1.py": "07b85cf46b6c18d64a9896a35d6a6c88b0ad4bc3",
@@ -38,7 +38,8 @@
     "local_failure_terminal": true,
     "refund_own_store_consumes_before_native_dispatch": true,
     "refund_consumed_unknown_not_retryable": true,
-    "current_external_effect_authentication": false
+    "current_external_effect_authentication": false,
+    "signed_refund_issuance_before_model_generation": true
   },
   "claim_boundaries": {
     "provider_calls": 0,
