@@ -4,8 +4,8 @@
   "base_main_sha": "00fe1dedc6ef6dd3e690bce892d81105bafb0989",
   "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
   "source_blobs": {
-    "task15_exact_native_address_return_capture_v1.py": "905d62b9d59b36b672069d8ee1570ea2f0bff8be",
-    "tests/test_task15_exact_native_address_return_capture_v1.py": "8126cc100bddc78a2c2caa0c99d83df74a904f75",
+    "task15_exact_native_address_return_capture_v1.py": "9e0a652d7f4c77ee81743c698a1fb04636aebb98",
+    "tests/test_task15_exact_native_address_return_capture_v1.py": "09ea0ee3ed3f4a2d4550ecbcf4d26d8f83c2e06c",
     "task15_native_address_profile_controlled_runner_v1.py": "2a346bef61f47a74a47e4675c36366c4aec352fc",
     "task15_native_model_response_capture_boundary_v1.py": "1f311d5714e1f6786c5c7b7a5a593f804c4a2c77",
     "contracts/TASK15_NATIVE_MODEL_RESPONSE_CAPTURE_BOUNDARY_V1.json": "296ca39095a822e6149152ab77426762ed452f3b"
@@ -29,5 +29,6 @@
     "final128_utility_recovery_proven": false,
     "independent_external_validation": false
   },
-  "next": "TASK15_COMPOSED_NATIVE_RETURN_V2_BINDING_AND_HISTORY_V1"
+  "next": "TASK15_COMPOSED_NATIVE_RETURN_V2_BINDING_AND_HISTORY_V1",
+  "execution_observation": "Native runtime result must not be overwritten by address post-state verification loop. The successor renames one shadowing local variable and appends three evidence fields, without changing admission, dispatch or state semantics."
 }
