@@ -108,4 +108,11 @@ def test_successor_replay_diff_is_only_three_terminal_return_fields():
             "native_return_canonical_json": canonical(jsonable(value)) if disposition == "COMMITTED" else None,
             "native_return_sha256": sha(jsonable(value)) if disposition == "COMMITTED" else None,
             "journal": rows}'''
-    assert legacy.count(replaced)==1 and v2==legacy.replace(replaced,actual)
+    shadowed = """            for key, value in candidate.arguments.items():
+                if value:
+                    expected["user_account"][key] = value"""
+    unshadowed = """            for key, field_value in candidate.arguments.items():
+                if field_value:
+                    expected["user_account"][key] = field_value"""
+    assert legacy.count(replaced)==1 and legacy.count(shadowed)==1
+    assert v2==legacy.replace(shadowed,unshadowed).replace(replaced,actual)
