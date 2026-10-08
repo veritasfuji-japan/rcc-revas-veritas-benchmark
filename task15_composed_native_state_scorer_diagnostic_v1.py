@@ -22,6 +22,7 @@ from task15_controlled_multi_effect_composed_admission_runner_v1 import (
     RULE as PREDECESSOR, FUNCTIONS, ORDINALS, FINAL_EVENTS,
 )
 from original_request_authority_lineage_v1 import OriginalRequestEnvelope
+from scripts.pairwise_protected_candidate_control_v1_1 import ProtectedCandidateControlV11
 from scripts.agentdojo_final_runner_integration_v0_1 import (
     ExecutionBarrier, score_after_execution,
 )
@@ -135,6 +136,14 @@ def _validate_completed(observation, *, initial_environment, envelope, case_id):
         require(type(arms) is dict and set(arms) == {"A","B"},
                 "PAIRED_NATIVE_ARM_RECORDS_REQUIRED")
         candidate = _owned_candidate(row,i)
+        recomputed = ProtectedCandidateControlV11.build(
+            case_id=case_id, proposal_ordinal=ORDINALS[i],
+            immediate_pre_state_sha256=sha(before["A"]),
+            function=FUNCTIONS[i], normalized_arguments=candidate["arguments"])
+        require(recomputed.candidate_sha256 == row["candidate_sha256"] and
+                recomputed.pairing_identity_sha256() ==
+                    row["actual_pairing_identity_sha256"],
+                "ACTUAL_ORDINAL_PAIRING_IDENTITY_NOT_RECOMPUTED")
         expected = _transition(before["A"],candidate,i)
         for arm in ("A","B"):
             a = arms[arm]
@@ -146,6 +155,26 @@ def _validate_completed(observation, *, initial_environment, envelope, case_id):
                     a.get("post_state_sha256") == sha(expected) and
                     canonical(a.get("post_environment")) == canonical(expected),
                     "NATIVE_COMPOSED_STATE_TRANSITION_MISMATCH")
+            lineage = lineages[arm].get("completed_local_observations",[])
+            require(type(lineage) is list and len(lineage) == 3,
+                    "FULL_PRIOR_NATIVE_OBSERVATION_CHAIN_REQUIRED")
+            local = lineage[i]
+            require(local.get("composition_step") == i and
+                    local.get("generation_ordinal") == ORDINALS[i] and
+                    local.get("function") == FUNCTIONS[i] and
+                    local.get("candidate_sha256") == row["candidate_sha256"] and
+                    local.get("pairing_identity_sha256") ==
+                        row["actual_pairing_identity_sha256"] and
+                    local.get("pre_state_sha256") == sha(before[arm]) and
+                    local.get("post_state_sha256") == sha(expected) and
+                    local.get("candidate") == candidate and
+                    local.get("local_state_observed") is True and
+                    local.get("effect_authenticated") is False and
+                    local.get("execution_permission") is False and
+                    local.get("native_dispatch_authorized") is False and
+                    local.get("parent_local_observation_sha256") ==
+                        (sha(lineage[i-1]) if i else None),
+                    "INDEPENDENT_PRIOR_LOCAL_OBSERVATION_CHANGED")
             journal = a["journal"]
             ev = [x["event"] for x in journal]
             require(ev.count(FINAL_EVENTS[i]) == 1 and
