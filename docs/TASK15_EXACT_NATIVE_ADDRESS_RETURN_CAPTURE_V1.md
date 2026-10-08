@@ -18,8 +18,11 @@ JSON projections. The address runner does not.
 Without editing the frozen address runner or changing any of its existing
 source/blob pins, `Task15ControlledAddressReturnCaptureRunnerV1`
 extends it, overriding **only** the single-arm replay method.
-Its method is byte-for-byte identical in functional control flow
-to the legacy implementation, except the final result gains three fields:
+Its method retains the legacy control flow. The existing address loop
+reused the name `value` while verifying post-state and thereby overwrote
+the original native return. In this successor **only**, that loop-local
+variable is renamed `field_value` to preserve the actual tuple. The
+final result also gains three fields:
 
 - `native_return`: `jsonable(value)` from the **same original**
   `runtime.run_function()` call, after the final native sink
@@ -33,8 +36,8 @@ to original Bind policy, or source mutation is permitted.
 Refused/B-blocked operations emit **null return fields**. Even the
 baseline Arm A native COMMIT cannot turn into a B-side permission.
 
-A test verifies the entire replay-method source equivalence to the
-frozen parent after removing only those three fields. Tests also
+A test verifies replay-method source equivalence to the frozen parent
+modulo **only** the loop-local rename and those three fields. Tests also
 verify A/B exact equality, current state transitions, the Bind COMMIT,
 6 ineligible B rejection scenarios and the single-use replay barrier.
 
