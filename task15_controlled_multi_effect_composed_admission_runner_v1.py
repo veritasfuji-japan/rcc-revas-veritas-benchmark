@@ -63,6 +63,9 @@ class Task15ControlledMultiEffectComposedRunner:
         self._generator_used = False
         self._phase = "READY"
         self._records = []
+        # Record a native result immediately, before the paired arm can fail.
+        # Detached native effects and UNKNOWN attempts must not disappear.
+        self._inflight_attempt = None
         self._sessions = {}
         self._boundaries = {}
         common = dict(envelope=envelope, case_id=case_id,
@@ -156,6 +159,12 @@ class Task15ControlledMultiEffectComposedRunner:
                     pre_b = copy.deepcopy(self._state["B"])
                     require(canonical(pre_a) == canonical(pre_b),
                             "PAIRING_PRESTATE_DIVERGENCE")
+                    self._inflight_attempt = dict(
+                        step=step, actual_generation_ordinal=ordinal,
+                        proof_slot=step, immediate_pre_state_sha256=sha(pre_a),
+                        stage="SCOPING", executing_arm=None,
+                        captured_arm_results={}, local_effect_status="UNKNOWN",
+                        external_effect_authenticated=False)
                     scope = {}
                     for arm in ("A", "B"):
                         scope[arm] = self._sessions[arm].issue_before_candidate(
@@ -229,6 +238,8 @@ class Task15ControlledMultiEffectComposedRunner:
                     require(set(captured) == {"candidate", "bindings", "reviews", "paired"},
                             "PRE_CANDIDATE_AUTHORITY_ISSUANCE_AND_CAPTURE_REQUIRED")
                     candidate = captured["candidate"]
+                    self._inflight_attempt.update(
+                        candidate_sha256=sha(candidate), stage="CANDIDATE_CAPTURED")
                     bindings = captured["bindings"]
                     reviews = captured["reviews"]
                     paired = captured["paired"]
@@ -242,9 +253,19 @@ class Task15ControlledMultiEffectComposedRunner:
                         self._boundaries[arm].verify_boundary(
                             boundary=reviews[arm], issued=scope[arm],
                             binding=bindings[arm], candidate=candidate)
-                        results[arm] = runner.replay_arm(prepared, arm)
-                        self._check_result(results[arm], arm=arm,
+                        self._inflight_attempt.update(
+                            stage="ARM_NATIVE_ATTEMPT_STARTED", executing_arm=arm)
+                        result = runner.replay_arm(prepared, arm)
+                        # Persist a detached snapshot immediately, before
+                        # integrity checks and before the other arm can throw.
+                        self._inflight_attempt["captured_arm_results"][arm] = dict(
+                            result=copy.deepcopy(result), integrity_verified=False)
+                        self._check_result(result, arm=arm,
                                            candidate=candidate, pre=pre_a, step=step)
+                        self._inflight_attempt["captured_arm_results"][arm][
+                            "integrity_verified"] = True
+                        results[arm] = result
+                        self._inflight_attempt["stage"] = "ARM_NATIVE_RESULT_VERIFIED"
                     row = dict(step=step, actual_generation_ordinal=ordinal,
                                proof_slot=step, candidate_sha256=sha(candidate),
                                actual_pairing_identity_sha256=paired["pairing_identity_sha256"],
@@ -254,6 +275,7 @@ class Task15ControlledMultiEffectComposedRunner:
                                    lifecycle_observation()["completed_local_observations"])
                                                     for arm in ("A", "B")})
                     self._records.append(row)
+                    self._inflight_attempt["stage"] = "BOTH_ARMS_RECORDED_PENDING_LOCAL_OBSERVATION"
                     for arm in ("A", "B"):
                         if results[arm]["disposition"] == "COMMITTED":
                             self._state[arm] = copy.deepcopy(results[arm]["post_environment"])
@@ -263,13 +285,20 @@ class Task15ControlledMultiEffectComposedRunner:
                             self._sessions[arm].close()
                     if any(results[arm]["disposition"] != "COMMITTED"
                            for arm in ("A", "B")):
+                        self._inflight_attempt = None
                         self._close("TERMINAL_PAIR_DIVERGENCE")
                         return self.observation()
                     require(canonical(self._state["A"]) == canonical(self._state["B"]),
                             "POST_NATIVE_PAIR_DIVERGENCE")
+                    self._inflight_attempt = None
                 self._phase = "COMPLETE_LOCAL_COMPOSED_RUN"
                 return self.observation()
-            except BaseException:
+            except BaseException as exc:
+                if self._inflight_attempt is not None:
+                    self._inflight_attempt.update(
+                        stage="TERMINAL_AFTER_INCOMPLETE_OR_UNVERIFIED_ARM",
+                        failure_type=type(exc).__name__,
+                        local_effect_status="UNKNOWN_OR_PARTIAL_NOT_RECONCILED")
                 self._close("TERMINAL_UNKNOWN_OR_FAILED")
                 raise
 
@@ -279,6 +308,7 @@ class Task15ControlledMultiEffectComposedRunner:
                         initial_state_sha256=self._initial,
                         receipt_anchor=copy.deepcopy(self._receipt_anchor),
                         completed_steps=copy.deepcopy(self._records),
+                        unresolved_native_attempt=copy.deepcopy(self._inflight_attempt),
                         arm_lineages={arm:session.lifecycle_observation()
                                       for arm,session in self._sessions.items()},
                         latest_local_state_sha256={arm:sha(self._state[arm])
