@@ -2,7 +2,7 @@
 
 **AIが提案した操作を、どの条件で実際に実行してよいかを証拠に基づいて評価します。**
 
-[English](README.md) · [VERITAS OS](https://github.com/veritasfuji-japan/veritas_os) · [V13正式結果](contracts/AGENTDOJO_FINAL_128_V13_TERMINAL_DISPOSITION_v1.json) · [独立検証手順](docs/AGENTDOJO_FINAL_128_INDEPENDENT_EXTERNAL_REPLICATION_HANDOFF_V1.md)
+[English](.github/README.md) · [VERITAS OS](https://github.com/veritasfuji-japan/veritas_os) · [V13正式結果](contracts/AGENTDOJO_FINAL_128_V13_TERMINAL_DISPOSITION_v1.json) · [独立検証手順](docs/AGENTDOJO_FINAL_128_INDEPENDENT_EXTERNAL_REPLICATION_HANDOFF_V1.md)
 
 > **2026-10-09時点の記載。** 研究・評価用ハーネスであり、実銀行で稼働する製品や認証取得済みの本番システムではありません。**実OpenAIプロバイダーによるV13の実測**と、**その後のTask15のプロバイダー未使用ローカル検証**を混同しないでください。CI成功だけで独立したPROVEN判定にはなりません。
 
@@ -111,6 +111,8 @@ python -m json.tool contracts/AGENTDOJO_FINAL_128_V13_POST_EXECUTION_ANALYSIS_BO
 5. 実企業の認証情報、迂回耐性、結果照合、監査証拠を含む範囲限定PoCを実施する。
 
 ## 旧v0.1 README
+
+ルートの `README.md` は凍結済みパッケージの検証対象として維持し、GitHubに表示する最新の英語版は [`.github/README.md`](.github/README.md) に配置しています。
 
 初期の「Joint Benchmark Runner / Evaluation Harness v0.1」の全文を、当時のSHA、`--bind-proxy`の注意事項、実行例を含めて[そのまま保存](docs/archive/joint-benchmark-runner-v0.1-README.md)しています。旧文書は**当時の個別ハーネス**の説明であり、最新のベンチマーク全体を説明するものではありません。
 
