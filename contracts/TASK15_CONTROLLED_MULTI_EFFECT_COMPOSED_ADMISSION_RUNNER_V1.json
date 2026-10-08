@@ -1,0 +1,72 @@
+{
+  "schema_version": "veritas.task15-controlled-multi-effect-composed-admission-runner.v1",
+  "status": "IMPLEMENTED_PENDING_CI_AND_INDEPENDENT_AUDIT",
+  "rule_of_one": "TASK15_CONTROLLED_MULTI_EFFECT_COMPOSED_ADMISSION_RUNNER_V1",
+  "base_main_sha": "1377a545fc365b077f13427e1e80e94d7d2e8809",
+  "source_blobs": {
+    "task15_controlled_multi_effect_composed_admission_runner_v1.py": "155338cceffd2b11f0513b23627b1cef623185a7",
+    "tests/test_task15_controlled_multi_effect_composed_admission_runner_v1.py": "0a2a4bd96df623769178f5da5cb9e3b961a559f1",
+    "contracts/TASK15_CONTROLLED_MULTI_EFFECT_COMPOSED_ADMISSION_BOUNDARY_V1.json": "d2a94bb0ab706509bc979d005a4eaae6cd2d6454",
+    "task15_controlled_multi_effect_composed_admission_boundary_v1.py": "07b85cf46b6c18d64a9896a35d6a6c88b0ad4bc3",
+    "task15_controlled_multi_effect_prospective_scope_lineage_v1.py": "bf6d7fe3225810f04c9be602ab6f784728b58f96",
+    "task15_native_address_profile_controlled_runner_v1.py": "2a346bef61f47a74a47e4675c36366c4aec352fc",
+    "task15_standing_order_profile_controlled_runner_v1.py": "a1070d839a4b63ad2d198159925cfaa0ac4d8b13",
+    "task15_refund_controlled_composed_admission_runner_v1.py": "09b466f42a0ffaf0d553204f63f1e8352303d7b5"
+  },
+  "operation_order": [
+    "update_user_info",
+    "update_scheduled_transaction",
+    "send_money"
+  ],
+  "actual_generation_ordinals": [
+    3,
+    9,
+    14
+  ],
+  "frozen_component_proof_slots": [
+    0,
+    1,
+    2
+  ],
+  "invariant": "A new local native action is possible only through its original frozen per-step RCC/Bind/final-sink authority; external scope review never becomes permission, pairing is exact for candidate and immediate state, and a stopped/diverged sequence cannot continue.",
+  "expected_runtime": {
+    "candidate_generator_invocations_per_step": 1,
+    "prospective_local_scopes_per_step": 2,
+    "full_candidate_pairing_required": true,
+    "per_arm_native_dispatch_maximum_per_step": 1,
+    "proof_slot_actual_ordinal_reinterpretation": false,
+    "local_failure_terminal": true,
+    "refund_own_store_consumes_before_native_dispatch": true,
+    "refund_consumed_unknown_not_retryable": true,
+    "current_external_effect_authentication": false,
+    "signed_refund_issuance_before_model_generation": true,
+    "partial_arm_native_evidence_retained_on_interruption": true,
+    "unconsumed_refund_reservation_closed_on_interruption": true,
+    "consumed_refund_reservation_kept_unknown_on_interruption": true,
+    "new_dedicated_test_cases": 15
+  },
+  "claim_boundaries": {
+    "provider_calls": 0,
+    "provider_client_construction": 0,
+    "production_effects": 0,
+    "isolated_harness_assumptions": true,
+    "independent_third_party_validation": false,
+    "full_final128_rerun": false,
+    "v13_authorization_reuse": false,
+    "utility_recovery_proven": false,
+    "injection_success_remeasured": false,
+    "external_effect_authenticated": false,
+    "durable_global_duplicate_exclusion": false,
+    "production_readiness": false,
+    "governed_three_step_composition_proven": false,
+    "certified_scope": "only exact pinned provider-free local current source and tests; CI and evidence review required"
+  },
+  "remaining_obligations": [
+    "independently verify CI and downloaded artifact",
+    "authenticate external original ledger/principal/root/time",
+    "durable receipt uniqueness beyond process-local store",
+    "held-out and independently operated replication",
+    "new separately authorized provider run and native scorer"
+  ],
+  "next_rule_of_one": "TASK15_CONTROLLED_MULTI_EFFECT_NATIVE_CONVERSATION_AND_SCORER_V1"
+}
