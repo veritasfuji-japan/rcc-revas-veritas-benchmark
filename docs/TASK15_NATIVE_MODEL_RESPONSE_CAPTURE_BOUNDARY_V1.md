@@ -2,77 +2,76 @@
 
 ## Status
 
-**IMPLEMENTED / NOT PROVEN** until exact-head CI and artifact inspection.
+**IMPLEMENTED / NOT PROVEN** until latest-HEAD CI and artifact inspection.
 
-This is an additive **offline-injected** native OpenAI response/codec bridge
-into the already proven, bounded local RCC + Bind + native Task15
-address / scheduled-rent / refund composition.
+An additive **offline-injected native OpenAI assistant response capture
+boundary** connects three independent native tool-call proposals to
+the unchanged owned Task15 RCC + Bind + native final sinks from PR #246.
 
-A permitted source response in V1 is a trusted harness-provided,
-injected offline chat completion object (OpenAI native schema), **not**
-a real provider response, independent model-provenance attestation,
-a new Final128 candidate or a production authorization.
+The source is a **test-only injected `ChatCompletionMessage` client**.
+No actual model or provider response is obtained. The recorded model ID
+is a request configuration, not evidence of provider use.
 
-## Rule of One
+## One invariant
 
-A protected native proposal passed to the prior composed runner must be
-derived directly from one native assistant response obtained **after**
-current owned profile/scope/signed authority issuance. The bridge
-strictly parses raw function-call arguments without repairing fields,
-rejects duplicate and nonfinite JSON, binds exact candidate hash,
-function and real generation ordinal (3 / 9 / 14), and allows the
-unchanged prior runner to execute RCC, Bind and its native final sink.
-The wire cannot grant or return an execution permit.
+At each step, the existing owned runner issues its scope and component
+profile (and independent signed refund authority for the refund step)
+**before** calling the candidate generator. The generator:
 
-Before the next proposal is requested, the prior A/B native result
-must already be committed and the two returns and pre/post states
-must match. Only the **returned native tool value** is inserted into
-shared model history; no model or test creates a fictitious tool
-success receipt. The three proposals are recorded with their original
-assistant-message SHA-256, IDs, requests and native schema identity.
+1. Checks that all prior steps were actually locally COMMITTED in both arms.
+2. Supplies the original user request in the native message encoding.
+3. Calls the isolated, injected offline native client once.
+4. Requires exactly one original native assistant function call of the
+   step's frozen type; parses raw JSON without repair, duplicate keys or
+   NaN/Infinity, and binds the exact candidate to current generation
+   ordinal 3/9/14.
+5. Returns the exact `CandidateAction` only to the original trusted runner.
+   RCC, profile authority, Bind and the native tool sink stay unchanged.
+6. Records the original decoded assistant message and request hashes.
+   Failures and cancellation are terminal, with no retry or new authority.
 
-After all three steps are complete, two terminal continuations are
-requested with **no tools exposed**, and any extra effect proposal is
-refused. All returned native messages share the same pre-final history
-and are never fed back into admission.
+## Important limitation: no synthetic tool-return messages
 
-## Offline evidence vs real-model evidence
+The merged address runner records native state and dispatch outcomes,
+but does not expose its original returned native tool value. Therefore,
+after the address step, the exact original native tool message **cannot
+be reconstructed from authoritative captured return bytes**.
 
-CI uses a completely injected, deterministic `StrictOfflineClient`.
-The model ID `gpt-4.1-mini-2025-04-14` is pinned in the native
-request format, but there are **zero actual GPT-4.1-mini requests**.
+This V1 deliberately performs **three independent proposal queries**
+against the same immutable system/user prefix. It does **not** append
+a guessed native tool result to a fake continuous conversation, does
+**not** request final A/B model continuations and does **not** claim
+actual AgentDojo full conversation or native function-stack capture.
 
-This V1 proves **source-at-capture wire and native-effect linkage only**
-under the owned recording-client assumptions. It does NOT prove:
-- that an external model really authored the responses;
-- a complete real provider conversation, grounded native reads or injection challenge;
-- new utility or injection scoring, or a Final128 run;
-- external bank/account payment effects, authenticated receipts, durable
-  network bind enforcement or production readiness.
+The positive fixture yields three source-captured proposals and three
+real bounded local native steps, not a complete source-authenticated
+multi-step model conversation.
 
-Injected offline tool results and terminal text are not grounds to
-relabel this work as real model evaluation.
+## Failure cases
 
-## Failure semantics
+13 malformed/forbidden first responses, plus a failure on the second
+candidate after the first native A/B effect: no retry, no rollback,
+no permit promotion, previous native effect evidence retained.
 
-Unsupported function, malformed or duplicated JSON, response role or
-choice tampering, history/tool schema mutation, provider exception and
-cancellation are terminal. No retries. If a failure happens after any
-native effect, the underlying composed runner observation is preserved
-as unresolved evidence; no rollback, compensation, NO_EFFECT claim,
-slot reset or automatic re-execution is offered.
+The exact CI proof tests provider, database, network and production
+trustlog calls as forbidden. The previous 2,242 proof-chain tests must
+succeed before 15 new cases execute.
 
-## CI
+## Scope exclusions
 
-The dedicated workflow replays the exact merged #247 proof chain
-(2,242 earlier tests) before 15 new tests, then validates offline
-transcripts, native steps, 14 refusal cases, and the zero-provider
-claim boundary. An exact git blob contract pins all dependencies.
+Provider calls: 0. Scorer calls: 0. New external effects: 0.
+No actual authenticated provider generation, continuous model history,
+full native utility measurement, attack remeasurement, Final128
+score improvement, recovery claim, persistent global duplicate
+exclusion or production readiness.
 
-## Next proof
+## Next Rule of One
 
-`TASK15_AUTHENTICATED_PROVIDER_CAPTURE_AND_FULL_NATIVE_CONVERSATION_SCORE_V1`
-requires a separately approved provider run and cost cap. It must
-first add genuine native read-only tool observations and verifiable
-provider response source/pinning, then score source-captured actual
-conversation + function stack trace. **This PR authorizes no spend.**
+`TASK15_EXACT_NATIVE_RETURN_CAPTURE_AT_FINAL_SINK_V1`:
+record the **actual bytes** of native address/rent/refund return results
+before discarding them, without changing dispatch admission, and
+prove that subsequent model history can use these real returns rather
+than reconstructed state. Until that proof, no continuous model
+conversation evaluation is admissible.
+
+Any real provider execution must be separately approved and cost-capped.
