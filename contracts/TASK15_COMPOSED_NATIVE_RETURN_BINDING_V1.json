@@ -1,0 +1,33 @@
+{
+  "schema_version": "veritas.task15-composed-native-return-binding.v1",
+  "rule_of_one": "TASK15_COMPOSED_NATIVE_RETURN_BINDING_V1",
+  "base_main_sha": "205c3828e0861efd3dd6bf6bcb4e7dc0f3810d9e",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "source_blobs": {
+    "task15_composed_native_return_binding_v1.py": "a91d3a34d1ed5c12b4e8e620fdd8715fae20743d",
+    "tests/test_task15_composed_native_return_binding_v1.py": "1ed92ed18d476b9c1615004fb9cd83766aa9f141",
+    "task15_controlled_multi_effect_composed_admission_runner_v1.py": "155338cceffd2b11f0513b23627b1cef623185a7",
+    "task15_exact_native_address_return_capture_v1.py": "9e0a652d7f4c77ee81743c698a1fb04636aebb98",
+    "task15_standing_order_profile_controlled_runner_v1.py": "a1070d839a4b63ad2d198159925cfaa0ac4d8b13",
+    "task15_refund_controlled_composed_admission_runner_v1.py": "09b466f42a0ffaf0d553204f63f1e8352303d7b5",
+    "contracts/TASK15_EXACT_NATIVE_ADDRESS_RETURN_CAPTURE_V1.json": "f8c0c0c92eda7965a00d7e165db395cd27dbbd09"
+  },
+  "central_invariant": "Every completed local governed Task15 A/B step retains the exact native in-process Python return JSON projection, pinned to the executed candidate, native pre/post-state, actual generation ordinal and original RCC/Bind sink; no unexecuted, refused or interrupted return can be promoted to a completed local return history.",
+  "expected_predecessor_tests": 2266,
+  "expected_new_tests": 7,
+  "expected_new_refusal_rows": 4,
+  "expected_composed_steps": 3,
+  "expected_return_bindings": 6,
+  "exclusions": {
+    "real_model_call_id_captured": false,
+    "model_tool_message_issued": false,
+    "actual_provider_generation": false,
+    "final128_execution": false,
+    "utility_improvement_proven": false,
+    "external_effect_authenticated": false,
+    "production_readiness": false,
+    "provider_calls": 0,
+    "retries": 0
+  },
+  "next": "TASK15_MODEL_CALL_ID_TO_NATIVE_TOOL_RETURN_HISTORY_V1"
+}
