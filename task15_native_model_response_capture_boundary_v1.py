@@ -1,12 +1,14 @@
 """Bounded source-at-capture native assistant messages for governed Task15 A/B.
 
-A trust-owned injected client supplies native chat-completion response objects.
+A trust-owned injected client supplies independent native chat-completion response objects.
 The model may propose a CandidateAction but cannot obtain/issue authorizations,
 edit request authority, dispatch a native tool or grant a retry. Every effect
 still runs solely through the exact, unchanged #246 RCC/Bind/native runner.
 
-This V1 test harness ALLOWS ONLY OFFLINE INJECTED CLIENTS. It proves wire
-preservation and linkage, NOT real provider execution, utility, or authenticity.
+This V1 test harness ALLOWS ONLY OFFLINE INJECTED CLIENTS. It proves isolated
+candidate-source preservation and native dispatch linkage. The frozen address
+runner does not export native return payloads: no continuous model/tool history
+or terminal continuations are claimed.
 Actual model/provider transport is a separate future authorization boundary.
 """
 from __future__ import annotations
@@ -35,7 +37,7 @@ def require(value,reason):
         raise Task15NativeCaptureViolation(reason)
 
 class Task15OfflineNativeModelCapture:
-    """One local run, three source-captured proposed native calls and two texts.
+    """One local run, three independent source-captured proposed native calls.
 
     External effects, actual authenticated response provenance, final benchmark
     scoring and access to fresh production credentials are excluded in V1.
@@ -148,32 +150,6 @@ class Task15OfflineNativeModelCapture:
             entry["status"]="FAILED_OR_CANCELLED"
             raise
 
-    @staticmethod
-    def _native_result_message(row, captured_call):
-        from agentdojo.types import text_content_block_from_string
-        from agentdojo.agent_pipeline.tool_execution import tool_result_to_str
-        require(row["arms"]["A"]["disposition"]=="COMMITTED" and
-                row["arms"]["B"]["disposition"]=="COMMITTED" and
-                row["arms"]["A"]["native_dispatch_count"]==1 and
-                row["arms"]["B"]["native_dispatch_count"]==1 and
-                row["arms"]["A"]["candidate_sha256"]==
-                    row["arms"]["B"]["candidate_sha256"]==
-                    row["candidate_sha256"] and
-                row["arms"]["A"]["pre_state_sha256"]==
-                    row["arms"]["B"]["pre_state_sha256"] and
-                row["arms"]["A"]["post_state_sha256"]==
-                    row["arms"]["B"]["post_state_sha256"],
-                "GOVERNED_NATIVE_PAIR_DIVERGED")
-        a,b=row["arms"]["A"],row["arms"]["B"]
-        require(type(a["native_return"]) is list and len(a["native_return"])==2 and
-                a["native_return"][1] is None and
-                canonical(a["native_return"])==canonical(b["native_return"]),
-                "ACTUAL_ARM_RETURN_NOT_SHARED")
-        return {"role":"tool","content":[text_content_block_from_string(
-                   tool_result_to_str(a["native_return"][0]))],
-                "tool_call_id":captured_call.id,
-                "tool_call":copy.deepcopy(captured_call),"error":None}
-
     def run(self):
         from rveval.models import CandidateAction
         with self._lock:
@@ -189,20 +165,21 @@ class Task15OfflineNativeModelCapture:
                         view["function"]==FUNCTIONS[step] and
                         view["original_request_digest"]==self._envelope.digest,
                         "CAPTURE_ORDER_OR_OWNED_REQUEST_CHANGED")
+                # The frozen address runner does NOT expose the exact
+                # native tool return. Do not fabricate a success receipt
+                # or claim a continuous AgentDojo conversation.
+                observation=self._runner.observation()
+                require(observation["phase"]=="RUNNING" and
+                        len(observation["completed_steps"])==step,
+                        "PREVIOUS_GOVERNED_NATIVE_STEP_NOT_TERMINAL")
                 if step:
-                    observation=self._runner.observation()
-                    require(observation["phase"]=="RUNNING" and
-                            len(observation["completed_steps"])==step,
-                            "MISSING_PRIOR_ACTUAL_EFFECT")
-                    row=observation["completed_steps"][-1]
-                    previous=self._responses[-1]
-                    require(row["step"]==step-1 and
-                            row["candidate_sha256"]==previous["candidate_sha256"],
-                            "PRIOR_SOURCE_CAPTURE_NOT_EXECUTED")
-                    # Convert real completed native A/B return into a shared
-                    # history, never predict the tool output from candidate.
-                    self._history.append(
-                        self._native_result_message(row,previous["call"]))
+                    previous=observation["completed_steps"][-1]
+                    require(previous["step"]==step-1 and
+                            previous["candidate_sha256"]==
+                                self._responses[-1]["candidate_sha256"] and
+                            all(previous["arms"][arm]["disposition"]=="COMMITTED"
+                                for arm in ("A","B")),
+                            "PREVIOUS_SOURCE_CANDIDATE_NOT_NATIVE_COMMITTED")
                 history=copy.deepcopy(self._history)
                 native=self._query(history=history,phase="PROTECTED_CANDIDATE",
                                    ordinal=ORDINALS[step],expected_tool=FUNCTIONS[step])
@@ -219,7 +196,6 @@ class Task15OfflineNativeModelCapture:
                      "source_assistant_sha256":sha(jsonable(native)),
                      "call":copy.deepcopy(call)}
                 self._responses.append(rec)
-                self._history.append(copy.deepcopy(native))
                 return candidate
 
             result=self._runner.run(generator)
@@ -232,21 +208,9 @@ class Task15OfflineNativeModelCapture:
                         row["candidate_sha256"]==rec["candidate_sha256"] and
                         row["actual_generation_ordinal"]==rec["ordinal"],
                         "SOURCE_RESPONSE_NOT_BOUND_TO_NATIVE_EFFECT")
-            common=copy.deepcopy(self._history)
-            final_tool=self._native_result_message(rows[-1],self._responses[-1]["call"])
-            common.append(final_tool)
-            common_hash=sha(jsonable(common))
-            arms=[]
-            for arm in ("A","B"):
-                # Only after all native effects are terminal. Tool exposure is
-                # empty and all additional proposed effects fail closed.
-                response=self._query(history=copy.deepcopy(common),
-                                     phase="TERMINAL_"+arm,ordinal=ORDINALS[-1]+1)
-                arms.append({"arm":arm,"messages":jsonable([*common,response]),
-                             "native_final_state_sha256":result[
-                                 "latest_local_state_sha256"][arm],
-                             "terminal_assistant_sha256":sha(jsonable(response)),
-                             "status":"TERMINAL_TEXT_AVAILABLE"})
+            # Missing raw native-return evidence makes terminal native
+            # conversation claims unsupported in this bounded proof.
+            source_hash=sha(jsonable(self._history))
             self._phase="COMPLETE_OFFLINE_CAPTURE"
             return {"rule_of_one":RULE,
                     "source_mode":"OFFLINE_INJECTED_CLIENT",
@@ -261,8 +225,11 @@ class Task15OfflineNativeModelCapture:
                     "source_candidate_events":[{
                         k:v for k,v in rec.items() if k!="call"
                     } for rec in self._responses],
-                    "common_history_sha256":common_hash,
-                    "arms":arms,
+                    "original_query_prefix_sha256":source_hash,
+                    "native_tool_returns_exposed":False,
+                    "native_conversation_captured":False,
+                    "terminal_continuations_performed":False,
+                    "model_queries_independent_by_step":True,
                     "composed_native_execution":copy.deepcopy(result),
                     "transport_journal":copy.deepcopy(self.journal),
                     "new_provider_calls":0,
