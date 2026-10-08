@@ -35,15 +35,28 @@ def main():
     for path in (evidence,refusals,junit):path.unlink(missing_ok=True)
     env["TASK15_COMPOSED_RUNNER_EVIDENCE"]=str(evidence)
     env["TASK15_COMPOSED_RUNNER_REFUSALS"]=str(refusals)
+    partial=out/(NAME+".partial.jsonl");partial.unlink(missing_ok=True)
+    env["TASK15_COMPOSED_RUNNER_PARTIAL"]=str(partial)
     run=subprocess.run([sys.executable,"-m","pytest","-q","-o","addopts=","tests/test_task15_controlled_multi_effect_composed_admission_runner_v1.py","--junitxml",str(junit)],cwd=ROOT,env=env,capture_output=True,text=True)
     (out/(NAME+".test.log")).write_text(run.stdout+run.stderr)
     print(run.stdout,end="")
     require(run.returncode==0,"COMPOSED_TESTS_FAILED:"+(run.stdout+run.stderr)[-3000:])
     cases=ET.parse(junit).getroot().findall(".//testcase")
-    require(len(cases)==13 and not any(t.find(k)is not None for t in cases for k in ("skipped","error","failure")),"TEST_POPULATION_CHANGED")
+    require(len(cases)==15 and not any(t.find(k)is not None for t in cases for k in ("skipped","error","failure")),"TEST_POPULATION_CHANGED")
     rows=[json.loads(x) for x in evidence.read_text().splitlines()]
     rejected=[json.loads(x) for x in refusals.read_text().splitlines()]
     require(len(rows)==1 and len(rejected)==6,"AUDIT_EVIDENCE_POPULATION_CHANGED")
+    incomplete=[json.loads(x) for x in partial.read_text().splitlines()]
+    require(len(incomplete)==2 and {x["fault"] for x in incomplete}=={"B_INTERRUPTED_AFTER_A_EFFECT","REFUND_B_INTERRUPTED"},"PARTIAL_EFFECT_PROBE_POPULATION_CHANGED")
+    for x in incomplete:
+        o=x["observation"];attempt=o["unresolved_native_attempt"]
+        require(o["phase"]=="TERMINAL_UNKNOWN_OR_FAILED" and attempt["executing_arm"]=="B" and "B" not in attempt["captured_arm_results"],"INTERRUPTED_PAIR_MISCLASSIFIED")
+        a=attempt["captured_arm_results"]["A"]
+        require(a["integrity_verified"] is True and a["result"]["disposition"]=="COMMITTED" and a["result"]["native_dispatch_count"]==1,"FIRST_ARM_LOCAL_EFFECT_DISCARDED")
+        if x["fault"]=="REFUND_B_INTERRUPTED":
+            store=attempt["terminal_owned_refund_store"]
+            require(len(o["completed_steps"])==2 and store["state"]=="CLOSED_BEFORE_CONSUMPTION" and store["consumptions"]==0 and store["slot_retry_allowed"] is False,"EARLIER_EFFECT_OR_RESERVATION_NOT_PRESERVED")
+        else:require(not o["completed_steps"],"INTERRUPTED_ADDRESS_COMPOSITION_NOT_TERMINAL")
     result=rows[0]
     require(result["phase"] in ("COMPLETE_LOCAL_COMPOSED_RUN","TERMINAL_PAIR_DIVERGENCE") and 1<=len(result["completed_steps"])<=3,"COMPOSITION_TERMINAL_RESULT_REQUIRED")
     for i,step in enumerate(result["completed_steps"]):
@@ -53,7 +66,7 @@ def main():
         for arm in (a,b):require(any(row["event"]=="RCC_REVIEW" for row in arm["journal"]) and arm["native_dispatch_count"] in (0,1),"NATIVE_RCC_MISSING")
         if b["disposition"]=="COMMITTED":require(any(x["event"]=="VERITAS_BIND_RECEIPT" for x in b["journal"]),"BIND_MISSING")
     require(result["provider_execution"] is False and result["utility_recovery_proven"] is False and result["externally_authenticated_effect"] is False,"INVALID_CLAIM_UPGRADE")
-    report=dict(rule_of_one=RULE,determination="BOUNDED_LOCAL_COMPOSED_RUNTIME_TESTED",predecessor_tests=2209,new_tests=13,failures=0,terminal_phase=result["phase"],governed_steps=len(result["completed_steps"]),provider_calls=0,external_effect_authenticated=False,utility_recovery_proven=False,independent_external_validation=False)
+    report=dict(rule_of_one=RULE,determination="BOUNDED_LOCAL_COMPOSED_RUNTIME_TESTED",predecessor_tests=2209,new_tests=15,partial_effect_probes=2,failures=0,terminal_phase=result["phase"],governed_steps=len(result["completed_steps"]),provider_calls=0,external_effect_authenticated=False,utility_recovery_proven=False,independent_external_validation=False)
     (out/(NAME+".json")).write_text(json.dumps(report,sort_keys=True,indent=2)+"\n")
     print("PASS_"+RULE)
 if __name__=="__main__":raise SystemExit(main())
