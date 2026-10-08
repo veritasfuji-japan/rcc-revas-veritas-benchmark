@@ -6,7 +6,7 @@
   "central_invariant": "Every candidate passed to the frozen #246 runner must be derived byte-faithfully through the exact pinned native OpenAI assistant-message decoder from one captured offline wire response. Later history is built solely from the preceding verified A/B native returns; terminal continuations cannot dispatch tools, and no failures can retry.",
   "source_blobs": {
     "task15_native_model_response_capture_boundary_v1.py": "fc50f22030d914a1bc74a1cbd21cdfbb2831bddb",
-    "tests/test_task15_native_model_response_capture_boundary_v1.py": "78b9c157719279299139891ae861152568eedd45",
+    "tests/test_task15_native_model_response_capture_boundary_v1.py": "92e69c74a1313e312fda3da202732608674522c3",
     "task15_controlled_multi_effect_composed_admission_runner_v1.py": "155338cceffd2b11f0513b23627b1cef623185a7",
     "task15_frozen_openai_wire_controlled_refund_adapter_v1.py": "cf589a98e6a3e9d8c219d7731bbcb1421cefbbf2",
     "task15_composed_native_state_scorer_diagnostic_v1.py": "9a5568ec838089dc527fec0fcfc0a72d5022e013",
