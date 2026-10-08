@@ -142,7 +142,7 @@ class Task15OfflineModelCallIdNativeReturnHistoryV1(Task15OfflineNativeModelCapt
                         and converted["tool_call_id"]==rec["call_id"],
                         "ACTUAL_NATIVE_TOOL_MESSAGE_CODEC_DIVERGENCE")
                 pair["arms"][arm]={
-                    "pre_history_sha256":sha(prior),
+                    "pre_history_sha256":sha(jsonable(prior)),
                     "post_history_sha256":sha(jsonable(prefix)),
                     "source_call_id":rec["call_id"],
                     "native_return_sha256":sha(returned),
