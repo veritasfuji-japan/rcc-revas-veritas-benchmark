@@ -1,0 +1,61 @@
+{
+  "schema_version": "veritas.task15-composed-native-state-scorer-diagnostic.v1",
+  "rule_of_one": "TASK15_COMPOSED_NATIVE_STATE_SCORER_DIAGNOSTIC_V1",
+  "base_main_sha": "98393b2d4abddd3fdaca7ede69b3d15396ad37a2",
+  "state": "IMPLEMENTED_PENDING_EXACT_MAIN_AND_INDEPENDENT_AUDIT",
+  "source_blobs": {
+    "task15_composed_native_state_scorer_diagnostic_v1.py": "9a5568ec838089dc527fec0fcfc0a72d5022e013",
+    "tests/test_task15_composed_native_state_scorer_diagnostic_v1.py": "e90a682c107d986e5edc01b024800d6cb0c6af03",
+    "task15_controlled_multi_effect_composed_admission_runner_v1.py": "155338cceffd2b11f0513b23627b1cef623185a7",
+    "task15_refund_profile_controlled_runner_v1.py": "cff48822fa36eac39eeb84d855111923fd5fb1c9",
+    "task15_standing_order_profile_controlled_runner_v1.py": "a1070d839a4b63ad2d198159925cfaa0ac4d8b13",
+    "scripts/agentdojo_native_scorer_invocation_v0_1.py": "e7e431a87a14af135e0bdc3dbf74e68e6e802dfd",
+    "scripts/agentdojo_final_runner_integration_v0_1.py": "c1e26ae453c15e7732cca959030ab833d23174bf",
+    "contracts/TASK15_CONTROLLED_MULTI_EFFECT_COMPOSED_ADMISSION_RUNNER_V1.json": "247ccd5a43f7fa53ed9906c686446c3feabe4308"
+  },
+  "central_invariant": "Native Task15 scorer may observe local A/B final states only after all three #246 recorded and independently recomputed native transitions, final sinks and B Bind receipts; scorer may never authorize, repair, retry, dispatch, or supply model-conversation evidence.",
+  "fixed_step_functions": [
+    "update_user_info",
+    "update_scheduled_transaction",
+    "send_money"
+  ],
+  "actual_generation_ordinals": [
+    3,
+    9,
+    14
+  ],
+  "component_proof_slots": [
+    0,
+    1,
+    2
+  ],
+  "native_scorer_input": {
+    "model_output": [],
+    "functions_stack_trace": [],
+    "pre_environment": "owned_initial_state",
+    "post_environment": "actual_verified_complete_three_step_final_state"
+  },
+  "expected_dedicated_tests": 18,
+  "expected_predecessor_tests": 2224,
+  "exclusions": {
+    "model_calls": 0,
+    "provider_calls": 0,
+    "production_effects": 0,
+    "new_bind_admission": 0,
+    "authority_feedback": 0,
+    "model_output_captured": false,
+    "agentdojo_pipeline_trace_captured": false,
+    "full_conversation_utility_measured": false,
+    "final128_reexecution": false,
+    "utility_recovery_proven": false,
+    "injection_success_remeasured": false,
+    "external_effect_authenticated": false,
+    "independent_external_validation": false,
+    "new_live_scoring": false,
+    "production_readiness": false
+  },
+  "source_note": "Git blob SHA values identify reviewed source; exported local record hashes do not independently authenticate external effects or human approval.",
+  "next_rule_of_one": "TASK15_ACTUAL_NATIVE_MODEL_CONVERSATION_CAPTURE_AND_PROTECTED_CONTINUATION_V1",
+  "recomputed_actual_generation_pairing_identity": true,
+  "prior_live_local_observation_chain_recomputed": true
+}
