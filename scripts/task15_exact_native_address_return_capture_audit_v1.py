@@ -5,6 +5,7 @@ import argparse,hashlib,json,os,subprocess,sys,xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
 RULE="TASK15_EXACT_NATIVE_ADDRESS_RETURN_CAPTURE_V1"
 NAME="task15-exact-native-address-return-capture-v1"
 
