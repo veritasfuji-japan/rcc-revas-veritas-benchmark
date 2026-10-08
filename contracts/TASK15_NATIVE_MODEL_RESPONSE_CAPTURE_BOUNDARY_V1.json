@@ -1,0 +1,46 @@
+{
+  "schema_version": "veritas.task15-native-model-response-capture-boundary.v1",
+  "rule_of_one": "TASK15_NATIVE_MODEL_RESPONSE_CAPTURE_BOUNDARY_V1",
+  "base_main_sha": "818afd54072268f25b3b41d12f9f6085021d872e",
+  "proof_status": "IMPLEMENTED_PENDING_EXACT_HEAD_AUDIT",
+  "central_invariant": "Every candidate passed to the frozen #246 runner must be derived byte-faithfully through the exact pinned native OpenAI assistant-message decoder from one captured offline wire response. Later history is built solely from the preceding verified A/B native returns; terminal continuations cannot dispatch tools, and no failures can retry.",
+  "source_blobs": {
+    "task15_native_model_response_capture_boundary_v1.py": "fc50f22030d914a1bc74a1cbd21cdfbb2831bddb",
+    "tests/test_task15_native_model_response_capture_boundary_v1.py": "78b9c157719279299139891ae861152568eedd45",
+    "task15_controlled_multi_effect_composed_admission_runner_v1.py": "155338cceffd2b11f0513b23627b1cef623185a7",
+    "task15_frozen_openai_wire_controlled_refund_adapter_v1.py": "cf589a98e6a3e9d8c219d7731bbcb1421cefbbf2",
+    "task15_composed_native_state_scorer_diagnostic_v1.py": "9a5568ec838089dc527fec0fcfc0a72d5022e013",
+    "scripts/agentdojo_openai_frozen_adapter_v0_1.py": "53a79d9a3f4a55c24ebb4a51f2edbd6542b81105",
+    "task15_prospective_controlled_refund_trajectory_v1.py": "cd32a7648eb04854d55e57f2f953c2e07f7f47d6",
+    "scripts/agentdojo_native_scorer_invocation_v0_1.py": "e7e431a87a14af135e0bdc3dbf74e68e6e802dfd",
+    "contracts/TASK15_COMPOSED_NATIVE_STATE_SCORER_DIAGNOSTIC_V1.json": "a2f95742fbcb1271219cafb1277700f1f9ea8595"
+  },
+  "expected_dedicated_tests": 15,
+  "expected_predecessor_tests": 2242,
+  "expected_candidate_phases": [
+    "PROTECTED_CANDIDATE",
+    "PROTECTED_CANDIDATE",
+    "PROTECTED_CANDIDATE",
+    "TERMINAL_A",
+    "TERMINAL_B"
+  ],
+  "actual_generation_ordinals": [
+    3,
+    9,
+    14
+  ],
+  "allowed_transport_mode": "OFFLINE_INJECTED_CLIENT",
+  "excluded": {
+    "provider_calls": 0,
+    "live_external_effects": 0,
+    "new_authority_from_wire": 0,
+    "new_native_scoring": 0,
+    "fully_authenticated_provider_response": false,
+    "actual_model_conversation_proven": false,
+    "final128_utility_recovery_proven": false,
+    "injection_success_remeasured": false,
+    "production_ready": false,
+    "v13_authorization_reused": false
+  },
+  "required_follow_up": "Authenticated live provider source binding, protected read prefix and complete native scorer must each be separately proven; no provider spending without explicit approval."
+}
