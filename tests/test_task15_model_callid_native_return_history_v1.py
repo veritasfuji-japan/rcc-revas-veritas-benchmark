@@ -119,14 +119,6 @@ def test_linkage_fault_after_native_effect_is_terminal_unknown_not_retried(owned
 def test_constructor_exact_type_and_unmodified_original_source(owned):
     assert Task15OfflineModelCallIdNativeReturnHistoryV1 is not Task15OfflineNativeModelCapture
     runner=make(owned)
-    class Forged(Task15ComposedNativeReturnBindingRunnerV1):pass
-    client=StrictOfflineClient()
     with pytest.raises(ValueError,match="EXACT_FRESH_OFFLINE_COMPOSED_RETURN_RUNNER_REQUIRED"):
         Task15OfflineModelCallIdNativeReturnHistoryV1(
-            runner=Forged(envelope=owned["envelope"],case_id=owned["case_id"],
-                owned_ledger_recipient=owned["owned_ledger_recipient"],
-                initial_owned_state=owned["trusted_prestate"],
-                initial_policy_draft=runner._sessions["A"]._policy_draft if False else {},
-                initial_slot_draft={},owned_clock=lambda:None,
-                review_refund=lambda state,core:{},controlled_runner_factory=lambda step,state:object()),
-            envelope=owned["envelope"],client=client)
+            runner=object(),envelope=owned["envelope"],client=StrictOfflineClient())
