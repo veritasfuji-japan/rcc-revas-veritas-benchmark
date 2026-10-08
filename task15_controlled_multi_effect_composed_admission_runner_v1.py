@@ -142,6 +142,30 @@ class Task15ControlledMultiEffectComposedRunner:
                         "CONSUMED_REFUND_REMAINS_UNKNOWN_REQUIRED")
         return disposition
 
+    @staticmethod
+    def _seal_unfinished_refund(runner, prepared):
+        """Close reserved, retain consumed as UNKNOWN; never release an attempt.
+
+        This is for exceptions outside the frozen refund runner's own B-finally,
+        including interruption between an A native append and starting B.
+        It only uses the original trusted runner's owned store and capture.
+        """
+        if type(runner) is not Task15ControlledComposedRefundRunner or prepared is None:
+            return None
+        capture = runner._execution_captures.get(prepared.context.digest)
+        if capture is None or capture.reservation is None:
+            return None
+        observation = runner._store.observe(reservation=capture.reservation)
+        if observation["state"] == "RESERVED":
+            runner._store.close_before_consumption(reservation=capture.reservation)
+        elif observation["state"] == "CONSUMED":
+            runner._store.mark_unknown(reservation=capture.reservation)
+        final = runner._store.observe(reservation=capture.reservation)
+        require(final["state"] in ("CLOSED_BEFORE_CONSUMPTION", "UNKNOWN")
+                and final["slot_retry_allowed"] is False,
+                "UNFINISHED_REFUND_SLOT_NOT_TERMINAL")
+        return final
+
     def run(self, generate_candidate: Callable):
         """Run once, with one candidate for both arms at each actual ordinal.
 
@@ -152,6 +176,8 @@ class Task15ControlledMultiEffectComposedRunner:
         with self._lock:
             require(self._phase == "READY", "ONE_COMPOSED_ATTEMPT_ONLY")
             self._phase = "RUNNING"
+            active_runner = None
+            active_prepared = None
             try:
                 require(callable(generate_candidate), "OWNED_GENERATOR_REQUIRED")
                 for step, ordinal in enumerate(ORDINALS):
@@ -172,7 +198,9 @@ class Task15ControlledMultiEffectComposedRunner:
                     # Construct the exact native runner before model generation.
                     # In particular, its signed refund issuer and owned receipt
                     # store are fixed without observing a proposed candidate.
-                    runner = self._factory(step, copy.deepcopy(pre_a))
+                    active_runner = self._factory(step, copy.deepcopy(pre_a))
+                    runner = active_runner
+                    active_prepared = None
                     require(type(runner) is RUNNERS[step],
                             "EXACT_FROZEN_NATIVE_RUNNER_REQUIRED")
                     require(runner.envelope.digest == self._envelope_digest,
@@ -235,6 +263,7 @@ class Task15ControlledMultiEffectComposedRunner:
                     prepared = runner.prepare(
                         case_id=self._case_id, proposal_ordinal=step,
                         trusted_env=native_env, candidate_generator=native_generate)
+                    active_prepared = prepared
                     require(set(captured) == {"candidate", "bindings", "reviews", "paired"},
                             "PRE_CANDIDATE_AUTHORITY_ISSUANCE_AND_CAPTURE_REQUIRED")
                     candidate = captured["candidate"]
@@ -291,6 +320,8 @@ class Task15ControlledMultiEffectComposedRunner:
                     require(canonical(self._state["A"]) == canonical(self._state["B"]),
                             "POST_NATIVE_PAIR_DIVERGENCE")
                     self._inflight_attempt = None
+                    active_runner = None
+                    active_prepared = None
                 self._phase = "COMPLETE_LOCAL_COMPOSED_RUN"
                 return self.observation()
             except BaseException as exc:
@@ -299,6 +330,17 @@ class Task15ControlledMultiEffectComposedRunner:
                         stage="TERMINAL_AFTER_INCOMPLETE_OR_UNVERIFIED_ARM",
                         failure_type=type(exc).__name__,
                         local_effect_status="UNKNOWN_OR_PARTIAL_NOT_RECONCILED")
+                # A refund may have been prepared/reserved before an unexpected
+                # exception interrupts its B arm. Seal it without creating a
+                # replacement token or claiming NO_EFFECT.
+                try:
+                    terminal_store = self._seal_unfinished_refund(
+                        active_runner, active_prepared)
+                    if self._inflight_attempt is not None and terminal_store is not None:
+                        self._inflight_attempt["terminal_owned_refund_store"] = terminal_store
+                except BaseException as seal_error:
+                    if self._inflight_attempt is not None:
+                        self._inflight_attempt["refund_store_seal_unverified"] = type(seal_error).__name__
                 self._close("TERMINAL_UNKNOWN_OR_FAILED")
                 raise
 
