@@ -160,48 +160,9 @@ class Task15ControlledMultiEffectComposedRunner:
                     for arm in ("A", "B"):
                         scope[arm] = self._sessions[arm].issue_before_candidate(
                             generation_ordinal=ordinal)
-                    proposal = generate_candidate(dict(
-                        case_id=self._case_id, function=FUNCTIONS[step],
-                        actual_generation_ordinal=ordinal, component_proof_slot=step,
-                        original_request_digest=self._envelope_digest,
-                        immediate_pre_state=copy.deepcopy(pre_a)))
-                    from rveval.models import CandidateAction
-                    require(type(proposal) is CandidateAction,
-                            "EXACT_RCC_CANDIDATE_REQUIRED")
-                    candidate = copy.deepcopy(proposal.to_dict())
-                    require(candidate.get("kind") == "tool_call"
-                            and candidate.get("name") == FUNCTIONS[step]
-                            and candidate.get("content") is None
-                            and candidate.get("metadata") == {},
-                            "FULL_NATIVE_RCC_CANDIDATE_REQUIRED")
-                    bindings = {}
-                    reviews = {}
-                    for arm in ("A", "B"):
-                        bindings[arm] = self._sessions[arm].capture_candidate(
-                            issued=scope[arm], candidate=candidate)
-                    paired = verify_controlled_pair(
-                        left=self._sessions["A"], left_scope=scope["A"],
-                        left_binding=bindings["A"], right=self._sessions["B"],
-                        right_scope=scope["B"], right_binding=bindings["B"],
-                        candidate=candidate)
-                    for arm in ("A", "B"):
-                        gate = self._boundaries[arm]
-                        reviews[arm] = gate.review(
-                            issued=scope[arm], binding=bindings[arm],
-                            candidate=candidate)
-                        gate.verify_boundary(
-                            boundary=reviews[arm], issued=scope[arm],
-                            binding=bindings[arm], candidate=candidate)
-                        p = reviews[arm].payload()
-                        require(p["actual_pairing_identity_sha256"] ==
-                                paired["pairing_identity_sha256"]
-                                and p["candidate_sha256"] == sha(candidate)
-                                and p["generation_ordinal"] == ordinal
-                                and p["legacy_component_proof_slot"] == step
-                                and all(x["status"] == "REQUIRED_UNPROVEN"
-                                        for x in p["obligations"])
-                                and p["execution_permission"] is False,
-                                "READ_ONLY_BOUNDARY_CHANGED_OR_PROMOTED")
+                    # Construct the exact native runner before model generation.
+                    # In particular, its signed refund issuer and owned receipt
+                    # store are fixed without observing a proposed candidate.
                     runner = self._factory(step, copy.deepcopy(pre_a))
                     require(type(runner) is RUNNERS[step],
                             "EXACT_FROZEN_NATIVE_RUNNER_REQUIRED")
@@ -210,10 +171,67 @@ class Task15ControlledMultiEffectComposedRunner:
                     native_env = runner.environment_type.model_validate(pre_a)
                     require(canonical(native_env.model_dump(mode="json")) ==
                             canonical(pre_a), "NATIVE_ENVIRONMENT_REINTERPRETED")
+                    captured = {}
+
+                    def native_generate(_native_view):
+                        # runner.prepare() has already issued its component
+                        # profile and, for refund, the independent signed
+                        # execution mandate before reaching this callback.
+                        proposal = generate_candidate(dict(
+                            case_id=self._case_id, function=FUNCTIONS[step],
+                            actual_generation_ordinal=ordinal,
+                            component_proof_slot=step,
+                            original_request_digest=self._envelope_digest,
+                            immediate_pre_state=copy.deepcopy(pre_a)))
+                        from rveval.models import CandidateAction
+                        require(type(proposal) is CandidateAction,
+                                "EXACT_RCC_CANDIDATE_REQUIRED")
+                        candidate = copy.deepcopy(proposal.to_dict())
+                        require(candidate.get("kind") == "tool_call"
+                                and candidate.get("name") == FUNCTIONS[step]
+                                and candidate.get("content") is None
+                                and candidate.get("metadata") == {},
+                                "FULL_NATIVE_RCC_CANDIDATE_REQUIRED")
+                        bindings, reviews = {}, {}
+                        for arm in ("A", "B"):
+                            bindings[arm] = self._sessions[arm].capture_candidate(
+                                issued=scope[arm], candidate=candidate)
+                        paired = verify_controlled_pair(
+                            left=self._sessions["A"], left_scope=scope["A"],
+                            left_binding=bindings["A"],
+                            right=self._sessions["B"], right_scope=scope["B"],
+                            right_binding=bindings["B"], candidate=candidate)
+                        for arm in ("A", "B"):
+                            gate = self._boundaries[arm]
+                            reviews[arm] = gate.review(
+                                issued=scope[arm], binding=bindings[arm],
+                                candidate=candidate)
+                            gate.verify_boundary(
+                                boundary=reviews[arm], issued=scope[arm],
+                                binding=bindings[arm], candidate=candidate)
+                            p = reviews[arm].payload()
+                            require(p["actual_pairing_identity_sha256"] ==
+                                    paired["pairing_identity_sha256"]
+                                    and p["candidate_sha256"] == sha(candidate)
+                                    and p["generation_ordinal"] == ordinal
+                                    and p["legacy_component_proof_slot"] == step
+                                    and all(x["status"] == "REQUIRED_UNPROVEN"
+                                            for x in p["obligations"])
+                                    and p["execution_permission"] is False,
+                                    "READ_ONLY_BOUNDARY_CHANGED_OR_PROMOTED")
+                        captured.update(candidate=candidate, bindings=bindings,
+                                        reviews=reviews, paired=paired)
+                        return CandidateAction(**copy.deepcopy(candidate))
+
                     prepared = runner.prepare(
                         case_id=self._case_id, proposal_ordinal=step,
-                        trusted_env=native_env,
-                        candidate_generator=lambda _: type(proposal)(**copy.deepcopy(candidate)))
+                        trusted_env=native_env, candidate_generator=native_generate)
+                    require(set(captured) == {"candidate", "bindings", "reviews", "paired"},
+                            "PRE_CANDIDATE_AUTHORITY_ISSUANCE_AND_CAPTURE_REQUIRED")
+                    candidate = captured["candidate"]
+                    bindings = captured["bindings"]
+                    reviews = captured["reviews"]
+                    paired = captured["paired"]
                     require(canonical(prepared.candidate_payload()) == canonical(candidate)
                             and prepared.candidate_sha256 == sha(candidate)
                             and prepared.control_identity_sha256 ==
