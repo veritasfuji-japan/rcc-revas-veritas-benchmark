@@ -32,13 +32,17 @@ permits, relaxed policies or any live provider execution.
    single-use token. Record real local results; do not accept supplied
    COMMITTED labels as authority.
 8. Verify real journals, candidate/pre-state hashes, one native dispatch at
-   most per arm, and exact local post-states.
+   most per arm, and exact local post-states. Persist each arm's detached native
+   result immediately, before the paired arm can raise; unresolved attempts
+   expose an UNKNOWN/PARTIAL observation rather than dropping A-side evidence.
 9. For refund B, verify the owned receipt consumed before the native call
    and left terminal UNKNOWN without reopen/retry.
 10. Preserve earlier local effect observations. If any arm refuses or
     diverges, close both lineages without acquiring a later candidate.
-    Exceptions are terminal UNKNOWN / failed: no retry, no rollback,
-    no NO_EFFECT authentication or compensation.
+    On interruption before refund B returns, close the original unconsumed
+    reservation, or retain a consumed reservation terminal UNKNOWN. Exceptions
+    preserve the in-flight result and remain terminal UNKNOWN / failed:
+    no retry, no rollback, no NO_EFFECT authentication or compensation.
 
 The factory, original request, root/principal mapping, complete native reader,
 metadata reviewer, process and clock are trusted harness assumptions. They
@@ -63,7 +67,8 @@ not a new scored Final 128.
 ## Verification
 
 The dedicated workflow runs the frozen #245 recursive audit (2209 dedicated
-previous tests) before new provider-free integration tests. It uses exact
+previous tests) before 15 new provider-free integration tests, including two interruption probes.
+A separate audit inspects the partial-effect records and refund-store closure. It uses exact
 predecessor native SHA pins and artifact hashes. A new contract pins the
 composition implementation, new tests, original proof dependencies and
 explicit claim boundaries. Failure in either chain must fail the job.
