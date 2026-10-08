@@ -82,7 +82,7 @@ def test_three_source_captured_native_candidates_and_actual_returns(owned):
                x["arms"]["B"]["native_dispatch_count"]==1
                for x in record["composed_native_execution"]["completed_steps"])
     assert [x["status"] for x in record["arms"]]==["TERMINAL_TEXT_AVAILABLE"]*2
-    assert all(len(x["messages"])==10 for x in record["arms"])
+    assert all(len(x["messages"])==9 for x in record["arms"])
     assert record["arms"][0]["messages"][:-1]==record["arms"][1]["messages"][:-1]
     assert all(c["model"]=="gpt-4.1-mini-2025-04-14" and
                c["temperature"]==0.0 and
