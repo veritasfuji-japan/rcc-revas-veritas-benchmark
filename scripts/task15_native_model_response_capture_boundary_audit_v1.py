@@ -108,8 +108,10 @@ def main():
             good["new_authority_issued_by_wire"]==0 and
             len(good["source_candidate_events"])==3 and
             [x["ordinal"] for x in good["source_candidate_events"]]==[3,9,14] and
-            len(good["arms"])==2 and
-            all(x["status"]=="TERMINAL_TEXT_AVAILABLE" for x in good["arms"]) and
+            good["native_conversation_captured"] is False and
+            good["native_tool_returns_exposed"] is False and
+            good["terminal_continuations_performed"] is False and
+            good["model_queries_independent_by_step"] is True and
             [x["phase"] for x in good["transport_journal"]]==contract["expected_candidate_phases"] and
             all(x["status"]=="RESPONSE_DECODED" for x in good["transport_journal"]) and
             good["composed_native_execution"]["phase"]=="COMPLETE_LOCAL_COMPOSED_RUN" and
@@ -124,11 +126,12 @@ def main():
         "rejected_faults":len(rejected),
         "owned_native_steps":3,
         "owned_a_b_local_dispatches":6,
-        "offline_injected_client_calls":5,
+        "offline_injected_client_calls":3,
         "provider_calls":0,
         "new_scoring_calls":0,
         "model_response_authenticity_proven":False,
         "real_provider_conversation_scored":False,
+        "continuous_native_conversation_proven":False,
         "final128_utility_recovery_proven":False,
         "external_effect_authenticated":False,
         "independent_external_validation":False,
