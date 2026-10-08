@@ -183,3 +183,65 @@ def test_runner_requires_trusted_owned_initial_state(owned, injected):
             owned_clock=lambda: NOW,
             review_refund=lambda state,core: {},
             controlled_runner_factory=lambda step,state:object())
+
+
+def test_interruption_after_A_native_commit_preserves_partial_receipt(owned, monkeypatch):
+    original = Task15ControlledAddressRunner.replay_arm
+    seen = []
+    def interrupted(self, prepared, arm):
+        if arm == "B":
+            seen.append("B_INTERRUPTED")
+            raise RuntimeError("synthetic B crash before native dispatch")
+        result = original(self, prepared, arm)
+        seen.append("A_COMMITTED")
+        return result
+    monkeypatch.setattr(Task15ControlledAddressRunner, "replay_arm", interrupted)
+    runner, _ = build(owned)
+    with pytest.raises(RuntimeError, match="synthetic B crash"):
+        runner.run(generator)
+    obs = runner.observation()
+    assert seen == ["A_COMMITTED", "B_INTERRUPTED"]
+    assert obs["phase"] == "TERMINAL_UNKNOWN_OR_FAILED"
+    assert obs["completed_steps"] == []
+    attempt = obs["unresolved_native_attempt"]
+    assert attempt["step"] == 0 and attempt["executing_arm"] == "B"
+    assert attempt["local_effect_status"] == "UNKNOWN_OR_PARTIAL_NOT_RECONCILED"
+    assert attempt["captured_arm_results"]["A"]["integrity_verified"]
+    a = attempt["captured_arm_results"]["A"]["result"]
+    assert a["disposition"] == "COMMITTED" and a["native_dispatch_count"] == 1
+    assert a["pre_state_sha256"] != a["post_state_sha256"]
+    assert "B" not in attempt["captured_arm_results"]
+    assert not obs["externally_authenticated_effect"]
+    with pytest.raises(ComposedRunnerViolation):runner.run(generator)
+    evidence("PARTIAL", {"fault":"B_INTERRUPTED_AFTER_A_EFFECT", "observation":obs})
+
+
+def test_later_refund_interruption_retains_prior_commits_and_closes_receipt(owned, monkeypatch):
+    original = Task15ControlledComposedRefundRunner.replay_arm
+    def interrupted(self, prepared, arm):
+        if arm == "B":
+            raise RuntimeError("synthetic refund B interruption")
+        return original(self, prepared, arm)
+    monkeypatch.setattr(Task15ControlledComposedRefundRunner, "replay_arm", interrupted)
+    runner, _ = build(owned)
+    with pytest.raises(RuntimeError, match="synthetic refund B interruption"):
+        runner.run(generator)
+    obs = runner.observation()
+    assert obs["phase"] == "TERMINAL_UNKNOWN_OR_FAILED"
+    assert len(obs["completed_steps"]) == 2
+    assert [x["step"] for x in obs["completed_steps"]] == [0,1]
+    assert all(x["arms"]["B"]["disposition"] == "COMMITTED"
+               for x in obs["completed_steps"])
+    assert all(len(obs["arm_lineages"][arm]["completed_local_observations"]) == 2
+               for arm in ("A","B"))
+    attempt = obs["unresolved_native_attempt"]
+    assert attempt["step"] == 2 and attempt["executing_arm"] == "B"
+    assert attempt["captured_arm_results"]["A"]["integrity_verified"]
+    assert attempt["captured_arm_results"]["A"]["result"]["native_dispatch_count"] == 1
+    store = attempt["terminal_owned_refund_store"]
+    assert store["state"] == "CLOSED_BEFORE_CONSUMPTION"
+    assert store["consumptions"] == 0 and store["slot_retry_allowed"] is False
+    assert attempt["local_effect_status"] == "UNKNOWN_OR_PARTIAL_NOT_RECONCILED"
+    assert not obs["externally_authenticated_effect"]
+    with pytest.raises(ComposedRunnerViolation):runner.run(generator)
+    evidence("PARTIAL", {"fault":"REFUND_B_INTERRUPTED", "observation":obs})
