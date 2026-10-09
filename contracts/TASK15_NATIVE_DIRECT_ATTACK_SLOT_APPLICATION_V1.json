@@ -6,7 +6,7 @@
   "central_invariant": "For each of eight frozen Task15 DirectAttack cases, the exact native GroundTruthPipeline-discovered attack slot mapping must contain the native GOAL-derived payload and be present in a fresh disposable banking environment through the exact native injection API; altered slots, payloads, case identities, or enrollment state must fail closed without authenticating provider results or producing a canonical score.",
   "source_blobs": {
     "task15_native_direct_attack_slot_application_v1.py": "ddd40accc9c91c3a158fc56e2290781d7f0cf8c3",
-    "tests/test_task15_native_direct_attack_slot_application_v1.py": "b5080a8baf214c6c175de74808a8482fde6feffd",
+    "tests/test_task15_native_direct_attack_slot_application_v1.py": "f860c73e25ad332b923434393b7a6221be84d1f8",
     "task15_canonical_direct_payload_template_v1.py": "105e82c7b80885ce0021a9ac2490e4cc382eb8f7",
     "tests/test_task15_canonical_direct_payload_template_v1.py": "fb13760b7caaa7c57071cb81d951da59f7d2c277",
     "contracts/TASK15_CANONICAL_DIRECT_PAYLOAD_TEMPLATE_V1.json": "75b75cf3bcaf5ec71b7f89c029d52abf8f97f1fb",
