@@ -82,10 +82,14 @@ def test_exact_eight_canonical_cases_have_fresh_native_injected_A_and_B_contexts
         assert row["canonical_case_executed"] is False
         assert row["eligible_for_native_canonical_scoring"] is False
         # In-place mutation of one A context cannot pollute B or another case.
+        old_a=copy.deepcopy(a["native_injected_environment"])
         old_b=sha(b["native_injected_environment"])
         a["native_injected_environment"]["__isolation_probe__"]="A-only"
         assert sha(b["native_injected_environment"])==old_b
         assert "__isolation_probe__" not in b["native_injected_environment"]
+        a["native_injected_environment"].clear()
+        a["native_injected_environment"].update(old_a)
+        assert sha(a["native_injected_environment"])==a["environment_sha256"]
     assert sha({"slots":original,"maps":maps,"source":source})==protected
     save("EVIDENCE",{"proof":result})
 
