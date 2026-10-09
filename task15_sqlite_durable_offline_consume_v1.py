@@ -114,11 +114,14 @@ class SQLiteOfflineRehearsal:
         require(self.path.is_file(),"EXISTING_ON_DISK_LEDGER_REQUIRED")
 
     @staticmethod
-    def _connection(path):
+    def _connection(path, *, create=False):
         db=sqlite3.connect(str(path),timeout=30,isolation_level=None)
         db.execute("PRAGMA busy_timeout=30000")
+        if create:
+            # WAL is a database-level durable setting. Reasserting it from
+            # every contender can itself race with a writer transaction.
+            db.execute("PRAGMA journal_mode=WAL")
         db.execute("PRAGMA synchronous=FULL")
-        db.execute("PRAGMA journal_mode=WAL")
         return db
 
     @classmethod
@@ -133,7 +136,7 @@ class SQLiteOfflineRehearsal:
             "prior_evidence":sha(prior),
             "plan":sha(plan),
         })
-        db=cls._connection(path)
+        db=cls._connection(path,create=True)
         try:
             db.executescript("""
                 CREATE TABLE tickets(
