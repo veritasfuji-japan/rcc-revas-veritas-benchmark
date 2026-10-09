@@ -1,0 +1,27 @@
+{
+  "schema_version": "veritas.task15-canonical-enrollment-gap-preflight.v1",
+  "rule_of_one": "TASK15_CANONICAL_ENROLLMENT_GAP_PREFLIGHT_V1",
+  "predecessor_merged_main_sha": "210bb3dc81ad4079d4767e9c20c2f73796363fb8",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "Exactly 8 frozen Canonical Final128 Task15 cases resolve in the pinned native AgentDojo suite and source enrollment contract, but no local synthetic, B-sourced, noncanonical Task15 evidence may be promoted to a canonical scored case by changing the case ID, enrollment roster, scorer freeze, model request, or provenance.",
+  "source_blobs": {
+    "task15_canonical_enrollment_gap_preflight_v1.py": "335567a1c35b959f36f2dad15cb1da44bb3cc820",
+    "tests/test_task15_canonical_enrollment_gap_preflight_v1.py": "410540b84566e2e5f8d6e9a0cf80d287f358fe1d",
+    "contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json": "054c79f2a83b48821ce57071185c8ceecda17ed3",
+    "contracts/AGENTDOJO_NATIVE_SCORER_FREEZE_v0.1.json": "c006b1b80a9783d5b0a27accb78598d9a2bcb73f",
+    "task15_offline_paired_scorer_input_provenance_v1.py": "e4c8988a5813ff9fe9558dbeeca9fe6c214996b6",
+    "contracts/TASK15_OFFLINE_PAIRED_SCORER_INPUT_PROVENANCE_V1.json": "dc2245722b6adf0decac7951f4c6dc6d47833b11"
+  },
+  "expected_predecessor_tests": 2337,
+  "expected_new_tests": 15,
+  "expected_denied_cases": 14,
+  "expected_task15_cases": 8,
+  "expected_total_cases": 128,
+  "scorer_calls": 0,
+  "provider_calls": 0,
+  "real_effects": 0,
+  "model_provider_authenticated": false,
+  "canonical_case_execution_proven": false,
+  "final128_utility_recovery_proven": false,
+  "next": "TASK15_INDEPENDENT_ARM_CANDIDATE_SOURCE_AND_CANONICAL_CASE_PAYLOAD_V1"
+}
