@@ -5,8 +5,8 @@
   "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
   "central_invariant": "After 3 candidate source calls generated from the original B-arm history and 6 governed native A/B commits, each A/B terminal request must independently consume the exact three own-arm native tool returns with original captured IDs and post-state identities, never cross-arm substitution or replay. Both text-only offline terminal responses must succeed once before any paired completion is published; any error retains committed effects but no complete pair.",
   "source_blobs": {
-    "task15_offline_paired_terminal_histories_v1.py": "fdeec031fbb26c76bbf8e573c2ba20f08e501f73",
-    "tests/test_task15_offline_paired_terminal_histories_v1.py": "3e5811381640bd79cbef64cd4f86040803d670cb",
+    "task15_offline_paired_terminal_histories_v1.py": "d82924b45a97482c04ce6aff9e45418d438a39ed",
+    "tests/test_task15_offline_paired_terminal_histories_v1.py": "08049ed3b21d74ea50ec8d07a84e3184dee98f58",
     "task15_offline_terminal_native_continuation_v1.py": "d7684206d2b2d2a8456eb86fa09983a1c31555db",
     "task15_offline_continuous_native_history_v1.py": "0fa7899ffcea58eb02c4d8c2ce3b2b2535575ecb",
     "task15_model_callid_native_return_history_v1.py": "54554bf6f0cb10f2e5bca05001e943c236f4ae60",
