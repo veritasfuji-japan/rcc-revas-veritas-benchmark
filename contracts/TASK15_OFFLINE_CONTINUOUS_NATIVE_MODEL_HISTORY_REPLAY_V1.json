@@ -1,0 +1,40 @@
+{
+  "schema_version": "veritas.task15-offline-continuous-native-model-history-replay.v1",
+  "rule_of_one": "TASK15_OFFLINE_CONTINUOUS_NATIVE_MODEL_HISTORY_REPLAY_V1",
+  "predecessor_main_sha": "5f473339c55ae150edbceb0b63ba599ec2190b3e",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "source_blobs": {
+    "task15_offline_continuous_native_history_v1.py": "0fa7899ffcea58eb02c4d8c2ce3b2b2535575ecb",
+    "tests/test_task15_offline_continuous_native_history_v1.py": "056098a7860d38d93379abfc2656f2273997dfcc",
+    "task15_model_callid_native_return_history_v1.py": "54554bf6f0cb10f2e5bca05001e943c236f4ae60",
+    "task15_composed_native_return_binding_v1.py": "a91d3a34d1ed5c12b4e8e620fdd8715fae20743d",
+    "task15_native_model_response_capture_boundary_v1.py": "1f311d5714e1f6786c5c7b7a5a593f804c4a2c77",
+    "contracts/TASK15_MODEL_CALL_ID_TO_NATIVE_TOOL_RETURN_HISTORY_V1.json": "bbba868c218c07ebff45e72fc63db80092781b57"
+  },
+  "central_invariant": "The second and third offline assistant candidate-source calls must actually consume the exact original predecessor tool-call and the committed, RCC/Bind-verified B-arm native result as messages in the native OpenAI request, with exact request-prefix, ordinal, source-call-ID, candidate, pre/post-state and native-return correspondence; refusal, interrupted or unpaired predecessor effects cannot authorize a subsequent source query.",
+  "expected_predecessor_tests": 2282,
+  "expected_tests": 9,
+  "expected_refusal_cases": 7,
+  "expected_native_steps": 3,
+  "expected_exact_source_wire_message_counts": [
+    2,
+    4,
+    6
+  ],
+  "expected_consumed_previous_results": [
+    0,
+    1,
+    2
+  ],
+  "expected_native_source_links": 3,
+  "expected_effect_receipts_ab": 6,
+  "source_arm_for_continuation": "B",
+  "provider_calls": 0,
+  "scorer_calls": 0,
+  "terminal_model_continuations": 0,
+  "source_authenticity_proven": false,
+  "full_conversation_proven": false,
+  "external_effect_authenticated": false,
+  "utility_recovery_proven": false,
+  "next": "TASK15_OFFLINE_TERMINAL_NATIVE_CONTINUATION_AND_SCORER_BOUNDARY_V1"
+}
