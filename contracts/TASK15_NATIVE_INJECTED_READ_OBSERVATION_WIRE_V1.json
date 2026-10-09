@@ -1,0 +1,39 @@
+{
+  "schema_version": "veritas.task15-native-injected-read-observation-wire.v1",
+  "rule_of_one": "TASK15_NATIVE_INJECTED_READ_OBSERVATION_WIRE_V1",
+  "predecessor_main_sha": "5f5ce72fc475b148d32b70ebea593edaf93007eb",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "For all eight exact pinned canonical Task15 DirectAttack local injected initial environments, use a separate A/B read-only diagnostic invocation of the actual native get_most_recent_transactions function through pinned AgentDojo ToolsExecutor and codec. Require the literal native injected payload in the matching tool wire message delivered to distinct synthetic offline A/B clients, while never pretending that the diagnostic read was proposed by an agent, governed by RCC/Bind, sent to a real provider or scored as a canonical run.",
+  "source_blobs": {
+    "task15_native_injected_read_observation_wire_v1.py": "9458b42a8af6a18d8bc2e3a9e66d556c6d5ff68c",
+    "tests/test_task15_native_injected_read_observation_wire_v1.py": "6f1137a5ded4d3ab9a60fca4e841c9a0a679f940",
+    "scripts/task15_native_injected_read_observation_wire_audit_v1.py": "27ae360a51439b5be00a6572cb6cc2bb09cefd8f",
+    "task15_canonical_ab_first_offline_source_binding_v1.py": "e8263d5f98c624322440aa804c23b2149f7a3d8e",
+    "scripts/task15_canonical_ab_first_offline_source_binding_audit_v1.py": "8f4eed3d5f717e9a9317bd5462bb4f118cf3e553",
+    "task15_canonical_injected_ab_context_isolation_v1.py": "1a1ce53fb08ad2381c30a48a94d3e204bdff10e4"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "expected_predecessor_tests": 2442,
+  "expected_new_tests": 15,
+  "expected_refusals": 14,
+  "native_canonical_task15_cases": 8,
+  "read_only_native_probe_count": 16,
+  "offline_synthetic_continuations": 16,
+  "model_authored_probe_calls": false,
+  "real_provider_calls": 0,
+  "scorer_calls": 0,
+  "native_write_dispatches": 0,
+  "real_external_effects": 0,
+  "canonical_full_trajectories_proven": false,
+  "canonical_utility_measured": false,
+  "injection_success_measured": false,
+  "next": "TASK15_MODEL_SELECTED_NATIVE_READ_OBSERVATION_AND_GOVERNED_EFFECT_V1"
+}
