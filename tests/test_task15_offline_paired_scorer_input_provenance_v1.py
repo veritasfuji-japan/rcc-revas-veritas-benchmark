@@ -94,7 +94,7 @@ def test_exact_A_B_native_helpers_project_real_terminal_output_and_function_call
             functions_stack_trace=calls)
         assert jsonable(typed.model_output)==row["model_output"]
         assert jsonable(typed.functions_stack_trace)==row["functions_stack_trace"]
-        assert sha(typed.post_environment.model_dump(mode="json"))==row["post_state_sha256"] if "post_state_sha256" in row else sha(row["post_environment"])==native["completed_steps"][2]["arms"][arm]["post_state_sha256"]
+        assert sha(typed.post_environment.model_dump(mode="json")) == native["completed_steps"][2]["arms"][arm]["post_state_sha256"]
         msg=copy.deepcopy(paired["captured_source_history"]["arm_histories"][arm])
         for i in (2,4,6):
             msg[i]["tool_calls"]=[FunctionCall(**msg[i]["tool_calls"][0])]
