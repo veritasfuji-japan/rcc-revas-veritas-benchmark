@@ -1,0 +1,31 @@
+{
+  "schema_version": "veritas.task15-independent-ab-native-candidate-source.v1",
+  "rule_of_one": "TASK15_INDEPENDENT_AB_NATIVE_CANDIDATE_SOURCE_V1",
+  "predecessor_main_sha": "d7224f5fcbaab91395e6924dd7c9ffe015e968af",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "At first protected candidate ordinal 3 in the explicitly noncanonical Task15 offline fixture, one native-format request must be independently invoked through each of two distinct injected arm clients, and only those two arm-specific native-decoded proposals with non-reused call IDs may form a read-only paired source record. Any substitution, altered request, replay, single-source alias, or incomplete pair fails closed.",
+  "source_blobs": {
+    "task15_independent_ab_native_candidate_source_v1.py": "0845ac9b575d65245466a31361155d1d6e98896b",
+    "tests/test_task15_independent_ab_native_candidate_source_v1.py": "395ce783ae360f32aa4b552defbf6f53a440f191",
+    "scripts/task15_independent_ab_native_candidate_source_audit_v1.py": "8d95ffc19a868403f783908dd963f0f54631cebd",
+    "task15_native_direct_attack_slot_application_v1.py": "ddd40accc9c91c3a158fc56e2290781d7f0cf8c3",
+    "task15_offline_paired_terminal_histories_v1.py": "d82924b45a97482c04ce6aff9e45418d438a39ed",
+    "task15_native_model_response_capture_boundary_v1.py": "1f311d5714e1f6786c5c7b7a5a593f804c4a2c77",
+    "task15_frozen_openai_wire_controlled_refund_adapter_v1.py": "cf589a98e6a3e9d8c219d7731bbcb1421cefbbf2"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993"
+  },
+  "expected_predecessor_tests": 2382,
+  "expected_new_tests": 15,
+  "expected_refusal_classes": 14,
+  "expected_local_offline_first_candidate_arm_invocations": 2,
+  "canonical_final128_enrollment_proven": false,
+  "all_three_steps_independently_generated": false,
+  "provider_calls": 0,
+  "scorer_calls": 0,
+  "external_effects": 0,
+  "next": "TASK15_CANONICAL_AB_INJECTED_CASE_AND_NATIVE_STATE_BINDING_V1"
+}
