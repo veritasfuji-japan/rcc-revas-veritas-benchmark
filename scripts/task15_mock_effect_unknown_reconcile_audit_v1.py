@@ -78,7 +78,10 @@ def main():
                 "c32de2526ee5e2fd454fd1359ef985d582caf2c8",
             "EXACT_PR271_MERGED_MAIN_REQUIRED")
     for path,digest in contract["source_blobs"].items():
-        require(blob(ROOT/path)==digest,"SOURCE_GIT_BLOB_MISMATCH:"+path)
+        actual=blob(ROOT/path)
+        require(actual==digest,
+                "SOURCE_GIT_BLOB_MISMATCH:"+path+
+                ":expected="+digest+":actual="+actual)
     for path,digest in contract["agentdojo_native_blobs"].items():
         require(blob(a.agentdojo_root.resolve()/path)==digest,
                 "AGENTDOJO_EXACT_SOURCE_BLOB_DRIFT:"+path)
