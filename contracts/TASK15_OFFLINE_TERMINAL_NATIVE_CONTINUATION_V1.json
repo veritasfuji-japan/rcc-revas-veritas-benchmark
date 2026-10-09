@@ -1,0 +1,33 @@
+{
+  "schema_version": "veritas.task15-offline-terminal-native-continuation.v1",
+  "rule_of_one": "TASK15_OFFLINE_TERMINAL_NATIVE_CONTINUATION_V1",
+  "predecessor_main_sha": "af0bd75c374915587a2c2952baa957d491d8da02",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "source_blobs": {
+    "task15_offline_terminal_native_continuation_v1.py": "d7684206d2b2d2a8456eb86fa09983a1c31555db",
+    "tests/test_task15_offline_terminal_native_continuation_v1.py": "9e0b67c5539ddfbf30f313b8985bebbf17d374ca",
+    "task15_offline_continuous_native_history_v1.py": "0fa7899ffcea58eb02c4d8c2ce3b2b2535575ecb",
+    "task15_model_callid_native_return_history_v1.py": "54554bf6f0cb10f2e5bca05001e943c236f4ae60",
+    "task15_composed_native_return_binding_v1.py": "a91d3a34d1ed5c12b4e8e620fdd8715fae20743d",
+    "task15_native_model_response_capture_boundary_v1.py": "1f311d5714e1f6786c5c7b7a5a593f804c4a2c77",
+    "contracts/TASK15_OFFLINE_CONTINUOUS_NATIVE_MODEL_HISTORY_REPLAY_V1.json": "ff3bd98aa0964db5848cb3e8c36007db1931b3fc"
+  },
+  "central_invariant": "After the three governed composed native steps and three offline source assistant calls are complete, submit a single actual text-only terminal query whose exact eight native OpenAI messages contain all three assistant tool-call IDs and all three B-arm committed native tool returns; the new request must have no tool definitions, no additional effects and no retries. Unsupported terminal response or mutated history must fail closed with prior effects preserved as unreconciled, without fabricating an answer.",
+  "expected_predecessor_tests": 2291,
+  "expected_tests": 11,
+  "expected_refusal_cases": 9,
+  "expected_total_offline_client_queries": 4,
+  "expected_source_candidate_queries": 3,
+  "expected_terminal_queries": 1,
+  "expected_terminal_wire_messages": 8,
+  "expected_governed_native_effects_ab": 6,
+  "expected_terminal_native_return_inputs": 3,
+  "source_arm_for_terminal": "B",
+  "provider_calls": 0,
+  "scorer_calls": 0,
+  "external_effect_authenticated": false,
+  "A_arm_terminal_tested": false,
+  "full_provider_conversation_proven": false,
+  "final128_utility_recovery_proven": false,
+  "next": "TASK15_OFFLINE_PAIRED_TERMINAL_CONTINUATION_AND_SCORER_BOUNDARY_V1"
+}
