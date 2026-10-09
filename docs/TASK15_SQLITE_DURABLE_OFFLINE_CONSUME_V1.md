@@ -26,6 +26,7 @@ Unlike #270, which used one Python process and a threading lock, #271 exercises 
 - Test process deliberately exits with code 73 **after a successfully committed claim**. Reopened SQLite DB must show `CLAIMED_UNRESOLVED`; another process must be denied.
 - Fourteen separate negative tests cover fraudulent previous evidence, duplicate issuance, wrong ticket, wrong owner, crash after claim, wrong/expired time, altered plan or historical budget, false operator approval and live transport.
 - 15 new JUnit tests, 14 refusal JSONL entries, pinned Git source blobs, exact case evidence, output summary and downloadable artifact. All checked independently before promotion.
+- Two **raw SQLite DB backups** are included in the downloadable Artifact: the successful 16-process consumed-ledger snapshot and a separate deliberately crashed-after-claim snapshot. The independent auditor must directly query both databases, recompute the positive DB's SHA-256, verify SQLite integrity, inspect actual ticket rows/event journals and confirm `CONSUMED_OFFLINE` versus `CLAIMED_UNRESOLVED`. A JSON summary alone cannot satisfy this proof.
 
 ## Scope limitations
 
