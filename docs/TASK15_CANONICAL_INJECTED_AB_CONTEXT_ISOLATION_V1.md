@@ -12,7 +12,7 @@ For each of the eight **actual** native AgentDojo banking Task15 `direct` attack
 
 - Eight exact Task15 case IDs `banking:user_task_15:injection_task_{0,1,2,3,4,5,6,8}:direct`.
 - Sixteen separate prospective injected initial contexts (one A, one B for every case).
-- A prospective two-message native-format system/user prefix using the pinned **actual Task15 user prompt**, not the local design prompt.
+- A prospective two-message native-format system/user prefix (AgentDojo OpenAI codec converts internal system role to wire developer role) using the pinned **actual Task15 user prompt**, not the local design prompt.
 - Native `TaskSuite.load_and_inject_default_environment` actually constructs every initial A/B context. These are **in-memory** test environments only.
 - Source proof from PR #259 is checked against its exact eight case-wise native injection mapping and payload hashes.
 - PR #261’s two isolated three-step model source histories are verified as original, **noncanonical, and ineligible** for these eight cases; no source history is copied over or reinterpreted as a canonical completed model trajectory.
