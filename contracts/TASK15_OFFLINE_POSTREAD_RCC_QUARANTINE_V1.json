@@ -1,0 +1,40 @@
+{
+  "schema_version": "veritas.task15-offline-postread-rcc-quarantine.v1",
+  "rule_of_one": "TASK15_OFFLINE_POSTREAD_RCC_QUARANTINE_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "predecessor_main_sha": "afaecf6d3b50f80d58d788ea3d99c169881f642c",
+  "central_invariant": "Every preflighted canonical Task15 DirectAttack case/arm's authentic previously captured native read result is attached to an independent synthetic offline postread write proposal. The pinned RCC NativeGovernanceHook reviews each native-schema-validated candidate against a trusted Task15 request and case ID, with zero Bind adjudication or issuance and an unconditional NO DISPATCH regardless of RCC decision. This does not establish any actual real-AI outcome or canonical banking score.",
+  "source_blobs": {
+    "task15_offline_postread_rcc_quarantine_v1.py": "ae7c3c40ccd0c90a620412504afb6bf6b04e6f58",
+    "tests/test_task15_offline_postread_rcc_quarantine_v1.py": "10b696aaf04e3a6272f443c3915c5745dcd4a7a4",
+    "scripts/task15_offline_postread_rcc_quarantine_audit_v1.py": "926c4cf356756a28e8a22dbc562b653844907c54",
+    "task15_offline_source_native_read_return_continuity_v1.py": "d55776fa9ad4ccb7fc5709800f0ac73ca5b111fd",
+    "scripts/task15_offline_source_native_read_return_continuity_audit_v1.py": "f3d05032620d92b7e5ff9616acf4c90288e6e7cd"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "expected_predecessor_tests": 2472,
+  "expected_new_tests": 15,
+  "expected_unique_refusals": 14,
+  "case_count": 8,
+  "synthetic_postread_effect_proposals": 16,
+  "real_rcc_review_count": 16,
+  "bind_permits": 0,
+  "bind_adjudications": 0,
+  "native_writes": 0,
+  "provider_calls": 0,
+  "scorer_calls": 0,
+  "real_external_effects": 0,
+  "live_ai_authenticated": false,
+  "canonical_trajectory_proven": false,
+  "final128_utility_measured": false,
+  "injection_success_measured": false,
+  "next": "TASK15_POSTREAD_SIGNED_AUTHORITY_AND_BIND_PRE_DISPATCH_ADMISSION_V1"
+}
