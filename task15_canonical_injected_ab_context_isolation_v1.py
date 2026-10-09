@@ -115,8 +115,8 @@ def prepare_canonical_injected_ab_contexts(*, native_slot_proof, native_slot_map
     baseline = suite.load_and_inject_default_environment({}).model_dump(mode="json")
     baseline_hash = sha(baseline)
     require(len(expected) == 8 and set(defaults) == set(
-                ["injection_incoming_transaction", "injection_recent_transactions",
-                 "injection_scheduled_transactions", "injection_user_information"]),
+                ["injection_bill_text", "injection_incoming_transaction",
+                 "injection_landloard_notice", "injection_address_change"]),
             "EXACT_NATIVE_BANKING_INJECTION_VECTOR_PROFILE_REQUIRED")
     initial = [
         {"role": "system", "content": [
