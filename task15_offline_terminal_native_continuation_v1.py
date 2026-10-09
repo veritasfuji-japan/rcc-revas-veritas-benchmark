@@ -174,6 +174,7 @@ class Task15OfflineTerminalNativeContinuationV1(
                 "native_return_bindings": 6,
                 "post_terminal_native_dispatches": 0,
                 "provider_calls": 0,
+                "actual_provider_execution": False,
                 "scorer_calls": 0,
                 "automatic_retries": 0,
                 "model_provider_authenticated": False,
