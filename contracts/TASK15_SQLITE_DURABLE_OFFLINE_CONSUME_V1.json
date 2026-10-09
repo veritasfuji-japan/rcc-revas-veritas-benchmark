@@ -6,8 +6,8 @@
   "central_invariant": "For one pinned Task15 offline provider rehearsal plan, 16 independent local Python processes contending on one SQLite WAL/FULL on-disk ledger may atomically claim at most once, with 15 durable replay refusals. Failed validation after atomic claim burns the ticket, and a crash after claim must remain CLAIMED_UNRESOLVED without automatic retry. No live provider/bank execution authority can be issued.",
   "source_blobs": {
     "task15_sqlite_durable_offline_consume_v1.py": "4ef93f6b8583eeb1fe542db45e76bdaeb1d233ea",
-    "tests/test_task15_sqlite_durable_offline_consume_v1.py": "37d39774ada4c95b43ad5ddc79c0e9e19982bdff",
-    "scripts/task15_sqlite_durable_offline_consume_audit_v1.py": "f43adfab7f0543205a06bc5791da5d9275a55c36",
+    "tests/test_task15_sqlite_durable_offline_consume_v1.py": "d24bc801af6f09367068baff3469d7e21b3cc042",
+    "scripts/task15_sqlite_durable_offline_consume_audit_v1.py": "57e4c7bda2f71863de4725acb54cd3081c621b2c",
     "scripts/task15_provider_single_use_rehearsal_default_deny_audit_v1.py": "d14cb1ab34dde3d08b8e65e4f55d86d2872fa055",
     "task15_provider_single_use_rehearsal_default_deny_v1.py": "63403ace230c0d59095ab98c2560771c119d91a7"
   },
@@ -40,5 +40,8 @@
   "crash_effect_reconciliation_proven": false,
   "trusted_clock_proven": false,
   "actual_authenticated_model_response_proven": false,
-  "next": "SEPARATELY_AUTHORIZED_AND_AUDITED_ISSUER_WITH_TRUST_ROOT_AND_LIVE_PROVIDER_AUTHENTICITY_PENDING"
+  "next": "SEPARATELY_AUTHORIZED_AND_AUDITED_ISSUER_WITH_TRUST_ROOT_AND_LIVE_PROVIDER_AUTHENTICITY_PENDING",
+  "expected_raw_sqlite_artifacts": 2,
+  "positive_raw_sqlite_expected_state": "CONSUMED_OFFLINE",
+  "crash_raw_sqlite_expected_state": "CLAIMED_UNRESOLVED"
 }
