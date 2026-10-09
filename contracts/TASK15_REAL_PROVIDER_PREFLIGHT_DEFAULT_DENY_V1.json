@@ -1,0 +1,42 @@
+{
+  "schema_version": "veritas.task15-real-provider-preflight-default-deny.v1",
+  "rule_of_one": "TASK15_REAL_PROVIDER_PREFLIGHT_DEFAULT_DENY_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "predecessor_main_sha": "f96051f7afd0395b8f4d4707b544023c06ba28ec",
+  "central_invariant": "The exact 16 Task15 synthetic post-read case-arm sources and their prior RCC/Bind decision evidence can be bound to a frozen named model, user/request/tool hashes and maximum spend ceiling without issuing ANY transport credential, real provider permission, source authenticity assertion or execution authority. Explicitly block every live call until independent fresh scoped approval and a later separately reviewed executable run.",
+  "source_blobs": {
+    "task15_real_provider_preflight_default_deny_v1.py": "be8d93cb246fa3a3bf21916dd7ab413284076d41",
+    "tests/test_task15_real_provider_preflight_default_deny_v1.py": "cc207f074a7a93235e39a239af52ff61ec21876c",
+    "scripts/task15_real_provider_preflight_default_deny_audit_v1.py": "432e683a90f34242e74b3b4df8228ca3cd97e516",
+    "scripts/task15_postread_a_bind_commit_b_refusal_pair_audit_v1.py": "1abab9f70996e92dce77af28bedce5f73a29ccf5",
+    "task15_postread_a_bind_commit_b_refusal_pair_v1.py": "9ad1e78faf64b5929af502588ea6f41b7d71d4a7"
+  },
+  "model_configuration_blob": "59a77c03f7e98a6d8a5fa9b78ba356cfc12ff92d",
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "selected_provider": "openai",
+  "selected_model_snapshot": "gpt-4.1-mini-2025-04-14",
+  "provider_spend_ceiling_usd": 5,
+  "provider_spend_ceiling_is_permission": false,
+  "execution_gate": "CLOSED",
+  "provider_api_key_allowed": false,
+  "fresh_execution_approval_present": false,
+  "single_use_provider_capability_issued": false,
+  "live_transport_adapter_enabled": false,
+  "real_authenticated_model_response_proven": false,
+  "expected_offline_request_bindings": 16,
+  "expected_new_tests": 15,
+  "expected_unique_refusals": 14,
+  "expected_provider_calls": 0,
+  "expected_native_writes": 0,
+  "expected_real_external_effects": 0,
+  "expected_final128_scores": false,
+  "next": "SEPARATE_EXPLICIT_CONSENT_FOR_SCOPED_REAL_PROVIDER_SOURCE_CAPTURE_AND_SINGLE_USE_BUDGETED_ATTEMPT"
+}
