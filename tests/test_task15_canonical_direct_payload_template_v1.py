@@ -9,7 +9,7 @@ if os.environ.get("TASK15_CANONICAL_DIRECT_PAYLOAD_PROOF")!="1":
 from test_task15_canonical_enrollment_gap_preflight_v1 import (
     completed, issue, owned_freezes,
 )
-from test_task15_composed_native_return_binding_v1 import forbidden_effects
+from test_task15_composed_native_return_binding_v1 import owned, forbidden_effects
 from task15_canonical_direct_payload_template_v1 import (
     verify_canonical_task15_direct_payloads, native_expected_direct_payloads,
     CanonicalPayloadViolation, ENROLLED_TASK15, LOCAL_DESIGN_CASE, RULE,
