@@ -1,0 +1,42 @@
+{
+  "schema_version": "veritas.task15-mock-effect-unknown-reconcile.v1",
+  "rule_of_one": "TASK15_MOCK_EFFECT_UNKNOWN_RECONCILE_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "predecessor_main_sha": "c32de2526ee5e2fd454fd1359ef985d582caf2c8",
+  "central_invariant": "A locally persisted mock dispatch fence must leave UNKNOWN after any possible provider invocation until a receipt supported by a separately stored mock-provider effect row is read and verified; absence of a mock row is NOT NO_EFFECT after the fence, and an interrupted/unknown dispatch cannot be retried. PRE_DISPATCH_NO_EFFECT is only possible before a dispatch fence.",
+  "source_blobs": {
+    "task15_mock_effect_unknown_reconcile_v1.py": "188d925e8330aa6657955f692ebfeb9c6835e528",
+    "tests/test_task15_mock_effect_unknown_reconcile_v1.py": "e0946d44c79a3b61344bf51aeb53dfcc4d2336d5",
+    "scripts/task15_mock_effect_unknown_reconcile_audit_v1.py": "55efb60c054dcf177fef01c9315649337ff9e619",
+    "task15_sqlite_durable_offline_consume_v1.py": "4ef93f6b8583eeb1fe542db45e76bdaeb1d233ea",
+    "scripts/task15_sqlite_durable_offline_consume_audit_v1.py": "57e4c7bda2f71863de4725acb54cd3081c621b2c"
+  },
+  "model_configuration_blob": "59a77c03f7e98a6d8a5fa9b78ba356cfc12ff92d",
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "expected_cumulative_predecessor_tests": 2562,
+  "expected_new_tests": 15,
+  "expected_negative_refusals": 14,
+  "expected_local_mock_scenarios": 6,
+  "expected_raw_sqlite_snapshots": 14,
+  "expected_mock_effect_positive_outcomes": 3,
+  "expected_mock_postfence_unknown_scenarios": 2,
+  "expected_predispatch_noeffect_scenarios": 1,
+  "mock_provider_transport_only": "LOCAL_SQLITE_SIMULATOR",
+  "trusted_production_provider_proven": false,
+  "authenticated_model_response_proven": false,
+  "real_provider_credential_issuance": false,
+  "actual_live_provider_calls": 0,
+  "actual_live_provider_charges_usd": 0,
+  "actual_bank_effects": 0,
+  "human_approval_issued": false,
+  "multi_host_or_network_recovery_proven": false,
+  "next": "SEPARATE_AUTHENTICATED_PROVIDER_RECEIPT_AND_EXTERNAL_EFFECT_RECONCILIATION_AFTER_EXPLICIT_CONSENT"
+}
