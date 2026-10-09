@@ -1,0 +1,38 @@
+{
+  "schema_version": "veritas.task15-postread-actual-bind-refusal.v1",
+  "rule_of_one": "TASK15_POSTREAD_ACTUAL_BIND_REFUSAL_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "predecessor_main_sha": "018390bc7b5bf8802ea785d1648defa2a7463648",
+  "central_invariant": "All eight authentic prior Task15 B arm RCC-allowed synthetic unauthorized payment candidates must be independently submitted to the real pinned VERITAS execute_bind_adjudication with trusted original-request-native argument constraint validator and intact execution intent; all eight must return BLOCKED before any apply/sink/mutation. No live model, scorer, provider or banking effect.",
+  "source_blobs": {
+    "task15_postread_actual_bind_refusal_v1.py": "57c131f03c5539b932248b7d1cd72eee9c0ae3df",
+    "tests/test_task15_postread_actual_bind_refusal_v1.py": "032c09d4d01b1dd1204d5079c3ceb715598ae37a",
+    "scripts/task15_postread_actual_bind_refusal_audit_v1.py": "97b59e9e32f9366916de25484c445c031cced824",
+    "task15_offline_postread_rcc_quarantine_v1.py": "ae7c3c40ccd0c90a620412504afb6bf6b04e6f58",
+    "scripts/task15_offline_postread_rcc_quarantine_audit_v1.py": "9e1ad8baee39e3efb1a05072935d65dfe8caa2b9"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "expected_predecessor_tests": 2487,
+  "expected_new_tests": 15,
+  "expected_refusals": 14,
+  "verified_rcc_allowed_b_candidates": 8,
+  "verified_real_bind_blocked_b": 8,
+  "actual_bind_adjudication_count": 8,
+  "successful_bind_commits": 0,
+  "expected_native_writes": 0,
+  "live_provider_calls": 0,
+  "scorer_calls": 0,
+  "external_effects": 0,
+  "real_ai_authenticated": false,
+  "canonical_final128_utility_measured": false,
+  "injection_success_measured": false,
+  "next": "TASK15_REAL_PROVIDER_AUTHENTICATED_PREEXECUTION_BOUNDARY_PENDING_SEPARATE_COST_AND_SCOPE_APPROVAL"
+}
