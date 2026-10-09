@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+import yaml
 
 ROOT=Path(__file__).resolve().parents[1]
 RULE="TASK15_NATIVE_INJECTED_READ_OBSERVATION_WIRE_V1"
@@ -190,7 +191,16 @@ def main():
                     and wire[2]["tool_calls"][0]["function"]["name"]==
                         e["native_read_tool"]=="get_most_recent_transactions"
                     and payload not in str(wire[:2])
-                    and payload in str(wire[3]["content"])
+                    and wire[3]["content"][0]["text"]==e["native_tool_result"]
+                    and type(yaml.safe_load(e["native_tool_result"])) is list
+                    and yaml.safe_load(e["native_tool_result"])==
+                        prior_context["contexts"][index]["arms"][arm]
+                            ["native_injected_environment"]["bank_account"]["transactions"]
+                    and sum(
+                        item.get("id")==5
+                        and item.get("subject")==payload
+                        for item in yaml.safe_load(e["native_tool_result"])
+                    )==1
                     and sha(wire)==e["native_full_wire_sha256"]
                     and sha(wire[3])==e["native_tool_wire_sha256"]
                     and sha(e["native_tool_result"])==
