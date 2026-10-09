@@ -33,16 +33,17 @@ def require(ok, reason):
         raise EnrollmentPreflightViolation(reason)
 
 
-def preflight_task15_canonical_enrollment(*, projection, enrollment,
-                                          scorer_freeze, local_case_id,
-                                          original_instruction):
+def preflight_task15_canonical_enrollment(*, projection, paired,
+                                          enrollment, scorer_freeze,
+                                          local_case_id, original_instruction):
     """Produce deterministic, non-promotable gap report for 8 frozen cases."""
     # Never accept a caller-produced mutable reference to underlying evidence.
     evidence = copy.deepcopy(projection)
     enrolled = copy.deepcopy(enrollment)
     scorer = copy.deepcopy(scorer_freeze)
-    old = sha({"projection":projection, "enrollment":enrollment,
-               "scorer":scorer_freeze, "case":local_case_id,
+    old = sha({"projection":projection, "paired":paired,
+               "enrollment":enrollment, "scorer":scorer_freeze,
+               "case":local_case_id,
                "original_instruction":original_instruction})
     require(type(local_case_id) is str
             and local_case_id == LOCAL_DESIGN_CASE
@@ -69,6 +70,26 @@ def preflight_task15_canonical_enrollment(*, projection, enrollment,
             and evidence.get("injection_success_measured") is False
             and evidence.get("final128_utility_recovery_proven") is False,
             "PREDECESSOR_NONCANONICAL_PROJECTION_NOT_FROZEN")
+    # An arbitrary claimed instruction is insufficient: it must match the
+    # captured exact native A/B source, and the projection must bind that same
+    # completed paired terminal observation.
+    pair = copy.deepcopy(paired)
+    require(evidence.get("source_paired_terminal_sha256") == sha(pair)
+            and pair.get("rule_of_one") ==
+                 "TASK15_OFFLINE_PAIRED_TERMINAL_NATIVE_HISTORIES_V1"
+            and pair.get("source_mode") == "OFFLINE_INJECTED_CLIENT"
+            and pair.get("candidate_source_arm") == "B"
+            and pair.get("actual_provider_calls") == 0
+            and pair.get("scorer_calls") == 0,
+            "PROJECTED_LOCAL_SOURCE_NOT_PINNED_TO_PAIRED_HISTORY")
+    histories = pair["captured_source_history"]["arm_histories"]
+    require(set(histories) == {"A", "B"}
+            and all(type(histories[a]) is list
+                    and histories[a][1]["role"] == "user"
+                    and histories[a][1]["content"] ==
+                    [{"type":"text","content":original_instruction}]
+                    for a in ("A", "B")),
+            "ORIGINAL_INSTRUCTION_NOT_IN_SOURCE_ARM_HISTORIES")
     require(type(evidence.get("scorer_inputs")) is dict
             and set(evidence["scorer_inputs"]) == {"A", "B"}
             and all(evidence["scorer_inputs"][arm]["case_id"] ==
@@ -158,7 +179,8 @@ def preflight_task15_canonical_enrollment(*, projection, enrollment,
         })
     require(len(cases)==8 and len({r["case_id"] for r in cases})==8,
             "EXACT_EIGHT_TASK15_ENROLLMENT_ROWS")
-    require(sha({"projection":projection,"enrollment":enrollment,
+    require(sha({"projection":projection,"paired":paired,
+                "enrollment":enrollment,
                 "scorer":scorer_freeze,"case":local_case_id,
                 "original_instruction":original_instruction}) == old,
             "CALLER_SOURCE_MUTATED")
