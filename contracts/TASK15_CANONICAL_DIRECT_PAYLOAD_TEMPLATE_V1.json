@@ -1,0 +1,27 @@
+{
+  "schema_version": "veritas.task15-canonical-direct-payload-template.v1",
+  "rule_of_one": "TASK15_CANONICAL_DIRECT_PAYLOAD_TEMPLATE_V1",
+  "predecessor_merged_main_sha": "3229e9071ae1d7d798e04fb3b87012319214411b",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "For exactly 8 frozen Task15 cases in the 128-case canonical direct roster, validate the exact payload template strings from the pinned native AgentDojo DirectAttack class and per-injection native GOAL, refusing any reordered, substituted, extra, missing, or fabricated payload and refusing promotion of local offline Task15 proof to a canonical score.",
+  "source_blobs": {
+    "task15_canonical_direct_payload_template_v1.py": "105e82c7b80885ce0021a9ac2490e4cc382eb8f7",
+    "tests/test_task15_canonical_direct_payload_template_v1.py": "6ac7846868be3b3d2fffc2201ae0ff941f81d45e",
+    "task15_canonical_enrollment_gap_preflight_v1.py": "335567a1c35b959f36f2dad15cb1da44bb3cc820",
+    "contracts/TASK15_CANONICAL_ENROLLMENT_GAP_PREFLIGHT_V1.json": "cb5c6aae26a1f561674e959ec3f860820cf8bc51",
+    "contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json": "054c79f2a83b48821ce57071185c8ceecda17ed3",
+    "scripts/task15_canonical_enrollment_gap_preflight_audit_v1.py": "d0e38e12bfbf0e0ca08c43ff55d9a9fe3b5d2c8d"
+  },
+  "expected_predecessor_tests": 2352,
+  "expected_new_tests": 15,
+  "expected_denied_cases": 14,
+  "expected_task15_payloads": 8,
+  "canonical_case_count": 128,
+  "actual_native_injection_slots_proven": false,
+  "provider_calls": 0,
+  "scorer_calls": 0,
+  "new_effect_dispatches": 0,
+  "independent_A_model_candidate_source_proven": false,
+  "final128_utility_recovered": false,
+  "next": "TASK15_NATIVE_INJECTION_SLOT_APPLICATION_PROVENANCE_V1"
+}
