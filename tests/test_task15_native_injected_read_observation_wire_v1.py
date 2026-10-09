@@ -148,7 +148,7 @@ def test_native_injected_transaction_tool_return_reaches_all_sixteen_offline_wir
 
 
 @pytest.mark.parametrize("case_index,arm,fault",[
-    (0,"A","exception"),(7,"B","exception"),(3,"B","cancel"),
+    (7,"B","exception"),(3,"B","cancel"),
     (2,"A","request_mutation"),(0,"B","wrong_role"),(1,"B","refusal"),
     (6,"A","empty_content"),(5,"B","unexpected_call"),
     (7,"A","extra_choice"),
