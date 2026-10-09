@@ -90,6 +90,7 @@ class LocalMockConsequence:
         self.plan=plan
         self.plan_sha=sha(plan)
         self.prior_sha=sha(prior)
+        self._local_dispatch_armed=False
         self.operation_id=sha({
             "domain":"task15.offline-mock-provider-effect.v1",
             "source_ticket":prior["ticket_id"],
@@ -219,6 +220,8 @@ class LocalMockConsequence:
     def fence_dispatch(self):
         self._transition("CLAIMED_UNRESOLVED","DISPATCH_UNKNOWN",
                          "FENCE_BEFORE_MOCK_PROVIDER_INVOCATION",fence=1)
+        # A crash/reopen MUST NOT recreate this volatile one-time call grant.
+        self._local_dispatch_armed=True
 
     def mock_effect_count(self):
         db=self._conn(self.provider)
@@ -226,9 +229,13 @@ class LocalMockConsequence:
         finally:db.close()
 
     def mock_send(self,*,drop_response=False):
-        require(self.state()["state"]=="DISPATCH_UNKNOWN"
+        require(self._local_dispatch_armed is True
+                and self.state()["state"]=="DISPATCH_UNKNOWN"
                 and self.state()["dispatch_fences"]==1,
-                "MOCK_PROVIDER_SEND_REQUIRES_DURABLE_FENCE")
+                "MOCK_SEND_NOT_ARMED_OR_ALREADY_CONSUMED_NO_RETRY")
+        # Burn before invoking even the local mock provider DB. A process
+        # reopened after crash sees UNKNOWN but cannot reconstruct dispatch.
+        self._local_dispatch_armed=False
         # The simulator has a durable idempotency/attempt ledger. A second
         # attempt is DENIED, never treated as a new network effect.
         receipt={
