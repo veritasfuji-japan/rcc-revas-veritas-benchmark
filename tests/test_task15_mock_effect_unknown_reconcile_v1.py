@@ -114,6 +114,8 @@ def test_positive_source_bound_mock_effect_and_both_unknown_crashes(prior,tmp_pa
     assert unknown.mock_effect_count()==0
     assert unknown.reconcile()=="UNKNOWN"
     assert unknown.state()["state"]=="DISPATCH_UNKNOWN"
+    with pytest.raises(MockBoundaryViolation,match="NO_RETRY"):
+        unknown.mock_send()
     evidence.append({"scenario":"fenced_no_row","state":unknown.evidence(),
                      "snapshots":save_snapshot(unknown,"fenced_no_row")})
     # 4. Pre-dispatch abort is the ONLY local NO_EFFECT outcome.
