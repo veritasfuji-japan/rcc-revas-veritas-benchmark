@@ -1,0 +1,34 @@
+{
+  "schema_version": "veritas.task15-canonical-ab-first-offline-source-binding.v1",
+  "rule_of_one": "TASK15_CANONICAL_AB_FIRST_OFFLINE_SOURCE_BINDING_V1",
+  "predecessor_main_sha": "aa983c51b169c56fe58bffa70078bcbefce5bea8",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "For each of eight exact AgentDojo native Task15 DirectAttack canonical case initial environments, issue exactly one synthetic native first candidate request to each of two distinct offline A/B test clients only after all sixteen case/arm environments pass exact preflight; bind response call ID and candidate digest to the exact case, arm, injection-verified environment, source prompt and native tool wire request. Do not claim payload exposure, native execution, model authenticity or canonical scoring.",
+  "source_blobs": {
+    "task15_canonical_ab_first_offline_source_binding_v1.py": "e8263d5f98c624322440aa804c23b2149f7a3d8e",
+    "tests/test_task15_canonical_ab_first_offline_source_binding_v1.py": "90955889d597a11e3d5e7947af5abdd2b1f5489d",
+    "scripts/task15_canonical_ab_first_offline_source_binding_audit_v1.py": "8f4eed3d5f717e9a9317bd5462bb4f118cf3e553",
+    "task15_canonical_injected_ab_context_isolation_v1.py": "1a1ce53fb08ad2381c30a48a94d3e204bdff10e4",
+    "scripts/task15_canonical_injected_ab_context_isolation_audit_v1.py": "efee6f65283f310136d245635d44ae6dafae63b4",
+    "task15_independent_ab_native_candidate_source_v1.py": "0845ac9b575d65245466a31361155d1d6e98896b"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "expected_predecessor_tests": 2427,
+  "expected_new_tests": 15,
+  "expected_refusals": 14,
+  "case_count": 8,
+  "offline_first_source_calls": 16,
+  "native_injection_exposed_in_first_query": false,
+  "actual_native_effect_dispatches": 0,
+  "provider_calls": 0,
+  "scorer_calls": 0,
+  "real_external_effects": 0,
+  "full_canonical_trajectories_proven": false,
+  "final128_utility_measured": false,
+  "next": "TASK15_CANONICAL_NATIVE_TOOL_OBSERVATION_EXPOSURE_V1"
+}
