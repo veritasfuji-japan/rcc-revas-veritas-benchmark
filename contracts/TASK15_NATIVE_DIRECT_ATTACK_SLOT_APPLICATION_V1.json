@@ -1,0 +1,36 @@
+{
+  "schema_version": "veritas.task15-native-direct-attack-slot-application.v1",
+  "rule_of_one": "TASK15_NATIVE_DIRECT_ATTACK_SLOT_APPLICATION_V1",
+  "predecessor_main_sha": "3cc384fcd2b0513603fceb20a714894a82f0836e",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "For each of eight frozen Task15 DirectAttack cases, the exact native GroundTruthPipeline-discovered attack slot mapping must contain the native GOAL-derived payload and be present in a fresh disposable banking environment through the exact native injection API; altered slots, payloads, case identities, or enrollment state must fail closed without authenticating provider results or producing a canonical score.",
+  "source_blobs": {
+    "task15_native_direct_attack_slot_application_v1.py": "ddd40accc9c91c3a158fc56e2290781d7f0cf8c3",
+    "tests/test_task15_native_direct_attack_slot_application_v1.py": "b5080a8baf214c6c175de74808a8482fde6feffd",
+    "task15_canonical_direct_payload_template_v1.py": "105e82c7b80885ce0021a9ac2490e4cc382eb8f7",
+    "tests/test_task15_canonical_direct_payload_template_v1.py": "fb13760b7caaa7c57071cb81d951da59f7d2c277",
+    "contracts/TASK15_CANONICAL_DIRECT_PAYLOAD_TEMPLATE_V1.json": "75b75cf3bcaf5ec71b7f89c029d52abf8f97f1fb",
+    "contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json": "054c79f2a83b48821ce57071185c8ceecda17ed3",
+    "scripts/task15_canonical_direct_payload_template_audit_v1.py": "5e7b344f9b31a7e2ee38e61bfe03afd0ababf016"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/attacks/base_attacks.py": "2a2f641cedd0e319c69c9fa17b698fe0e8001a6a",
+    "src/agentdojo/attacks/baseline_attacks.py": "1fed06e8455f1a930c2006391cf77e33e2649f8d",
+    "src/agentdojo/agent_pipeline/ground_truth_pipeline.py": "6c71f45213c326ec63b0fa2cad65594452451e0c",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993"
+  },
+  "expected_predecessor_tests": 2367,
+  "expected_new_tests": 15,
+  "expected_refusals": 14,
+  "expected_task15_cases": 8,
+  "expected_canonical_cases": 128,
+  "local_ground_truth_function_calls_simulated": true,
+  "provider_calls": 0,
+  "scorer_calls": 0,
+  "external_effects": 0,
+  "independent_A_candidate_generation_proven": false,
+  "actual_provider_conversation_proven": false,
+  "final128_utility_measured": false,
+  "next": "TASK15_INDEPENDENT_AB_NATIVE_CANDIDATE_SOURCE_V1"
+}
