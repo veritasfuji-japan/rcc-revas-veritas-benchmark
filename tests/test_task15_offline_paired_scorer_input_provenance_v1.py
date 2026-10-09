@@ -156,7 +156,7 @@ def test_wrong_scope_case_rejected(completed,case_id):
         run_projection(completed,case_id=case_id)
     emit("REFUSALS",{"fault":"wrong_case_id","case_id":case_id})
 
-def test_noncanonical_case_is_visible_not silently_enrolled(completed):
+def test_noncanonical_case_is_visible_not_silently_enrolled(completed):
     result=run_projection(completed)
     assert completed[4]["case_id"]=="banking:user_task_15:refund-design-v1"
     assert result["canonical_case_id_match"] is False
