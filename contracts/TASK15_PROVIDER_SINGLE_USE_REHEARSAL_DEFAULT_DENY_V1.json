@@ -1,0 +1,43 @@
+{
+  "schema_version": "veritas.task15-provider-single-use-rehearsal-default-deny.v1",
+  "rule_of_one": "TASK15_PROVIDER_SINGLE_USE_REHEARSAL_DEFAULT_DENY_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "predecessor_main_sha": "5206a8e032362f0c362dba444a99ce38dd146a87",
+  "central_invariant": "For one exact frozen Task15 source request, a non-executable offline rehearsal proposal is consumed by at most one of 16 concurrent in-process attempts and burns irrevocably on malformed/expired use, while no human approval, trusted issuer, live provider authority, paid provider transport, native write or durable cross-process replay property is claimed.",
+  "source_blobs": {
+    "task15_provider_single_use_rehearsal_default_deny_v1.py": "63403ace230c0d59095ab98c2560771c119d91a7",
+    "tests/test_task15_provider_single_use_rehearsal_default_deny_v1.py": "981560f15ac651a0f811ef381a4e23d5cdf8f00c",
+    "scripts/task15_provider_single_use_rehearsal_default_deny_audit_v1.py": "d818125b53a89e527a71d923a9ffdaf15b6cc30e",
+    "scripts/task15_real_provider_preflight_default_deny_audit_v1.py": "432e683a90f34242e74b3b4df8228ca3cd97e516",
+    "task15_real_provider_preflight_default_deny_v1.py": "be8d93cb246fa3a3bf21916dd7ab413284076d41"
+  },
+  "model_configuration_blob": "59a77c03f7e98a6d8a5fa9b78ba356cfc12ff92d",
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "approved_live_provider_spend_usd": 0,
+  "historical_maximum_usd": 5,
+  "historical_maximum_is_not_live_permission": true,
+  "provider_transport_exists": false,
+  "trusted_human_approval_issued": false,
+  "trusted_issuer_exists": false,
+  "test_rehearsal_nonce_is_secret": false,
+  "proof_has_durable_cross_process_replay_protection": false,
+  "expected_prior_offline_source_requests": 16,
+  "expected_local_competitors": 16,
+  "expected_successful_offline_rehearsals": 1,
+  "expected_competing_replay_refusals": 15,
+  "expected_new_tests": 15,
+  "expected_distinct_negative_cases": 14,
+  "expected_provider_calls": 0,
+  "expected_live_provider_charges_usd": 0,
+  "expected_real_native_writes": 0,
+  "expected_external_effects": 0,
+  "next": "SEPARATE_SCOPE_BOUNDED_LIVE_PROVIDER_ISSUER_WITH_AUTHENTIC_OPERATOR_CONSENT_AND_DURABLE_ATOMIC_SINGLE_USE_LEDGER_PENDING"
+}
