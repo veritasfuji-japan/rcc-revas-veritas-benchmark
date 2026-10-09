@@ -12,11 +12,17 @@ if os.environ.get("TASK15_INDEPENDENT_AB_SOURCE_PROOF") != "1":
                 allow_module_level=True)
 
 from test_task15_composed_native_return_binding_v1 import owned, forbidden_effects
-from test_task15_native_model_response_capture_boundary_v1 import StrictOfflineClient
+from test_task15_native_model_response_capture_boundary_v1 import (StrictOfflineClient, no_external_services)
 from task15_independent_ab_native_candidate_source_v1 import (
     Task15IndependentABOfflineFirstCandidateV1,
     IndependentABSourceViolation, RULE,
 )
+
+
+@pytest.fixture(autouse=True)
+def no_provider_or_effects(forbidden_effects, no_external_services):
+    # Preserve all frozen network, database, scorer and native-effect guards.
+    yield
 
 
 class ArmClient(StrictOfflineClient):
