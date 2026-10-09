@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 from types import SimpleNamespace
+import yaml
 
 import pytest
 
@@ -124,6 +125,13 @@ def test_native_injected_transaction_tool_return_reaches_all_sixteen_offline_wir
             assert wire[2]["tool_calls"][0]["id"]==r["probe_call_id"]
             assert wire[3]["tool_call_id"]==r["probe_call_id"]
             assert sha(wire[3])==r["native_tool_wire_sha256"]
+            assert wire[3]["content"][0]["text"]==r["native_tool_result"]
+            native_decoded=yaml.safe_load(r["native_tool_result"])
+            native_fixture=ctx["contexts"][index]["arms"][arm]["native_injected_environment"]["bank_account"]["transactions"]
+            assert native_decoded==native_fixture
+            assert len([item for item in native_decoded
+                        if item["id"]==5 and
+                           item["subject"]==native_fixture[4]["subject"]])==1
             assert r["probe_call_id"] not in unique
             unique.add(r["probe_call_id"])
             assert r["native_payload_sha256"]==ctx["contexts"][index]["native_payload_sha256"]
