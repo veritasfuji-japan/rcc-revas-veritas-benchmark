@@ -119,6 +119,12 @@ def test_sixteen_independent_processes_one_atomic_durable_consume(prior,tmp_path
             original_plan=plan,proposed_plan=plan)
     assert SQLiteOfflineRehearsal(ledger.path).observed()["records"]==state["records"]
     assert SQLiteOfflineRehearsal(ledger.path).observed()["live_provider_calls"]==0
+    artifact=os.environ["TASK15_SQLITE_DURABLE_DB_ARTIFACT"]
+    # Consistent SQLite online backup, not merely a self-attested state dump.
+    with sqlite3.connect(str(ledger.path)) as source_db:
+        with sqlite3.connect(artifact) as snapshot_db:
+            source_db.backup(snapshot_db)
+    actual_blob=__import__("hashlib").sha256(Path(artifact).read_bytes()).hexdigest()
     save("EVIDENCE",{
         "proof":proof,
         "plan":plan,
@@ -130,8 +136,8 @@ def test_sixteen_independent_processes_one_atomic_durable_consume(prior,tmp_path
         "refused_process_consumptions":len(refused),
         "refusal_reasons":[x["reason"] for x in refused],
         "durable_state":state,
-        "sqlite_database_sha256":__import__("hashlib").sha256(
-            ledger.path.read_bytes()).hexdigest(),
+        "sqlite_database_sha256":actual_blob,
+        "sqlite_database_artifact":"task15-sqlite-durable-offline-consume-v1.sqlite3",
     })
 
 @pytest.mark.parametrize("fault",[
@@ -189,6 +195,11 @@ def test_fourteen_durable_boundary_refusals(prior,tmp_path,fault):
             state=SQLiteOfflineRehearsal(ledger.path).observed()
             assert state["records"][0]["state"]=="CLAIMED_UNRESOLVED"
             assert state["records"][0]["claims"]==1
+            crashed_artifact=os.environ["TASK15_SQLITE_DURABLE_CRASH_DB_ARTIFACT"]
+            # Preserve the unresolved row itself as a separate raw DB artifact.
+            with sqlite3.connect(str(ledger.path)) as crash_db:
+                with sqlite3.connect(crashed_artifact) as snap_db:
+                    crash_db.backup(snap_db)
             with pytest.raises(DurableOfflineViolation,match="DURABLE_TICKET_ALREADY_CLAIMED"):
                 SQLiteOfflineRehearsal(ledger.path).claim(
                     ticket_id=ticket,worker="restart-worker",
