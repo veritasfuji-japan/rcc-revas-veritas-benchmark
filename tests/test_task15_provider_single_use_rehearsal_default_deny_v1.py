@@ -4,6 +4,7 @@ import copy
 import json
 import os
 from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from pathlib import Path
 import pytest
 
@@ -58,7 +59,11 @@ def test_one_in_memory_consumption_under_sixteen_competing_threads(prior):
     with pytest.raises(RehearsalViolation,match="ONE_DRAFT_PER_REHEARSAL_ONLY"):
         runner.draft()
 
+    barrier=Barrier(16)
     def compete(_):
+        # Require all sixteen actual worker threads at the same start gate.
+        # Without this, a threadpool can pass the test purely sequentially.
+        barrier.wait(timeout=20)
         try:
             return runner.consume_rehearsal(proposal=copy.deepcopy(proposal))
         except RehearsalViolation as ex:
@@ -95,6 +100,7 @@ def test_one_in_memory_consumption_under_sixteen_competing_threads(prior):
     save("EVIDENCE",{"proof":result,
                      "plan":proposal,
                      "concurrent_attempts":16,
+                     "concurrency_barrier_parties":barrier.parties,
                      "rehearsals_consumed":1,
                      "replay_refusals":15})
 
