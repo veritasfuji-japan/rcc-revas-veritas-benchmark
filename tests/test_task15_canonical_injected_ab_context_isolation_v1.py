@@ -73,8 +73,8 @@ def test_exact_eight_canonical_cases_have_fresh_native_injected_A_and_B_contexts
         assert a["native_prospective_messages"] is not b["native_prospective_messages"]
         assert sha(a["native_injected_environment"])==a["environment_sha256"]
         assert sha(b["native_injected_environment"])==b["environment_sha256"]
-        assert [x["role"] for x in a["native_prospective_messages"]]==["system","user"]
-        assert [x["role"] for x in b["native_prospective_messages"]]==["system","user"]
+        assert [x["role"] for x in a["native_prospective_messages"]]==["developer","user"]
+        assert [x["role"] for x in b["native_prospective_messages"]]==["developer","user"]
         assert a["source_candidate_generated_for_this_case"] is False
         assert b["source_candidate_generated_for_this_case"] is False
         assert a["canonical_enrollment_eligible"] is False
