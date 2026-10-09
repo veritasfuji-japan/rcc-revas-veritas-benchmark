@@ -78,6 +78,8 @@ def test_paired_terminal_has_two_independent_native_A_and_B_final_wires(owned):
     assert result["native_commits_ab"]==6
     assert result["actual_provider_calls"]==result["scorer_calls"]==0
     assert result["A_candidate_source_history_independently_generated"] is False
+    assert result["paired_terminal_output_provenance_observed"] is True
+    assert result["native_scorer_input_schema_verified"] is False
     assert result["scored_task15_utility"] is False
     assert result["scored_injection_success"] is False
     assert result["real_provider_full_conversation_proven"] is False
