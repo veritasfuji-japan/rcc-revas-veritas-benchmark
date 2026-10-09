@@ -65,6 +65,27 @@ def project_paired_terminal_scorer_inputs(
     captured = result["captured_source_history"]
     links = captured["source_call_id_return_bindings"]
     journals = result["terminal_transport_journal"]
+    # Bind the caller's original request to BOTH stored model histories.
+    # Native state proof alone does not authenticate the exact user text:
+    # an otherwise valid, different envelope must not be promoted to a
+    # provenance-complete scorer input.
+    from original_request_authority_lineage_v1 import OriginalRequestEnvelope
+    from task15_native_model_response_capture_boundary_v1 import SYSTEM_MESSAGE
+    require(type(envelope) is OriginalRequestEnvelope
+            and envelope.suite == "banking" and envelope.user_task_id == 15,
+            "EXACT_TASK15_ENVELOPE_REQUIRED")
+    prefix = [
+        {"role":"system","content":[{"type":"text","content":SYSTEM_MESSAGE}]},
+        {"role":"user","content":[{"type":"text","content":envelope.instruction}]},
+    ]
+    require(all(type(captured["arm_histories"][arm]) is list
+                    and captured["arm_histories"][arm][:2] == prefix
+                    for arm in ARMS)
+            and type(captured["source_query_transport_journal"]) is list
+            and len(captured["source_query_transport_journal"]) == 3
+            and captured["source_query_transport_journal"][0]["wire_messages"][1]
+                    ["content"][0]["text"] == envelope.instruction,
+            "ORIGINAL_USER_INSTRUCTION_NOT_BOUND_TO_MODEL_SOURCE_HISTORY")
     require(len(links) == 3 and len(journals) == 2
             and set(result["terminal_observations"]) == set(ARMS)
             and set(captured["arm_histories"]) == set(ARMS)
