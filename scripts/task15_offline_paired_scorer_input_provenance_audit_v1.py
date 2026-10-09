@@ -128,8 +128,7 @@ def main():
             and report["final128_utility_recovery_proven"] is False
             and row["fixture_case_id"]==contract["local_fixture_case_id"]
             and report["source_paired_terminal_sha256"]==sha(row["paired_terminal"])
-            and report["initial_native_state_sha256"]==sha(row["paired_terminal"]["paired_native_execution"]["completed_steps"][0]["arms"]["A"]["pre_environment"]) if "pre_environment" in native["completed_steps"][0]["arms"]["A"] else
-                report["initial_native_state_sha256"]==native["initial_state_sha256"],
+            and report["initial_native_state_sha256"]==native["initial_state_sha256"],
             "NOT_STRICT_LOCAL_UNSCORED_SOURCE")
     checked=0
     for arm in ("A","B"):
