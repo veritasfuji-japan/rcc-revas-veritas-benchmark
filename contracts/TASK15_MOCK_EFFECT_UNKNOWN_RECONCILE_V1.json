@@ -5,8 +5,8 @@
   "predecessor_main_sha": "c32de2526ee5e2fd454fd1359ef985d582caf2c8",
   "central_invariant": "A locally persisted mock dispatch fence must leave UNKNOWN after any possible provider invocation until a receipt supported by a separately stored mock-provider effect row is read and verified; absence of a mock row is NOT NO_EFFECT after the fence, and an interrupted/unknown dispatch cannot be retried. PRE_DISPATCH_NO_EFFECT is only possible before a dispatch fence.",
   "source_blobs": {
-    "task15_mock_effect_unknown_reconcile_v1.py": "23575eba811be06e62d908fed266477eef0130e0",
-    "tests/test_task15_mock_effect_unknown_reconcile_v1.py": "759a5c74b781904d39d4ff369d6e398811c6c6d6",
+    "task15_mock_effect_unknown_reconcile_v1.py": "188d925e8330aa6657955f692ebfeb9c6835e528",
+    "tests/test_task15_mock_effect_unknown_reconcile_v1.py": "e0946d44c79a3b61344bf51aeb53dfcc4d2336d5",
     "scripts/task15_mock_effect_unknown_reconcile_audit_v1.py": "16b360271c20faf20b823bd13cbca4b8c71f5566",
     "task15_sqlite_durable_offline_consume_v1.py": "4ef93f6b8583eeb1fe542db45e76bdaeb1d233ea",
     "scripts/task15_sqlite_durable_offline_consume_audit_v1.py": "57e4c7bda2f71863de4725acb54cd3081c621b2"
