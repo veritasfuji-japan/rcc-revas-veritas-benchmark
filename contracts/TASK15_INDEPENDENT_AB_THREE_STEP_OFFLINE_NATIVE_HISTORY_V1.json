@@ -1,0 +1,37 @@
+{
+  "schema_version": "veritas.task15-independent-ab-three-step-offline-native-history.v1",
+  "rule_of_one": "TASK15_INDEPENDENT_AB_THREE_STEP_OFFLINE_NATIVE_HISTORY_V1",
+  "predecessor_main_sha": "7d6487b71b799994eb5931c8b9853345322b0c86",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "In the noncanonical Task15 local fixture, two distinct injected model clients must each complete three separate native-format candidate queries through independently owned local paired-RCC/Bind runner sessions, and their second and third queries must consume the exact prior native return of their OWN logical source session. Cross-session call ID or native-return substitution, missing completion, source mutation and restart must refuse full paired proof without claiming rollback.",
+  "source_blobs": {
+    "task15_independent_ab_three_step_offline_native_history_v1.py": "189dcdcd6483b00418f6b755f8e1fab125ef16c6",
+    "tests/test_task15_independent_ab_three_step_offline_native_history_v1.py": "f861ab118e74cf3df70f8c0a5c2f1064483b2cbf",
+    "scripts/task15_independent_ab_three_step_offline_native_history_audit_v1.py": "ae6a565144c5f591356b066967c24fa5926447fe",
+    "task15_offline_continuous_native_history_v1.py": "0fa7899ffcea58eb02c4d8c2ce3b2b2535575ecb",
+    "task15_independent_ab_native_candidate_source_v1.py": "0845ac9b575d65245466a31361155d1d6e98896b",
+    "task15_composed_native_return_binding_v1.py": "a91d3a34d1ed5c12b4e8e620fdd8715fae20743d",
+    "scripts/task15_independent_ab_native_candidate_source_audit_v1.py": "8d95ffc19a868403f783908dd963f0f54631cebd"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993"
+  },
+  "expected_predecessor_tests": 2397,
+  "expected_new_tests": 15,
+  "expected_refusal_classes": 14,
+  "offline_independent_logical_source_arms": 2,
+  "offline_candidate_requests": 6,
+  "owned_native_return_feedback_links": 4,
+  "local_governed_native_dispatches": 12,
+  "native_local_dispatches_per_isolated_session": 6,
+  "actual_provider_calls": 0,
+  "scorer_calls": 0,
+  "real_external_effects": 0,
+  "canonical_final128_enrollment_proven": false,
+  "provider_authenticated": false,
+  "canonical_final128_utility_measured": false,
+  "independent_real_model_computation_proven": false,
+  "next": "TASK15_CANONICAL_AB_INJECTED_CASE_NATIVE_RUNNER_BINDING_V1"
+}
