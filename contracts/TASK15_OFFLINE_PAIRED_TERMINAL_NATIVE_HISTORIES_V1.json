@@ -1,0 +1,37 @@
+{
+  "schema_version": "veritas.task15-offline-paired-terminal-native-histories.v1",
+  "rule_of_one": "TASK15_OFFLINE_PAIRED_TERMINAL_NATIVE_HISTORIES_V1",
+  "predecessor_main_sha": "c332ff22652f14207f8d4ca226b49293b3e4edf2",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "After 3 candidate source calls generated from the original B-arm history and 6 governed native A/B commits, each A/B terminal request must independently consume the exact three own-arm native tool returns with original captured IDs and post-state identities, never cross-arm substitution or replay. Both text-only offline terminal responses must succeed once before any paired completion is published; any error retains committed effects but no complete pair.",
+  "source_blobs": {
+    "task15_offline_paired_terminal_histories_v1.py": "d82924b45a97482c04ce6aff9e45418d438a39ed",
+    "tests/test_task15_offline_paired_terminal_histories_v1.py": "08049ed3b21d74ea50ec8d07a84e3184dee98f58",
+    "task15_offline_terminal_native_continuation_v1.py": "d7684206d2b2d2a8456eb86fa09983a1c31555db",
+    "task15_offline_continuous_native_history_v1.py": "0fa7899ffcea58eb02c4d8c2ce3b2b2535575ecb",
+    "task15_model_callid_native_return_history_v1.py": "54554bf6f0cb10f2e5bca05001e943c236f4ae60",
+    "task15_composed_native_return_binding_v1.py": "a91d3a34d1ed5c12b4e8e620fdd8715fae20743d",
+    "contracts/TASK15_OFFLINE_TERMINAL_NATIVE_CONTINUATION_V1.json": "dfc5309544e177b4a1837d35c19e295cb307ef05"
+  },
+  "expected_predecessor_tests": 2302,
+  "expected_tests": 20,
+  "expected_negative_records": 18,
+  "expected_source_queries": 3,
+  "expected_terminal_queries": 2,
+  "expected_total_model_queries": 5,
+  "expected_native_effects_ab": 6,
+  "expected_native_messages_per_terminal": 8,
+  "expected_native_tool_returns_per_arm": 3,
+  "source_arm_for_candidates": "B",
+  "terminal_arms": [
+    "A",
+    "B"
+  ],
+  "provider_calls": 0,
+  "scorer_calls": 0,
+  "real_external_effect_authenticated": false,
+  "A_candidate_source_independently_generated": false,
+  "scored_native_task15_utility": false,
+  "final128_utility_recovered": false,
+  "next": "TASK15_OFFLINE_PAIRED_TERMINAL_NATIVE_SCORER_INPUT_BOUNDARY_V1"
+}
