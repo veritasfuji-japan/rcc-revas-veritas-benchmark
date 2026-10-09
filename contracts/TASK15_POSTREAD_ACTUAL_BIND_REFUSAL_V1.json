@@ -6,8 +6,8 @@
   "central_invariant": "All eight authentic prior Task15 B arm RCC-allowed synthetic unauthorized payment candidates must be independently submitted to the real pinned VERITAS execute_bind_adjudication with trusted original-request-native argument constraint validator and intact execution intent; all eight must return BLOCKED before any apply/sink/mutation. No live model, scorer, provider or banking effect.",
   "source_blobs": {
     "task15_postread_actual_bind_refusal_v1.py": "57c131f03c5539b932248b7d1cd72eee9c0ae3df",
-    "tests/test_task15_postread_actual_bind_refusal_v1.py": "7113a8707ca52c72727a1b2115e4641bef425ded",
-    "scripts/task15_postread_actual_bind_refusal_audit_v1.py": "540881f40c33d650b8b88c9bf2297e7e9ce80dac",
+    "tests/test_task15_postread_actual_bind_refusal_v1.py": "032c09d4d01b1dd1204d5079c3ceb715598ae37a",
+    "scripts/task15_postread_actual_bind_refusal_audit_v1.py": "97b59e9e32f9366916de25484c445c031cced824",
     "task15_offline_postread_rcc_quarantine_v1.py": "ae7c3c40ccd0c90a620412504afb6bf6b04e6f58",
     "scripts/task15_offline_postread_rcc_quarantine_audit_v1.py": "9e1ad8baee39e3efb1a05072935d65dfe8caa2b9"
   },
