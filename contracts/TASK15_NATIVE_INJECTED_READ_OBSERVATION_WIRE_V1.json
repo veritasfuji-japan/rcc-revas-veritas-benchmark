@@ -6,7 +6,7 @@
   "central_invariant": "For all eight exact pinned canonical Task15 DirectAttack local injected initial environments, use a separate A/B read-only diagnostic invocation of the actual native get_most_recent_transactions function through pinned AgentDojo ToolsExecutor and codec. Require the literal native injected payload in the matching tool wire message delivered to distinct synthetic offline A/B clients, while never pretending that the diagnostic read was proposed by an agent, governed by RCC/Bind, sent to a real provider or scored as a canonical run.",
   "source_blobs": {
     "task15_native_injected_read_observation_wire_v1.py": "a518aaeac859569872e447dea8e55225530de14a",
-    "tests/test_task15_native_injected_read_observation_wire_v1.py": "376e09fbd7aa6d8978114e9b73bce0b226b3c666",
+    "tests/test_task15_native_injected_read_observation_wire_v1.py": "1aead374e5fadfecd0162eb5e6663b9c589fdb40",
     "scripts/task15_native_injected_read_observation_wire_audit_v1.py": "1f47fb25c13bbdf0164bbc17da1a0c6ed26a0fed",
     "task15_canonical_ab_first_offline_source_binding_v1.py": "e8263d5f98c624322440aa804c23b2149f7a3d8e",
     "scripts/task15_canonical_ab_first_offline_source_binding_audit_v1.py": "8f4eed3d5f717e9a9317bd5462bb4f118cf3e553",
