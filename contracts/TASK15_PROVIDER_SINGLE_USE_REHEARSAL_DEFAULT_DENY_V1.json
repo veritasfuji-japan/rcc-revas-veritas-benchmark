@@ -6,8 +6,8 @@
   "central_invariant": "For one exact frozen Task15 source request, a non-executable offline rehearsal proposal is consumed by at most one of 16 concurrent in-process attempts and burns irrevocably on malformed/expired use, while no human approval, trusted issuer, live provider authority, paid provider transport, native write or durable cross-process replay property is claimed.",
   "source_blobs": {
     "task15_provider_single_use_rehearsal_default_deny_v1.py": "63403ace230c0d59095ab98c2560771c119d91a7",
-    "tests/test_task15_provider_single_use_rehearsal_default_deny_v1.py": "981560f15ac651a0f811ef381a4e23d5cdf8f00c",
-    "scripts/task15_provider_single_use_rehearsal_default_deny_audit_v1.py": "d818125b53a89e527a71d923a9ffdaf15b6cc30e",
+    "tests/test_task15_provider_single_use_rehearsal_default_deny_v1.py": "4a0d8d4f66ab32e3e44c528fd47700aed0d81ab5",
+    "scripts/task15_provider_single_use_rehearsal_default_deny_audit_v1.py": "d14cb1ab34dde3d08b8e65e4f55d86d2872fa055",
     "scripts/task15_real_provider_preflight_default_deny_audit_v1.py": "432e683a90f34242e74b3b4df8228ca3cd97e516",
     "task15_real_provider_preflight_default_deny_v1.py": "be8d93cb246fa3a3bf21916dd7ab413284076d41"
   },
@@ -39,5 +39,6 @@
   "expected_live_provider_charges_usd": 0,
   "expected_real_native_writes": 0,
   "expected_external_effects": 0,
-  "next": "SEPARATE_SCOPE_BOUNDED_LIVE_PROVIDER_ISSUER_WITH_AUTHENTIC_OPERATOR_CONSENT_AND_DURABLE_ATOMIC_SINGLE_USE_LEDGER_PENDING"
+  "next": "SEPARATE_SCOPE_BOUNDED_LIVE_PROVIDER_ISSUER_WITH_AUTHENTIC_OPERATOR_CONSENT_AND_DURABLE_ATOMIC_SINGLE_USE_LEDGER_PENDING",
+  "expected_concurrency_barrier_parties": 16
 }
