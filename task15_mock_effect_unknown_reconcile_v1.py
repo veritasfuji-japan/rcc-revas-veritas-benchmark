@@ -288,6 +288,9 @@ class LocalMockConsequence:
         # negative-finality statement or trusted clock.
         require(self.state()["state"]=="DISPATCH_UNKNOWN",
                 "ONLY_UNKNOWN_STATE_CAN_BE_RECONCILED")
+        # Once reconciliation is attempted, never turn absence of a row into
+        # an opportunity to send. UNKNOWN remains terminal for dispatch.
+        self._local_dispatch_armed=False
         observed=self.mock_read_only_receipt()
         if observed is None:
             require(receipt is None,"FORGED_RECEIPT_WITHOUT_PROVIDER_ROW")
