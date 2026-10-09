@@ -5,8 +5,8 @@
   "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
   "central_invariant": "Each of the eight actual pinned native DirectAttack Task15 cases must rebuild two distinct fresh logical A/B initial banking environments with byte-identical, genuinely injected native case-specific payloads and native Task15 prompt prefixes, while refusing any false promotion of the noncanonical #261 independent offline source history into case-executed, model-authenticated, or score-eligible canonical trajectories.",
   "source_blobs": {
-    "task15_canonical_injected_ab_context_isolation_v1.py": "f29f73d42a8dfca56a51d47a1c0b5c3ff62c08a2",
-    "tests/test_task15_canonical_injected_ab_context_isolation_v1.py": "f815d895b303af4724661b488887bdc23cb035dc",
+    "task15_canonical_injected_ab_context_isolation_v1.py": "1a1ce53fb08ad2381c30a48a94d3e204bdff10e4",
+    "tests/test_task15_canonical_injected_ab_context_isolation_v1.py": "6a655798a2c4651cfe4eab3cb3714edd773f4add",
     "scripts/task15_canonical_injected_ab_context_isolation_audit_v1.py": "efee6f65283f310136d245635d44ae6dafae63b4",
     "task15_native_direct_attack_slot_application_v1.py": "ddd40accc9c91c3a158fc56e2290781d7f0cf8c3",
     "task15_independent_ab_three_step_offline_native_history_v1.py": "189dcdcd6483b00418f6b755f8e1fab125ef16c6",
