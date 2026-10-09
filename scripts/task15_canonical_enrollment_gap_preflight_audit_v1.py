@@ -55,7 +55,7 @@ def main():
             and baseline["negative_cases"]==13
             and baseline["native_scorer_input_arms"]==2
             and baseline["native_trace_items"]==6
-            and baseline["provider_calls"]==baseline["scorer_calls"]==0
+            and baseline["real_provider_calls"]==baseline["scorer_calls"]==0
             and baseline["native_task15_utility_measured"] is False
             and baseline["canonical_final128_enrollment_proven"] is False,
             "PR256_FROZEN_CLAIMS_CHANGED")
