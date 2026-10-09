@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+import sqlite3
 from pathlib import Path
 import subprocess
 import sys
@@ -101,6 +102,11 @@ def main():
     env["TASK15_SQLITE_DURABLE_PREDECESSOR_DIR"]=str(out)
     env["TASK15_SQLITE_DURABLE_EVIDENCE"]=str(evidence)
     env["TASK15_SQLITE_DURABLE_REFUSALS"]=str(refusals)
+    durable_db=out/(NAME+".sqlite3")
+    crash_db=out/(NAME+".crashed.sqlite3")
+    for f in (durable_db,crash_db):f.unlink(missing_ok=True)
+    env["TASK15_SQLITE_DURABLE_DB_ARTIFACT"]=str(durable_db)
+    env["TASK15_SQLITE_DURABLE_CRASH_DB_ARTIFACT"]=str(crash_db)
     test=subprocess.run([
         sys.executable,"-m","pytest","-q","-o","addopts=",
         "tests/test_task15_sqlite_durable_offline_consume_v1.py",
@@ -183,6 +189,47 @@ def main():
                 state["scorer_calls"]==
                 state["external_effects"]==0,
             "DURABLE_ON_DISK_SINGLE_CLAIM_JOURNAL_INVALID")
+    # Independently inspect RAW SQLite snapshots preserved in the ZIP.
+    # Serialized JSONL statuses alone cannot establish a durable ledger.
+    require(durable_db.is_file() and crash_db.is_file(),
+            "BOTH_ACTUAL_SQLITE_DATABASE_SNAPSHOTS_REQUIRED")
+    from hashlib import sha256 as file_sha
+    dbhash=file_sha(durable_db.read_bytes()).hexdigest()
+    require(record.get("sqlite_database_artifact")==durable_db.name
+            and record.get("sqlite_database_sha256")==dbhash,
+            "EXACT_CONSUMED_DATABASE_FILE_HASH_REQUIRED")
+    def inspect(path):
+        con=sqlite3.connect("file:"+str(path.resolve())+"?mode=ro",uri=True)
+        try:
+            ticket_rows=con.execute(
+                "SELECT id,plan_sha256,predecessor_sha256,state,owner,claims FROM tickets"
+            ).fetchall()
+            ev=con.execute(
+                "SELECT seq,event,worker FROM audit_events ORDER BY seq"
+            ).fetchall()
+            arrivals=con.execute("SELECT COUNT(*) FROM arrivals").fetchone()[0]
+            integrity=con.execute("PRAGMA integrity_check").fetchone()[0]
+            return ticket_rows,ev,arrivals,integrity
+        finally:con.close()
+    rows,events,arrivals,integrity=inspect(durable_db)
+    require(integrity=="ok" and len(rows)==1 and arrivals==16
+            and rows[0]==(
+                ticket,canonical_sha(record["plan"]),
+                canonical_sha(previous),"CONSUMED_OFFLINE",p["owner"],1)
+            and [(e[0],e[1],e[2]) for e in events]==
+                [(e["seq"],e["event"],e["worker"]) for e in state["events"]],
+            "INDEPENDENT_RAW_SQLITE_ATOMIC_CONSUME_PROOF_FAILED")
+    crash_rows,crash_events,crash_arrivals,crash_integrity=inspect(crash_db)
+    require(crash_integrity=="ok" and len(crash_rows)==1
+            and crash_rows[0][3]=="CLAIMED_UNRESOLVED"
+            and crash_rows[0][4]=="crash-test-worker"
+            and crash_rows[0][5]==1
+            and len(crash_events)==2
+            and [e[1] for e in crash_events]==[
+                "OFFLINE_NONEXECUTABLE_TICKET_CREATED",
+                "ATOMIC_SINGLE_CLAIM_COMMITTED"]
+            and crash_arrivals==0,
+            "INDEPENDENT_RAW_SQLITE_CRASH_UNRESOLVED_PROOF_FAILED")
     summary={
         "rule_of_one":RULE,
         "determination":p["determination"],
