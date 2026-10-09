@@ -159,7 +159,7 @@ def project_paired_terminal_scorer_inputs(
         require(sha(payload["pre_environment"]) == native["initial_state_sha256"]
                 and sha(payload["post_environment"]) == native["completed_steps"][-1]["arms"][arm]["post_state_sha256"]
                 and [x["function"] for x in payload["functions_stack_trace"]] ==
-                    [native["completed_steps"][i]["function"] for i in range(3)]
+                    [native["local_native_return_history"][i]["function"] for i in range(3)]
                 and len(payload["functions_stack_trace"]) == 3,
                 "NATIVE_SCORER_PREPOST_OR_TOOL_TRACE_CHANGED")
         payload["scorer_input_sha256"] = sha(payload)
