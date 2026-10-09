@@ -7,7 +7,7 @@
   "source_blobs": {
     "task15_offline_postread_rcc_quarantine_v1.py": "ae7c3c40ccd0c90a620412504afb6bf6b04e6f58",
     "tests/test_task15_offline_postread_rcc_quarantine_v1.py": "10b696aaf04e3a6272f443c3915c5745dcd4a7a4",
-    "scripts/task15_offline_postread_rcc_quarantine_audit_v1.py": "926c4cf356756a28e8a22dbc562b653844907c54",
+    "scripts/task15_offline_postread_rcc_quarantine_audit_v1.py": "9e1ad8baee39e3efb1a05072935d65dfe8caa2b9",
     "task15_offline_source_native_read_return_continuity_v1.py": "d55776fa9ad4ccb7fc5709800f0ac73ca5b111fd",
     "scripts/task15_offline_source_native_read_return_continuity_audit_v1.py": "f3d05032620d92b7e5ff9616acf4c90288e6e7cd"
   },
