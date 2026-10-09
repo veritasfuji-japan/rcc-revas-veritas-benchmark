@@ -13,6 +13,7 @@ from task15_composed_native_return_binding_v1 import Task15ComposedNativeReturnB
 from task15_model_callid_native_return_history_v1 import Task15OfflineModelCallIdNativeReturnHistoryV1,RULE
 from task15_native_address_request_profile_issuance_v1 import canonical,sha
 from agentdojo.agent_pipeline.llms.openai_llm import _message_to_openai
+from agentdojo.types import FunctionCall
 from scripts.agentdojo_openai_frozen_adapter_v0_1 import MODEL_ID
 from scripts.agentdojo_clean_ab_canonical_final_runner_v2_8 import jsonable
 
@@ -61,7 +62,14 @@ def test_three_source_ids_bound_to_six_actual_native_returns_and_tool_messages(o
             assert tool["tool_call_id"]==pair["source_tool_call_id"]
             assert tool["error"] is None
             assert tool["tool_call"]==call["tool_calls"][0]
-            assert _message_to_openai(tool,MODEL_ID)["tool_call_id"]==pair["source_tool_call_id"]
+            # Stored evidence is JSON; the native codec requires a typed FunctionCall.
+            # Rehydrate only for validation and verify a lossless JSON round-trip.
+            typed_tool=copy.deepcopy(tool)
+            typed_tool["tool_call"]=FunctionCall(**tool["tool_call"])
+            assert jsonable(typed_tool)==tool
+            wire=_message_to_openai(typed_tool,MODEL_ID)
+            assert wire["tool_call_id"]==pair["source_tool_call_id"]
+            assert wire["name"]==call["tool_calls"][0]["function"]
             assert sha(tool)==binding["native_tool_message_sha256"]
             original=execution["completed_steps"][i]["arms"][arm]
             assert original["native_dispatch_count"]==1
