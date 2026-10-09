@@ -6,7 +6,7 @@
   "central_invariant": "The pinned native AgentDojo model_output_from_messages and functions_stack_trace_from_messages must extract exact terminal output and all three native tool-call FunctionCall IDs for both A and B from the independently observed paired terminal histories, with exact trusted initial/final environment state, without invoking any scorer or misrepresenting the noncanonical offline design case as a Canonical Final128 enrollment or utility score.",
   "source_blobs": {
     "task15_offline_paired_scorer_input_provenance_v1.py": "3b0acc5891644b48618f18788c6770494b443c06",
-    "tests/test_task15_offline_paired_scorer_input_provenance_v1.py": "6ac861189d516b5ee7342a4685dda4476f0c6c7e",
+    "tests/test_task15_offline_paired_scorer_input_provenance_v1.py": "1bc3390679c12c69a55d85ea6b0e34bc392c10e8",
     "task15_offline_paired_terminal_histories_v1.py": "d82924b45a97482c04ce6aff9e45418d438a39ed",
     "task15_offline_terminal_native_continuation_v1.py": "d7684206d2b2d2a8456eb86fa09983a1c31555db",
     "task15_composed_native_state_scorer_diagnostic_v1.py": "9a5568ec838089dc527fec0fcfc0a72d5022e013",
