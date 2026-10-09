@@ -1,0 +1,41 @@
+{
+  "schema_version": "veritas.task15-offline-source-native-read-return-continuity.v1",
+  "rule_of_one": "TASK15_OFFLINE_SOURCE_NATIVE_READ_RETURN_CONTINUITY_V1",
+  "predecessor_main_sha": "639d495fefc3ee6f026b2ee5cd8634635cdccaf7",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "Each of eight original pinned Task15 injected bank environment cases has separate offline A and B test clients that generate one native-shaped get_most_recent_transactions proposal. The exact call ID from the offline response must persist across AgentDojo native decode, actual read-only ToolsExecutor result and same-client synthetic continuation wire; no unrelated #264 harness-authored read may be passed off as that model-shaped proposal. The source is not authenticated live AI and no write tool or scorer is executed.",
+  "source_blobs": {
+    "task15_offline_source_native_read_return_continuity_v1.py": "d55776fa9ad4ccb7fc5709800f0ac73ca5b111fd",
+    "tests/test_task15_offline_source_native_read_return_continuity_v1.py": "93f67854abae79e8b5b55e3bc63ed002bbd25ada",
+    "scripts/task15_offline_source_native_read_return_continuity_audit_v1.py": "f3d05032620d92b7e5ff9616acf4c90288e6e7cd",
+    "task15_native_injected_read_observation_wire_v1.py": "a518aaeac859569872e447dea8e55225530de14a",
+    "scripts/task15_native_injected_read_observation_wire_audit_v1.py": "1f47fb25c13bbdf0164bbc17da1a0c6ed26a0fed",
+    "task15_canonical_ab_first_offline_source_binding_v1.py": "e8263d5f98c624322440aa804c23b2149f7a3d8e",
+    "task15_canonical_injected_ab_context_isolation_v1.py": "1a1ce53fb08ad2381c30a48a94d3e204bdff10e4"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "expected_predecessor_tests": 2457,
+  "expected_new_tests": 15,
+  "expected_refusals": 14,
+  "case_count": 8,
+  "distinct_offline_first_read_proposals": 16,
+  "actual_native_read_only_returns": 16,
+  "synthetic_offline_continuations": 16,
+  "real_authenticated_model_selected_read_count": 0,
+  "real_provider_calls": 0,
+  "native_write_dispatches": 0,
+  "scorer_calls": 0,
+  "real_external_effects": 0,
+  "completed_canonical_trajectories_proven": false,
+  "final128_utility_measured": false,
+  "injection_success_measured": false,
+  "next": "TASK15_GOVERNED_NATIVE_READ_RESPONSE_TO_EFFECT_CANDIDATE_V1"
+}
