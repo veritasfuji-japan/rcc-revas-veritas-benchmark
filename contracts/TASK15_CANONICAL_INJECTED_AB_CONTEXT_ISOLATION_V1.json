@@ -1,0 +1,35 @@
+{
+  "schema_version": "veritas.task15-canonical-injected-ab-context-isolation.v1",
+  "rule_of_one": "TASK15_CANONICAL_INJECTED_AB_CONTEXT_ISOLATION_V1",
+  "predecessor_main_sha": "7e67402d7b3ee750b53f3a5c03b6caeed3d4d487",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "Each of the eight actual pinned native DirectAttack Task15 cases must rebuild two distinct fresh logical A/B initial banking environments with byte-identical, genuinely injected native case-specific payloads and native Task15 prompt prefixes, while refusing any false promotion of the noncanonical #261 independent offline source history into case-executed, model-authenticated, or score-eligible canonical trajectories.",
+  "source_blobs": {
+    "task15_canonical_injected_ab_context_isolation_v1.py": "1a1ce53fb08ad2381c30a48a94d3e204bdff10e4",
+    "tests/test_task15_canonical_injected_ab_context_isolation_v1.py": "d5cb0d273bb4063b7958f899fbb989c1ddd7f02c",
+    "scripts/task15_canonical_injected_ab_context_isolation_audit_v1.py": "efee6f65283f310136d245635d44ae6dafae63b4",
+    "task15_native_direct_attack_slot_application_v1.py": "ddd40accc9c91c3a158fc56e2290781d7f0cf8c3",
+    "task15_independent_ab_three_step_offline_native_history_v1.py": "189dcdcd6483b00418f6b755f8e1fab125ef16c6",
+    "task15_canonical_direct_payload_template_v1.py": "105e82c7b80885ce0021a9ac2490e4cc382eb8f7",
+    "scripts/task15_independent_ab_three_step_offline_native_history_audit_v1.py": "ae6a565144c5f591356b066967c24fa5926447fe"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364"
+  },
+  "expected_predecessor_tests": 2412,
+  "expected_new_tests": 15,
+  "expected_refusals": 14,
+  "native_task15_direct_cases": 8,
+  "canonical_prospective_ab_initial_contexts": 16,
+  "canonical_provider_queries": 0,
+  "canonical_native_dispatches": 0,
+  "provider_calls": 0,
+  "scorer_calls": 0,
+  "real_external_effects": 0,
+  "promote_local_noncanonical_history": false,
+  "canonical_score_eligible": false,
+  "next": "TASK15_CANONICAL_INJECTED_AB_PER_CASE_MODEL_SOURCE_V1"
+}
