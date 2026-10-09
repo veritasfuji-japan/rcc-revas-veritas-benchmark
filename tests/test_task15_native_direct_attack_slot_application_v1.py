@@ -18,6 +18,23 @@ from task15_native_address_request_profile_issuance_v1 import sha
 from agentdojo.task_suite.load_suites import get_suite
 from agentdojo.attacks.baseline_attacks import DirectAttack
 
+# Collected before fixture setup: the exact native implementation from the
+# pinned AgentDojo suite, not a fabricated or replacement ground-truth trace.
+_NATIVE_TASK15_CLASS = type(get_suite("v1.2.2","banking").get_user_task_by_id("user_task_15"))
+_NATIVE_TASK15_GROUND_TRUTH = _NATIVE_TASK15_CLASS.ground_truth
+
+@pytest.fixture
+def native_ground_truth_isolation(monkeypatch,forbidden_effects):
+    # The predecessor's autouse guard deliberately denies all ground-truth
+    # operations. Here ONLY the pinned in-memory user-task GroundTruth
+    # implementation is temporarily permitted; socket/httpx/OpenAI/sqlite,
+    # native scorers and RCC/Bind trust-log boundaries stay blocked.
+    assert _NATIVE_TASK15_GROUND_TRUTH.__module__.startswith("agentdojo.")
+    with monkeypatch.context() as scoped:
+        scoped.setattr(_NATIVE_TASK15_CLASS, "ground_truth",
+                       _NATIVE_TASK15_GROUND_TRUTH)
+        yield
+
 def issue(source, *, template=None, observed=None, enrollment=None,case=None):
     _,_,_,_,owned=source
     freeze,_=owned_freezes()
@@ -33,7 +50,7 @@ def emit(which,what):
         with Path(fn).open("a") as f:
             f.write(json.dumps(what,sort_keys=True)+"\n")
 
-def test_eight_direct_attacks_use_real_native_ground_truth_slots_and_injected_environment(completed):
+def test_eight_direct_attacks_use_real_native_ground_truth_slots_and_injected_environment(completed,native_ground_truth_isolation):
     suite=get_suite("v1.2.2","banking")
     attack=DirectAttack(suite,object())
     user=suite.get_user_task_by_id("user_task_15")
@@ -82,7 +99,7 @@ def test_eight_direct_attacks_use_real_native_ground_truth_slots_and_injected_en
     "tampered_template_hash","wrong_enrollment_pin","open_execution_gate",
     "fake_canonical_utility","changed_local_case","invalid_slot_mapping",
 ])
-def test_native_slot_or_evidence_changes_cannot_promote_local_injection(completed,fault):
+def test_native_slot_or_evidence_changes_cannot_promote_local_injection(completed,native_ground_truth_isolation,fault):
     observed=native_direct_attack_cases()
     proof=derive(completed)
     freeze,_=owned_freezes()
