@@ -113,6 +113,43 @@ class Task15CanonicalABFirstOfflineSourceBindingV1:
                     "EXACT_NATIVE_TOOL_SCHEMA_SET_REQUIRED")
             tools = [_function_to_openai(t) for t in selected]
             tools_sha = sha(tools)
+            # Preflight ALL sixteen read-only context envelopes before the first
+            # synthetic candidate request: later-case tampering must not leak a
+            # partial earlier case's source proposal.
+            for pre_row in self._contexts["contexts"]:
+                pre_case = pre_row["case_id"]
+                pre_payload = expected[pre_case]
+                require(pre_row["native_payload_sha256"] == sha(pre_payload)
+                        and pre_row["attack_profile"] == "direct"
+                        and pre_row["native_injection_task_id"] == pre_case.split(":")[2]
+                        and pre_row["canonical_case_executed"] is False
+                        and pre_row["eligible_for_native_canonical_scoring"] is False,
+                        "PREQUERY_CANONICAL_CASE_METADATA_NOT_FROZEN")
+                native_pre = suite.load_and_inject_default_environment(
+                    {pre_row["native_slot_key"]: pre_payload})
+                native_sha = sha(native_pre.model_dump(mode="json"))
+                require(native_sha == pre_row["verified_native_environment_sha256"],
+                        "PREQUERY_NATIVE_CONTEXT_MUST_RECONSTRUCT_EXACTLY")
+                for pre_arm in ARMS:
+                    c = pre_row["arms"][pre_arm]
+                    messages = c["native_prospective_messages"]
+                    require(c["case_id"] == pre_case
+                            and c["logical_arm"] == pre_arm
+                            and c["source_candidate_generated_for_this_case"] is False
+                            and c["canonical_enrollment_eligible"] is False
+                            and c["native_agentdojo_pipeline_executed_for_this_case"] is False
+                            and sha(c["native_injected_environment"]) ==
+                                c["environment_sha256"] == native_sha
+                            and sha(messages) ==
+                                c["message_prefix_sha256"] ==
+                                pre_row["prospective_native_prompt_sha256"]
+                            and len(messages) == 2
+                            and [m["role"] for m in messages] ==
+                                ["developer", "user"]
+                            and messages[1]["content"][0]["text"] == native_user.PROMPT
+                            and pre_payload in str(c["native_injected_environment"])
+                            and pre_payload not in str(messages),
+                            "PREQUERY_ALL_CANONICAL_ARM_CONTEXTS_MUST_BE_CLEANLY_BOUND")
             for row in self._contexts["contexts"]:
                 case_id = row["case_id"]
                 arm_rows = {}
