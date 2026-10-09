@@ -108,15 +108,31 @@ def test_any_forged_or_changed_rcc_source_fails_closed_without_bind_attempt(orig
     elif fault=="forged_bind_permit":b["bind_permit_present"]=True
     elif fault=="previous_write_present": source["native_write_dispatch_count"]=1
     elif fault=="pretend_real_ai":b["live_model_authenticated"]=True
-    runner=Task15PostreadActualBindRefusalV1(prior=source)
-    with pytest.raises((BindRefusalViolation,ValueError,RuntimeError)):
-        runner.run()
-    o=runner.observation()
-    assert o["phase"]=="TERMINAL_UNKNOWN_OR_FAILED"
-    assert o["journal"]==[]
-    assert o["provisional"]["partial_bind_receipts_not_promoted"] is True
-    assert o["retry_allowed"] is False
-    assert o["native_writes"]==o["provider_calls"]==o["scorer_calls"]==o["external_effects"]==0
-    with pytest.raises(BindRefusalViolation,match="ONE_BIND_REFUSAL_ROUND_ONLY"):
-        runner.run()
-    save("REFUSALS",{"fault":fault,"result":"NO_REAL_BIND_REFUSAL_PROOF_PROMOTION"})
+    # Two malformed predecessor snapshots are rejected by the constructor
+    # before a Bind-capable runner exists. A later rejection occurs in run()
+    # after the attempt is irreversibly consumed. Both must fail closed, but
+    # the constructor outcome must never be presented as a Bind adjudication.
+    if fault in ("wrong_case_id","previous_write_present"):
+        with pytest.raises(BindRefusalViolation) as denied:
+            Task15PostreadActualBindRefusalV1(prior=source)
+        expected={
+            "wrong_case_id":"ALL_EIGHT_PINNED_RCC_ALLOWED_B_CASES_REQUIRED",
+            "previous_write_present":"EXACT_UNPERMITTED_RSS_POSTREAD_PROOF_REQUIRED",
+        }
+        assert str(denied.value)==expected[fault]
+        stage="CONSTRUCTOR_PREFLIGHT_REJECTED"
+    else:
+        runner=Task15PostreadActualBindRefusalV1(prior=source)
+        with pytest.raises((BindRefusalViolation,ValueError,RuntimeError)):
+            runner.run()
+        o=runner.observation()
+        assert o["phase"]=="TERMINAL_UNKNOWN_OR_FAILED"
+        assert o["journal"]==[]
+        assert o["provisional"]["partial_bind_receipts_not_promoted"] is True
+        assert o["retry_allowed"] is False
+        assert o["native_writes"]==o["provider_calls"]==o["scorer_calls"]==o["external_effects"]==0
+        with pytest.raises(BindRefusalViolation,match="ONE_BIND_REFUSAL_ROUND_ONLY"):
+            runner.run()
+        stage="RUN_PREFLIGHT_REJECTED"
+    save("REFUSALS",{"fault":fault,"stage":stage,
+                    "result":"NO_REAL_BIND_REFUSAL_PROOF_PROMOTION"})
