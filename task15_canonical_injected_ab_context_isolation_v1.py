@@ -125,7 +125,7 @@ def prepare_canonical_injected_ab_contexts(*, native_slot_proof, native_slot_map
             {"type": "text", "content": native_user.PROMPT}]},
     ]
     prefix_wire = [_message_to_openai(message, MODEL_ID) for message in initial]
-    require(len(prefix_wire) == 2 and prefix_wire[0]["role"] == "system"
+    require(len(prefix_wire) == 2 and prefix_wire[0]["role"] == "developer"
             and prefix_wire[1]["role"] == "user"
             and prefix_wire[1]["content"][0]["text"] == native_user.PROMPT,
             "NATIVE_TASK15_PROSPECTIVE_PREFIX_CHANGED")
