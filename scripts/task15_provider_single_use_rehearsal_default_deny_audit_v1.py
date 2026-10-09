@@ -190,6 +190,7 @@ def main():
                 result["scorer_calls"]==result["external_effects"]==0
             and result["canonical_final128_measured"] is False
             and evidence["concurrent_attempts"]==16
+            and evidence["concurrency_barrier_parties"]==16
             and evidence["rehearsals_consumed"]==1
             and evidence["replay_refusals"]==15,
             "ONLY_SINGLE_IN_MEMORY_REHEARSAL_NO_LIVE_EFFECT_CLAIM_ALLOWED")
