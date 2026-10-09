@@ -6,7 +6,6 @@ import json
 import os
 from pathlib import Path
 from types import SimpleNamespace
-import yaml
 
 import pytest
 
@@ -14,6 +13,7 @@ if os.environ.get("TASK15_NATIVE_READ_OBSERVATION_PROOF") != "1":
     pytest.skip("Pinned synthetic native read-only observation sidecar only",
                 allow_module_level=True)
 
+import yaml
 from openai.types.chat import ChatCompletionMessage
 from test_task15_composed_native_return_binding_v1 import forbidden_effects
 from test_task15_native_model_response_capture_boundary_v1 import no_external_services
