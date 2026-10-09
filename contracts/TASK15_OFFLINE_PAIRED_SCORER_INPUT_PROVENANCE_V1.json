@@ -1,0 +1,30 @@
+{
+  "schema_version": "veritas.task15-offline-paired-scorer-input-provenance.v1",
+  "rule_of_one": "TASK15_OFFLINE_PAIRED_SCORER_INPUT_PROVENANCE_V1",
+  "predecessor_main_sha": "5c50d281f409e678c8193202c19f0648583fbe31",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "central_invariant": "The pinned native AgentDojo model_output_from_messages and functions_stack_trace_from_messages must extract exact terminal output and all three native tool-call FunctionCall IDs for both A and B from the independently observed paired terminal histories, with exact trusted initial/final environment state, without invoking any scorer or misrepresenting the noncanonical offline design case as a Canonical Final128 enrollment or utility score.",
+  "source_blobs": {
+    "task15_offline_paired_scorer_input_provenance_v1.py": "e4c8988a5813ff9fe9558dbeeca9fe6c214996b6",
+    "tests/test_task15_offline_paired_scorer_input_provenance_v1.py": "1bc3390679c12c69a55d85ea6b0e34bc392c10e8",
+    "task15_offline_paired_terminal_histories_v1.py": "d82924b45a97482c04ce6aff9e45418d438a39ed",
+    "task15_offline_terminal_native_continuation_v1.py": "d7684206d2b2d2a8456eb86fa09983a1c31555db",
+    "task15_composed_native_state_scorer_diagnostic_v1.py": "9a5568ec838089dc527fec0fcfc0a72d5022e013",
+    "scripts/agentdojo_native_scorer_invocation_v0_1.py": "e7e431a87a14af135e0bdc3dbf74e68e6e802dfd",
+    "contracts/TASK15_OFFLINE_PAIRED_TERMINAL_NATIVE_HISTORIES_V1.json": "0cbf6facffbd93b577678518d06a7499e45833bb"
+  },
+  "expected_predecessor_tests": 2322,
+  "expected_tests": 15,
+  "expected_negative_records": 13,
+  "expected_scorer_input_projections": 2,
+  "expected_native_trace_items": 6,
+  "expected_terminal_model_outputs": 2,
+  "expected_governed_native_commits": 6,
+  "scorer_calls": 0,
+  "provider_calls": 0,
+  "local_fixture_case_id": "banking:user_task_15:refund-design-v1",
+  "canonical_case_id_valid": false,
+  "canonical_final128_scoring_eligible": false,
+  "final128_utility_recovered": false,
+  "next": "TASK15_CANONICAL_ENROLLMENT_AND_REAL_SCORER_INPUT_PROVENANCE_V1"
+}
