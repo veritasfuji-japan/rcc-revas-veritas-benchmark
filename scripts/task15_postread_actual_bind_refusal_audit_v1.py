@@ -141,8 +141,13 @@ def main():
     require(len(good)==1 and len(bad)==14
             and len({r["fault"] for r in bad})==14
             and all(r["result"]=="NO_REAL_BIND_REFUSAL_PROOF_PROMOTION"
-                    for r in bad),
-            "FOURTEEN_UNPROMOTED_ADVERSARIAL_MUTATIONS_REQUIRED")
+                    for r in bad)
+            and {r["fault"] for r in bad if r.get("stage")==
+                    "CONSTRUCTOR_PREFLIGHT_REJECTED"}==
+                    {"wrong_case_id","previous_write_present"}
+            and len([r for r in bad if r.get("stage")==
+                    "RUN_PREFLIGHT_REJECTED"])==12,
+            "FOURTEEN_ADVERSARIAL_REJECTIONS_AND_EXACT_STAGE_REQUIRED")
     proof=good[0]["proof"]
     require(proof["rule_of_one"]==RULE
             and proof["determination"]==
