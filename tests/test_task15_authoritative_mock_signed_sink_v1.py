@@ -236,16 +236,13 @@ def test_fourteen_closed_sink_bypass_attempts(prior,tmp_path,fault):
         elif fault=="reopen_other_source":
             mutated=copy.deepcopy(prior)
             mutated["ticket_id"]="0"*64
-            other=LocalMockConsequence(
-                tmp_path/"other_controller.sqlite3",
-                tmp_path/"other_provider.sqlite3",mutated)
-            try:
-                reopened=AuthoritativeMockSignedSinkV1(sink.path,other,trust,create=False)
-                with pytest.raises(MockTrustViolation):
-                    reopened.status()
-            except Exception:
-                # Source must fail closed at construction or on read.
-                pass
+            # Even before a sink is reopened, tampered source evidence must
+            # be refused by the local mock source-pin constructor.
+            with pytest.raises(Exception):
+                LocalMockConsequence(
+                    tmp_path/"other_controller.sqlite3",
+                    tmp_path/"other_provider.sqlite3",mutated)
+            assert sink.status()=="DISPATCH_UNKNOWN"
             stage="CROSS_SOURCE_REUSE_REFUSED"
         elif fault=="double_promotion":
             assert sink.promote()=="CONFIRMED_SIGNED_MOCK_EFFECT"
