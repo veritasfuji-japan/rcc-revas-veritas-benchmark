@@ -237,7 +237,7 @@ def trusted_revoke(brokerid,pub,out,scenario):
     evidence={
        "signed_admin_command":token,
        "test_admin_public_root_hex":ADMIN_PUBLIC.hex(),
-       "trusted_admin_receipt":parsed,
+       "trusted_admin_receipt":dict(parsed),
        "denied_admin_attempts":refusal,
        "durable_admin_command":[list(z) for z in cmds],
        "durable_admin_event":[list(z) for z in events]
