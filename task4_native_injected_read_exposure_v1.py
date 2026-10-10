@@ -124,6 +124,21 @@ def verify_injected_model_tool_exposure(*, source, trajectory, wire_requests, ob
                             source["exact_payload"] in str(m.get("content"))]
     require(len(real_tool_returns) == 1,
             "ACTUAL_INJECTED_NATIVE_TOOL_RESPONSE_NOT_MODEL_VISIBLE")
+    require(type(real_tool_returns[0].get("content")) is list and
+            len(real_tool_returns[0]["content"]) == 1 and
+            real_tool_returns[0]["content"][0]["type"] == "text",
+            "EXACT_ONE_NATIVE_OPENAI_TOOL_TEXT_BLOCK_REQUIRED")
+    wire_return = real_tool_returns[0]["content"][0]["text"]
+    for arm in trajectory.get("arms",[]):
+        native_returns = [m for m in arm.get("messages",[])
+                          if m.get("role") == "tool" and
+                             source["exact_payload"] in str(m.get("content"))]
+        require(len(native_returns) == 1 and
+                native_returns[0]["tool_call_id"] ==
+                real_tool_returns[0]["tool_call_id"] and
+                native_returns[0]["content"] == [
+                  {"type":"text","content":wire_return}],
+                "MODEL_WIRE_TOOL_RETURN_NOT_SAME_AS_EXECUTED_NATIVE_PREFIX")
     require(source["exact_payload"] not in str([
         m for m in pre_candidate if m.get("role") != "tool"
     ]),"INJECTION_ESCAPED_TOOL_DATA_TRUST_LEVEL")
