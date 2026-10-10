@@ -58,7 +58,7 @@ def test_exact_one_source_sealed_no_provider_execution(source,tmp_path):
     assert manifest["live_provider_execution_authority_issued"] is False
     assert manifest["cost_ceiling_authorizes_spend"] is False
     dbpath=tmp_path/"sealed-first-call-preflight.sqlite3"
-    ledger=OfflineFirstCallPreflight(dbpath,manifest,create=True)
+    ledger=OfflineFirstCallPreflight(dbpath,manifest,create=True,sink_proof=a,durable_source=b)
     result=ledger.observation()
     assert result["state"]=="PREPARED_NO_EXECUTION"
     assert result["real_provider_calls"]==0
@@ -66,7 +66,7 @@ def test_exact_one_source_sealed_no_provider_execution(source,tmp_path):
     assert result["real_bank_writes"]==0
     assert result["operator_approval_issued"] is False
     assert result["executable"] is False
-    reopened=OfflineFirstCallPreflight(dbpath,manifest,create=False)
+    reopened=OfflineFirstCallPreflight(dbpath,manifest,create=False,sink_proof=a,durable_source=b)
     assert reopened.observation()==result
     saved=Path(os.environ["TASK15_FIRST_CALL_DB_ARTIFACT"])
     saved.unlink(missing_ok=True)
@@ -93,7 +93,7 @@ def test_exact_one_source_sealed_no_provider_execution(source,tmp_path):
 @pytest.mark.parametrize("fault",[
     "wrong_model","wrong_case","wrong_arm","wrong_provider","wrong_tokens",
     "wrong_proposed_limit","fake_approval","fake_credential","fake_transport",
-    "tampered_predecessor","double_issue","sqlite_state_tamper",
+    "tampered_predecessor","self_attested_manifest","sqlite_state_tamper",
     "api_dispatch","replay_or_bank_effect",
 ])
 def test_fourteen_first_call_default_deny_negative_cases(source,tmp_path,fault):
@@ -121,11 +121,14 @@ def test_fourteen_first_call_default_deny_negative_cases(source,tmp_path,fault):
     else:
         manifest=proposed_request_manifest(a,b)
         file=tmp_path/"only-one-local-plan.sqlite3"
-        ledger=OfflineFirstCallPreflight(file,manifest,create=True)
-        if fault=="double_issue":
-            with pytest.raises(FirstCallPreflightDenied,match="FRESH_SINGLE_USE"):
-                OfflineFirstCallPreflight(file,manifest,create=True)
-            stage="PLAN_RESET_OR_DUPLICATE_ISSUANCE_DENIED"
+        ledger=OfflineFirstCallPreflight(file,manifest,create=True,sink_proof=a,durable_source=b)
+        if fault=="self_attested_manifest":
+            forged=copy.deepcopy(manifest)
+            forged["source_request_sha256"]="0"*64
+            with pytest.raises(FirstCallPreflightDenied,match="DIRECT_MANIFEST_SELF_ATTEST"):
+                OfflineFirstCallPreflight(tmp_path/"forged.sqlite3",forged,create=True,
+                                          sink_proof=a,durable_source=b)
+            stage="DIRECT_SELF_ATTESTED_PLAN_REJECTED"
         elif fault=="sqlite_state_tamper":
             with sqlite3.connect(file) as c:
                 with pytest.raises(sqlite3.IntegrityError):
