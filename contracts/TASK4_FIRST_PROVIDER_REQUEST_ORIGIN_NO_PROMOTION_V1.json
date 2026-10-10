@@ -1,0 +1,47 @@
+{
+  "schema_version": "veritas.task4-first-provider-request-origin-no-promotion.v1",
+  "rule_of_one": "TASK4_FIRST_PROVIDER_REQUEST_ORIGIN_NO_PROMOTION_V1",
+  "predecessor_merged_main_sha": "5e194563645cda3a122021ed640676662408bf2d",
+  "status": "DRAFT_NOT_PROVEN_PENDING_EXACT_HEAD_CI_AND_RAW_ARTIFACT_AUDIT",
+  "central_invariant": "Synthetic Task4 A/B offline independently named model-wire histories from #290 may inform only the shape of two separately owned INITIAL provider query requests (developer+user, native tools, no fake prior assistant/tool results); a scripted post-read/third query or fake completion cannot be promoted to independent real Provider generation, consent or execution authority. Even both identical initial query bytes require two separately bound source identities; no permission to send or spend is issued.",
+  "source_blobs": {
+    "task4_dual_offline_native_source_history_v1.py": "7efd1a868d061770d8abc1cab44211f9446cbab5",
+    "task4_native_injected_read_exposure_v1.py": "a08d6d21f6b8a670f62159cd2b7d763506539c1e",
+    "contracts/TASK4_DUAL_OFFLINE_NATIVE_SOURCE_HISTORY_V1.json": "0ccfbab40870464ec0ad7db5cfebcd1185c71218",
+    "task4_prospective_controlled_trajectory_integration_v1.py": "ca52e9272575eacfe20364c517144f97e68c6571",
+    "task4_frozen_provider_transport_date_context_binding_v1.py": "acc656ac485b325f228671a39ce78862f81fb670"
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb"
+  },
+  "exact_case_id": "banking:user_task_4:injection_task_0:direct",
+  "exact_initial_message_roles": [
+    "developer",
+    "user"
+  ],
+  "frozen_previous_synthetic_model_label": "gpt-4.1-mini-2025-04-14",
+  "current_external_provider_model_availability_verified": false,
+  "expected_dedicated_tests": 18,
+  "expected_negative_tests": 15,
+  "expected_synthetic_source_records": 2,
+  "expected_first_query_snapshots": 2,
+  "expected_first_query_wire_bytes_identical": true,
+  "observed_real_provider_calls": 0,
+  "new_real_model_inferences": 0,
+  "new_canonical_final128_scores": 0,
+  "real_provider_execution_authorized": false,
+  "permitted_real_provider_calls": 0,
+  "permitted_spend_usd": 0,
+  "permitted_external_bank_effects": 0,
+  "caveats": [
+    "No real OpenAI model is invoked, constructed or authenticated; exact model snapshot may be unavailable at future execution and needs current verification",
+    "Historical #290 fake tool outputs are NOT valid actual independent Provider completions; only the first query skeleton is a potential independently executable source",
+    "No real-provider approver enrolled and no fresh explicit human approval or spend cap; no retained V13 5 USD authorization",
+    "No physical real-model token budget enforcement, no external transport, no durable authentic Provider receipt, no retry or unknown reconciliation",
+    "Actual native injected text first appears AFTER native tool reads, not in the very first model query",
+    "This does not repair or rescore V13 Utility; the historical 64/128 remains unchanged"
+  ],
+  "next": "For one prospectively enrolled case, separately collect genuine Provider responses to the INITIAL A/B requests and subsequent read-only tool returns; require fresh exact-case human approval, independent source proofs, one-time durable consume, caller budget and independent scorer. Real model execution NOT authorized by this proof."
+}
