@@ -5,8 +5,8 @@
   "predecessor_main_sha": "7fdfed5cf4d8b1302fc376d36d97b67089dcfa12",
   "central_invariant": "Within one exact frozen Task15 first-case A-arm model response capture PRE-FLIGHT, a single non-executable source request manifest can be sealed durably without any live provider transport or issuance of operator approval, spend authority, provider API credential, retries or banking effects. Historical $5 budget and a proposed $0.25 cap are not expenditure permission.",
   "source_blobs": {
-    "task15_real_provider_first_call_preflight_default_deny_v1.py": "c234ec5aa8c4752ba519d5aba195568af36e9cd1",
-    "tests/test_task15_real_provider_first_call_preflight_default_deny_v1.py": "cf289c45a84d742f635ac463dd42a28056a14b3e",
+    "task15_real_provider_first_call_preflight_default_deny_v1.py": "c6a4ee1539e0e460fb47892e5e5d112f2c04086d",
+    "tests/test_task15_real_provider_first_call_preflight_default_deny_v1.py": "788deb64ece6eb2cc9964b2175b211939376ea27",
     "scripts/task15_real_provider_first_call_preflight_default_deny_audit_v1.py": "1fcd50c95e27f24cc1063d5e6fa59ea64eaff722",
     "scripts/task15_authoritative_mock_signed_sink_audit_v1.py": "798bd9d86b663759448c61ec05dbf5d26dc5ba1e",
     "task15_authoritative_mock_signed_sink_v1.py": "9b7795ffe006a49b1fd3ad7bb6030d269ce56e1a"
