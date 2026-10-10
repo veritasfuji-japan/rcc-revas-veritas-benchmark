@@ -9,6 +9,11 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 import unittest
 
+# Only dedicated offline proof imports the crypto dependency and runs these cases.
+# The fast general CI intentionally does not install cryptography.
+if os.environ.get("TASK15_MOCK_BROKER_PROOF") != "1":
+    raise unittest.SkipTest("Dedicated mock broker proof workflow only")
+
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from task15_mock_broker_authorization_boundary_v1 import (
