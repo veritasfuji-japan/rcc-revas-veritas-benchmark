@@ -6,6 +6,7 @@ import pytest
 
 if os.environ.get("TASK4_FIRST_ORIGIN_NO_PROMOTION_PROOF")!="1":
     pytest.skip("Dedicated #291 provider-source no-promotion gate",allow_module_level=True)
+from test_task4_trusted_execution_date_runner_integration_v1 import setup
 from test_task4_dual_offline_native_source_history_v1 import (
     two_owned_logical_source_histories,prohibit_provider_network_and_db,
 )
