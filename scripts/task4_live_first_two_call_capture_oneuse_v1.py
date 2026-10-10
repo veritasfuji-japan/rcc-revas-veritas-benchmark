@@ -149,6 +149,8 @@ def send_exactly_once(*,request,key,arm,request_id,transport=None):
         check(len(body)<=262144,"RESPONSE_BODY_SIZE_UNTRUSTED")
         obj=json.loads(body)
         check(status==200,"HTTP_NON_SUCCESS_REQUEST_OUTCOME_UNKNOWN_NO_RETRY_"+str(status))
+        check(type(provider_request_id) is str and bool(provider_request_id),
+              "PROVIDER_REQUEST_ID_MISSING_NO_RETRY")
         check(type(obj) is dict and obj.get("object")=="chat.completion"
               and type(obj.get("id")) is str and bool(obj["id"]) and
               type(obj.get("choices")) is list and len(obj["choices"])==1
@@ -158,9 +160,10 @@ def send_exactly_once(*,request,key,arm,request_id,transport=None):
                   for t in ("prompt_tokens","completion_tokens","total_tokens")),
               "UNAUTHENTICATED_OR_INCOMPLETE_PROVIDER_RESPONSE_STOP")
         usage=obj["usage"]
-        check(usage["total_tokens"]>=usage["prompt_tokens"]+
-              usage["completion_tokens"]-usage.get("prompt_tokens_details",{}).get("cached_tokens",0),
-              "BAD_USAGE_VALUES_STOP")
+        check(usage["total_tokens"]==usage["prompt_tokens"]+
+              usage["completion_tokens"] and
+              usage["completion_tokens"]<=OUTPUT_LIMIT,
+              "BAD_USAGE_OR_COMPLETION_LIMIT_STOP")
         cost=(usage["prompt_tokens"]*INPUT_RATE_PER_MILLION+
               usage["completion_tokens"]*OUTPUT_RATE_PER_MILLION)/1000000
         check(cost<=PER_FIRST_USD,
