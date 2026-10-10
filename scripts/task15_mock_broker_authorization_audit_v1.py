@@ -15,6 +15,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 sys.path.insert(0,str(ROOT/"tests"))
+os.environ["TASK15_MOCK_BROKER_PROOF"] = "1"
 from task15_mock_broker_authorization_boundary_v1 import (
     RULE, MockAuthorizationBroker, BrokerDenied, exact_request, sha
 )
