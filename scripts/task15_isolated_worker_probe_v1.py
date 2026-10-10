@@ -77,7 +77,13 @@ def no_host_sentinel():
 def no_docker_socket_or_secret_mount():
     for p in ("/var/run/docker.sock", "/run/docker.sock",
               "/run/secrets/OPENAI_API_KEY", "/root/.aws/credentials"):
-        must(not Path(p).exists(), "UNTRUSTED_WORKER_HAS_PRIVILEGED_MOUNT:" + p)
+        try:
+            available = Path(p).exists()
+        except PermissionError:
+            # Non-root cannot even traverse the owner-only location: no
+            # credential access. Other unexpected errors still fail closed.
+            available = False
+        must(not available, "UNTRUSTED_WORKER_HAS_PRIVILEGED_MOUNT:" + p)
 
 def non_root():
     must(os.geteuid() == 65534 and os.getegid() == 65534,
