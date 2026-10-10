@@ -1,7 +1,9 @@
 """Task4 first genuine model query origin is an offline NON-executable plan."""
 from __future__ import annotations
 import copy
+import json
 import os
+from pathlib import Path
 import pytest
 
 if os.environ.get("TASK4_FIRST_ORIGIN_NO_PROMOTION_PROOF")!="1":
@@ -10,7 +12,7 @@ from test_task4_trusted_execution_date_runner_integration_v1 import setup
 from test_task4_dual_offline_native_source_history_v1 import (
     two_owned_logical_source_histories,prohibit_provider_network_and_db,
 )
-from task4_dual_offline_native_source_history_v1 import DualSourceViolation
+from task4_dual_offline_native_source_history_v1 import DualSourceViolation, validate_dual_offline_native_sources
 from task4_first_provider_request_origin_no_promotion_v1 import (
     frozen_first_request_handoff,forbid_live_handoff_action,
     FirstOriginDenied,RULE,
@@ -26,6 +28,13 @@ def test_01_prospective_first_request_is_only_a_plan(two_owned_logical_source_hi
     assert x["normalization_from_simulation_to_real_sampling_forbidden"] is True
     assert x["arms"]["A"]["first_request_sha256"]==x["arms"]["B"]["first_request_sha256"]
     assert x["arms"]["A"]["synthetic_source_sha256"]!=x["arms"]["B"]["synthetic_source_sha256"]
+    if os.environ.get("TASK4_FIRST_ORIGIN_RAW_EVIDENCE"):
+        Path(os.environ["TASK4_FIRST_ORIGIN_RAW_EVIDENCE"]).write_text(
+            json.dumps({"raw":two_owned_logical_source_histories,
+                        "proof":validate_dual_offline_native_sources(
+                            two_owned_logical_source_histories)},
+                       sort_keys=True)+"\n")
+
 
 def test_02_cannot_mutate_frozen_synthetic_evidence(two_owned_logical_source_histories):
     before=sha_json(two_owned_logical_source_histories)
