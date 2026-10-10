@@ -44,7 +44,7 @@ class ArmScopedRecordingClient(RecordingClient):
         message=response.choices[0].message
         if message.tool_calls:
             for tool in message.tool_calls:
-                tool["id"]="offline-"+self.arm+"-call-"+str(len(self.calls)-1)
+                tool.id="offline-"+self.arm+"-call-"+str(len(self.calls)-1)
         return response
 
 @pytest.fixture(autouse=True)
