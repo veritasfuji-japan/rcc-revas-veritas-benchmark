@@ -207,9 +207,8 @@ def test_fourteen_closed_sink_bypass_attempts(prior,tmp_path,fault):
             other=TestOnlyMockIssuer()
             alt=FrozenOfflineMockTrust(tmp_path/"alternative_root.sqlite3",
                                        other.public_bytes,create=True)
-            forged=AuthoritativeMockSignedSinkV1(sink.path,sim,alt,create=False)
             with pytest.raises(MockTrustViolation,match="SOURCE_OR_ROOT_CHANGED"):
-                forged.status()
+                AuthoritativeMockSignedSinkV1(sink.path,sim,alt,create=False)
             stage="NEW_ROOT_CANNOT_REOPEN_SINK"
         elif fault=="mock_root_file_tampered":
             other=TestOnlyMockIssuer()
