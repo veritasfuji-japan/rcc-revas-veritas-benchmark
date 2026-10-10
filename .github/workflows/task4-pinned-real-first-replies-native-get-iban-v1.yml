@@ -1,0 +1,86 @@
+name: Task4 Pinned Real First Replies Native Get IBAN V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-pinned-real-first-replies-native-get-iban-v1.yml"
+      - "task4_pinned_real_first_replies_native_get_iban_v1.py"
+      - "tests/test_task4_pinned_real_first_replies_native_get_iban_v1.py"
+      - "scripts/task4_pinned_real_first_replies_native_get_iban_audit_v1.py"
+      - "contracts/TASK4_PINNED_REAL_FIRST_REPLIES_NATIVE_GET_IBAN_V1.json"
+      - "docs/TASK4_PINNED_REAL_FIRST_REPLIES_NATIVE_GET_IBAN_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-pinned-real-first-replies-native-get-iban-v1.yml"
+      - "task4_pinned_real_first_replies_native_get_iban_v1.py"
+      - "tests/test_task4_pinned_real_first_replies_native_get_iban_v1.py"
+      - "scripts/task4_pinned_real_first_replies_native_get_iban_audit_v1.py"
+      - "contracts/TASK4_PINNED_REAL_FIRST_REPLIES_NATIVE_GET_IBAN_V1.json"
+      - "docs/TASK4_PINNED_REAL_FIRST_REPLIES_NATIVE_GET_IBAN_V1.md"
+permissions:
+  contents: read
+  actions: read
+jobs:
+  task4-pinned-real-first-reply-offline-native-iban:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Download exactly 292 packet and 294 real Provider response evidence, never send
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source/packet source/provider results
+          gh run download 38060638006 -R "$GITHUB_REPOSITORY"             --name task4-two-arm-first-live-request-packet-v1 --dir source/packet
+          echo "096f428f060d6b7d73b594955b95db11728c2045c8224e23ff4bb41a0b3dbcf3  source/packet/task4-two-first-request-packets.json" | sha256sum -c -
+          curl --fail --silent --show-error --location --retry 0             -H "Authorization: Bearer $GH_TOKEN"             -H "Accept: application/vnd.github+json"             "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11675146283/zip"             -o source/provider/real-first-two.zip
+          echo "7a5edcbdc7277917c700cef98e6e4a1c2b27cb730da2fdbc1e8e2ff3998671af  source/provider/real-first-two.zip" | sha256sum -c -
+      - name: Checkout exact pinned native AgentDojo RCC and VERITAS code
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+      - name: Install pinned native AgentDojo simulator and offline-only test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install "pytest==9.1.1" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py             --lock _pins/agentdojo/uv.lock             --output /tmp/task4-pinned-first-iban-deps.txt
+          pip install -r /tmp/task4-pinned-first-iban-deps.txt
+      - name: Replay exact captured real Provider responses through NATIVE read-only get_iban
+        env:
+          GH_TOKEN: ""
+          GITHUB_TOKEN: ""
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip freeze > results/task4-pinned-real-first-native-iban-dependencies.txt
+          cp /tmp/task4-pinned-first-iban-deps.txt results/task4-pinned-real-first-native-iban-lock.txt
+          python scripts/task4_pinned_real_first_replies_native_get_iban_audit_v1.py             --agentdojo-root _pins/agentdojo --rcc-root _pins/rcc             --veritas-root _pins/veritas             --captured-provider-zip source/provider/real-first-two.zip             --original-packet-json source/packet/task4-two-first-request-packets.json             --output-dir results | tee results/task4-pinned-real-first-native-iban-ci.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-pinned-real-first-replies-native-get-iban-v1
+          path: results/*
+          if-no-files-found: warn

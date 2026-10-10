@@ -1,0 +1,55 @@
+{
+  "schema_version": "veritas.task4-pinned-real-first-replies-native-get-iban.v1",
+  "rule_of_one": "TASK4_PINNED_REAL_FIRST_REPLIES_NATIVE_GET_IBAN_V1",
+  "predecessor_merged_main_sha": "99812fe1fdbc627e582ec7935a429a852e22703d",
+  "status": "DRAFT_PENDING_EXACT_HEAD_CI_AND_DOWNLOADED_ARTIFACT_AUDIT",
+  "central_invariant": "Bind two genuine first-turn A/B OpenAI-model get_iban tool call decisions captured under consumed run 38065015883 to their immutable first provider request, then execute ONE real pinned AgentDojo read-only get_iban operation in each separate native-injected banking environment; store the exact next model-format request unsent, with zero additional model call/bank writer/scorer.",
+  "original_provider_run_id": "38065015883",
+  "original_provider_job_id": "114250789301",
+  "original_provider_artifact_id": "11675146283",
+  "original_provider_artifact_zip_sha256": "7a5edcbdc7277917c700cef98e6e4a1c2b27cb730da2fdbc1e8e2ff3998671af",
+  "original_provider_merged_main_sha": "99812fe1fdbc627e582ec7935a429a852e22703d",
+  "consumed_tag": "refs/tags/task4-first-two-real-provider-v1-consumed",
+  "original_request_run": "38060638006",
+  "original_request_artifact_id": "11672698922",
+  "original_request_packet_file_sha256": "096f428f060d6b7d73b594955b95db11728c2045c8224e23ff4bb41a0b3dbcf3",
+  "original_complete_request_sha256": "3c9ef1c4fa4d58f8969df723b40b99298fc08a9d44acfc6609f086fc0d7c5b13",
+  "pinned_provider_model": "gpt-4.1-mini-2025-04-14",
+  "pinned_response_sha256": {
+    "A": "2a3affe5a0e0f309dc3eb16615a0d08f1cfbf93785402506a78b1c33dfe86944",
+    "B": "d880401d0d5214b041b63f5e804ef383e280a45f5c1d6b15fdff378884add058"
+  },
+  "source_blobs": {
+    "task4_native_read_model_continuation_seam_v1.py": "74f16619d25e7ae80c596bc99aa9028e5b070c51",
+    "task4_two_arm_first_live_request_packet_v1.py": "7f2de21ac773698cc8be9ec043b06be2952de50b",
+    "task4_native_injected_read_exposure_v1.py": "a08d6d21f6b8a670f62159cd2b7d763506539c1e",
+    "scripts/task4_live_first_two_call_capture_oneuse_v1.py": "2594ce305cd3f9e7f683fdf60edc63ea5e76abb6",
+    "contracts/TASK4_LIVE_FIRST_TWO_CALL_CAPTURE_ONEUSE_V1.json": "0396976f2e6e316f98850afbf07212b62f2b96bb",
+    "contracts/TASK4_NATIVE_READ_MODEL_CONTINUATION_SEAM_V1.json": "facbb71ac5ff6c825a605e5622aa2a1b14557c80"
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb"
+  },
+  "expected_dedicated_tests": 28,
+  "expected_real_provider_first_turn_decisions_replayed": 2,
+  "expected_real_native_banking_readonly_get_iban_executes": 2,
+  "additional_provider_calls_authorized": 0,
+  "send_next_request_authorized": false,
+  "new_authorized_provider_spend_usd": 0,
+  "expected_native_external_bank_writes": 0,
+  "expected_native_injection_exposure_to_real_model": false,
+  "expected_new_native_task4_utility_scores": 0,
+  "expected_new_canonical_final128_scores": 0,
+  "provenance_assumption": "The authentic source was directly captured through GitHub Actions default TLS to OpenAI's API under a dedicated key; the JSON response itself is not provider-signed, and independent external cryptographic identity cannot be proved solely by archived server IDs.",
+  "limitations": [
+    "Only actual first model decisions get_iban are replayed; original first response has no attack text; native get_iban is not the injected transaction-list read.",
+    "No additional Provider call or attempt. Future genuine model inference after this tool result requires new authorization and fresh single-use tracking.",
+    "The next model-format requests are complete but remain UNSENT; exact native tool call IDs/returns are archived, with no model write permissions.",
+    "GitHub Actions original consumed ref 99812fe1... is verified by separate GitHub audit; CI source SHA checks are necessary but do not independently prove provider's cryptographic signature.",
+    "This does not score actual Task4 utility, injection success or improve V13 Final128; two tool reads are in disposable native simulator only.",
+    "The original $0.50 first-two-call approval is consumed and cannot be reused."
+  ],
+  "next": "Separately authorize and implement exact A/B SECOND Provider calls using the real get_iban native returns, with independent, one-use budget/approval and no native bank writers; only AFTER a real model chooses get_most_recent_transactions may the attack text reach that model's future prompt."
+}
