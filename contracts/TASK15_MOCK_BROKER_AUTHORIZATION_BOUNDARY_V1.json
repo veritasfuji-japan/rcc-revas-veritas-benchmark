@@ -1,0 +1,30 @@
+{
+  "schema_version": "veritas.task15-mock-broker-authorization-boundary.v1",
+  "rule_of_one": "TASK15_MOCK_BROKER_AUTHORIZATION_BOUNDARY_V1",
+  "predecessor_merged_main_sha": "3d0a319931cd4f43a206cb3d1ac6b3d8e6b8384a",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI_AND_INDEPENDENT_ARTIFACT_REVIEW",
+  "central_invariant": "A frozen offline Task15 model proposal cannot reach the built-in local mock sink without a pre-pinned Ed25519 signature and a durable first-use SQLite claim. Any claimed request cannot retry even after ambiguous delivery.",
+  "trusted_operator_root": "BROKER_CONSTRUCTOR_OWNED_NOT_WORKER_ENVELOPE",
+  "trusted_utc_clock": "BROKER_CONSTRUCTOR_OWNED_TEST_FIXTURE_ONLY",
+  "frozen_wire_source_sha256": "a09c777b94e6e86edc274983fac8e447343749d7312e88397b39941741899d19",
+  "frozen_model": "gpt-4.1-mini-2025-04-14",
+  "max_calls": 1,
+  "max_total_spend_micro_usd": 0,
+  "real_provider_calls_authorized": false,
+  "real_provider_spend_authorized": false,
+  "expected_adversarial_tests": 30,
+  "expected_sqlite_artifacts": 2,
+  "isolated_worker_ipc_integrated": false,
+  "real_provider_credential_present": false,
+  "external_trust_root_onboarded": false,
+  "independent_audit_required": true,
+  "nonclaims": [
+    "In-process Python object is not OS process isolation",
+    "Test signer is not an enrolled human operator",
+    "No raw native wire payload in proposal",
+    "No live Provider sender or approved billing",
+    "Broker not yet connected to isolated worker #278",
+    "Trusted host process compromise not prevented"
+  ],
+  "next": "Separately implement physically isolated broker process and authenticated IPC with hardened credential custody. Real Provider transport stays disabled."
+}
