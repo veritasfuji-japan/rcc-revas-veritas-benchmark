@@ -145,7 +145,9 @@ def test_fourteen_first_call_default_deny_negative_cases(source,tmp_path,fault):
             with pytest.raises(FirstCallPreflightDenied,match="NEVER_ISSUED"):
                 ledger.authorize_bank_write()
             stage="NO_RETRY_OR_BANK_EFFECT_AUTHORITY"
-        assert ledger.observation()["real_provider_calls"]==0 if fault!="sqlite_state_tamper" else True
+        if fault!="sqlite_state_tamper":
+            assert ledger.observation()["real_provider_calls"]==0
+            assert ledger.observation()["real_provider_charges_usd"]==0
     log("REFUSALS",{
         "fault":fault,"stage":stage,
         "result":"NO_REAL_PROVIDER_CAPABILITY_AND_NO_PAID_REQUEST",
