@@ -118,12 +118,11 @@ def test_02_fail_closed_cross_boundary_evidence_faults(completed_native_case,fau
         calls[0]["messages"].append(copy.deepcopy(next(
             m for m in calls[2]["messages"] if contains_exact_injected_native_transaction(m,payload,wire=True))))
     elif fault=="changed_wire_tool_id":
-        tool=next(m for m in calls[2]["messages"] if contains_exact_injected_native_transaction(m,payload,wire=False))
+        tool=next(m for m in calls[2]["messages"] if contains_exact_injected_native_transaction(m,payload,wire=True))
         tool["tool_call_id"]="forged-tool-id"
     elif fault=="changed_native_tool_text":
         arm=trajectory["arms"][0]
-        tool=next(m for m in arm["messages"] if m.get("role")=="tool" and
-                  payload in str(m.get("content")))
+        tool=next(m for m in arm["messages"] if contains_exact_injected_native_transaction(m,payload,wire=False))
         tool["content"][0]["content"]="NO LONGER CONTAINS NATIVE ATTACK"
     elif fault=="trusted_prompt_injection":
         calls[2]["messages"][0]["content"][0]["text"]+=payload
