@@ -1,0 +1,38 @@
+{
+  "schema_version": "veritas.task15-direct-openai-https-bypass-default-deny.v1",
+  "rule_of_one": "TASK15_DIRECT_OPENAI_HTTPS_BYPASS_DEFAULT_DENY_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "predecessor_main_sha": "677a65721fb44d11618a0f906b71eb1931166b44",
+  "original_v276_audited_source_blob": "a3ff123d5df3fc47e5014b212666050f525cba02",
+  "central_invariant": "In the bounded two original Task15 OpenAI transport entrypoints, construction and direct send of DirectOpenAIHTTPSOnce MUST unconditionally reject any caller/key/request before creating HTTPS transport; DurableOneShotModelCapture.capture(live=True) MUST fail closed before consuming a SQLite grant. Offline mock capture remains available and never executes returned bank tool calls. This is NOT credential-/network-level isolation across arbitrary Python processes.",
+  "source_blobs": {
+    "task15_one_shot_openai_model_capture_gate_v1.py": "38f9186a419af0dc161c41733a1fe578a2261ef7",
+    "tests/test_task15_direct_openai_https_bypass_default_deny_v1.py": "e10c037b62d74db31d52a767a209ee6437dc5b36",
+    "scripts/task15_direct_openai_https_bypass_default_deny_audit_v1.py": "b6887405ee2fdf66ba72519adb39d86cc57c8415",
+    "scripts/task15_one_shot_openai_model_capture_gate_audit_v1.py": "5ce74e25e3505717f09f97eb7501edb7d6d86a95",
+    "tests/test_task15_one_shot_openai_model_capture_gate_v1.py": "77d7d143dc85f00a1a2f94488089fc6f791b62d7"
+  },
+  "model_configuration_blob": "59a77c03f7e98a6d8a5fa9b78ba356cfc12ff92d",
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "expected_tests": 15,
+  "expected_distinct_refusals": 14,
+  "expected_raw_sqlite_databases": 2,
+  "previously_executable_class_direct_send_now_default_denied": true,
+  "all_live_capture_through_previous_public_entrypoints_default_denied": true,
+  "offline_mock_proof_regression_required": true,
+  "no_live_transport_or_key_in_proof_ci": true,
+  "no_human_approval_or_true_clock_onboarded": true,
+  "bypass_resistance_against_arbitrary_processes_or_external_http_clients_proven": false,
+  "real_provider_calls": 0,
+  "real_provider_charges_usd": 0,
+  "real_bank_effects": 0,
+  "next": "DESIGN_SEPARATE_OPERATING_SYSTEM_ISOLATED_SINGLE_CALL_EGRESS_AND_SECRET_HOLDER_WITH_EXTERNAL_CONSENT_AND_REAL_BUDGET_GATES_BEFORE_LIVE_PROVIDER_CONNECTION"
+}
