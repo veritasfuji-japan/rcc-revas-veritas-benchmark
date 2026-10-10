@@ -172,8 +172,10 @@ class GovernedAdminRootBroker(SignedAdminRevocationBroker):
                         hashlib.sha256(bytes.fromhex(old_hex)).hexdigest(),
                         "GOVERNANCE_MONOTONIC_EPOCH_OR_PREDECESSOR_DRIFT")
                 if s["operation"] == "ROTATE":
-                    require(s["admin_root_hex"] != old_hex,
-                            "GOVERNANCE_SAME_ADMIN_ROOT_ROTATION_FORBIDDEN")
+                    require(db.execute(
+                        "SELECT 1 FROM governed_admin_roots WHERE root_hex=?",
+                        (s["admin_root_hex"],)).fetchone() is None,
+                        "GOVERNANCE_HISTORIC_ADMIN_ROOT_REUSE_FORBIDDEN")
             db.execute(
                 "INSERT INTO governed_admin_roots VALUES (?,?,?,?,?,?)",
                 (s["epoch"], s["admin_root_hex"],
