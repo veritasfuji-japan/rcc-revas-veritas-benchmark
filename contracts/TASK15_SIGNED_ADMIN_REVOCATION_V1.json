@@ -1,0 +1,45 @@
+{
+  "schema_version": "veritas.task15-signed-admin-revocation.v1",
+  "rule_of_one": "TASK15_SIGNED_ADMIN_REVOCATION_V1",
+  "predecessor_merged_main_sha": "3f1f7fe3c606a694d7b07330e0a3e2e86752e737",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI_AND_INDEPENDENT_ARTIFACT_AUDIT",
+  "central_invariant": "Inside networkless Docker broker, a trusted-host admin revocation may be committed only if a separate pinned Ed25519 TEST administrator key signs an exact frozen request-bound, zero-spend, no-bank-effect, time-bounded command. Its nonce and command digest are durably consumed atomically with the request revocation in one SQLite BEGIN IMMEDIATE transaction. All later AF_UNIX mock dispatch claims are denied.",
+  "scope": "synthetic Task15 offline mock + TEST signer; never real Provider",
+  "admin_key_separate_from_model_signer": true,
+  "admin_root_enrollment": "The trusted CI host generates and pins the independent admin TEST root. It is NOT an independently verified organization operator or production IAM identity.",
+  "command_fields": [
+    "domain",
+    "action",
+    "request_sha256",
+    "nonce",
+    "issued_at",
+    "expires_at",
+    "no_live_provider",
+    "max_spend_micro_usd",
+    "bank_effects"
+  ],
+  "signature": "TEST Ed25519 over sorted compact canonical UTF-8 JSON; 256-bit nonce; max 300 seconds validity",
+  "serialized_admin_action": "Insert signed admin command nonce, insert revocation, append revocation audit and signed admin audit within one SQLite BEGIN IMMEDIATE write transaction; replay and second fresh revoke fail closed",
+  "worker_ipc_admin_operation_exposed": false,
+  "trusted_host_docker_exec_required": true,
+  "expected_unit_tests": 18,
+  "expected_runtime_junit_checks": 20,
+  "expected_negatives_per_scenario": 5,
+  "expected_scenarios": [
+    "revocation_first: signed action commits before valid copied worker key+grant, zero mock effect",
+    "claim_first: a previously permitted synthetic effect may happen before signed revocation, followed by denial of all new dispatch"
+  ],
+  "expected_archived_sqlite_databases": 2,
+  "expected_provider_requests": 0,
+  "real_provider_execution_authorized": false,
+  "expected_real_provider_spend_usd": 0,
+  "expected_real_bank_effects": 0,
+  "limitations": [
+    "The admin key is a locally generated TEST key; there is no independent trusted human enrollment or multi-party approval",
+    "Privileged Docker host can supply/replace the admin-root CLI argument or edit private SQLite; those capabilities are trusted",
+    "A stolen signed admin authorization may execute once before expiry if it has not yet been durably consumed",
+    "Revocation cannot undo a claim already committed or local effect already made",
+    "The request is identifier-only; no complete native AgentDojo wire authenticity or real Provider secret custody",
+    "No API HTTP transport or bank effect enabled"
+  ]
+}
