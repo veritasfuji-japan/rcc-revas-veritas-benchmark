@@ -1,0 +1,48 @@
+{
+  "schema_version": "veritas.task4-two-arm-first-live-request-packet.v1",
+  "rule_of_one": "TASK4_TWO_ARM_FIRST_LIVE_REQUEST_PACKET_V1",
+  "predecessor_merged_main_sha": "2bfd1daa736b33964b6aa8d275d0695d75079e3b",
+  "status": "DRAFT_NOT_PROVEN_PENDING_EXACT_HEAD_CI_AND_ARCHIVED_ARTIFACT",
+  "central_invariant": "For exactly one AgentDojo Task4 DirectAttack case, materialize two full immutable provider-format FIRST-model-request JSON objects from each separately evidenced synthetic source with exact frozen native original request/tool schemas. A and B first request bytes may be equal, but source ownership cannot be aliased. Model continuation, live provider permission, real-model authenticity and user spending consent remain absent and cannot be inferred from these signed-free offline packets.",
+  "source_blobs": {
+    "task4_first_provider_request_origin_no_promotion_v1.py": "50ba328fc41ec21afd3b8bb3fa05661aad87bf65",
+    "task4_dual_offline_native_source_history_v1.py": "7efd1a868d061770d8abc1cab44211f9446cbab5",
+    "task4_native_injected_read_exposure_v1.py": "a08d6d21f6b8a670f62159cd2b7d763506539c1e",
+    "contracts/TASK4_FIRST_PROVIDER_REQUEST_ORIGIN_NO_PROMOTION_V1.json": "3ecb3317359a96522e490550de26c9c6f4d7dac7"
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb"
+  },
+  "frozen_case_id": "banking:user_task_4:injection_task_0:direct",
+  "exact_original_first_wire_sha256": "c83bca26d25f6a6332cc1b7266c84ee5974f1f7904d0d77d4f6a913100233dc7",
+  "frozen_model": "gpt-4.1-mini-2025-04-14",
+  "provider_api": "POST https://api.openai.com/v1/chat/completions",
+  "max_completion_tokens_per_proposed_first_request": 256,
+  "proposed_request_count": 2,
+  "proposed_per_call_max_spend_usd": 0.25,
+  "proposed_total_max_spend_usd": 0.5,
+  "proposed_max_is_not_hard_provider_billing_guarantee": true,
+  "approved_spend_usd": 0,
+  "actual_provider_calls": 0,
+  "live_provider_transport_enabled": false,
+  "model_account_access_verified": false,
+  "valid_fresh_operator_approval_present": false,
+  "expected_unit_tests": 19,
+  "expected_negative_controls": 16,
+  "manual_final_approval_required": true,
+  "historical_v13_five_dollar_consent_reusable": false,
+  "first_request_injected_attack_text_present": false,
+  "actual_real_bank_effects": 0,
+  "explicit_nonclaims": [
+    "No actual provider call or authenticated first model result is included",
+    "First request has no injected transaction text yet; complete attack testing requires real model-produced tool reads and subsequent tool responses",
+    "The exact historical model snapshot may be accessible in public API docs but this repository cannot establish per-user access without real API authentication",
+    "No real model-generated A/B independent behavior or full canonical Final128 score",
+    "The existing Task4 test date 2031-07-08 is synthetic trusted metadata, not operator-enrolled production date",
+    "The proposed $0.50 for two first requests is not live authorization or a hard provider billing cap; actual usage and price must be checked",
+    "No live network sender, API key, signature, or real bank capability is created here"
+  ],
+  "next": "An operator must explicitly approve exact case/model/total maximum cost and establish trusted root and robust sender, after account model access/pricing validation. Only then produce authentic two independent A/B initial responses and continue real native read flow. No prior approval re-use."
+}
