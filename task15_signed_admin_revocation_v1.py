@@ -146,7 +146,7 @@ class SignedAdminRevocationBroker(RevocableMockAuthorizationBroker):
             raise
         finally:
             db.close()
-        return {"state":"REVOKED","request_sha256":request_sha,
+        return {"state":"REVOKED","new_revocation":True,"request_sha256":request_sha,
                 "admin_command_sha256":cmd_sha,"consumed_nonce":nonce,
                 "signed_admin_events":1}
 
