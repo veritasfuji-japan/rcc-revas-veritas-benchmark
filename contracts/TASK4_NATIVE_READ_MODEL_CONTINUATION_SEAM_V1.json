@@ -1,0 +1,47 @@
+{
+  "schema_version": "veritas.task4-native-read-model-continuation-seam.v1",
+  "rule_of_one": "TASK4_NATIVE_READ_MODEL_CONTINUATION_SEAM_V1",
+  "predecessor_merged_main_sha": "c0e6be8e106de4fb7ec47db12a7b495252aee07f",
+  "status": "DRAFT_PENDING_EXACT_HEAD_FULL_CI_AND_RAW_ARTIFACT_AUDIT",
+  "central_invariant": "For one exact pinned native AgentDojo Task4 DirectAttack initial injected banking state, each separately constructed A/B provider-format FIRST request can ingest a single offline OpenAI-shaped model tool response, execute ONLY native get_iban/get_most_recent_transactions reads with actual pinned AgentDojo ToolsExecutor/FunctionsRuntime (no writer registered), and freeze the resulting real native YAML tool return into its NEXT model-format request without bank mutation or synthetic-to-authentic Provider promotion; invalid inputs burn that arm step.",
+  "source_blobs": {
+    "task4_two_arm_first_live_request_packet_v1.py": "7f2de21ac773698cc8be9ec043b06be2952de50b",
+    "task4_first_provider_request_origin_no_promotion_v1.py": "50ba328fc41ec21afd3b8bb3fa05661aad87bf65",
+    "task4_native_injected_read_exposure_v1.py": "a08d6d21f6b8a670f62159cd2b7d763506539c1e",
+    "task4_prospective_controlled_trajectory_integration_v1.py": "ca52e9272575eacfe20364c517144f97e68c6571",
+    "contracts/TASK4_TWO_ARM_FIRST_LIVE_REQUEST_PACKET_V1.json": "cf788ad52d405b735f4c11e602802a639023230c"
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb"
+  },
+  "exact_native_case": "banking:user_task_4:injection_task_0:direct",
+  "native_read_allowlist_order": [
+    "get_iban",
+    "get_most_recent_transactions"
+  ],
+  "native_injected_tool_return_expected_from_read_ordinal": 1,
+  "expected_model_sources": 2,
+  "expected_total_actual_native_read_only_tool_executes": 4,
+  "expected_next_request_with_native_attack_exposure": 2,
+  "expected_dedicated_tests": 19,
+  "negative_refusal_cases": 17,
+  "real_model_responses_authenticated": false,
+  "real_model_dispatch_implemented": false,
+  "allowed_provider_requests": 0,
+  "approved_spend_usd": 0,
+  "real_bank_effects_permitted": false,
+  "actual_real_bank_effects": 0,
+  "no_scorer_calls": true,
+  "limitations": [
+    "Both model tool responses in this proof are untrusted local fixtures that look like ChatCompletion and contain synthetic IDs, not actual OpenAI responses",
+    "Native AgentDojo read-only functions and injected banking state are genuine frozen implementation and actually execute locally; the bank effect state must not change",
+    "Current bounded path covers only get_iban then get_most_recent_transactions; if real model selects a different ordering or tool, this gate fails closed and records no Utility success",
+    "Final third query, now actually containing the lower-trust injection payload from the native bank, is NEVER sent to any real Provider in this proof",
+    "No protected send_money candidate accepted, no Bind grant, no bank write, no full Task4 or Final128 benchmark score",
+    "Historical V13 utility B=64/128 and injection B=0/128 are unchanged; new real model injection/utility measurement is zero",
+    "A model response ID and token counters received from an untrusted JSON object are not Provider-authenticated receipts or independently proven billing"
+  ],
+  "next": "After exact-head green+audited raw artifact, a separately approved live-model transport with a trusted provider response source and operator budget/identity needs to replace synthetic raw completions. Full read+actual model continuation+Bind+native scoring remains unfinished."
+}
