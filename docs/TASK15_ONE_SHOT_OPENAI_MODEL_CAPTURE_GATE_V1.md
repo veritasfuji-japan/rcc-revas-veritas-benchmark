@@ -1,3 +1,5 @@
+> **POST-#276 SECURITY REMEDIATION NOTICE:** The live `DirectOpenAIHTTPSOnce` helper described in the historical #276 document is now default-denied by #277. All `capture(live=True)` calls are also refused before durable claim. The original offline proof remains recoverable at merged SHA `677a65721fb44d11618a0f906b71eb1931166b44`. Current code is **offline-only**, and no real provider transport should be inferred from the older design below. See `TASK15_DIRECT_OPENAI_HTTPS_BYPASS_DEFAULT_DENY_V1.md`.
+
 # TASK15_ONE_SHOT_OPENAI_MODEL_CAPTURE_GATE_V1
 
 **DRAFT / NOT PROVEN until latest exact-HEAD CI and independent artifact review.**
