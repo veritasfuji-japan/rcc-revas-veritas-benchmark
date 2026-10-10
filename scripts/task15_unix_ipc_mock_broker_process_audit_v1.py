@@ -19,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import xml.etree.ElementTree as ET
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
@@ -243,6 +244,26 @@ def main():
                    "real_bank_effects":0}
             (out/"task15-unix-ipc-broker-evidence.json").write_text(
                 json.dumps(proof,sort_keys=True,indent=2)+"\n")
+            # Exact-head proof trace in a portable JUnit shape. This is a
+            # bounded runtime observation, not a certification or a claim
+            # that the same UID cannot be reused by another process.
+            checks=[
+                ("signed_test_grant_one_mock",events["connections"][0]["decision"]=="MOCK_RECORDED"),
+                ("durable_replay_denied",events["connections"][1]["reason"]=="ONE_SHOT_REQUEST_ALREADY_CONSUMED_OR_UNKNOWN"),
+                ("changed_provider_target_denied",events["connections"][2]["reason"]=="FROZEN_MODEL_SOURCE_OR_TARGET_DRIFT"),
+                ("untrusted_host_peercred_denied",events["connections"][3]["reason"]=="UNTRUSTED_UNIX_PEER_UID_GID"),
+                ("worker_uid_gid_exact",worker_report["worker_uid"]==65534 and worker_report["worker_gid"]==65534),
+                ("network_namespace_no_egress",worker_report["external_tcp_testnet_blocked"] is True),
+                ("broker_private_material_unmounted",worker_report["broker_private_directory_absent"] is True),
+                ("one_integrity_checked_durable_receipt",raw["response_hash_matches"] is True and len(raw["events"])==2),
+                ("no_live_provider_calls_or_spend",events["real_provider_calls"]==0 and events["real_provider_spend_usd"]==0),
+            ]
+            require(all(ok for _,ok in checks),"NINE_BOUNDED_RUNTIME_ASSERTIONS_FAILED")
+            junit=ET.Element("testsuite",name=RULE,tests=str(len(checks)),failures="0",errors="0")
+            for name,_ in checks:
+                ET.SubElement(junit,"testcase",classname=RULE,name=name)
+            ET.ElementTree(junit).write(
+                out/"task15-unix-ipc-broker-junit.xml",encoding="utf-8",xml_declaration=True)
             print("PASS_BOUNDED_IPC_PEERCRED: signed=1 replay=DENY changed-target=DENY host-peer=DENY")
             print("RAW_SQLITE=1; MODEL_PROVIDER_CALLS=0; BANK_EFFECTS=0")
         finally:
