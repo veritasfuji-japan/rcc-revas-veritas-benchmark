@@ -196,7 +196,7 @@ class StolenSessionRevocationTests(unittest.TestCase):
         self.revoke()
         def worker(_):
             try:
-                self.open().execute(self.envelope)
+                self.broker.execute(self.envelope)
                 return "ALLOWED"
             except BrokerDenied as exc:
                 return str(exc)
