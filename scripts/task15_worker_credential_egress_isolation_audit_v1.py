@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROBE = ROOT / "scripts" / "task15_isolated_worker_probe_v1.py"
 CONTRACT = ROOT / "contracts" / "TASK15_WORKER_CREDENTIAL_EGRESS_ISOLATION_V1.json"
 RULE = "TASK15_WORKER_CREDENTIAL_EGRESS_ISOLATION_V1"
-IMAGE = "python:3.11.16-slim"
+IMAGE = "python:3.11.16-slim@sha256:e41613d42d4891e4930f79523f93f81bbc7632584ec65e36ab055f41a800b41e"
 EXPECTED_TESTS = 14
 
 class IsolationDenied(RuntimeError):
@@ -117,8 +117,9 @@ def main():
     img = json.loads(command(["docker", "image", "inspect", IMAGE]).stdout)[0]
     image_id = img["Id"]
     image_digests = img.get("RepoDigests") or []
-    require(image_id.startswith("sha256:") and len(image_digests) >= 1,
-            "EXACT_IMAGE_ID_AND_UPSTREAM_DIGEST_REQUIRED")
+    require(image_id.startswith("sha256:") and
+            any(v.endswith("@sha256:e41613d42d4891e4930f79523f93f81bbc7632584ec65e36ab055f41a800b41e") for v in image_digests),
+            "PINNED_IMAGE_MANIFEST_DIGEST_MUST_MATCH_RUNTIME")
     host_secret = "sk-synthetic-host-only-" + secrets.token_hex(32)
     fingerprint = hashlib.sha256(host_secret.encode()).hexdigest()
     host_env = dict(os.environ, OPENAI_API_KEY=host_secret)

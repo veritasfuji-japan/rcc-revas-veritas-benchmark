@@ -32,6 +32,6 @@ The dedicated GitHub Actions workflow runs the Docker proof, publishes the raw c
 
 ## Strict exclusions
 
-The public Python base image currently uses a **version tag, not an independently approved immutable digest**; the resolved digest is recorded in the proof artifact for review. This is an offline negative test, not a production-isolated execution system. No production broker exists here, and there is no argument that the host, Docker daemon, kernel, image supplier, or an authorized privileged operator cannot bypass the isolation.
+The Python base image is **pinned to immutable manifest digest** `python@sha256:e41613d42d4891e4930f79523f93f81bbc7632584ec65e36ab055f41a800b41e` observed in the first successful offline proof run. The image supplier and Docker host have **not** received an independent provenance attestation. This is an offline negative test, not a production-isolated execution system. No production broker exists here, and there is no argument that the host, Docker daemon, kernel, image supplier, or an authorized privileged operator cannot bypass the isolation.
 
 A future **separate** proof round must implement a trusted credential-owning broker outside the worker, genuine authenticated one-shot issuance/consumption at the send boundary, budget controls, provider-target allowlisting, operator trust-root enrollment, and provider receipts. Neither historical US$5 nor proposed US$0.25 spending caps are consent to spend. `DirectOpenAIHTTPSOnce` and `capture(live=True)` remain blocked.
