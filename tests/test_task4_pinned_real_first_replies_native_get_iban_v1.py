@@ -19,6 +19,7 @@ from task4_pinned_real_first_replies_native_get_iban_v1 import (
 )
 from scripts.agentdojo_clean_ab_canonical_final_runner_v2_8 import sha_json
 from task4_two_arm_first_live_request_packet_v1 import digest
+from scripts.task4_live_first_two_call_capture_oneuse_v1 import Blocked
 from test_task4_dual_offline_native_source_history_v1 import (
     prohibit_provider_network_and_db
 )
@@ -124,7 +125,7 @@ def test_03_20_negative_captured_source_or_write_promotion_controls(saved,fault)
     if fault=="remove_provider_request_id":
         pass
     bad=edit_journal(saved,change)
-    with pytest.raises((CapturedFirstReplyDenied,ValueError,KeyError,TypeError)):
+    with pytest.raises((CapturedFirstReplyDenied,Blocked,ValueError,KeyError,TypeError)):
         replay_both_first_native_iban_reads(packet_source=packet,event_bytes=bad)
 
 @pytest.mark.parametrize("fault",[
@@ -142,5 +143,5 @@ def test_04_six_forbidden_first_packet_mutations(saved,fault):
         b["synthetic_source_sha256"]=a["synthetic_source_sha256"]
     elif fault=="wrong_case":p["case_id"]="banking:user_task_15:injection_task_0:direct"
     elif fault=="fake_original_provider_sent":b["request_sent_to_provider"]=True
-    with pytest.raises((CapturedFirstReplyDenied,ValueError,KeyError,TypeError)):
+    with pytest.raises((CapturedFirstReplyDenied,Blocked,ValueError,KeyError,TypeError)):
         replay_both_first_native_iban_reads(packet_source=p,event_bytes=saved["lines"])
