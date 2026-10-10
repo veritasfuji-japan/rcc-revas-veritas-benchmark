@@ -1,0 +1,129 @@
+name: Task4 Third Two Real Provider Calls V1
+on:
+  workflow_dispatch:
+    inputs:
+      approval_phrase:
+        type: string
+        required: true
+        description: "NEW and independent consent: exact Task4 A/B THIRD 2 calls, additional target max USD 0.50"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: task4-third-two-real-provider-v1-irreversible
+  cancel-in-progress: false
+
+jobs:
+  third-two-only:
+    if: github.actor == 'veritasfuji-japan' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: task4-real-provider-third-two-calls
+    env:
+      TASK4_THIRD_APPROVAL_PHRASE: ${{ inputs.approval_phrase }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Require NEW manual human consent only for THIRD Task4 A/B exact scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$TASK4_THIRD_APPROVAL_PHRASE" = "APPROVE_TASK4_ONE_CASE_A_B_THIRD_2_CALLS_MAX_USD_0.50"
+          test "$GITHUB_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+      - name: Download byte-pinned #298 genuine model to injected native request evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source/extracted results
+          curl --fail --silent --show-error --location --retry 0 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11676881211/zip" \
+            -o source/pinned-third-requests.zip
+          echo "bbc7ba1a16aaac67aed75bdbb7a5abc71bfa978599e1cfc42700779377e838f4  source/pinned-third-requests.zip" | sha256sum -c -
+          unzip -q source/pinned-third-requests.zip -d source/extracted
+          echo "4d719a1d05f83f6028c340434480a8f0d3df09c9fb1027f66fa0b90259a31824  source/extracted/task4-real-second-native-read-third-unsent-requests.json" | sha256sum -c -
+          pip install "PyYAML==6.0.3"
+          python scripts/task4_live_third_two_call_capture_oneuse_v1.py \
+            --mode preflight \
+            --source source/extracted/task4-real-second-native-read-third-unsent-requests.json \
+            --output results/task4-third-A-B-bound-source-preflight.json
+      - name: Check both older consumed approvals and NEW no-bypass protected once-ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          first="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-first-two-real-provider-v1-consumed" --jq '.object.sha')"
+          second="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-second-two-real-provider-v1-consumed" --jq '.object.sha')"
+          test "$first" = "99812fe1fdbc627e582ec7935a429a852e22703d"
+          test "$second" = "6c13f90e116b0365c85cc3323ce60a2bf608cb3c"
+          python - <<'PY'
+          import json,os,subprocess
+          repo=os.environ["GITHUB_REPOSITORY"]
+          exact="refs/tags/task4-third-two-real-provider-v1-consumed"
+          def api(path):
+              return json.loads(subprocess.check_output(
+                  ["gh","api",path],text=True))
+          rules=api(f"repos/{repo}/rulesets?per_page=100")
+          matching=[]
+          for rule in rules:
+              if rule.get("target")!="tag" or rule.get("enforcement")!="active":
+                  continue
+              full=api(f"repos/{repo}/rulesets/{rule['id']}")
+              include=full.get("conditions",{}).get("ref_name",{}).get("include",[])
+              installed={x.get("type") for x in full.get("rules",[])}
+              if (exact in include and
+                  {"deletion","update","non_fast_forward"}<=installed and
+                  "creation" not in installed and
+                  not full.get("bypass_actors")):
+                  matching.append(full["id"])
+          if not matching:
+              raise SystemExit("MISSING_ACTIVE_NO_BYPASS_THIRD_TAG_ONCE_PROTECTION")
+          print("EXACT_THIRD_REF_NO_BYPASS_CREATION_ALLOWED_LOCK_CONFIRMED")
+          PY
+      - name: Refuse before irreversible consume if third Environment key is missing
+        env:
+          TASK4_OPENAI_API_KEY: ${{ secrets.TASK4_OPENAI_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$TASK4_OPENAI_API_KEY" ]; then
+            echo "::error::Third-round environment secret missing; no API requests."
+            exit 1
+          fi
+      - name: Atomically consume third round NEW tag BEFORE any OpenAI POST
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/task4-third-two-real-provider-v1-consumed" \
+            -f sha="$GITHUB_SHA" > /dev/null
+          echo "THIRD_ROUND_CONSUMED_NO_RETRIES"
+      - name: Send no more than ONE THIRD model POST each for A and B; NO native tools
+        env:
+          TASK4_OPENAI_API_KEY: ${{ secrets.TASK4_OPENAI_API_KEY }}
+          TASK4_THIRD_NEW_PROTECTED_REF_CREATED: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/task4_live_third_two_call_capture_oneuse_v1.py \
+            --mode send \
+            --source source/extracted/task4-real-second-native-read-third-unsent-requests.json \
+            --output results/task4-third-two-real-provider-evidence.jsonl
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-third-two-real-provider-capture-v1
+          path: results/*
+          if-no-files-found: warn
