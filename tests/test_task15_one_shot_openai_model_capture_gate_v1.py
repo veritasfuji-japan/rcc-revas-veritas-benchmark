@@ -170,6 +170,8 @@ def test_exact_task15_a_wire_one_winner_sixteen_threads_and_crashed_unknown(
         "rule_of_one":RULE,
         "determination":"EXACT_FROZEN_NATIVE_SOURCE_ONE_LOCAL_MODEL_ATTEMPT_MOCK_ONLY",
         "pr275_evidence_sha256":digest(pf),
+        "offline_signed_approval":auth,
+        "offline_test_public_key_hex":pub.hex(),
         "source_request_sha256":SOURCE_SHA,
         "exact_http_request_sha256":digest(req),
         "exact_http_request":req,
