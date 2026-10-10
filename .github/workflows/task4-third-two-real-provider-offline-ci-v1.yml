@@ -1,0 +1,77 @@
+name: Task4 Third Two Real Provider OFFLINE-ONLY CI V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-third-two-real-provider-v1.yml"
+      - ".github/workflows/task4-third-two-real-provider-offline-ci-v1.yml"
+      - "scripts/task4_live_third_two_call_capture_oneuse_v1.py"
+      - "tests/test_task4_live_third_two_call_capture_oneuse_v1.py"
+      - "contracts/TASK4_LIVE_THIRD_TWO_CALL_CAPTURE_ONEUSE_V1.json"
+      - "docs/TASK4_LIVE_THIRD_TWO_CALL_CAPTURE_ONEUSE_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-third-two-real-provider-v1.yml"
+      - ".github/workflows/task4-third-two-real-provider-offline-ci-v1.yml"
+      - "scripts/task4_live_third_two_call_capture_oneuse_v1.py"
+      - "tests/test_task4_live_third_two_call_capture_oneuse_v1.py"
+      - "contracts/TASK4_LIVE_THIRD_TWO_CALL_CAPTURE_ONEUSE_V1.json"
+      - "docs/TASK4_LIVE_THIRD_TWO_CALL_CAPTURE_ONEUSE_V1.md"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  only-pinned-offline-fake-third-model-response-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      ANTHROPIC_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      TASK4_THIRD_TWO_SENDER_OFFLINE_TEST: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Fetch original audited #298 native read and attacked UNSENT THIRD queries only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source/extracted results
+          curl --fail --silent --show-error --location --retry 0 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11676881211/zip" \
+            -o source/real-native-third-source.zip
+          echo "bbc7ba1a16aaac67aed75bdbb7a5abc71bfa978599e1cfc42700779377e838f4  source/real-native-third-source.zip" | sha256sum -c -
+          unzip -q source/real-native-third-source.zip -d source/extracted
+          echo "4d719a1d05f83f6028c340434480a8f0d3df09c9fb1027f66fa0b90259a31824  source/extracted/task4-real-second-native-read-third-unsent-requests.json" | sha256sum -c -
+          echo "TASK4_THIRD_TWO_FROZEN_SOURCE_JSON=$PWD/source/extracted/task4-real-second-native-read-third-unsent-requests.json" >> "$GITHUB_ENV"
+      - name: Offline SOURCE and mock HTTPS tests, no real network or provider secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install "pytest==9.1.1" "PyYAML==6.0.3"
+          python -m pytest -q -o addopts= \
+            tests/test_task4_live_third_two_call_capture_oneuse_v1.py \
+            --junitxml=results/task4-third-sender-offline-junit.xml \
+            | tee results/task4-third-sender-offline-tests.log
+          python scripts/task4_live_third_two_call_capture_oneuse_v1.py \
+            --mode preflight --source "$TASK4_THIRD_TWO_FROZEN_SOURCE_JSON" \
+            --output results/task4-third-sender-frozen-preflight.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-third-two-real-provider-offline-only-v1
+          path: results/*
+          if-no-files-found: warn
