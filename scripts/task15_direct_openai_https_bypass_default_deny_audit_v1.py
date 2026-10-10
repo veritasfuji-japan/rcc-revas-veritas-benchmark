@@ -162,14 +162,25 @@ def main():
                 obs["provider_http_requests"]==
                 obs["provider_spend_usd"]==0,
             "CURRENT_PATH_MUST_PROVE_NO_LIVE_OPENAI_EFFECT")
-    approval=obs["signed_fixture_approval"]
-    public=bytes.fromhex(obs["public_fixture_root_hex"])
-    approval_sha=validate_fresh_approval(approval,public,req,now_utc=NOW)
     paths=obs["snapshots"]
-    require(set(paths)=={"mock","direct_live_denied"},"TWO_RAW_REMEDIATION_DATABASES")
+    grants=obs["fixture_grants"]
+    require(set(paths)=={"mock","direct_live_denied"}
+            and set(grants)==set(paths),
+            "EXACT_TWO_SEPARATE_SIGNED_FIXTURE_GRANTS_REQUIRED")
     exp={"mock":("MOCK_RECORDED",1,3),
          "direct_live_denied":("PREPARED",0,1)}
     for name,row in paths.items():
+        # Each independently constructed case had its OWN ephemeral test
+        # private key. Verify its corresponding signature and root before
+        # comparing the exact approval hash in the persisted SQLite row.
+        fixture=grants[name]
+        require(set(fixture)=={"public_key_hex","signed_approval"},
+                "NO_SHARED_OR_MISSING_CASE_SIGNATURE_ALLOWED")
+        public=bytes.fromhex(fixture["public_key_hex"])
+        approval_sha=validate_fresh_approval(
+            fixture["signed_approval"],public,req,now_utc=NOW)
+        require(len({grants[key]["public_key_hex"] for key in grants})==2,
+                "SEPARATE_SCENARIO_KEYS_MUST_NOT_ALIAS")
         path=out/row["name"]
         require(path.is_file()
                 and path.name=="task15-direct-bypass-"+(
