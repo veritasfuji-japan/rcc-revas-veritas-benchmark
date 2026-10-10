@@ -1,0 +1,124 @@
+name: Task4 Second Two Real Provider Calls V1
+on:
+  workflow_dispatch:
+    inputs:
+      approval_phrase:
+        type: string
+        required: true
+        description: "NEW explicit consent for only the Task4 A/B SECOND calls, proposed total USD 0.50"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: task4-second-two-real-provider-v1-irreversible
+  cancel-in-progress: false
+
+jobs:
+  second-two-only:
+    if: github.actor == 'veritasfuji-japan' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: task4-real-provider-second-two-calls
+    env:
+      TASK4_SECOND_APPROVAL_PHRASE: ${{ inputs.approval_phrase }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Explicit fresh consent; never inherit consumed first-round consent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$TASK4_SECOND_APPROVAL_PHRASE" = "APPROVE_TASK4_ONE_CASE_A_B_SECOND_2_CALLS_MAX_USD_0.50"
+          test "$GITHUB_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+      - name: Read exact frozen #296 A/B second packets (no Provider secret)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source results
+          curl --fail --silent --show-error --location --retry 0 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11674814494/zip" \
+            -o source/task4-second-packets.zip
+          echo "5e060179f7c0419d5a2b3d49587dba4d1e93f7adc8c0a41ddac1bb689813a609  source/task4-second-packets.zip" | sha256sum -c -
+          unzip -q source/task4-second-packets.zip -d source/extracted
+          echo "d31e2f9781ba3f1de33b04bbac382bc1664588ad7533d83eb13f7f7fec6be6d5  source/extracted/task4-pinned-second-preflight-full-A-B-requests.json" | sha256sum -c -
+          python scripts/task4_live_second_two_call_capture_oneuse_v1.py \
+            --mode preflight \
+            --source source/extracted/task4-pinned-second-preflight-full-A-B-requests.json \
+            --output results/task4-second-two-preflight.json
+      - name: Verify first-round tag stays consumed and new tag is protected
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          first_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-first-two-real-provider-v1-consumed" --jq '.object.sha')"
+          test "$first_sha" = "99812fe1fdbc627e582ec7935a429a852e22703d"
+          python - <<'PY'
+          import json,os,subprocess
+          repo=os.environ["GITHUB_REPOSITORY"]
+          want="refs/tags/task4-second-two-real-provider-v1-consumed"
+          def api(path):
+              return json.loads(subprocess.check_output(
+                  ["gh","api",path],text=True))
+          rules=api(f"repos/{repo}/rulesets?per_page=100")
+          matches=[]
+          for entry in rules:
+              if entry.get("target")!="tag" or entry.get("enforcement")!="active":
+                  continue
+              details=api(f"repos/{repo}/rulesets/{entry['id']}")
+              include=details.get("conditions",{}).get("ref_name",{}).get("include",[])
+              required={"deletion","update","non_fast_forward"}
+              installed={x.get("type") for x in details.get("rules",[])}
+              if want in include and required<=installed and not details.get("bypass_actors"):
+                  matches.append(details["id"])
+          if not matches:
+              raise SystemExit("NO_ACTIVE_UNBYPASSABLE_SECOND_ROUND_TAG_PROTECTION")
+          print("SECOND_ROUND_TAG_PROTECTION_VERIFIED_NO_LIVE_MODEL_CALL_YET")
+          PY
+      - name: Require distinct protected environment secret before irreversible consume
+        env:
+          TASK4_OPENAI_API_KEY: ${{ secrets.TASK4_OPENAI_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$TASK4_OPENAI_API_KEY" ]; then
+            echo "::error::No second-round dedicated environment secret. No API calls."
+            exit 1
+          fi
+      - name: Atomically consume NEW single-use ref before any Provider request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/task4-second-two-real-provider-v1-consumed" \
+            -f sha="$GITHUB_SHA" > /dev/null
+          echo "SECOND_ROUND_SINGLE_USE_CONSUMED_NO_RETRY"
+      - name: Submit at most one bound second model request per arm
+        env:
+          TASK4_OPENAI_API_KEY: ${{ secrets.TASK4_OPENAI_API_KEY }}
+          TASK4_SECOND_ONCE_REF_CREATED: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/task4_live_second_two_call_capture_oneuse_v1.py \
+            --mode send \
+            --source source/extracted/task4-pinned-second-preflight-full-A-B-requests.json \
+            --output results/task4-second-two-provider-evidence.jsonl
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-second-two-real-provider-response-capture-v1
+          path: results/*
+          if-no-files-found: warn
