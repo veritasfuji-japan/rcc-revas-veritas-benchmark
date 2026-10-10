@@ -1,0 +1,89 @@
+name: Task4 First Two Real Provider Calls V1
+on:
+  workflow_dispatch:
+    inputs:
+      approval_phrase:
+        description: "Exact one-case A/B first two-call USD 0.50 approval"
+        type: string
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: task4-real-provider-first-two-calls-v1-never-retry
+  cancel-in-progress: false
+
+jobs:
+  send-first-two-only:
+    if: github.actor == 'veritasfuji-japan' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: task4-real-provider-first-two-calls
+    env:
+      TASK4_APPROVAL_PHRASE: ${{ inputs.approval_phrase }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Exact approval and nonretriable manual workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$TASK4_APPROVAL_PHRASE" = "APPROVE_TASK4_ONE_CASE_A_B_FIRST_2_CALLS_MAX_USD_0.50"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_ACTOR" = "veritasfuji-japan"
+      - name: Download immutable successful source proof number 292
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source results
+          gh run download 38060638006 -R "$GITHUB_REPOSITORY" \
+            --name task4-two-arm-first-live-request-packet-v1 --dir source
+          echo "096f428f060d6b7d73b594955b95db11728c2045c8224e23ff4bb41a0b3dbcf3  source/task4-two-first-request-packets.json" | sha256sum -c -
+          python scripts/task4_live_first_two_call_capture_oneuse_v1.py \
+            --mode preflight \
+            --source source/task4-two-first-request-packets.json \
+            --output results/task4-live-preflight.json
+      - name: Dedicated project-scoped environment secret must exist before consumption
+        env:
+          TASK4_OPENAI_API_KEY: ${{ secrets.TASK4_OPENAI_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$TASK4_OPENAI_API_KEY" ]; then
+            echo "::error::Dedicated TASK4_OPENAI_API_KEY environment secret missing. Zero provider calls."
+            exit 1
+          fi
+      - name: Atomically reserve durable single-use tag before external API access
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/task4-first-two-real-provider-v1-consumed" \
+            -f sha="$GITHUB_SHA" >/dev/null
+          echo "SINGLE_USE_TAG_CREATED_NON_RETRYABLE"
+      - name: Send two first requests maximum and archive exact response or UNKNOWN
+        env:
+          TASK4_OPENAI_API_KEY: ${{ secrets.TASK4_OPENAI_API_KEY }}
+          TASK4_CONSUMED_REF_CREATED: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/task4_live_first_two_call_capture_oneuse_v1.py \
+            --mode send \
+            --source source/task4-two-first-request-packets.json \
+            --output results/task4-live-first-two-provider-response-evidence.jsonl
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-real-first-two-provider-call-capture-v1
+          path: results/*
+          if-no-files-found: warn
