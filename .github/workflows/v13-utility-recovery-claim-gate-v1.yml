@@ -1,0 +1,56 @@
+name: V13 Utility Recovery Claim Gate V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/v13-utility-recovery-claim-gate-v1.yml"
+      - "v13_utility_recovery_claim_gate_v1.py"
+      - "tests/test_v13_utility_recovery_claim_gate_v1.py"
+      - "scripts/v13_utility_recovery_claim_gate_audit_v1.py"
+      - "contracts/V13_UTILITY_RECOVERY_CLAIM_GATE_V1.json"
+      - "docs/V13_UTILITY_RECOVERY_CLAIM_GATE_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v13-utility-recovery-claim-gate-v1.yml"
+      - "v13_utility_recovery_claim_gate_v1.py"
+      - "tests/test_v13_utility_recovery_claim_gate_v1.py"
+      - "scripts/v13_utility_recovery_claim_gate_audit_v1.py"
+      - "contracts/V13_UTILITY_RECOVERY_CLAIM_GATE_V1.json"
+      - "docs/V13_UTILITY_RECOVERY_CLAIM_GATE_V1.md"
+permissions:
+  contents: read
+jobs:
+  read-only-historical-utility-attribution:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      ANTHROPIC_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+      V13_UTILITY_RECOVERY_GATE_PROOF: "1"
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Run 24 read-only attribution and false-recovery negative cases
+        run: python -m unittest discover -s tests -p 'test_v13_utility_recovery_claim_gate_v1.py' -v
+      - name: Independently crosscheck frozen utility source blobs and output evidence
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python scripts/v13_utility_recovery_claim_gate_audit_v1.py --output-dir results | tee results.log
+      - name: Archive exact source classifications and JUnit
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v13-utility-recovery-claim-gate-v1
+          path: |
+            results/*
+            results.log
+          if-no-files-found: warn
