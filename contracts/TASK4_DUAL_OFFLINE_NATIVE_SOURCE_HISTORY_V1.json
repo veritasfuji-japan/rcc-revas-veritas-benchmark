@@ -1,0 +1,57 @@
+{
+  "schema_version": "veritas.task4-dual-offline-native-source-history.v1",
+  "rule_of_one": "TASK4_DUAL_OFFLINE_NATIVE_SOURCE_HISTORY_V1",
+  "predecessor_merged_main_sha": "c4cf32aca9f0686f14c3905d21bd7cead6eb7e9f",
+  "status": "DRAFT_NOT_PROVEN_UNTIL_EXACT_HEAD_ALL_CI_AND_RAW_ARTIFACT_AUDIT",
+  "central_invariant": "On one frozen real native AgentDojo Task4 DirectAttack injection case, two distinct synthetic TEST model-compatible clients and separate owned-date sessions MUST each receive independently recorded tool-return-injected conversation histories from a fresh native banking environment; distinguish true logical per-arm source identity from a single B-sourced shared candidate. Select A from A-source native run and B from B-source native run without exchanging tool-call IDs, prefixes, prestate, bound grants or scorer evidence. Neither source is an authenticated real Provider/LLM computation.",
+  "case_id": "banking:user_task_4:injection_task_0:direct",
+  "frozen_rule_of_one_predecessor": "TASK4_NATIVE_INJECTED_READ_EXPOSURE_V1",
+  "source_blobs": {
+    "task4_native_injected_read_exposure_v1.py": "a08d6d21f6b8a670f62159cd2b7d763506539c1e",
+    "task4_prospective_controlled_trajectory_integration_v1.py": "ca52e9272575eacfe20364c517144f97e68c6571",
+    "task4_prospective_native_scorer_observation_boundary_v1.py": "9673b73fcdd10433c9df66e6c92ab17204bc8304",
+    "task4_frozen_provider_transport_date_context_binding_v1.py": "acc656ac485b325f228671a39ce78862f81fb670",
+    "contracts/TASK4_NATIVE_INJECTED_READ_EXPOSURE_V1.json": "bd6b9ff23a9a5f881ffa16df4675dda335bddd8c",
+    "contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json": "054c79f2a83b48821ce57071185c8ceecda17ed3"
+  },
+  "native_agentdojo_blobs": {
+    "src/agentdojo/attacks/baseline_attacks.py": "1fed06e8455f1a930c2006391cf77e33e2649f8d",
+    "src/agentdojo/default_suites/v1/banking/user_tasks.py": "cb19278cfee4a622407c065022fde0b6e48f9f71",
+    "src/agentdojo/default_suites/v1_2/banking/injection_tasks.py": "6c50248882bb93a21575800a94c0fbd50f700a19",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb"
+  },
+  "expected_new_tests": 18,
+  "expected_frozen_case_ids": 1,
+  "expected_untouched_canonical_roster": 128,
+  "expected_fake_clients": 2,
+  "expected_separately_signed_test_date_context_issuers": 2,
+  "expected_own_native_initial_environments": 2,
+  "expected_fake_openai_compatible_wire_queries": 10,
+  "expected_native_trajectory_runs": 2,
+  "expected_total_native_simulated_effects": 4,
+  "expected_selected_native_effects": 2,
+  "expected_native_scorer_arm_calls": 4,
+  "expected_protected_source_ids_distinct": true,
+  "candidate_values_identical_per_deterministic_synthetic_stub": true,
+  "independent_real_provider_model_computation_proven": false,
+  "new_final128_score_proven": false,
+  "real_provider_execution_authorized": false,
+  "external_bank_effects_authorized": false,
+  "expected_real_provider_calls": 0,
+  "expected_real_provider_spend_usd": 0,
+  "expected_real_bank_effects": 0,
+  "limitations": [
+    "Two independent client Python objects and call-ID namespaces prove distinct synthetic wire source records, not stochastic model inference or Provider account independence",
+    "One exact canonical-identified Task4 DirectAttack environment, not a native Final128 canonical run or new attack-success measurement",
+    "Each local source executes two actual in-memory A/B native simulator arms (four local effects total); selected A and B are sourced from different logical clients; unselected internal arms remain diagnostic probes",
+    "Both separately generated synthetic candidates may have equal canonical hashes and identical deterministic outputs because the clients are scripted; independent response semantics are not established",
+    "No historical V13 utility improvements or new scorer benchmark rate may be promoted; no real Provider network, billable spend or actual bank effects",
+    "The trusted host issues the separate TEST DateContext roots, rather than an externally authenticated real authority; physical key and model trust remain open"
+  ],
+  "next": "Specify an independently authenticated real-Provider per-arm candidate lineage with bounded first-turn and full native attacked scorer consent, and only execute on fresh explicit Provider/budget authorization."
+}
