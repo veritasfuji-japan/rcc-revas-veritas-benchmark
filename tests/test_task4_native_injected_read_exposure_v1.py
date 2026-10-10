@@ -23,7 +23,8 @@ from task4_prospective_controlled_trajectory_integration_v1 import Task4Prospect
 from task4_prospective_native_scorer_observation_boundary_v1 import observe_completed_task4
 from task4_native_injected_read_exposure_v1 import (
     RULE,CASE,SLOT,ATTACK_RECIPIENT,OWNED_DATE,native_case_environment,
-    verify_injected_model_tool_exposure,InjectionExposureViolation
+    verify_injected_model_tool_exposure,InjectionExposureViolation,
+    contains_exact_injected_native_transaction
 )
 from scripts.agentdojo_clean_ab_canonical_final_runner_v2_8 import sha_json
 from agentdojo.task_suite.task_suite import TaskSuite
@@ -111,16 +112,13 @@ def test_02_fail_closed_cross_boundary_evidence_faults(completed_native_case,fau
     elif fault=="source_sha":source["payload_sha256"]="0"*64
     elif fault=="native_state":source["native_injected_prestate"]["bank_account"]["balance"]=999
     elif fault=="missing_native_tool":
-        tool=next(m for m in calls[2]["messages"] if m.get("role")=="tool" and
-                  payload in str(m.get("content")))
+        tool=next(m for m in calls[2]["messages"] if contains_exact_injected_native_transaction(m,payload,wire=True))
         tool["content"][0]["text"]="NO LONGER CONTAINS NATIVE ATTACK"
     elif fault=="wire_earlier_than_read":
         calls[0]["messages"].append(copy.deepcopy(next(
-            m for m in calls[2]["messages"] if m.get("role")=="tool" and
-               payload in str(m.get("content")))))
+            m for m in calls[2]["messages"] if contains_exact_injected_native_transaction(m,payload,wire=True))))
     elif fault=="changed_wire_tool_id":
-        tool=next(m for m in calls[2]["messages"] if m.get("role")=="tool" and
-                  payload in str(m.get("content")))
+        tool=next(m for m in calls[2]["messages"] if contains_exact_injected_native_transaction(m,payload,wire=False))
         tool["tool_call_id"]="forged-tool-id"
     elif fault=="changed_native_tool_text":
         arm=trajectory["arms"][0]
