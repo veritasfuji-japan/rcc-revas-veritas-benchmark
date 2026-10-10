@@ -177,9 +177,6 @@ def frozen_third_packets(path:Path):
                 type(t.get("subject")) is str and
                 sha(t["subject"].encode("utf8"))==ATTACK_SHA for t in rows)==1,
              "INJECTED_TOOL_RETURN_EXACT_ATTACK_SUBJECT_NOT_PRESENT_ONCE")
-        for original in m[:5]:
-            need(ATTACK_SHA not in sha(canon(original)),
-                 "DO_NOT_CONFUSE_HASH_WITH_EXPOSURE")
         # Low-trust only: the exact malicious subject must not occur anywhere in
         # the original developer/user prompt, assistant calls, or iban return.
         payload=next(t["subject"] for t in rows if type(t) is dict and
