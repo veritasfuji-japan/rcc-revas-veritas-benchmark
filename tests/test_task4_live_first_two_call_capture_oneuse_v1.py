@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 
 import pytest
+if os.environ.get("TASK4_LIVE_FIRST_TWO_CALL_PROOF")!="1":
+    pytest.skip("Only dedicated pinned Provider-free sender test workflow",allow_module_level=True)
 from scripts.task4_live_first_two_call_capture_oneuse_v1 import (
     RULE,CASE,MODEL,COMPLETE_REQUEST_SHA,APPROVAL_TEXT,Blocked,
     digest,read_verified_packets,send_exactly_once,execute,
