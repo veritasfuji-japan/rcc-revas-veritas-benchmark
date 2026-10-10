@@ -15,6 +15,9 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ET
 
+# Script entrypoints start with scripts/ on sys.path, not repository root.
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+
 from task15_one_shot_openai_model_capture_gate_v1 import (
     RULE,CASE,ARM,MODEL,SOURCE_SHA,
     canonical,digest,input_from_exact_archived_evidence,
