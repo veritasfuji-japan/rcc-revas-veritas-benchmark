@@ -1,0 +1,58 @@
+name: Task15 Governed Admin Root Lifecycle V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task15-governed-admin-root-lifecycle-v1.yml"
+      - "task15_governed_admin_root_lifecycle_v1.py"
+      - "tests/test_task15_governed_admin_root_lifecycle_v1.py"
+      - "scripts/task15_governed_admin_root_audit_v1.py"
+      - "contracts/TASK15_GOVERNED_ADMIN_ROOT_LIFECYCLE_V1.json"
+      - "docs/TASK15_GOVERNED_ADMIN_ROOT_LIFECYCLE_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task15-governed-admin-root-lifecycle-v1.yml"
+      - "task15_governed_admin_root_lifecycle_v1.py"
+      - "tests/test_task15_governed_admin_root_lifecycle_v1.py"
+      - "scripts/task15_governed_admin_root_audit_v1.py"
+      - "contracts/TASK15_GOVERNED_ADMIN_ROOT_LIFECYCLE_V1.json"
+      - "docs/TASK15_GOVERNED_ADMIN_ROOT_LIFECYCLE_V1.md"
+permissions:
+  contents: read
+jobs:
+  governed-admin-root-mock-only-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      ANTHROPIC_API_KEY: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+      TASK15_GOVERNED_ADMIN_ROOT_PROOF: "1"
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Install pinned TEST-only Ed25519 dependency
+        run: python -m pip install "cryptography==50.0.0"
+      - name: Prove 30 adversarial administration root enrollment rotation and revocation cases
+        run: python -m unittest discover -s tests -p 'test_task15_governed_admin_root_lifecycle_v1.py' -v
+      - name: Archive two raw independent SQLite states and signed TEST governance proof
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python scripts/task15_governed_admin_root_audit_v1.py --output-dir results | tee results.log
+      - name: Upload TEST governance root signatures, JUnit and raw SQLite evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: task15-governed-admin-root-lifecycle-v1
+          path: |
+            results/*
+            results.log
+          if-no-files-found: warn

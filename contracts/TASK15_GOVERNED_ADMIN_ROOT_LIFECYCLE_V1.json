@@ -1,0 +1,32 @@
+{
+  "schema_version": "veritas.task15-governed-admin-root-lifecycle.v1",
+  "rule_of_one": "TASK15_GOVERNED_ADMIN_ROOT_LIFECYCLE_V1",
+  "predecessor_merged_main_sha": "24a28ee3b6fd058f73fd519653d5c087b3515334",
+  "status": "DRAFT_NOT_PROVEN_PENDING_EXACT_HEAD_CI_AND_INDEPENDENT_ARTIFACT_AUDIT",
+  "central_invariant": "A separate, pre-pinned TEST governance Ed25519 root alone signs administrator TEST public-key enrollment, monotonic rotation and terminal revocation; the resulting active admin root is obtained from the same private SQLite database within the exact BEGIN IMMEDIATE transaction that authorizes and consumes signed administrator revocation. Stale/expired/forged roots or grants cannot transition or revoke.",
+  "governance_root": "Pre-pinned ephemeral offline TEST governance signing key set by trusted host at Broker constructor; never present in worker proposal",
+  "separation": "TEST governance root, TEST model approval root and administrator key A/B must all be distinct; governance private key never written to artifact",
+  "admin_root_lifecycle": "ENROLL epoch=1, ROTATE epoch=prior+1 with previous active root SHA-256, REVOKE epoch=prior+1 terminal; old root reuse and epoch rollback denied; all manifests signed with short expiry and unique nonce",
+  "admin_revocation": "Latest currently ACTIVE enrolled admin public key loaded after SQLite BEGIN IMMEDIATE; existing independent signed admin command verification, nonce consumption and trusted request revocation in that same write transaction",
+  "trust_model": "Host, local governance root constructor pin and private SQLite file are trusted; root is not enrolled by an actual external human/IAM",
+  "expected_adversarial_unit_tests": 30,
+  "expected_sqlite_archives": 2,
+  "expected_scenarios": [
+    "Rotate from TEST admin key A to B, reject A, accept B's signed revoke once",
+    "Rotate A to B then governance REVOKE B root, no admin can revoke frozen request"
+  ],
+  "expected_real_provider_requests": 0,
+  "expected_spend_usd": 0,
+  "expected_bank_effects": 0,
+  "real_provider_execution_authorized": false,
+  "effect_sink": "Existing mock-only broker core, no Provider HTTP sender or live bank adapter",
+  "added_to_docker_af_unix_runtime": false,
+  "limitations": [
+    "Synthetic governance root pinned by trusted host; does not prove external organizational authority enrollment",
+    "No Docker AF_UNIX broker integration in this proof round; that needs separately audited gate",
+    "No real API credential, spend, bank effect or full AgentDojo native payload execution",
+    "If trusted host/Docker admin may alter pinned root or SQLite file, external governance integrity is not established",
+    "Terminal test-root revocation blocks future admin commands until separately designed break-glass recovery, which is out of scope",
+    "Historical root rows remain in database for audit; root-level cryptographic identity is test-only"
+  ]
+}
