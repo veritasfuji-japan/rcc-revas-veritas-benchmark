@@ -59,6 +59,7 @@ def main():
         "TASK4_DUAL_OFFLINE_SOURCE_PROOF":"1",
         "TASK4_FIRST_ORIGIN_NO_PROMOTION_PROOF":"1",
         "TASK4_DUAL_OFFLINE_SOURCE_EVIDENCE":str(raw),
+        "TASK4_FIRST_ORIGIN_RAW_EVIDENCE":str(raw),
         "TASK4_RCC_ROOT":str(args.rcc_root.resolve()),
     })
     trial=subprocess.run([
