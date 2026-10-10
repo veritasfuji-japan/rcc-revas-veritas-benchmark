@@ -7,7 +7,7 @@
   "source_blobs": {
     "task15_one_shot_openai_model_capture_gate_v1.py": "a3ff123d5df3fc47e5014b212666050f525cba02",
     "tests/test_task15_one_shot_openai_model_capture_gate_v1.py": "77d7d143dc85f00a1a2f94488089fc6f791b62d7",
-    "scripts/task15_one_shot_openai_model_capture_gate_audit_v1.py": "5a2bfe2d95552d08ba5469fb73fd68fe4d07758b",
+    "scripts/task15_one_shot_openai_model_capture_gate_audit_v1.py": "5ce74e25e3505717f09f97eb7501edb7d6d86a95",
     "task15_real_provider_first_call_preflight_default_deny_v1.py": "c6a4ee1539e0e460fb47892e5e5d112f2c04086d",
     "scripts/task15_real_provider_first_call_preflight_default_deny_audit_v1.py": "1fcd50c95e27f24cc1063d5e6fa59ea64eaff722"
   },
