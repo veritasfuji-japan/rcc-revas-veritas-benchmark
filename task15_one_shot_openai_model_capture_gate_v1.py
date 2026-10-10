@@ -192,7 +192,19 @@ class DurableOneShotModelCapture:
     Approval is verified on each invocation. Caller MUST establish operator
     trust root independently; passing any attacker-owned root is outside proof.
     """
-    def __init__(self,path,manifest,quarantine,approval,public_key,*,now_utc,create):
+    def __init__(self,path,manifest,quarantine,approval,public_key,*,
+                 preflight_evidence,now_utc,create):
+        need(type(preflight_evidence) is dict
+             and preflight_evidence.get("rule_of_one")==
+                 "TASK15_REAL_PROVIDER_FIRST_CALL_PREFLIGHT_DEFAULT_DENY_V1"
+             and preflight_evidence.get("determination")==
+                 "EXACT_ONE_SOURCE_SEALED_NO_LIVE_PROVIDER_AUTHORITY"
+             and type(preflight_evidence.get("manifest")) is dict
+             and canonical(manifest)==canonical(preflight_evidence["manifest"])
+             and preflight_evidence.get("actual_real_provider_calls")==0
+             and preflight_evidence.get("actual_real_provider_spend_usd")==0
+             and preflight_evidence.get("fresh_operator_approval_issued") is False,
+             "UNVERIFIED_PR275_PREFLIGHT_EVIDENCE_OR_MANIFEST_SUBSTITUTION")
         self.path=Path(path)
         self.request=input_from_exact_archived_evidence(manifest,quarantine)
         self.approval_sha=validate_fresh_approval(
