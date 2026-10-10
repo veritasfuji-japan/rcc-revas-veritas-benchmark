@@ -1,9 +1,10 @@
 """Task15 ONE-SHOT live OpenAI-model capture boundary; CI is offline only.
 
-This module *can* make an actual model-only Chat Completions HTTPS call, but
-ONLY after a separately signed, exact-source, short-lived operator approval,
-credential availability, and a durable SQLite claim. No default approval,
-no retry after UNKNOWN, and absolutely no bank/tool execution capability.
+As of the post-#276 direct-transport bypass remediation, this module is
+OFFLINE ONLY: it CANNOT make an actual model-only HTTPS call. The prior
+public DirectOpenAIHTTPSOnce helper is permanently default-denied. A future
+separate isolated sender must be reviewed before live transport is possible.
+The existing durable mock state machine and frozen source remain available.
 
 A signed test consent from this project's test harness is NOT production
 operator onboarding. Live trust-root custody and approval must be established
@@ -12,13 +13,11 @@ independently by the operator before the first billable call. CI NEVER does it.
 from __future__ import annotations
 import copy
 import hashlib
-import http.client
 import json
 import os
 from pathlib import Path
 import socket
 import sqlite3
-import ssl
 from datetime import datetime,timezone
 
 from cryptography.exceptions import InvalidSignature
@@ -155,36 +154,20 @@ def validate_fresh_approval(approval,public_key,request,*,now_utc):
     return digest(approval)
 
 class DirectOpenAIHTTPSOnce:
-    """No retry, no SDK, no redirects, no external tool calls; TLS only."""
+    """Former direct HTTPS helper. NEVER instantiate or dispatch from here.
+
+    Security remediation #277: a caller with a real API key could formerly
+    bypass DurableOneShotModelCapture's signed approval and durable claim by
+    calling this class directly. This exact old API is now fail-closed.
+    """
+
     def __init__(self,api_key):
-        need(type(api_key) is str and api_key.startswith("sk-")
-             and len(api_key)>12,
-             "ACTUAL_API_KEY_MUST_BE_SUPPLIED_AT_EXPLICIT_LOCAL_LIVE_EXECUTION")
-        self._key=api_key
-        self._spent=False
+        del api_key
+        raise OneShotDenied("DIRECT_HTTPS_HELPER_WITH_KEY_DEFAULT_DENIED")
 
     def send(self,request):
-        need(not self._spent,"NO_HTTP_RETRY_EVER")
-        self._spent=True
-        connection=http.client.HTTPSConnection(
-            HOST,443,timeout=20,context=ssl.create_default_context())
-        try:
-            # Native TLS verifies the public API host; this is not a
-            # provider-signed, third-party-verified execution receipt.
-            connection.request("POST",API_PATH,
-                body=canonical(request).encode(),
-                headers={
-                    "Authorization":"Bearer "+self._key,
-                    "Content-Type":"application/json",
-                    "Accept":"application/json",
-                })
-            response=connection.getresponse()
-            body=response.read(1048577)
-            need(len(body)<=1048576,"OPENAI_RESPONSE_BODY_TOO_LARGE")
-            need(response.status==200,
-                 "OPENAI_HTTP_FAILURE_OUTCOME_UNKNOWN_"+str(response.status))
-            return json.loads(body)
-        finally:connection.close()
+        del request
+        raise OneShotDenied("DIRECT_HTTPS_DISPATCH_NOT_AN_AUTHORIZED_EFFECT_SINK")
 
 class DurableOneShotModelCapture:
     """Disk-atomic claim BEFORE provider, UNKNOWN on all ambiguous outcomes.
@@ -304,6 +287,9 @@ class DurableOneShotModelCapture:
         if live:
             need(type(transport) is DirectOpenAIHTTPSOnce,
                  "REAL_PROVIDER_MUST_USE_FIXED_NO_RETRY_TLS_TRANSPORT")
+            # Even object.__new__(DirectOpenAIHTTPSOnce) must never become
+            # a usable live capability; do not consume the offline ticket.
+            raise OneShotDenied("LIVE_PROVIDER_DISPATCH_NOT_ENABLED_IN_THIS_PROOF")
         else:
             need(type(transport) is not DirectOpenAIHTTPSOnce,
                  "REAL_PROVIDER_TRANSPORT_FORBIDDEN_IN_SIMULATION")
