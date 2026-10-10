@@ -1,0 +1,58 @@
+name: Task15 Stolen Session Revocation Fence V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task15-stolen-session-revocation-v1.yml"
+      - "task15_stolen_session_revocation_fence_v1.py"
+      - "tests/test_task15_stolen_session_revocation_fence_v1.py"
+      - "scripts/task15_stolen_session_revocation_audit_v1.py"
+      - "contracts/TASK15_STOLEN_SESSION_REVOCATION_FENCE_V1.json"
+      - "docs/TASK15_STOLEN_SESSION_REVOCATION_FENCE_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task15-stolen-session-revocation-v1.yml"
+      - "task15_stolen_session_revocation_fence_v1.py"
+      - "tests/test_task15_stolen_session_revocation_fence_v1.py"
+      - "scripts/task15_stolen_session_revocation_audit_v1.py"
+      - "contracts/TASK15_STOLEN_SESSION_REVOCATION_FENCE_V1.json"
+      - "docs/TASK15_STOLEN_SESSION_REVOCATION_FENCE_V1.md"
+permissions:
+  contents: read
+jobs:
+  stolen-session-revocation-core-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      ANTHROPIC_API_KEY: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+      TASK15_STOLEN_SESSION_PROOF: "1"
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Install pinned offline-only cryptographic test dependency
+        run: python -m pip install "cryptography==50.0.0"
+      - name: Run adversarial copied-session and durable revoke tests
+        run: python -m unittest discover -s tests -p 'test_task15_stolen_session_revocation_fence_v1.py' -v
+      - name: Build exact JUnit and two raw SQLite proof archives
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python scripts/task15_stolen_session_revocation_audit_v1.py --output-dir results | tee results.log
+      - name: Upload mock-only frozen evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: task15-stolen-session-revocation-v1
+          path: |
+            results/*
+            results.log
+          if-no-files-found: warn
