@@ -12,12 +12,12 @@ import sqlite3
 from threading import Lock
 
 import pytest
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-
 if os.environ.get("TASK15_ONE_SHOT_OPENAI_GATE_OFFLINE_PROOF")!="1":
     pytest.skip("Dedicated offline-only first actual model-call gate audit",
                 allow_module_level=True)
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from task15_one_shot_openai_model_capture_gate_v1 import (
     MODEL,CASE,ARM,RULE,SOURCE_SHA,APPROVAL_PROFILE,
