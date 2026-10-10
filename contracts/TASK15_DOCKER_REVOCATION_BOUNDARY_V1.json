@@ -1,0 +1,41 @@
+{
+  "schema_version": "veritas.task15-docker-revocation-boundary.v1",
+  "rule_of_one": "TASK15_DOCKER_REVOCATION_BOUNDARY_V1",
+  "predecessor_merged_main_sha": "2c1eb0199b2828a08cfb9ab2140952bbb365810d",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI_AND_INDEPENDENT_RAW_ARTIFACT_AUDIT",
+  "invariant": "A trusted admin revocation committed through docker exec inside a networkless isolated mock Broker and the broker's AF_UNIX dispatch decision must serialize via one durable SQLite BEGIN IMMEDIATE lock; subsequently received stolen-key plus valid signed TEST grant requests are denied without another mock sink call.",
+  "trusted_revocation_authority": "Host-runner Docker exec control into broker container; intentionally NOT exposed on worker Unix socket. Host/Docker privileges are trusted assumptions, not externally enrolled operator proof.",
+  "socket_protocol": "worker presents broker-fresh HMAC with 32-byte synthetic copied session key, frozen signed Ed25519 TEST grant; broker checks SO_PEERCRED UID/GID and grants; pre-claim revoked request fails closed",
+  "expected_two_scenarios": [
+    "revocation_first: forged HMAC rejected, trusted admin revoke commits, stolen-key signed grant denied, wrong host UID denied; zero mock effects",
+    "claim_first: stolen-key signed grant causes exactly one allowed mock effect before revocation, trusted admin revoke commits, stolen and legitimate keyed replays denied"
+  ],
+  "expected_total_unix_sessions": 6,
+  "expected_runtime_junit_cases": 16,
+  "expected_artifact_sqlite_archives": 2,
+  "expected_real_provider_requests": 0,
+  "real_provider_execution_authorized": false,
+  "expected_real_provider_spend_usd": 0,
+  "expected_native_bank_effects": 0,
+  "frozen_network_mode": "none for all Broker/worker runtime containers",
+  "worker_uid_gid": "65534:65534",
+  "broker_uid_gid": "CI non-root user UID:GID",
+  "credentials": "Only synthetic test sink bytes and ephemeral synthetic session key, never real Provider credential",
+  "expected_shared_mounts": "Broker rw /ipc and rw /private; worker readonly /ipc and readonly /worker.py, plus readonly session key for stolen/legitimate worker. No private mount in workers.",
+  "trust_assumptions": [
+    "Linux host, Docker daemon, host runner with Docker permissions and broker owner trusted",
+    "Locally generated TEST Ed25519 root is not a real human enrollment",
+    "Host-side Docker exec authority to revoke is assumed",
+    "Session key theft in legitimately keyed worker is explicitly simulated",
+    "Docker image dependencies are pinned versions but build supply chain not externally attested",
+    "No real HTTP Provider transport or native AgentDojo full wire body"
+  ],
+  "nonclaims": [
+    "Revocation cannot undo an already committed claim or dispatched effect",
+    "Docker daemon compromise defeats isolation",
+    "An attacker with both stolen session key and valid signed TEST grant may win first claim before revocation",
+    "Trusted Docker exec is not an enterprise operator authorization boundary",
+    "No real Provider key custody, billing, bank effect, real IAM or human approval attested"
+  ],
+  "next": "After this bounded Docker integration audit, independently enroll trusted operator revocation action and test fail-closed production credential and full native payload custody before authorizing any real Provider send."
+}
