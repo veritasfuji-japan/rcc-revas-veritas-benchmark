@@ -1,0 +1,40 @@
+{
+  "schema_version": "veritas.task15-authoritative-mock-signed-sink.v1",
+  "rule_of_one": "TASK15_AUTHORITATIVE_MOCK_SIGNED_SINK_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "predecessor_main_sha": "4a5c6cedef2944fd6e15c1eea4ecbb17dfd125f6",
+  "central_invariant": "Within exactly the NEW bounded signed mock authority sink, neither the legacy generic mock controller's CONFIRMED status nor an unsigned row may become authoritative. Every authoritative signed status read re-verifies exact independently recorded mock receipt, Ed25519 signature under frozen pre-enrolled local test root, source plan and predecessor proof. Direct tampering must fail closed. No system-wide or actual provider guarantee.",
+  "source_blobs": {
+    "task15_authoritative_mock_signed_sink_v1.py": "9b7795ffe006a49b1fd3ad7bb6030d269ce56e1a",
+    "tests/test_task15_authoritative_mock_signed_sink_v1.py": "384ac30af8476b385408544c5d54fa22b4588dbf",
+    "scripts/task15_authoritative_mock_signed_sink_audit_v1.py": "798bd9d86b663759448c61ec05dbf5d26dc5ba1e",
+    "scripts/task15_mock_signed_receipt_trust_boundary_audit_v1.py": "38e3a0c80b1fac4b366d0236c692bf64e7fd9ae5",
+    "task15_mock_signed_receipt_trust_boundary_v1.py": "249c106a33593ff901e6290f3bdb2464a12e0bdf"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "model_configuration_blob": "59a77c03f7e98a6d8a5fa9b78ba356cfc12ff92d",
+  "expected_new_tests": 15,
+  "expected_adversarial_refusals": 14,
+  "expected_mock_scenarios": 4,
+  "expected_actual_sqlite_snapshots": 16,
+  "expected_signed_authoritative_promotions": 1,
+  "expected_legacy_unsigned_generic_confirm_but_sink_unknown": 1,
+  "expected_unsigned_or_empty_other_unknown": 2,
+  "existing_legacy_generic_mock_route_can_still_confirm_its_own_state": true,
+  "sink_must_not_promote_from_legacy_controller_only": true,
+  "authenticated_real_provider_receipt_proven": false,
+  "system_wide_bypass_resistance_proven": false,
+  "trusted_production_issuer_proven": false,
+  "real_provider_calls": 0,
+  "real_provider_charges_usd": 0,
+  "real_bank_writes": 0,
+  "next": "ONLY_AFTER_BOUNDED_SINK_PROOF_DESIGN_ISOLATED_SINGLE_CALL_REAL_MODEL_CAPTURE_PREFLIGHT_WITH_EXPLICIT_OPERATOR_CONSENT"
+}
