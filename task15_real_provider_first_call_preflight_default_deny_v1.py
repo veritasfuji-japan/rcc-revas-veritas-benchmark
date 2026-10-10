@@ -78,6 +78,9 @@ def check_predecessors(sink_proof,durable_source):
     for key in ("source_request_sha256","source_tool_schemas_sha256",
                 "source_user_message_sha256","predecessor_proof_sha256"):
         require(hex64(plan.get(key)),"FROZEN_EXACT_SOURCE_HASH_MISSING_"+key)
+    require(type(plan.get("source_read_call_id")) is str
+            and bool(plan["source_read_call_id"]),
+            "FROZEN_NATIVE_READ_CALL_ID_REQUIRED")
     return copy.deepcopy(plan)
 
 def proposed_request_manifest(sink_proof,durable_source,*,model=MODEL,
@@ -109,7 +112,7 @@ def proposed_request_manifest(sink_proof,durable_source,*,model=MODEL,
         "source_request_sha256":prior["source_request_sha256"],
         "source_tool_schemas_sha256":prior["source_tool_schemas_sha256"],
         "source_user_message_sha256":prior["source_user_message_sha256"],
-        "native_read_call_id":prior.get("source_native_read_call_id"),
+        "native_read_call_id":prior["source_read_call_id"],
         "requested_model_call_limit":1,
         "proposed_max_output_tokens":MAX_OUTPUT_TOKENS,
         "proposed_cost_ceiling_micro_usd":PROPOSED_MAX_COST_MICRO_USD,
