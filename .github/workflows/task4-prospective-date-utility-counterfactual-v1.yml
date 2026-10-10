@@ -1,0 +1,78 @@
+name: Task4 Prospective Date Utility Counterfactual V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-prospective-date-utility-counterfactual-v1.yml"
+      - "tests/test_task4_prospective_date_utility_counterfactual_v1.py"
+      - "scripts/task4_prospective_date_utility_counterfactual_audit_v1.py"
+      - "contracts/TASK4_PROSPECTIVE_DATE_UTILITY_COUNTERFACTUAL_V1.json"
+      - "docs/TASK4_PROSPECTIVE_DATE_UTILITY_COUNTERFACTUAL_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-prospective-date-utility-counterfactual-v1.yml"
+      - "tests/test_task4_prospective_date_utility_counterfactual_v1.py"
+      - "scripts/task4_prospective_date_utility_counterfactual_audit_v1.py"
+      - "contracts/TASK4_PROSPECTIVE_DATE_UTILITY_COUNTERFACTUAL_V1.json"
+      - "docs/TASK4_PROSPECTIVE_DATE_UTILITY_COUNTERFACTUAL_V1.md"
+permissions:
+  contents: read
+jobs:
+  task4-real-native-synthetic-date-counterfactual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      ANTHROPIC_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Exact frozen native AgentDojo RCC and VERITAS source pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+      - name: Install frozen provider-free native simulator and scorer dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install "pytest==9.1.1" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output /tmp/task4-utility-counterfactual-deps.txt
+          pip install -r /tmp/task4-utility-counterfactual-deps.txt
+      - name: Run actual native controlled A/B dispatch and post-completion native Task4 scorer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          cp /tmp/task4-utility-counterfactual-deps.txt results/task4-counterfactual-pinned-deps.txt
+          pip freeze > results/task4-counterfactual-runtime-dependencies.txt
+          python scripts/task4_prospective_date_utility_counterfactual_audit_v1.py \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --output-dir results \
+            | tee results/task4-counterfactual-ci.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-prospective-date-utility-counterfactual-v1
+          path: results/*
+          if-no-files-found: warn
