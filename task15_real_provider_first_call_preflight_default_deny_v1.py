@@ -136,7 +136,12 @@ def proposed_request_manifest(sink_proof,durable_source,*,model=MODEL,
 
 class OfflineFirstCallPreflight:
     """SQLite-sealed request manifest; emphatically never an API capability."""
-    def __init__(self,path,manifest,*,create):
+    def __init__(self,path,manifest,*,create,sink_proof,durable_source):
+        # This DB wrapper is NOT allowed to self-attest an arbitrary plan:
+        # reconstruct the one exact audited source-bound non-executable plan.
+        exact=proposed_request_manifest(sink_proof,durable_source)
+        require(type(manifest) is dict and canonical(manifest)==canonical(exact),
+                "DIRECT_MANIFEST_SELF_ATTEST_OR_SOURCE_DRIFT_REFUSED")
         require(type(manifest) is dict and
                 manifest.get("rule_of_one")==RULE and
                 manifest.get("kind")=="NON_EXECUTABLE_ONE_CALL_SOURCE_PREFLIGHT",
