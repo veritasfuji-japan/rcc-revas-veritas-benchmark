@@ -1,0 +1,40 @@
+{
+  "schema_version": "veritas.task15-mock-signed-receipt-trust-boundary.v1",
+  "rule_of_one": "TASK15_MOCK_SIGNED_RECEIPT_TRUST_BOUNDARY_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "predecessor_main_sha": "10ed8d1c5fd37e0712b3b33aa33cdec8b34620ce",
+  "central_invariant": "Within the named offline mock signed-recovery adapter only, a fenced UNKNOWN effect must never be confirmed solely by a matching SQLite mock-provider row. Both the row and an Ed25519 signature over operation, source plan, source predecessor proof, receipt hash and exact model snapshot must verify under a public key enrolled in a separate preexisting test trust-root SQLite DB. Without the trusted test signature the result remains UNKNOWN, with no retry or real effect.",
+  "source_blobs": {
+    "task15_mock_signed_receipt_trust_boundary_v1.py": "249c106a33593ff901e6290f3bdb2464a12e0bdf",
+    "tests/test_task15_mock_signed_receipt_trust_boundary_v1.py": "a4db7307482d308c373640e7cff8d0972f9dcfe2",
+    "scripts/task15_mock_signed_receipt_trust_boundary_audit_v1.py": "38e3a0c80b1fac4b366d0236c692bf64e7fd9ae5",
+    "scripts/task15_mock_effect_unknown_reconcile_audit_v1.py": "55efb60c054dcf177fef01c9315649337ff9e619",
+    "task15_mock_effect_unknown_reconcile_v1.py": "188d925e8330aa6657955f692ebfeb9c6835e528"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "model_configuration_blob": "59a77c03f7e98a6d8a5fa9b78ba356cfc12ff92d",
+  "expected_new_tests": 15,
+  "expected_negative_cases": 14,
+  "expected_offline_scenarios": 6,
+  "expected_signed_mock_confirmations": 3,
+  "expected_unsigned_or_absent_unknown": 2,
+  "expected_predispatch_noeffect": 1,
+  "expected_raw_sqlite_snapshots": 18,
+  "test_only_issuer": "OFFLINE_EPHEMERAL_SIMULATOR_NO_REAL_PROVIDER_IDENTITY",
+  "test_key_generated_in_runtime": true,
+  "test_private_key_written_to_repo_or_artifact": false,
+  "production_external_provider_identity_verified": false,
+  "system_wide_reconciliation_bypass_resistance_proven": false,
+  "actual_provider_requests": 0,
+  "actual_provider_spend_usd": 0,
+  "actual_bank_writes": 0,
+  "next": "INDEPENDENT_EXTERNAL_PROVIDER_IDENTITY_AND_RECEIPT_VERIFICATION_ONLY_WITH_EXPLICIT_PROVIDER_SCOPE_AND_TRUST_ROOT"
+}
