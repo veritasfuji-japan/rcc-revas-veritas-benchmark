@@ -1,0 +1,44 @@
+{
+  "schema_version": "veritas.task15-unix-ipc-mock-broker-process.v1",
+  "rule_of_one": "TASK15_UNIX_IPC_MOCK_BROKER_PROCESS_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_OS_PROCESS_PROOF_AND_INDEPENDENT_ARTIFACT_AUDIT",
+  "predecessor_merged_main_sha": "9dc4f661949e032198ecd132f1c99ce670c9f2c5",
+  "central_invariant": "A worker in the specified networkless Docker container cannot invoke the separately hosted local-only mock broker without passing kernel SO_PEERCRED UID/GID, independent broker-pinned TEST Ed25519 approval, and durable SQLite first-use consumption. Host runner requests with the wrong peer UID are denied before decoding the request. No real Provider is present.",
+  "approved_worker_uid": 65534,
+  "approved_worker_gid": 65534,
+  "trusted_broker_execution": "separate host subprocess; not independently sandboxed from compromised host",
+  "docker_image": "python:3.11.16-slim@sha256:e41613d42d4891e4930f79523f93f81bbc7632584ec65e36ab055f41a800b41e",
+  "os_config": [
+    "--network=none",
+    "--read-only",
+    "--user=65534:65534",
+    "--cap-drop=ALL",
+    "--security-opt=no-new-privileges",
+    "--pids-limit=64",
+    "--memory=256m",
+    "two exact read-only mounts: worker code and shared test grant/socket"
+  ],
+  "required_connections": 4,
+  "expected_decisions": [
+    "MOCK_RECORDED",
+    "DENIED",
+    "DENIED",
+    "DENIED"
+  ],
+  "expected_mock_effects": 1,
+  "expected_durable_sqlite_records": 1,
+  "operator_root": "test-only locally generated; pinned by host broker subprocess, not by worker",
+  "peer_authentication": "SO_PEERCRED UID/GID plus signed, source-target-bound, single-use test grant; UID is not unique to one Docker container",
+  "provider_calls_authorized": false,
+  "real_provider_secrets_present": false,
+  "operator_consent_to_bill": false,
+  "nonclaims": [
+    "No independent production operator trust root",
+    "No production Provider credential or egress controls",
+    "A host administrator or other process running as UID 65534 with access to the socket is not ruled out by UID alone",
+    "Docker daemon and host kernel are trusted assumptions",
+    "No challenge-response IPC channel authentication against same UID peer",
+    "No proof of complete AgentDojo wire body because mock-only request identifier is used"
+  ],
+  "next": "Independently verify precise Docker inspect, exact request and signed grant, raw SQLite, UID/GID peer evidence and CI; do not enable real Provider calls. Later: hardened broker/container credential custody and independently enrolled human approval."
+}
