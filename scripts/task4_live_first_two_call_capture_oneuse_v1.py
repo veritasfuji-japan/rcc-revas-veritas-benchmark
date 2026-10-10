@@ -152,7 +152,8 @@ def send_exactly_once(*,request,key,arm,request_id,transport=None):
         check(type(provider_request_id) is str and bool(provider_request_id),
               "PROVIDER_REQUEST_ID_MISSING_NO_RETRY")
         check(type(obj) is dict and obj.get("object")=="chat.completion"
-              and type(obj.get("id")) is str and bool(obj["id"]) and
+              and obj.get("model")==MODEL and
+              type(obj.get("id")) is str and bool(obj["id"]) and
               type(obj.get("choices")) is list and len(obj["choices"])==1
               and type(obj.get("usage")) is dict and
               all(type(obj["usage"].get(t)) is int and
