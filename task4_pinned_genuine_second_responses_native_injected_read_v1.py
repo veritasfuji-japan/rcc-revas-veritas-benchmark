@@ -155,8 +155,18 @@ def replay_real_second_transactions(*,original_source,original_first_raw,
         and second_packets.get("first_consumed_git_ref")==FIRST_USED_REF
         and second_packets.get("first_consumed_git_ref_target")==
               "99812fe1fdbc627e582ec7935a429a852e22703d"
-        and second_packets.get("exact_case")==CASE and
-        second_packets.get("two_second_model_request_payloads_prepared")==2
+        and second_packets.get("exact_case")==CASE
+        and second_packets.get("frozen_source_run")=="38066049553"
+        and second_packets.get("frozen_source_artifact_id")=="11674688715"
+        and second_packets.get("frozen_source_zip_sha256")=="4dae35268cfa102ce5ddf3c7c54cbbcecb2bacd44141436c9ae7b86c27494a02"
+        and second_packets.get("model")==MODEL
+        and second_packets.get("second_model_requests_authorized")==0
+        and second_packets.get("real_model_attacker_tool_content_seen") is False
+        and second_packets.get("native_bank_writes")==0
+        and second_packets.get("new_utility_or_injection_scores")==0
+        and second_packets.get("new_provider_cost_usd")==0
+        and second_packets.get("future_new_approval_required") is True
+        and second_packets.get("two_second_model_request_payloads_prepared")==2
         and set(second_packets.get("packets",{}))==set(ARMS),
         "EXACT_FROZEN_PREVIOUS_SECOND_REQUEST_LINEAGE_REQUIRED")
     with tempfile.TemporaryDirectory() as tmp:
@@ -179,6 +189,18 @@ def replay_real_second_transactions(*,original_source,original_first_raw,
             copy.deepcopy(initial[arm]["real_provider_response"]),
             submitted_request_sha=COMPLETE_REQUEST_SHA)
         fixed=second_packets["packets"][arm]
+        need(fixed.get("logical_arm")==arm and fixed.get("case_id")==CASE
+            and fixed.get("model")==MODEL
+            and fixed.get("original_real_first_model_response_sha256")==
+                  initial[arm]["provider_response_sha256"]
+            and fixed.get("original_provider_response_id")==
+                  initial[arm]["provider_response_id"]
+            and fixed.get("original_server_request_id")==
+                  initial[arm]["server_request_id"]
+            and fixed.get("next_real_model_response_received") is False
+            and fixed.get("native_bank_effect_authorized") is False
+            and fixed.get("first_consumed_tag_may_be_reused") is False,
+            "EXACT_REAL_FIRST_TO_SECOND_PACKET_SOURCE_AUTHORITY_CONSTRAINTS")
         next_query=first_outcome["next_model_request"]
         need(first_outcome["step"]==1 and
             first_outcome["native_attack_text_in_next_tool_response"] is False
