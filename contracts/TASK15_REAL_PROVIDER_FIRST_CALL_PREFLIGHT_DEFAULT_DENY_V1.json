@@ -1,0 +1,41 @@
+{
+  "schema_version": "veritas.task15-real-provider-first-call-preflight-default-deny.v1",
+  "rule_of_one": "TASK15_REAL_PROVIDER_FIRST_CALL_PREFLIGHT_DEFAULT_DENY_V1",
+  "status": "IMPLEMENTED_NOT_PROVEN_PENDING_EXACT_HEAD_CI",
+  "predecessor_main_sha": "7fdfed5cf4d8b1302fc376d36d97b67089dcfa12",
+  "central_invariant": "Within one exact frozen Task15 first-case A-arm model response capture PRE-FLIGHT, a single non-executable source request manifest can be sealed durably without any live provider transport or issuance of operator approval, spend authority, provider API credential, retries or banking effects. Historical $5 budget and a proposed $0.25 cap are not expenditure permission.",
+  "source_blobs": {
+    "task15_real_provider_first_call_preflight_default_deny_v1.py": "c234ec5aa8c4752ba519d5aba195568af36e9cd1",
+    "tests/test_task15_real_provider_first_call_preflight_default_deny_v1.py": "cf289c45a84d742f635ac463dd42a28056a14b3e",
+    "scripts/task15_real_provider_first_call_preflight_default_deny_audit_v1.py": "1fcd50c95e27f24cc1063d5e6fa59ea64eaff722",
+    "scripts/task15_authoritative_mock_signed_sink_audit_v1.py": "798bd9d86b663759448c61ec05dbf5d26dc5ba1e",
+    "task15_authoritative_mock_signed_sink_v1.py": "9b7795ffe006a49b1fd3ad7bb6030d269ce56e1a"
+  },
+  "agentdojo_commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "agentdojo_native_blobs": {
+    "src/agentdojo/agent_pipeline/tool_execution.py": "ce23a76ed2963d867742e1719e1b7019d4e76309",
+    "src/agentdojo/functions_runtime.py": "eb68a7201b41398e76e70f00d2a9da6d351c8489",
+    "src/agentdojo/agent_pipeline/llms/openai_llm.py": "f0b9ab0c6a1766a32c17df430bd601c04df54364",
+    "src/agentdojo/default_suites/v1/tools/banking_client.py": "941c27467b7890cced7ab70e5fd5ca32241f99a5",
+    "src/agentdojo/task_suite/task_suite.py": "da0f3bd18f058ef4d74decad25658d434338a993",
+    "src/agentdojo/data/suites/banking/injection_vectors.yaml": "dcaad0a354bcae278034262e715aaf7a0152380e"
+  },
+  "model_configuration_blob": "59a77c03f7e98a6d8a5fa9b78ba356cfc12ff92d",
+  "expected_tests": 15,
+  "expected_negative_refusals": 14,
+  "expected_raw_sqlite_manifest_artifacts": 1,
+  "fixed_case_id": "banking:user_task_15:injection_task_0:direct",
+  "fixed_arm": "A",
+  "frozen_model": "gpt-4.1-mini-2025-04-14",
+  "proposed_token_output_limit": 256,
+  "proposed_cost_ceiling_usd": 0.25,
+  "historical_cost_limit_usd": 5,
+  "any_cost_limit_as_spend_permission": false,
+  "provider_transport_implemented": false,
+  "operator_signed_authority_issued": false,
+  "real_model_response_authenticity_proven": false,
+  "real_provider_calls": 0,
+  "real_provider_spend_usd": 0,
+  "real_bank_writes": 0,
+  "next": "SEPARATE_EXPLICIT_OPERATOR_APPROVAL_EXACT_ONE_LIVE_OPENAI_MODEL_RESPONSE_CAPTURE_WITH_NO_BANK_EFFECTS_AND_DURABLE_PROVIDER_RECEIPT"
+}
