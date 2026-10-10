@@ -6,7 +6,7 @@
   "central_invariant": "Within exactly the NEW bounded signed mock authority sink, neither the legacy generic mock controller's CONFIRMED status nor an unsigned row may become authoritative. Every authoritative signed status read re-verifies exact independently recorded mock receipt, Ed25519 signature under frozen pre-enrolled local test root, source plan and predecessor proof. Direct tampering must fail closed. No system-wide or actual provider guarantee.",
   "source_blobs": {
     "task15_authoritative_mock_signed_sink_v1.py": "9b7795ffe006a49b1fd3ad7bb6030d269ce56e1a",
-    "tests/test_task15_authoritative_mock_signed_sink_v1.py": "743ecf1bc9dab861b14a475d65ff2fe866ed5d78",
+    "tests/test_task15_authoritative_mock_signed_sink_v1.py": "384ac30af8476b385408544c5d54fa22b4588dbf",
     "scripts/task15_authoritative_mock_signed_sink_audit_v1.py": "798bd9d86b663759448c61ec05dbf5d26dc5ba1e",
     "scripts/task15_mock_signed_receipt_trust_boundary_audit_v1.py": "38e3a0c80b1fac4b366d0236c692bf64e7fd9ae5",
     "task15_mock_signed_receipt_trust_boundary_v1.py": "249c106a33593ff901e6290f3bdb2464a12e0bdf"
