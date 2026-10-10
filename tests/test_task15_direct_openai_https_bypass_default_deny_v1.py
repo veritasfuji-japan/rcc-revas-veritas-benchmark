@@ -129,11 +129,11 @@ def test_positive_offline_safe_mock_still_works_and_direct_paths_close(
     with pytest.raises(OneShotDenied,match="DIRECT_HTTPS_DISPATCH_NOT_AN_AUTHORIZED_EFFECT_SINK"):
         object.__new__(denied).send(request)
     fake=FakeProvider()
-    valid,grant,pub=live_fixture(tmp_path,archived_source,"mock_still_works")
+    valid,valid_grant,valid_pub=live_fixture(tmp_path,archived_source,"mock_still_works")
     assert valid.capture(fake,live=False)["state"]=="MOCK_RECORDED"
     assert fake.calls==1
     assert valid.read_response()["choices"][0]["message"]["tool_calls"][0]["function"]["name"]=="send_money"
-    new,grant,pub=live_fixture(tmp_path,archived_source,"forged_live_blocked")
+    new,denied_grant,denied_pub=live_fixture(tmp_path,archived_source,"forged_live_blocked")
     forged=object.__new__(denied)
     with pytest.raises(OneShotDenied,match="LIVE_PROVIDER_DISPATCH_NOT_ENABLED"):
         new.capture(forged,live=True)
@@ -151,8 +151,12 @@ def test_positive_offline_safe_mock_still_works_and_direct_paths_close(
         "source_pr275_evidence_sha256":digest(pf),
         "exact_source_request_sha256":SOURCE_SHA,
         "request_sha256":digest(request),
-        "public_fixture_root_hex":pub.hex(),
-        "signed_fixture_approval":grant,
+        "fixture_grants":{
+            "mock":{"public_key_hex":valid_pub.hex(),
+                    "signed_approval":valid_grant},
+            "direct_live_denied":{"public_key_hex":denied_pub.hex(),
+                                  "signed_approval":denied_grant},
+        },
         "test_only_operator_signature":True,
         "direct_helper_constructor_blocked":True,
         "direct_helper_send_blocked":True,
