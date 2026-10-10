@@ -58,7 +58,7 @@ def validate_inspect(info, probe, fingerprint):
     require(not h.get("Binds"), "UNREVIEWED_BIND_MOUNT_FORBIDDEN")
     require(not h.get("PortBindings") and not h.get("PublishAllPorts"),
             "PUBLISHED_PORT_FORBIDDEN")
-    require(not h.get("PidMode") and not h.get("IpcMode"),
+    require(not h.get("PidMode") and h.get("IpcMode") in ("", "private", None),
             "HOST_PID_OR_IPC_NAMESPACE_FORBIDDEN")
     require(h.get("PidsLimit") is not None and 0 < h["PidsLimit"] <= 64,
             "PROCESS_LIMIT_REQUIRED")
