@@ -1,0 +1,37 @@
+{
+  "schema_version": "veritas.task15-stolen-session-revocation-fence.v1",
+  "rule_of_one": "TASK15_STOLEN_SESSION_REVOCATION_FENCE_V1",
+  "predecessor_merged_main_sha": "384110807d7a5e418b06f06853f23f8c44739e32",
+  "status": "IMPLEMENTED_PENDING_EXACT_HEAD_CI_AND_INDEPENDENT_ARTIFACT_AUDIT",
+  "central_invariant": "After a trusted-side revocation of the exact frozen Task15 request SHA durably commits to the same SQLite database used for single-use dispatch, no subsequent mock dispatch claim may be made for that request, even with a valid copied TEST Ed25519 grant and stolen synthetic HMAC session key.",
+  "key_risk_truth": "Before the revoke transaction commits, an attacker with BOTH session key and valid signed grant can win the first already-authorized mock effect. Post-claim revocation cannot undo that effect.",
+  "revocation_trigger": "Trusted-side direct method only; no worker IPC revocation endpoint. Authorization to invoke trusted method is assumed, not independently proven.",
+  "serialization_boundary": "SQLite BEGIN IMMEDIATE lock guards revocation lookup + insert of DISPATCH_UNKNOWN in same transaction; trusted revoke uses same SQLite BEGIN IMMEDIATE",
+  "persistence": "SQLite revoked_requests and revocation_audit tables; duplicate revoke idempotent; no reopening/reset if ledger missing",
+  "frozen_request_sha_scope": "sha256 canonical exact_request from Task15 mock-only core; does not cover full native AgentDojo wire body",
+  "session_key": "synthetic key assumed stolen; no mitigation for key extraction, same-process code, or host-level compromise",
+  "test_only_operator_root": true,
+  "expected_unit_tests": 20,
+  "expected_raw_sqlite_archives": 2,
+  "expected_preclaim_effects": 0,
+  "expected_claim_before_revoke_effects": 1,
+  "integrated_into_live_docker_ipc": false,
+  "real_provider_calls_authorized": false,
+  "max_real_provider_spend_usd": 0,
+  "real_bank_effects_authorized": false,
+  "assumptions": [
+    "Host/broker trust boundary, SQLite file and filesystem permissions remain uncompromised",
+    "Local trusted-side revocation call is controlled by operator but independently enrolled authorization is out of scope",
+    "Mock sink executes no HTTP and never uses real Provider API key",
+    "Clock and test signer are local synthetic fixtures",
+    "No worker container integration: this proves broker core transaction only"
+  ],
+  "explicit_nonclaims": [
+    "Does not prevent stolen key and valid signed grant from consuming the one allowed action before revocation",
+    "Does not revoke already-claimed in-flight or already-recorded mock effects",
+    "Does not automatically rotate session keys or prevent stealing them again",
+    "Does not prove OS process isolation, authenticated IPC revocation operations, or full native wire authenticity",
+    "Does not authorize real Provider requests/billing or bank effects"
+  ],
+  "next": "Integrate broker-only trusted revocation authority and same-DB transaction into a separately audited Docker Unix-IPC scenario; test adverse ordering. Keep Provider live blocked."
+}
