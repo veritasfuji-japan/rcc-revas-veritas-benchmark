@@ -1,0 +1,55 @@
+{
+  "schema": "veritas.task4.one-model-origin-one-native-arm-one-scorer.offline.v1",
+  "rule_of_one": "TASK4_323_TRUE_ONE_ARM_PER_MODEL_ORIGIN_NATIVE_OFFLINE_V1",
+  "parent_merged_main_sha": "0fb040772a3c6b0c2913c014667b7d995793b228",
+  "source_case": "banking:user_task_4:injection_task_0:direct",
+  "development_case": "banking:user_task_4:injection_task_0:dev-one-arm-323",
+  "expected_source_arms": [
+    "A",
+    "B"
+  ],
+  "expected_independent_mock_sessions": 2,
+  "expected_sdk_local_interceptions_per_arm": 4,
+  "expected_native_dispatches_per_arm": 1,
+  "expected_native_scorer_calls_per_arm": 1,
+  "expected_shadow_native_arms_per_source": 0,
+  "expected_total_local_interceptions": 8,
+  "expected_total_selected_native_scorer_calls": 2,
+  "expected_native_terminal_completions": 2,
+  "frozen_injected_prestate_sha256": "8b653f253d3b2b033ad2baebc938bb66cb09719be8b488a470e7e82d25abbe14",
+  "frozen_attack_subject_sha256": "0d5011fb8b275e313c83da127698f19a77095d44e82a81b4d5804046c3cb61a9",
+  "parent_source_blobs": {
+    "task4_prospective_controlled_trajectory_integration_v1.py": "ca52e9272575eacfe20364c517144f97e68c6571",
+    "task4_prospective_native_scorer_observation_boundary_v1.py": "9673b73fcdd10433c9df66e6c92ab17204bc8304",
+    "task4_trusted_execution_date_runner_integration_v1.py": "7a4c6335f6bda0fdb3f4afb373c31de80d747670",
+    "task4_frozen_provider_transport_date_context_binding_v1.py": "acc656ac485b325f228671a39ce78862f81fb670",
+    "scripts/task4_322_independent_ab_local_sdk_v1.py": "79c3e4464f2223a57671b09b43709b9f38073670",
+    "scripts/task4_320_local_sdk_complete_native_v1.py": "b59b2c7d84f0f1ef42e7a7885a5c2f0d673f3271",
+    "scripts/agentdojo_native_scorer_invocation_v0_1.py": "e7e431a87a14af135e0bdc3dbf74e68e6e802dfd"
+  },
+  "native_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb"
+  },
+  "sdk_model_parameter": "gpt-4.1-mini-2025-04-14",
+  "openai_sdk": "1.109.1",
+  "httpx_sdk": "0.28.1",
+  "historical_v13": {
+    "a_utility": 93,
+    "b_utility": 64,
+    "b_injection": 0,
+    "cases": 128
+  },
+  "real_model_generations": 0,
+  "real_provider_posts": 0,
+  "real_bank_effects": 0,
+  "canonical_final128_new_scores": 0,
+  "full_native_production_authority_proven": false,
+  "origin": "TWO_DISTINCT_LOCAL_SCRIPTED_SDK_CLIENTS_NOT_REAL_LLM",
+  "transport_continuation_phase": "CONTINUATION_A_IS_ONLY_TERMINAL_TRANSPORT_PHASE_NOT_NATIVE_ARM_A",
+  "old_provider_consent": "SPENT_DO_NOT_REUSE",
+  "new_human_live_approval": false,
+  "external_credential_attestation": false,
+  "live_provider_dispatch": "DENY"
+}
