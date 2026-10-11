@@ -21,7 +21,7 @@ if os.environ.get("TASK4_320_LOCAL_SDK_PROOF")!="1":
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"_pins/rcc/external-eval/v0.3.9/src"))
 sys.path.insert(0,str(ROOT/"scripts"))
-import task4_320_local_sdk_complete_native_v1 as driver
+from scripts import task4_320_local_sdk_complete_native_v1 as driver
 import task4_320_native_sdk_mock_crosscheck_v1 as audit
 
 @pytest.fixture(scope="module")
