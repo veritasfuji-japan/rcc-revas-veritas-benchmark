@@ -156,6 +156,7 @@ class WireInspector:
                 "output_tokens_not_yet_used":OUTPUT_CAP,
                 "previous_hash_sha256":self.previous_sha,
                 "raw_wire_json":copy.deepcopy(data),
+                "raw_wire_body_utf8":raw.decode("utf-8"),
                 "real_provider_posts":0,
             }
             event["event_sha256"]=hash_bytes(canonical(event))
