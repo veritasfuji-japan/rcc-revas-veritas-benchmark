@@ -1,7 +1,3 @@
-"""#323: one selected native arm and one detached real local scorer per
-separately started scripted SDK session. Derived from pinned #322 model driver
-79c3e4464f2223a57671b09b43709b9f38073670. No real Provider sender or real-effect authority.
-"""
 #!/usr/bin/env python3
 """#322: two independent *locally scripted* Arm A/B model-session starts.
 
@@ -17,6 +13,12 @@ other two arm diagnostics are NOT attributed as independent A/B trial scores.
 This is NOT genuine independent LLM inference and grants no API permission.
 """
 from __future__ import annotations
+# """#323: one selected native arm and one detached real local scorer per
+# separately started scripted SDK session. Derived from pinned #322 model driver
+# 79c3e4464f2223a57671b09b43709b9f38073670. No real Provider sender or real-effect authority.
+# """
+# 
+
 import copy
 from datetime import datetime, timezone
 import json
