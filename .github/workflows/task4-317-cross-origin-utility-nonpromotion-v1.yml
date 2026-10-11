@@ -1,4 +1,5 @@
 name: Task4 Cross-Origin Utility Nonpromotion V1
+# Offline-only workflow. No external Provider dispatch or new authorization.
 on:
   pull_request:
     paths:
