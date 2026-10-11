@@ -45,6 +45,12 @@ def raw_json(o):
                       separators=(",",":"),allow_nan=False).encode("utf-8")
 def sha(o):
     return hashlib.sha256(raw_json(o)).hexdigest()
+def unique_json_keys(pairs):
+    result={}
+    for k,v in pairs:
+        need(k not in result,"DUPLICATE_JSON_KEY")
+        result[k]=v
+    return result
 def frozen_scope():
     return {
        "trial_id":TRIAL_ID,"source_case":SOURCE_CASE,
@@ -114,7 +120,7 @@ class RemoteMockHandler(BaseHTTPRequestHandler):
             need(length.isdigit() and 0<int(length)<=2048,
                  "BOUNDED_REQUEST_REQUIRED")
             buf=self.rfile.read(int(length))
-            body=json.loads(buf.decode("utf-8"))
+            body=json.loads(buf.decode("utf-8"),object_pairs_hook=unique_json_keys)
             need(type(body) is dict and body==BODY and set(body)=={"ref","sha"} and
                  HEX40.fullmatch(body["sha"]) is not None,
                  "EXACT_FROZEN_TEST_ONLY_REF_AND_TARGET_REQUIRED")
