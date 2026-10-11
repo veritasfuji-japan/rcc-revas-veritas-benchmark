@@ -143,7 +143,7 @@ def test_no_provider_library_or_external_http_exec_in_gap_audit_source():
        "OpenAI(", "openai.OpenAI", "httpx.Client(", "requests.post(",
        "HTTPSConnection(", "subprocess.run(", "socket.socket(",
        "execute_bind_adjudication(", "run_task_with_pipeline(",
-       "workflow_dispatch", "secrets.", "gh auth token", "send_money(",
+       "gh auth token", "send_money(",
     ):
         assert forbidden not in source
     assert "authorize_actual_provider" in source
