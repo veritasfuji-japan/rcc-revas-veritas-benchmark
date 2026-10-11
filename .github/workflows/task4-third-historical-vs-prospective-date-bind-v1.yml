@@ -1,0 +1,122 @@
+name: Task4 Third Historical vs Prospective Date Bind V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-third-historical-vs-prospective-date-bind-v1.yml"
+      - "scripts/task4_third_historical_vs_prospective_date_bind_v1.py"
+      - "tests/test_task4_third_historical_vs_prospective_date_bind_v1.py"
+      - "contracts/TASK4_THIRD_HISTORICAL_VS_PROSPECTIVE_DATE_BIND_V1.json"
+      - "docs/TASK4_THIRD_HISTORICAL_VS_PROSPECTIVE_DATE_BIND_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-third-historical-vs-prospective-date-bind-v1.yml"
+      - "scripts/task4_third_historical_vs_prospective_date_bind_v1.py"
+      - "tests/test_task4_third_historical_vs_prospective_date_bind_v1.py"
+      - "contracts/TASK4_THIRD_HISTORICAL_VS_PROSPECTIVE_DATE_BIND_V1.json"
+      - "docs/TASK4_THIRD_HISTORICAL_VS_PROSPECTIVE_DATE_BIND_V1.md"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  offline-historic-refusal-prospective-date-bound-native-simulation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      ANTHROPIC_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      GITHUB_TOKEN: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      PYTHONDONTWRITEBYTECODE: "1"
+      TASK4_302_SOURCE_ZIP: source/native-third-source.zip
+      TASK4_302_CAPTURE_ZIP: source/third-real-provider-capture.zip
+      TASK4_302_RCC_ROOT: _pins/rcc
+      TASK4_302_AGENTDOJO_ROOT: _pins/agentdojo
+      TASK4_302_VERITAS_ROOT: _pins/veritas
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Reuse ONLY exact genuine historic source and consumed Provider output
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p source results
+          curl --fail --silent --show-error --location --retry 0 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11676881211/zip" \
+            -o "$TASK4_302_SOURCE_ZIP"
+          echo "bbc7ba1a16aaac67aed75bdbb7a5abc71bfa978599e1cfc42700779377e838f4  $TASK4_302_SOURCE_ZIP" | sha256sum -c -
+          curl --fail --silent --show-error --location --retry 0 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11686131074/zip" \
+            -o "$TASK4_302_CAPTURE_ZIP"
+          echo "6d9842caa8c017ae2bd4426ee7d4b0f1c02f79252d82c96767c048c88f176ab2  $TASK4_302_CAPTURE_ZIP" | sha256sum -c -
+      - name: Refuse retrospective consent reuse and verify consumed tags
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          third="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')"
+          test "$third" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+          echo "THIRD_REAL_PROVIDER_CONSENT_ALREADY_CONSUMED"
+      - name: Read-only exact AgentDojo RCC and VERITAS pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/rcc rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          test "$(git hash-object task4_trusted_execution_date_runner_integration_v1.py)" = "7a4c6335f6bda0fdb3f4afb373c31de80d747670"
+          test "$(git hash-object task4_trusted_execution_date_profile_v1.py)" = "4eb8646b18cae7130c217fa3a04d05a3d71756d3"
+      - name: Install fixed local-only native model and governance deps
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install "pytest==9.1.1" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock --output /tmp/task4-prospective-302-deps.txt
+          pip install -r /tmp/task4-prospective-302-deps.txt
+      - name: Offline cross-proof; old genuine responses remain denied; new synthetic admitted
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_task4_third_historical_vs_prospective_date_bind_v1.py \
+            --junitxml=results/task4-third-prospective-date-junit.xml \
+            | tee results/task4-third-prospective-date-tests.log
+          python scripts/task4_third_historical_vs_prospective_date_bind_v1.py \
+            --source-zip "$TASK4_302_SOURCE_ZIP" \
+            --capture-zip "$TASK4_302_CAPTURE_ZIP" \
+            --rcc-root "$TASK4_302_RCC_ROOT" \
+            --agentdojo-root "$TASK4_302_AGENTDOJO_ROOT" \
+            --veritas-root "$TASK4_302_VERITAS_ROOT" \
+            --output results/task4-third-historical-vs-prospective-date-bind.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-third-historical-vs-prospective-date-bind-v1
+          path: results/*
+          if-no-files-found: warn
