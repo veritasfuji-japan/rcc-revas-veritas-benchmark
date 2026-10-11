@@ -55,7 +55,7 @@ def test_exact_proposal_bound_to_issuer_frozen_wire_cost_and_old_consumption(rou
     assert p["old_provider_consent_consumed_sha"]==proof.HISTORICAL_THIRD_CONSUMED
     assert p["estimated_spend_usd_historical_not_invoice"]=="0.0044096"
     assert p["local_estimate_threshold_usd_not_billing_cap"]=="0.005"
-    assert p["max_completion_tokens"] if False else True
+    assert p["output_token_ceiling"]==256
     assert round_.ack["kind"]==proof.OFFLINE_ACK_KIND
     assert round_.ack["real_execution_authorized"] is False
     assert round_.ack["server_request_id"] is None
@@ -183,7 +183,7 @@ def test_interrupted_or_unknown_outcome_stays_consumed_and_nonretry(round_,error
         round_.attempt_once(**{error:True})
     evidence=round_.inspect()
     assert evidence["local_state"]=="UNKNOWN_CONSUMED_NO_RETRY"
-    assert evidence["local_receipt_digest"] is None if error=="fail_after_consume" else True
+    assert evidence["record_sha256"] is not None
     assert evidence["live_api_dispatch"]=="DENY"
     with pytest.raises(proof.Rejected,match="ALREADY_CONSUMED_ATOMIC_LOCAL_SLOT_NO_RETRY"):
         proof.OfflineSingleUseAdmission(
