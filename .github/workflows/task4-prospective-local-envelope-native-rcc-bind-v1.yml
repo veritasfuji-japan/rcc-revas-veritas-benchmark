@@ -58,7 +58,7 @@ jobs:
           test "$(git hash-object task4_trusted_execution_date_profile_v1.py)" = "4eb8646b18cae7130c217fa3a04d05a3d71756d3"
           test "$(git hash-object agentdojo_constraint_resolver_v0_1.py)" = "edbf513e67efa8719de3a1193a5f3ba937afdf52"
           test "$(git hash-object scripts/task4_prospective_model_wire_date_boundary_v1.py)" = "83ad7d3f229084633c28729d592330c477c76316"
-          test "$(git hash-object scripts/task4_prospective_offline_completion_envelope_bridge_v1.py)" = "defer-to-real-source-blob-305"
+          test "$(git hash-object scripts/task4_prospective_offline_completion_envelope_bridge_v1.py)" = "b7ca0e41125a4a137397d41f8bc2650c7e179088"
           echo "TASK4_305_PRE_DISPATCH_PARENT_PIN_AND_CONSUMPTION_SUCCESS"
       - name: Clone immutable RCC AgentDojo VERITAS sources read-only
         shell: bash
