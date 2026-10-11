@@ -1,0 +1,57 @@
+{
+  "schema_version": "veritas.task4.future-provider-consent-evidence-default-deny.v1",
+  "rule_of_one": "TASK4_FUTURE_PROVIDER_CONSENT_EVIDENCE_DEFAULT_DENY_V1",
+  "status": "DRAFT_OFFLINE_NO_LIVE_AUTHORITY",
+  "parent_main_exact": "cd683bb392cc871d79d145c3ae9cc3194f8af2a9",
+  "unchanged_evidence_sources": {
+    "date_profile_blob": "4eb8646b18cae7130c217fa3a04d05a3d71756d3",
+    "model_wire_blob": "83ad7d3f229084633c28729d592330c477c76316",
+    "local_envelope_blob": "b7ca0e41125a4a137397d41f8bc2650c7e179088",
+    "native_RCC_Bind_blob": "a287ff67878f22cd552552a31c9b8451be1e5751",
+    "real_SDK_offline_mock_blob": "f3d2bc13a813faa405f29bd276e93b8d4458d0ec"
+  },
+  "historical_provider_tag": {
+    "ref": "refs/tags/task4-third-two-real-provider-v1-consumed",
+    "target_sha": "95ff6be8c5875ed3827a00fe71fb54bd9de48130",
+    "status": "PERMANENTLY_CONSUMED_NOT_REUSABLE"
+  },
+  "central_invariant": "A prospective provider authorization proposal always DENIES live issuance or provider dispatch, while a local exclusive-create journal atomically consumes one OFFLINE fake-response rehearsal attempt and fails closed on replay/unknown/tamper; never elevate that rehearsal journal to a genuine provider evidence receipt.",
+  "operator_actions": {
+    "real_model_provider_post_count": 0,
+    "new_human_approval_requested_from_operator_by_this_script": false,
+    "human_approval_issued_by_this_PR": false,
+    "real_permission_activation_possible": false,
+    "bank_network_dispatch_count": 0,
+    "native_bind_decision_count": 0,
+    "official_task4_or_final128_scorer_calls": 0
+  },
+  "future_scope_not_approved": {
+    "proposed_max_real_provider_calls": 1,
+    "proposed_model": "gpt-4.1-mini-2025-04-14",
+    "model_request_and_date_issuer": "#303 frozen prospective model request & issuer",
+    "local_completion_parser": "#304, offline fake-only",
+    "native_bind_predecessor": "#305 separately bounded in-memory proof",
+    "real_sdk_predecessor": "#306 exact-serialization mock-only",
+    "estimated_cost_profile": "historical price assumption and static input/output ceiling; never actual account hard cap",
+    "operator_explicit_consent": "MISSING",
+    "new_protected_durable_single_use_grant": "MISSING",
+    "actual_authenticated_provider_receipt": "MISSING",
+    "fresh_billing_controls": "MISSING",
+    "live_sender_entrypoint": "NOT_PRESENT"
+  },
+  "local_proof": {
+    "manifest_status": "DENY",
+    "rehearsal_scope": "LOCAL_SYNTHETIC_COMPLETION_ONLY",
+    "durable_scope": "atomic O_EXCL local file creation+fsync only, not cross-run/production grant",
+    "append_only_observation": "best-effort single-process hash-chain; not cryptographically authenticated audit store",
+    "first_event": "OFFLINE_REHEARSAL_SLOT_CONSUMED_BEFORE_VALIDATION",
+    "end_states": [
+      "OFFLINE_TERMINAL_NO_PROVIDER_EFFECT",
+      "OFFLINE_UNKNOWN_STOP_NO_RETRY"
+    ],
+    "origin_type": "unauthenticated synthetic local fake, not real Provider receipt",
+    "never_retry_after_unknown": true
+  },
+  "limitations": "No live model, billed tokens, genuine API sender, billing cap, human approval, Provider provenance verification, authoritative physical clock, production credential/IAM, native Bind adjudication in #307, external effect or independent Final128 run.",
+  "merge_gates": "Exact HEAD dedicated and ordinary CI SUCCESS and independently reviewed JUnit, JSON evidence & artifact SHA. No auto merge."
+}
