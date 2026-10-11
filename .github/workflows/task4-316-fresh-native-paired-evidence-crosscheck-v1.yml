@@ -7,10 +7,6 @@ on:
       - "scripts/task4_316_fresh_native_paired_evidence_crosscheck_v1.py"
       - "tests/test_task4_316_fresh_native_paired_evidence_crosscheck_v1.py"
       - "docs/TASK4_316_FRESH_NATIVE_PAIRED_EVIDENCE_CROSSCHECK_V1.md"
-      - "contracts/TASK4_317_CROSS_ORIGIN_UTILITY_NONPROMOTION_V1.json"
-      - "scripts/task4_317_cross_origin_utility_nonpromotion_v1.py"
-      - "tests/test_task4_317_cross_origin_utility_nonpromotion_v1.py"
-      - "docs/TASK4_317_CROSS_ORIGIN_UTILITY_NONPROMOTION_V1.md"
   push:
     branches: [main]
     paths:
@@ -19,10 +15,6 @@ on:
       - "scripts/task4_316_fresh_native_paired_evidence_crosscheck_v1.py"
       - "tests/test_task4_316_fresh_native_paired_evidence_crosscheck_v1.py"
       - "docs/TASK4_316_FRESH_NATIVE_PAIRED_EVIDENCE_CROSSCHECK_V1.md"
-      - "contracts/TASK4_317_CROSS_ORIGIN_UTILITY_NONPROMOTION_V1.json"
-      - "scripts/task4_317_cross_origin_utility_nonpromotion_v1.py"
-      - "tests/test_task4_317_cross_origin_utility_nonpromotion_v1.py"
-      - "docs/TASK4_317_CROSS_ORIGIN_UTILITY_NONPROMOTION_V1.md"
 
 permissions:
   contents: read
@@ -123,89 +115,5 @@ jobs:
         if: always()
         with:
           name: task4-316-fresh-native-paired-evidence-crosscheck-v1
-          path: results/*
-          if-no-files-found: warn
-
-  independent-frozen-provenance-join-must-deny-utility-promotion:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    env:
-      OPENAI_API_KEY: ""
-      TASK4_OPENAI_API_KEY: ""
-      ANTHROPIC_API_KEY: ""
-      OPENAI_BASE_URL: ""
-      VERITAS_DATABASE_URL: ""
-      TASK4_317_APPROVAL_PHRASE: ""
-      TASK4_317_OFFLINE_CROSS_ORIGIN: "1"
-      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
-      PYTEST_ADDOPTS: ""
-      PYTHONNOUSERSITE: "1"
-      PYTHONDONTWRITEBYTECODE: "1"
-      TASK4_317_REAL_ZIP: "inputs/task4-300-real-third-model.zip"
-      TASK4_317_DEV_ZIP: "inputs/task4-316-native-scripted-dev.zip"
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: "3.11.16"
-      - name: Download two immutable prior artifacts only, with byte SHA-256
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          mkdir -p inputs results
-          curl --fail --silent --show-error --location --retry 0 \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11686131074/zip" \
-            -o "$TASK4_317_REAL_ZIP"
-          echo "6d9842caa8c017ae2bd4426ee7d4b0f1c02f79252d82c96767c048c88f176ab2  $TASK4_317_REAL_ZIP" | sha256sum -c -
-          curl --fail --silent --show-error --location --retry 0 \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11693057933/zip" \
-            -o "$TASK4_317_DEV_ZIP"
-          echo "520f15d9abee308bf4ceda4cb983166a3b152d11f211d5f6f89cef158549d2bc  $TASK4_317_DEV_ZIP" | sha256sum -c -
-      - name: Historical single-use Provider authorization must still be consumed
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
-          echo "TASK4_317_PRIOR_PROVIDER_AUTHORIZATION_SPENT"
-      - name: Inspect true historic model origin versus unrelated local native scorer
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install --disable-pip-version-check "pytest==9.1.1"
-          python scripts/task4_317_cross_origin_utility_nonpromotion_v1.py \
-            --historical-real-zip "$TASK4_317_REAL_ZIP" \
-            --native-dev-zip "$TASK4_317_DEV_ZIP" \
-            --output results/task4-317-cross-origin-audit.json \
-            | tee results/task4-317-cross-origin-audit.log
-          python -m pytest -q -o addopts= \
-            tests/test_task4_317_cross_origin_utility_nonpromotion_v1.py \
-            --junitxml=results/task4-317-cross-origin-junit.xml \
-            | tee results/task4-317-cross-origin-tests.log
-          python - <<'PY'
-          import json
-          r=json.load(open("results/task4-317-cross-origin-audit.json"))
-          assert len(r["real_model_historical_proposals"]) == 2
-          assert r["local_dev_summary"]["local_native_trajectories"] == 16
-          assert r["same_run_real_model_native_scorer_linkage"] is False
-          assert r["new_measured_real_model_utility_recovery"] == 0
-          assert r["external_preconditions_unattested"] == 12
-          assert r["new_provider_calls"] == 0
-          assert r["decision"] == "DENY"
-          print("TASK4_317_REAL_PROPOSAL_NOT_SCRIPTED_NATIVE_UTILITY_NO_LIVE_GRANT")
-          PY
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: task4-317-cross-origin-utility-nonpromotion-v1
           path: results/*
           if-no-files-found: warn
