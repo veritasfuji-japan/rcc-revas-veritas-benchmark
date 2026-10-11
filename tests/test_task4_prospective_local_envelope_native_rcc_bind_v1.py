@@ -239,13 +239,16 @@ def test_Veritas_bind_missing_authority_blocks_valid_proposal(native):
     assert b["pre_state_sha256"]==b["post_state_sha256"]
 
 
-def test_date_expiry_after_capture_blocks_bind(native):
+def test_date_expiry_after_capture_is_rejected_before_native_effect(native):
     clock=OwnedClock()
     obj=fresh(native,clock=clock)
     obj.prepare()
     clock.now+=timedelta(seconds=300)
     b=obj.replay("B")
-    assert b["disposition"]=="BLOCKED"
+    # Already-expired at pre-dispatch is a date-profile refusal, not a
+    # native Bind receipt; neither path can reach the in-memory mutation sink.
+    assert b["disposition"]=="DATE_PROFILE_REJECTED"
+    assert b["reason"]=="DATE_CONTEXT_STALE_OR_FUTURE"
     assert b["native_dispatch_count"]==0
     assert b["pre_state_sha256"]==b["post_state_sha256"]
 
