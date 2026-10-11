@@ -144,7 +144,7 @@ def test_local_simulation_cannot_prove_usage_or_true_price(monkeypatch):
     row=j.reserve_local_only(attempt)
     assert row["input_tokens_estimated_not_verified"]==1
     assert row["output_tokens_reserved_not_used"]==1
-    assert j.snapshot()["worst_case_planning_usd_not_invoice"]=="0.0000020"
+    assert j.snapshot()["worst_case_planning_usd_not_invoice"]=="0.000002"
     assert j.real_provider_post_allowed is False
 
 def test_source_and_workflow_no_sender_and_no_secret_reference():
