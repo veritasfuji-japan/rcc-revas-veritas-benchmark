@@ -1,0 +1,161 @@
+{
+  "schema": "veritas.task4.external-control-readiness-preflight.v1",
+  "rule_of_one": "TASK4_313_EXTERNAL_CONTROL_READINESS_BLOCKS_UNATTESTED_DEPLOYMENT_V1",
+  "parent_merged_main": "a04ed01396e8d7a35ef82f437db1a93e28bd4762",
+  "parent_blobs": {
+    "contracts/TASK4_PROTECTED_ISSUER_CREDENTIAL_EGRESS_ARCHITECTURE_V1.json": "4c7351cc04bf0356c7e1056f3cebe065ccf61329",
+    "scripts/task4_protected_issuer_credential_egress_architecture_v1.py": "5da8d295bc851cedd36cad3fc3826bf4cd9bac15",
+    "tests/test_task4_protected_issuer_credential_egress_architecture_v1.py": "a660de80ee621b1b5af0feb573a11b8ce33d0386",
+    ".github/workflows/task4-protected-issuer-credential-egress-architecture-v1.yml": "9fca4aa1c18d0b8502d1133343870b756ad89114",
+    "docs/TASK4_PROTECTED_ISSUER_CREDENTIAL_EGRESS_ARCHITECTURE_V1.md": "1063e9a1e44d6b92c33121cc635bde79fa053cac"
+  },
+  "historical_real_provider_approval": "CONSUMED_DO_NOT_REUSE",
+  "consumed_tag_target": "95ff6be8c5875ed3827a00fe71fb54bd9de48130",
+  "scope": "OFFLINE_NON_DEPLOYED_DECISION_PREFLIGHT_ONLY",
+  "infrastructure_selection": "UNDECIDED_OWNER_ACTION_REQUIRED",
+  "administrative_separation": "NOT_ESTABLISHED",
+  "decision_dimensions": [
+    {
+      "id": "identity_provider",
+      "chosen_service": null,
+      "account_or_tenant": null,
+      "independent_control_owner": null,
+      "externally_verified_evidence": null
+    },
+    {
+      "id": "protected_issuer_runtime",
+      "chosen_service": null,
+      "account_or_tenant": null,
+      "independent_control_owner": null,
+      "externally_verified_evidence": null
+    },
+    {
+      "id": "independent_ledger_and_database_admin",
+      "chosen_service": null,
+      "account_or_tenant": null,
+      "independent_control_owner": null,
+      "externally_verified_evidence": null
+    },
+    {
+      "id": "ephemeral_secret_broker",
+      "chosen_service": null,
+      "account_or_tenant": null,
+      "independent_control_owner": null,
+      "externally_verified_evidence": null
+    },
+    {
+      "id": "protected_sender_runtime",
+      "chosen_service": null,
+      "account_or_tenant": null,
+      "independent_control_owner": null,
+      "externally_verified_evidence": null
+    },
+    {
+      "id": "deny_by_default_egress",
+      "chosen_service": null,
+      "account_or_tenant": null,
+      "independent_control_owner": null,
+      "externally_verified_evidence": null
+    },
+    {
+      "id": "out_of_band_audit_sink",
+      "chosen_service": null,
+      "account_or_tenant": null,
+      "independent_control_owner": null,
+      "externally_verified_evidence": null
+    },
+    {
+      "id": "verified_billing_controls",
+      "chosen_service": null,
+      "account_or_tenant": null,
+      "independent_control_owner": null,
+      "externally_verified_evidence": null
+    }
+  ],
+  "pre_send_controls": [
+    {
+      "id": "NEW_HUMAN_SCOPED_APPROVAL",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "ISSUER_WORKLOAD_IDENTITY",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "PROTECTED_LEDGER_CAS",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "DB_ADMIN_BREAKGLASS_RECONCILIATION",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "EPHEMERAL_PROVIDER_SECRET_BROKER",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "NETWORK_EGRESS_ENFORCEMENT",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "PROTECTED_SENDER_CODE_INTEGRITY",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "FRESH_ACCOUNT_BILLING_ENFORCEMENT",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "EXACT_REQUEST_ISSUER_TIME_AND_PRESTATE",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "COMMITTED_RECEIPT_BEFORE_SEND",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "UNKNOWN_REMOTE_STATE_NEVER_RETRY",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    },
+    {
+      "id": "INDEPENDENT_AUDIT_AND_NO_REISSUE",
+      "status": "NOT_ATTESTED",
+      "independent_evidence_uri": null,
+      "attestor_identity": null
+    }
+  ],
+  "remaining_privileged_bypass": "DB_BREAKGLASS_ADMIN_NOT_EXTERNALLY_CONTROLLED",
+  "external_cloud_iam_inspected": false,
+  "actual_vault_permissions_inspected": false,
+  "actual_egress_enforcement_inspected": false,
+  "provider_billing_controls_inspected": false,
+  "production_deployment_created": false,
+  "new_human_provider_authorization": false,
+  "real_provider_posts": 0,
+  "real_bank_effects": 0,
+  "official_final128_scores": 0,
+  "live_dispatch_decision": "DENY",
+  "result": "BLOCKED_AWAITING_OWNER_INFRA_AND_INDEPENDENT_ATTESTATION"
+}
