@@ -121,8 +121,10 @@ def test_enormous_prompt_and_tool_schema_byte_refusal_before_fake_response(rows)
 def test_duplicate_wire_replay_and_unknown_no_resume(rows):
     gate=model.OfflineWireBudget("A")
     req=make_request(rows)
-    receipt=gate.inspect(req)
-    assert receipt["real_provider_post_allowed"] is False
+    parsed=gate.inspect(req)
+    assert parsed["model"]==model.MODEL
+    assert len(gate.entries)==1
+    assert gate.entries[0]["real_provider_post_allowed"] is False
     with pytest.raises(model.Denied):gate.inspect(req)
     assert gate.closed
     second=model.OfflineWireBudget("B")
