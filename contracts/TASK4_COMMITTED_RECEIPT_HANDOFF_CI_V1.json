@@ -1,0 +1,46 @@
+{
+  "schema": "veritas.task4.committed-receipt-handoff.ci.v1",
+  "rule_of_one": "TASK4_COMMITTED_CONSUMPTION_RECEIPT_FAIL_CLOSED_HANDOFF_CI_V1",
+  "baseline_main": "5d49b4a7c7e28ec9fd497a1e3f0b2ddaa5f82617",
+  "frozen_parents": {
+    "postgres_role_separated_sql_310": "0b891930f50fc17747a9854666450c9438ef7945",
+    "postgres_role_separated_script_310": "8e9dad92aa2b548f525b81c8fe8cc281cf97fe70",
+    "issuer_wire_303": "83ad7d3f229084633c28729d592330c477c76316"
+  },
+  "historic_real_provider_consent_consumed_sha": "95ff6be8c5875ed3827a00fe71fb54bd9de48130",
+  "central_invariant": "In an ephemeral CI PostgreSQL database, fixture grant consumption and its receipt are written atomically in the same transaction; no separate handoff session can verify a receipt until that transaction commits, and after commit only the exact winning attempt and scope can be verified. Every actual Provider dispatch remains DENY.",
+  "db_environment": "PostgreSQL 16.6 disposable GitHub Actions service; passwords published fixture-only",
+  "roles": {
+    "fixture_issuer": "PR310 fixture INSERT grant, cannot consume, inspect, verify",
+    "fixture_consumer_311": "EXECUTE consume+receipt function, no table SELECT/INSERT/UPDATE/DELETE and no handoff verify",
+    "fixture_handoff_311": "EXECUTE verify committed receipt only; cannot consume, mutate or inspect tables",
+    "fixture_admin": "privileged superuser in isolated CI, can bypass; cannot claim production anti-bypass",
+    "legacy_310_fixture_consumer": "old unreceipted EXECUTE revoked in the #311 CI database only"
+  },
+  "consumption_proof": {
+    "same_transaction": "UPDATE task4_310 grant and INSERT task4_311 fixture receipt in one transaction",
+    "rollback": "separate DB handoff sees no committed receipt; transaction rollback removes both",
+    "successful_commit": "separate DB session verifies exact issuer context/wire/case/model/cost/attempt and persisted receipt SHA",
+    "concurrent_sessions": "12 consumers one winner, eleven rejected",
+    "replay": "subsequent consumers cannot re-consume; losers cannot claim receipt",
+    "privileged_admin_bypass": "explicitly shown in a negative CI test; not hardened against admin",
+    "receipt_hash": "unkeyed SHA-256 integrity only, not independently authenticated audit evidence",
+    "actual_egress_gated": "NO EGRESS EXISTS IN THE DEMONSTRATOR"
+  },
+  "not_proven": [
+    "actual protected issuer and independently controlled grant issuance",
+    "production PostgreSQL/backup/HA/DB admin separation",
+    "non-bypassable egress/IAM/credential isolation",
+    "fresh real billing caps, per-request pricing and token limits",
+    "real API sender bound to independently committed consumptions",
+    "network unknown-result reconciliation and global no-retry",
+    "new human approval and real Provider response provenance",
+    "real native VERITAS Bind and external effects"
+  ],
+  "status": "LOCAL_CI_ONLY_CONSUMPTION_RECEIPT_NOT_REAL_PROVIDER_AUTHORIZATION",
+  "real_provider_calls": 0,
+  "new_human_approval_issued": false,
+  "native_bank_effects": 0,
+  "final128_calls": 0,
+  "no_auto_merge": true
+}
