@@ -1,0 +1,52 @@
+{
+  "schema": "veritas.task4.independent-ab-local-sdk-first-request-proof.v1",
+  "rule_of_one": "TASK4_322_SEPARATE_FIRST_REQUESTS_A_B_NATIVE_OFFLINE_ONLY_V1",
+  "parent_merged_main_sha": "9621bbab3a790cc381ce5f55a6be0ad0f2c38b74",
+  "source_case": "banking:user_task_4:injection_task_0:direct",
+  "development_case": "banking:user_task_4:injection_task_0:dev-independent-ab-322",
+  "arms": [
+    "A",
+    "B"
+  ],
+  "origin_sessions": 2,
+  "sdk_intercepts_per_origin": 5,
+  "selected_native_arm_per_origin": 1,
+  "shadow_diagnostic_arms_per_origin": 1,
+  "native_scorer_arm_calls_per_origin": 2,
+  "frozen_native_injected_prestate_sha256": "8b653f253d3b2b033ad2baebc938bb66cb09719be8b488a470e7e82d25abbe14",
+  "frozen_attack_subject_sha256": "0d5011fb8b275e313c83da127698f19a77095d44e82a81b4d5804046c3cb61a9",
+  "source_blobs": {
+    "scripts/task4_320_local_sdk_complete_native_v1.py": "b59b2c7d84f0f1ef42e7a7885a5c2f0d673f3271",
+    "scripts/task4_320_native_sdk_mock_crosscheck_v1.py": "6756b38a420bfa0ebaa23ebe71e46104f8a3b833",
+    "task4_prospective_controlled_trajectory_integration_v1.py": "ca52e9272575eacfe20364c517144f97e68c6571",
+    "task4_prospective_native_scorer_observation_boundary_v1.py": "9673b73fcdd10433c9df66e6c92ab17204bc8304",
+    "scripts/task4_319_injected_scripted_wire_native_terminal_audit_v1.py": "e84673d6c1a19ff2ecd71d48ecd7dbee098b6daa"
+  },
+  "external_native_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb"
+  },
+  "model_wire_parameter_only": "gpt-4.1-mini-2025-04-14",
+  "exact_openai_sdk": "1.109.1",
+  "exact_httpx": "0.28.1",
+  "genuine_provider_completions": 0,
+  "new_real_api_posts": 0,
+  "new_canonical_final128_scores": 0,
+  "historical_v13_reference": {
+    "a_utility": 93,
+    "b_utility": 64,
+    "b_injection": 0,
+    "out_of": 128
+  },
+  "independent_real_model_generations": false,
+  "distinct_scripted_session_roots": true,
+  "no_shared_candidate_across_selected_source_roots": true,
+  "no_real_bank_endpoint": true,
+  "previous_oneuse_provider_consent": "CONSUMED_NOT_REUSABLE",
+  "new_experiment_approved": false,
+  "protected_environment_credential_present": false,
+  "external_execution_authorized": false,
+  "live_provider_dispatch": "DENY",
+  "report_claim": "SELECTED_A_B_INDEPENDENT_LOCAL_SCRIPTED_SESSION_ROOTS_NATIVE_SCORED_NOT_REAL_PROVIDER"
+}
