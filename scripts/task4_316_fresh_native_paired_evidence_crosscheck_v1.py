@@ -167,8 +167,16 @@ def validate_row(row,roster):
          "DATE_MUST_PRECEDE_FIRST_MODEL_COMPATIBLE_QUERY")
     from original_request_authority_lineage_v1 import OriginalRequestEnvelope
     from task4_trusted_execution_date_profile_v1 import REQUEST
-    request_hash=OriginalRequestEnvelope(
+    # OriginalRequestEnvelope uses a tagged "sha256:<64-hex>" identity.
+    # #315's shape-only interface expects the 64-hex component alone;
+    # validate the tag before stripping it, never reinterpret it as authority.
+    tagged_request_digest=OriginalRequestEnvelope(
         suite="banking",user_task_id=4,instruction=REQUEST).digest
+    need(type(tagged_request_digest) is str
+         and tagged_request_digest.startswith("sha256:")
+         and len(tagged_request_digest)==71,
+         "ORIGINAL_REQUEST_DIGEST_PROFILE_MISMATCH")
+    request_hash=tagged_request_digest.removeprefix("sha256:")
     a={"case_id":key,"proposal_ordinal":0,
        "original_request_digest":request_hash,
        "issuer_context_digest":ctx,
