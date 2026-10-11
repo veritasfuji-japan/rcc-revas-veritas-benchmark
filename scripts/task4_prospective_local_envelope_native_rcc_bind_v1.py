@@ -269,11 +269,11 @@ def run(*, rcc_root, agentdojo_root, veritas_root):
         "ANTHROPIC_API_KEY","VERITAS_DATABASE_URL")),
         "NO_EXTERNAL_CREDENTIALS_IN_OFFLINE_ROUND")
     from scripts.task4_third_historical_vs_prospective_date_bind_v1 import pin_all
+    pin_all(rcc_root=rcc_root,agentdojo_root=agentdojo_root,
+            veritas_root=veritas_root)
     from scripts.agentdojo_clean_ab_canonical_final_runner_v2_8 import (
         sha_json,verify_authority_fixture)
     from agentdojo_constraint_resolver_v0_1 import validate_candidate
-    pin_all(rcc_root=rcc_root,agentdojo_root=agentdojo_root,
-            veritas_root=veritas_root)
     suite,env,gate=native_environment_and_gate(rcc_root=rcc_root)
     need(verify_authority_fixture() is True,
          "SIGNED_BENCHMARK_AUTHORITY_FIXTURE_NOT_VERIFIED")
