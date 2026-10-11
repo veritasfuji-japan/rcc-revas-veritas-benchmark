@@ -33,6 +33,7 @@ jobs:
       PYTHONNOUSERSITE: "1"
       PYTHONDONTWRITEBYTECODE: "1"
       PYTEST_ADDOPTS: ""
+      TASK4_306_REAL_SDK_MOCK_PROOF: "1"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
