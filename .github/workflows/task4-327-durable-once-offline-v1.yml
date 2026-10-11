@@ -1,0 +1,93 @@
+name: Task4 Offline Shared-Local SQLite Atomic Once and Crash Unknown V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-327-durable-once-offline-v1.yml"
+      - "scripts/task4_327_offline_shared_sqlite_once_v1.py"
+      - "scripts/task4_327_offline_once_report_v1.py"
+      - "tests/test_task4_327_offline_shared_once_v1.py"
+      - "contracts/TASK4_327_SHARED_SQLITE_OFFLINE_V1.json"
+      - "docs/TASK4_327_LOCAL_DURABLE_ONCE_OFFLINE_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-327-durable-once-offline-v1.yml"
+      - "scripts/task4_327_offline_shared_sqlite_once_v1.py"
+      - "scripts/task4_327_offline_once_report_v1.py"
+      - "tests/test_task4_327_offline_shared_once_v1.py"
+      - "contracts/TASK4_327_SHARED_SQLITE_OFFLINE_V1.json"
+      - "docs/TASK4_327_LOCAL_DURABLE_ONCE_OFFLINE_V1.md"
+
+permissions:
+  contents: read
+
+jobs:
+  offline-cross-process-same-database-once:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify no live-provider secrets and exact PR HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          for k in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL VERITAS_DATABASE_URL; do
+            test -z "${!k:-}"
+          done
+          git rev-parse HEAD > results/task4-327-actual-head.txt
+          echo "${{ github.event.pull_request.head.sha || github.sha }}" > results/task4-327-expected-head.txt
+          test "$(cat results/task4-327-actual-head.txt)" = "$(cat results/task4-327-expected-head.txt)"
+      - name: Run cross-process SQLite and crash-after-COMMIT refusal tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+          python -m pytest -q -o addopts= tests/test_task4_327_offline_shared_once_v1.py \
+            --junitxml=results/task4-327-junit.xml \
+            | tee results/task4-327-pytest.log
+          python scripts/task4_327_offline_once_report_v1.py results/task4-327-local-durable-once-report.json \
+            | tee results/task4-327-audit.log
+          python - <<'PY'
+          import json,hashlib
+          d=json.load(open("results/task4-327-local-durable-once-report.json"))
+          canon=lambda x:json.dumps(x,sort_keys=True,ensure_ascii=False,separators=(",",":"),allow_nan=False).encode()
+          digest=d.pop("report_sha256")
+          assert hashlib.sha256(canon(d)).hexdigest()==digest
+          assert d["parallel_independent_process_count"]==16
+          assert d["successful_atomic_local_claim_count"]==1
+          assert d["rejected_parallel_claim_count"]==15
+          assert d["fresh_process_retry_after_commit_crash_rejected"] is True
+          assert d["separate_github_hosted_runners_proven"] is False
+          assert d["real_provider_sender_present"] is False
+          assert d["real_provider_posts"]==d["new_final128_scores"]==0
+          assert d["api_dispatch"]=="DENY"
+          print("TASK4_327_OFFLINE_SHARED_SQLITE_ATOMIC_LOCAL_ONLY_CROSS_RUN_NOT_ATTESTED")
+          PY
+          sha256sum scripts/task4_327_offline_shared_sqlite_once_v1.py \
+            scripts/task4_327_offline_once_report_v1.py \
+            contracts/TASK4_327_SHARED_SQLITE_OFFLINE_V1.json \
+            results/task4-327-local-durable-once-report.json \
+            > results/task4-327-source-report-sha256.txt
+          python -m pip freeze > results/task4-327-pip-freeze.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-327-offline-shared-disk-once-not-cross-run-v1
+          path: results/*
+          if-no-files-found: warn
