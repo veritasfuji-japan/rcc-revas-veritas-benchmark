@@ -172,7 +172,7 @@ jobs:
       - name: Historical single-use Provider authorization must still be consumed
         shell: bash
         env:
-          GH_TOKEN: @@GITHUB_TOKEN@@
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
