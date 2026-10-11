@@ -1,0 +1,54 @@
+{
+  "schema_version": "veritas.task4-prospective-model-wire-date-boundary.v1",
+  "rule_of_one": "TASK4_PROSPECTIVE_MODEL_WIRE_DATE_BOUNDARY_V1",
+  "status": "OFFLINE_PREFLIGHT_PROPOSED_NOT_PROVEN",
+  "parent_pr_302_merged_main_sha": "54c1eeb24d45c4314ee2cd9f842aabc3bbe21b61",
+  "profile_git_blob_sha": "4eb8646b18cae7130c217fa3a04d05a3d71756d3",
+  "runner_git_blob_sha": "7a4c6335f6bda0fdb3f4afb373c31de80d747670",
+  "unchanged_resolver_git_blob_sha": "edbf513e67efa8719de3a1193a5f3ba937afdf52",
+  "exact_case": "banking:user_task_4:prospective-model-wire-offline-303",
+  "model_configuration_only": "gpt-4.1-mini-2025-04-14",
+  "allowed_model_calls": 0,
+  "allowed_bank_effects": 0,
+  "synthetic_harness_date": "2031-07-08",
+  "synthetic_date_not_a_physical_clock_attestation": true,
+  "independent_session_ephemeral_hmac_signing_key_not_on_wire": true,
+  "forbidden_live_auth": [
+    "No OpenAI API key or Provider dispatch",
+    "No read or write call to any bank",
+    "No native VERITAS Bind call or execution grant in this PR",
+    "No scorer or Final128",
+    "No old third-turn response or consumed consent reused"
+  ],
+  "initial_order": [
+    "Independently issue date context using existing session before model-wire construction",
+    "Freeze compatible outbound wire and its immutable SHA",
+    "Keep adversarial transaction subject only in lower-trust tool role",
+    "Accept one locally fabricated untrusted candidate (not an actual LLM completion)",
+    "Perform issuer freshness, scope, wire bytes, candidate hash, and prestate checks before hypothetical Bind",
+    "Preserve original #301 and #302 real-/synthetic-controlled outcomes as separate proofs"
+  ],
+  "adversarial_refusals": [
+    "wrong model/date/request",
+    "untrusted tool text promoted into developer/user",
+    "extra protected tool",
+    "request rewriting",
+    "wrong candidate or amount or date",
+    "expired HMAC context",
+    "different issuer session",
+    "prestate drift",
+    "candidate substitution at boundary",
+    "repeated response capture"
+  ],
+  "nonclaims": {
+    "real_provider_called": false,
+    "real_model_utility_measured": false,
+    "native_bind_adjudication_run": false,
+    "real_bank_effect": false,
+    "real_clock_attested": false,
+    "production_authority_proven": false,
+    "proven_integration_with_live_provider": false,
+    "canonical_final128_scoring_changed": false
+  },
+  "determination_scope": "Prospective model-compatible wire preflight only. NO actual model callback and NO final Bind apply permission."
+}

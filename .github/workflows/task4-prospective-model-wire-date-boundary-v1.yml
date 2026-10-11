@@ -1,0 +1,70 @@
+name: Task4 Prospective Model Wire Date Boundary V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-prospective-model-wire-date-boundary-v1.yml"
+      - "scripts/task4_prospective_model_wire_date_boundary_v1.py"
+      - "tests/test_task4_prospective_model_wire_date_boundary_v1.py"
+      - "contracts/TASK4_PROSPECTIVE_MODEL_WIRE_DATE_BOUNDARY_V1.json"
+      - "docs/TASK4_PROSPECTIVE_MODEL_WIRE_DATE_BOUNDARY_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-prospective-model-wire-date-boundary-v1.yml"
+      - "scripts/task4_prospective_model_wire_date_boundary_v1.py"
+      - "tests/test_task4_prospective_model_wire_date_boundary_v1.py"
+      - "contracts/TASK4_PROSPECTIVE_MODEL_WIRE_DATE_BOUNDARY_V1.json"
+      - "docs/TASK4_PROSPECTIVE_MODEL_WIRE_DATE_BOUNDARY_V1.md"
+
+permissions:
+  contents: read
+
+jobs:
+  offline-prospective-model-wire-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      OPENAI_BASE_URL: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_ADDOPTS: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Check immutable pre-existing date profile and runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object task4_trusted_execution_date_profile_v1.py)" = "4eb8646b18cae7130c217fa3a04d05a3d71756d3"
+          test "$(git hash-object task4_trusted_execution_date_runner_integration_v1.py)" = "7a4c6335f6bda0fdb3f4afb373c31de80d747670"
+          test "$(git hash-object agentdojo_constraint_resolver_v0_1.py)" = "edbf513e67efa8719de3a1193a5f3ba937afdf52"
+          echo "UNCHANGED_DATE_PROFILE_AND_EXISTING_BIND_RUNNER_PINS"
+      - name: Install offline pytest only
+        run: python -m pip install "pytest==9.1.1"
+      - name: Offline request freezing, forged-message rejection and Bind-facing recheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python -m pytest -q -o addopts= \
+            tests/test_task4_prospective_model_wire_date_boundary_v1.py \
+            --junitxml=results/task4-model-wire-date-boundary-junit.xml \
+            | tee results/task4-model-wire-date-boundary-tests.log
+          python scripts/task4_prospective_model_wire_date_boundary_v1.py \
+            --output results/task4-model-wire-date-boundary-evidence.json \
+            | tee results/task4-model-wire-date-boundary-report.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-prospective-model-wire-date-boundary-v1
+          path: results/*
+          if-no-files-found: warn
