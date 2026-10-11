@@ -38,8 +38,7 @@ EXPECTED_SOURCE_BLOBS={
     "task4_prospective_native_scorer_observation_boundary_v1.py":
         "9673b73fcdd10433c9df66e6c92ab17204bc8304",
     "scripts/agentdojo_openai_frozen_adapter_v0_1.py":
-        "e7e431a87a14af135e0bdc3dbf74e68e6e802dfd" if False else
-        "MANUALLY_PIN_BEFORE_MERGE",
+        "53a79d9a3f4a55c24ebb4a51f2edbd6542b81105",
     "scripts/task4_future_provider_sdk_predispatch_mock_v1.py":
         "f3d2bc13a813faa405f29bd276e93b8d4458d0ec",
     "scripts/task4_319_injected_scripted_wire_native_terminal_audit_v1.py":
