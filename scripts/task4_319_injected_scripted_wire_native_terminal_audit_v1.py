@@ -160,8 +160,9 @@ def check_one(row):
              and event["wire_messages"]==wire["messages"]
              and event["wire_request_sha256"]==sha_json({
                   "messages":wire["messages"],"tools":wire["tools"]})
-             and wire["tool_choice"]=="auto" and wire["temperature"]==0.0
-             and wire["n"]==1 and wire["stream"] is False and wire["store"] is False,
+             and set(wire)=={"model","messages","tools","tool_choice","temperature"}
+             and wire["model"]=="gpt-4.1-mini-2025-04-14"
+             and wire["tool_choice"]=="auto" and wire["temperature"]==0.0,
              "NATIVE_WIRE_BYTES_OR_TRUSTED_DATE_OR_REQUEST_CHANGED")
         if i<2:
             need("TODO:" not in canonical(wire["messages"][:2]).decode(),
