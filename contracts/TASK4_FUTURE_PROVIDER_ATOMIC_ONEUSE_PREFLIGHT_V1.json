@@ -1,0 +1,71 @@
+{
+  "schema": "veritas.task4.future-provider-atomic-oneuse-preflight.v1",
+  "rule_of_one": "TASK4_FUTURE_PROVIDER_ATOMIC_ONEUSE_AUTHORIZATION_PREFLIGHT_OFFLINE_V1",
+  "status": "DRAFT_LOCAL_SIMULATION_DEFAULT_DENY",
+  "parent_main": "d76ba0a3539b2850367f6cb5e58e6128653351a5",
+  "exact_blob_pins": {
+    "date_profile": "4eb8646b18cae7130c217fa3a04d05a3d71756d3",
+    "prospective_wire": "83ad7d3f229084633c28729d592330c477c76316",
+    "local_completion_parser": "b7ca0e41125a4a137397d41f8bc2650c7e179088",
+    "native_Rcc_Bind_offline": "a287ff67878f22cd552552a31c9b8451be1e5751",
+    "SDK_mock": "f3d2bc13a813faa405f29bd276e93b8d4458d0ec",
+    "future_consent_evidence_default_deny": "d45511882e9cb9fc9f89128dee7c36dac377e672"
+  },
+  "central_invariant": "One issuer-frozen Task4 proposal and a plainly fake non-authorizing acknowledgment can be claimed by at most one concurrent local SQLite transaction (unique slot), and remains consumed across local restarts or unknown outcomes, while all attempts to exercise live Provider authority unconditionally DENY.",
+  "test_only_mock_ack": "OFFLINE_CONSENT_CHECK_ONLY_NO_AUTHORIZATION",
+  "simulator_local_authority": "NONE",
+  "live_external_authority": "NONE",
+  "real_Provider_post_count": 0,
+  "protected_real_Provider_consent_issued": false,
+  "future_proposed_model": "gpt-4.1-mini-2025-04-14",
+  "exact_case": "banking:user_task_4:prospective-new-date-future-provider-307",
+  "frozen_wire_source": "PR #303 issuer constructed before model request",
+  "proposed_live_calls_NOT_AUTHORIZED": 1,
+  "new_human_approval": false,
+  "previous_third_provider_approval": {
+    "consumed": true,
+    "tag": "refs/tags/task4-third-two-real-provider-v1-consumed",
+    "sha": "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+  },
+  "rate_assumptions_historical_not_current": {
+    "input_usd_per_million": "0.40",
+    "output_usd_per_million": "1.60",
+    "hypothetical_max_input_tokens": 10000,
+    "max_completion_tokens": 256,
+    "total_usd_estimate": "0.0044096",
+    "local_threshold_usd_not_hard_cap": "0.005"
+  },
+  "local_oneuse_technical_mechanism": {
+    "scope": "single host/file SQLite transaction; not organization/GitHub runners or distributed workers",
+    "sqlite_atomic_insert": "BEGIN IMMEDIATE, primary key unique slot, transaction commit BEFORE verifying mock acknowledgment",
+    "collision_behavior": "all but first consumer fail ALREADY_CONSUMED; no retry after any unknown or failure",
+    "terminal_states": [
+      "OFFLINE_VALIDATED_REAL_DISPATCH_STILL_DENIED",
+      "UNKNOWN_CONSUMED_NO_RETRY",
+      "CONSUMED_PENDING_NEVER_RETRY"
+    ],
+    "evidence": "locally stored sha256 consistency hash, NOT independent authentication or tamperproof storage",
+    "online_claims": "NONE"
+  },
+  "test_matrix": [
+    "parallel 10 consumer collision one succeeds nine denied",
+    "same-process and re-instantiated local consumer retry refused",
+    "forged grant fields, changed model/request/cost/date/context refused",
+    "fake operator approval or real-looking server request id cannot elevate permission",
+    "presence of live credentials or prior approval phrases rejected",
+    "expired issuer context and interrupted attempts consumed no retry",
+    "local evidence hash mismatch detected, not externally tamperproof"
+  ],
+  "explicit_nonclaims": [
+    "not a genuine human approval",
+    "not a protected durable production authorization",
+    "not an enforced live project spending cap",
+    "not real model inference or server request receipt",
+    "not a network API client or connection",
+    "not production bank effect",
+    "not actual VERITAS native Bind proof from this PR",
+    "not Final128 score",
+    "not physical clock attestation"
+  ],
+  "merge_criteria": "Exact-head dedicated and ordinary CI SUCCESS; JUnit/report/evidence ZIP SHA reviewed; user performs merge. No real-API execute path."
+}
