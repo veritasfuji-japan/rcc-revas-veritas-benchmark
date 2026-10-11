@@ -272,7 +272,7 @@ class ConsentEvidenceOfflineRound:
                 supplied_wire=json.loads(self.boundary.wire_bytes),
                 local_packet=packet)
             binding_sha=bridge.verify_before_bind(
-                supplied_wire=deepcopy(self.boundary.wire))
+                supplied_wire=json.loads(self.boundary.wire_bytes))
             second=_line(1,OFFLINE_EVENTS[1],previous["entry_sha256"],base_sha,{
                 "candidate_sha256":candidate_sha,
                 "binding_sha256":binding_sha,
