@@ -10,6 +10,14 @@ import sqlite3
 import sys
 
 import pytest
+
+# Unlike the base generic CI, the dedicated SDK mock proof explicitly installs
+# pinned openai/httpx. Do not accidentally make the generic pytest suite
+# dependent on an SDK it intentionally does not install.
+if os.environ.get("TASK4_306_REAL_SDK_MOCK_PROOF") != "1":
+    pytest.skip("Dedicated exact-SDK offline MockTransport proof only",
+                allow_module_level=True)
+
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 import task4_future_provider_sdk_predispatch_mock_v1 as proof
 from task4_prospective_model_wire_date_boundary_v1 import BoundaryViolation
