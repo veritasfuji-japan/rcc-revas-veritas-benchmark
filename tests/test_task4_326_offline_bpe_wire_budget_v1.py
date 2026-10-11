@@ -21,6 +21,7 @@ sys.path.insert(0,str(ROOT/"scripts"))
 from scripts import task4_326_offline_bpe_wire_gate_v1 as model
 from scripts import task4_326_offline_bpe_audit_v1 as audit
 from scripts import task4_325_sdk_wire_audit_v1 as parent_audit
+from scripts import task4_323_one_arm_audit_v1 as native_audit
 from scripts import task4_320_local_sdk_complete_native_v1 as base
 from scripts.agentdojo_clean_ab_canonical_final_runner_v2_8 import sha_json
 import httpx
@@ -186,7 +187,7 @@ def test_tampered_receipt_and_original_native_rejected(rows,mutation):
     elif mutation=="nested_sdk_wire":r["original_325_native_wire_row"]["wire_proof"][0]["raw_wire_body_utf8"]="{}"
     elif mutation=="missing_receipt":r["early_local_budget_receipts"].pop()
     elif mutation=="extra_receipt":r["early_local_budget_receipts"].append(copy.deepcopy(receipt))
-    with pytest.raises((audit.Rejected,parent_audit.Denied)):
+    with pytest.raises((audit.Rejected,parent_audit.Denied,native_audit.Refused)):
         audit.audit(rr)
 
 @pytest.mark.parametrize("field,val",[
