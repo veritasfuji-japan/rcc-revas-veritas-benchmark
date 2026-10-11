@@ -21,8 +21,8 @@ def ledger(tmp_path,monkeypatch):
     monkeypatch.setenv("TASK4_327_LEDGER_ROOT",str(tmp_path))
     return tmp_path/"one-shot-test.sqlite3"
 
-def claim(db,ident="worker-1",req=None,**kw):
-    return m.claim_once(db,req or "a"*64,ident,**kw)
+def claim(db,ident="worker-1",req="a"*64,**kw):
+    return m.claim_once(db,req,ident,**kw)
 
 def run_subprocess(db,ident="worker",hash_="a"*64,crash=False,root=None):
     env=dict(os.environ)
