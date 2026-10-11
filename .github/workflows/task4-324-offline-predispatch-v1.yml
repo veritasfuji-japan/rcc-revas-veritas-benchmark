@@ -1,0 +1,90 @@
+name: Task4 Offline Predispatch Budget and Unknown Denial V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-324-offline-predispatch-v1.yml"
+      - "scripts/task4_324_offline_predispatch_guard_v1.py"
+      - "scripts/task4_324_offline_report_v1.py"
+      - "contracts/TASK4_324_OFFLINE_PREDISPATCH_V1.json"
+      - "tests/test_task4_324_offline_predispatch_v1.py"
+      - "docs/TASK4_324_OFFLINE_PREDISPATCH_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-324-offline-predispatch-v1.yml"
+      - "scripts/task4_324_offline_predispatch_guard_v1.py"
+      - "scripts/task4_324_offline_report_v1.py"
+      - "contracts/TASK4_324_OFFLINE_PREDISPATCH_V1.json"
+      - "tests/test_task4_324_offline_predispatch_v1.py"
+      - "docs/TASK4_324_OFFLINE_PREDISPATCH_V1.md"
+
+permissions:
+  contents: read
+
+jobs:
+  offline-budget-and-oneattempt-refusals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Fail closed on unexpected Provider credentials or URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL VERITAS_DATABASE_URL; do
+            test -z "${!name:-}" || exit 1
+          done
+          echo "TASK4_324_CREDENTIAL_FREE_NO_PROVIDER_SENDER"
+      - name: Run offline refusals and create immutable local receipt-chain evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+          python -m pytest -q -o addopts= tests/test_task4_324_offline_predispatch_v1.py \
+            --junitxml=results/task4-324-offline-predispatch-junit.xml \
+            | tee results/task4-324-pytest.log
+          python scripts/task4_324_offline_report_v1.py \
+            --output results/task4-324-offline-simulation-report.json \
+            | tee results/task4-324-report.log
+          git rev-parse HEAD > results/task4-324-head-sha.txt
+          echo "${{ github.event.pull_request.head.sha || github.sha }}" > results/task4-324-expected-head-sha.txt
+          test "$(cat results/task4-324-head-sha.txt)" = "$(cat results/task4-324-expected-head-sha.txt)"
+          sha256sum scripts/task4_324_offline_predispatch_guard_v1.py \
+            tests/test_task4_324_offline_predispatch_v1.py \
+            contracts/TASK4_324_OFFLINE_PREDISPATCH_V1.json \
+            results/task4-324-offline-simulation-report.json \
+            > results/task4-324-file-sha256.txt
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("results/task4-324-offline-simulation-report.json").read_text())
+          assert x["simulated_local_reservation_count"] == 10
+          assert x["per_arm"] == {"A":5,"B":5}
+          assert x["simulated_unknown_or_closed"] is True
+          assert x["real_provider_post_allowed"] is False
+          assert x["worst_case_planning_usd_not_invoice"] == "0.044096"
+          assert x["provider_sender_present"] is False
+          print("TASK4_324_OFFLINE_FAIL_CLOSED_ZERO_REAL_PROVIDER")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-324-offline-budget-unknown-deny-v1
+          path: results/*
+          if-no-files-found: warn
