@@ -50,6 +50,15 @@ jobs:
           test "$(git hash-object scripts/task4_prospective_local_envelope_native_rcc_bind_v1.py)" = "a287ff67878f22cd552552a31c9b8451be1e5751"
           test "$(git hash-object agentdojo_constraint_resolver_v0_1.py)" = "edbf513e67efa8719de3a1193a5f3ba937afdf52"
           echo "TASK4_306_PINNED_PARENT_MODEL_DATE_ENVELOPE_AND_BIND_CODE_UNCHANGED"
+      - name: Verify previous genuine third-run authorization remains consumed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          third="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')"
+          test "$third" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+          echo "THIRD_REAL_PROVIDER_APPROVAL_CONSUMED_AND_NOT_REUSABLE"
       - name: Install pinned real SDK (used only with no-network MockTransport)
         shell: bash
         run: |
