@@ -151,8 +151,14 @@ def role_permission_report():
         issuer_can_consume=bool(conn.execute("""SELECT has_function_privilege(
              %s,'task4_310.consume_offline_fixture_once(text,text,text,text,text,numeric,text)','EXECUTE')""",
              (issuer,)).fetchone()[0])
-        public_can_consume=bool(conn.execute("""SELECT has_function_privilege(
-            'PUBLIC','task4_310.consume_offline_fixture_once(text,text,text,text,text,numeric,text)','EXECUTE')""").fetchone()[0])
+        # PUBLIC is a pseudo-role (grantee OID 0), not a login name.
+        public_can_consume=bool(conn.execute("""
+          SELECT EXISTS(
+            SELECT 1 FROM pg_catalog.pg_proc AS p,
+              LATERAL pg_catalog.aclexplode(p.proacl) AS acl
+            WHERE p.oid =
+              'task4_310.consume_offline_fixture_once(text,text,text,text,text,numeric,text)'::pg_catalog.regprocedure
+              AND acl.grantee=0 AND acl.privilege_type='EXECUTE')""").fetchone()[0])
     # Table privilege introspection uses a separate read-only admin connection.
     with db("admin") as conn:
         def yes(role,priv):
