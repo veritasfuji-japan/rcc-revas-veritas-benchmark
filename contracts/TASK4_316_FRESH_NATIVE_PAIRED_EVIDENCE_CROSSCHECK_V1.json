@@ -1,0 +1,52 @@
+{
+  "schema": "veritas.task4.fresh-native-paired-evidence-crosscheck.v1",
+  "rule_of_one": "TASK4_316_FRESH_NATIVE_TASK4_EVIDENCE_CANNOT_PROMOTE_HISTORICAL_UTILITY_V1",
+  "parent_main": "c949379ee7ba736dad4618a510f87350e8331bf3",
+  "source_blobs": {
+    "contracts/TASK4_315_V13_REGRESSION_PAIRED_LINEAGE_DIAGNOSTIC_V1.json": "b1957004197d3abfff8c3ade4b996bd2229e0778",
+    "scripts/task4_315_v13_regression_paired_lineage_diagnostic_v1.py": "3b23189e12bd443b9fa212e2a6b64d486baf3923",
+    "scripts/task4_prospective_date_utility_counterfactual_audit_v1.py": "5bc6fa87ea120d59a325fe086b78e846a3234059",
+    "contracts/TASK4_PROSPECTIVE_DATE_UTILITY_COUNTERFACTUAL_V1.json": "3ad7d515c9889831a208cae1534072db80f33ec9",
+    "task4_prospective_controlled_trajectory_integration_v1.py": "ca52e9272575eacfe20364c517144f97e68c6571",
+    "contracts/TASK4_SEND_MONEY_EXECUTION_DATE_AUTHORITY_V1.json": "27df2d5fb3d6eb75ec173a9273b0bc6834fd0c1c"
+  },
+  "external_pins": {
+    "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+    "veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb"
+  },
+  "expected_source_case_labels": 8,
+  "expected_development_variants": [
+    "historical_candidate_date",
+    "new_owned_date"
+  ],
+  "expected_fresh_dev_native_trajectories": 16,
+  "expected_fresh_dev_native_scorer_arm_calls": 32,
+  "expected_approved_date": "2031-07-08",
+  "expected_historical_date_histogram": {
+    "2022-03-07": 6,
+    "2024-06-01": 2
+  },
+  "expected_new_owned_date_dev_B_success": 8,
+  "expected_historical_date_dev_B_success": 0,
+  "historical_V13_utility_A": 93,
+  "historical_V13_utility_B": 64,
+  "historical_V13_injection_B": 0,
+  "new_provider_calls": 0,
+  "new_real_bank_effects": 0,
+  "new_canonical_final128_enrollments": 0,
+  "new_independent_attack_success_measurements": 0,
+  "new_historical_utility_recoveries": 0,
+  "new_independent_model_generations": 0,
+  "historical_provider_permission": "SPENT_DO_NOT_REUSE",
+  "real_provider_dispatch": "DENY",
+  "authority": "TEST_HARNESS_ONLY_NOT_PRODUCTION",
+  "status": "PENDING_NEW_NATIVE_DEV_EVIDENCE_CI_NO_REAL_PROVIDER",
+  "nonclaims": [
+    "not_new_V13_scores",
+    "not_independent_attacker_payloads",
+    "not_model_performance",
+    "not_heldout_or_production",
+    "no_scorer_as_authority"
+  ]
+}
