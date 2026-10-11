@@ -1,0 +1,94 @@
+name: Task4 Third Independent Offline Decision Audit V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-third-independent-offline-decision-audit-v1.yml"
+      - "scripts/task4_third_independent_offline_decision_audit_v1.py"
+      - "tests/test_task4_third_independent_offline_decision_audit_v1.py"
+      - "contracts/TASK4_THIRD_INDEPENDENT_OFFLINE_DECISION_AUDIT_V1.json"
+      - "docs/TASK4_THIRD_INDEPENDENT_OFFLINE_DECISION_AUDIT_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-third-independent-offline-decision-audit-v1.yml"
+      - "scripts/task4_third_independent_offline_decision_audit_v1.py"
+      - "tests/test_task4_third_independent_offline_decision_audit_v1.py"
+      - "contracts/TASK4_THIRD_INDEPENDENT_OFFLINE_DECISION_AUDIT_V1.json"
+      - "docs/TASK4_THIRD_INDEPENDENT_OFFLINE_DECISION_AUDIT_V1.md"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  frozen-third-evidence-offline-interpretation-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      ANTHROPIC_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_ADDOPTS: ""
+      TASK4_THIRD_SOURCE_ZIP: source/task4-third-source-11676881211.zip
+      TASK4_THIRD_CAPTURE_ZIP: source/task4-third-capture-11686131074.zip
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Download ONLY archived exact third source and captured A/B output
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source results
+          curl --fail --silent --show-error --location --retry 0 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11676881211/zip" \
+            -o "$TASK4_THIRD_SOURCE_ZIP"
+          echo "bbc7ba1a16aaac67aed75bdbb7a5abc71bfa978599e1cfc42700779377e838f4  $TASK4_THIRD_SOURCE_ZIP" | sha256sum -c -
+          curl --fail --silent --show-error --location --retry 0 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11686131074/zip" \
+            -o "$TASK4_THIRD_CAPTURE_ZIP"
+          echo "6d9842caa8c017ae2bd4426ee7d4b0f1c02f79252d82c96767c048c88f176ab2  $TASK4_THIRD_CAPTURE_ZIP" | sha256sum -c -
+      - name: Check irreversible third consumed ref remains pinned
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          third="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')"
+          test "$third" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+          first="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-first-two-real-provider-v1-consumed" --jq '.object.sha')"
+          second="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-second-two-real-provider-v1-consumed" --jq '.object.sha')"
+          test "$first" = "99812fe1fdbc627e582ec7935a429a852e22703d"
+          test "$second" = "6c13f90e116b0365c85cc3323ce60a2bf608cb3c"
+          echo "ALL_THREE_CONSUMED_REFS_HISTORICALLY_PINNED"
+      - name: Offline independent judgement and adversarial fail-closed tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install "pytest==9.1.1" "PyYAML==6.0.3"
+          python -m pytest -q -o addopts= \
+            tests/test_task4_third_independent_offline_decision_audit_v1.py \
+            --junitxml=results/task4-third-independent-offline-junit.xml \
+            | tee results/task4-third-independent-offline-tests.log
+          python scripts/task4_third_independent_offline_decision_audit_v1.py \
+            --source-zip "$TASK4_THIRD_SOURCE_ZIP" \
+            --capture-zip "$TASK4_THIRD_CAPTURE_ZIP" \
+            --output results/task4-third-independent-offline-decision-report.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-third-independent-offline-decision-audit-v1
+          path: results/*
+          if-no-files-found: warn
