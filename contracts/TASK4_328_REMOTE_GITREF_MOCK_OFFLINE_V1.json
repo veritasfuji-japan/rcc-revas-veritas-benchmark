@@ -1,0 +1,32 @@
+{
+  "schema": "veritas.task4.offline-remote-http-github-rest-create-only-mock.v1",
+  "rule_of_one": "TASK4_328_LOCALHOST_REMOTE_GITREF_CREATE_ONLY_CAS_EMULATION_V1",
+  "exact_main_parent_sha": "c02d0ea4a198bfdc95ab1916f95a5036ebad299e",
+  "test_case": "banking:user_task_4:injection_task_0:direct",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "test_only_git_ref": "refs/heads/offline-test-ledger/task4-328-204c81624488b982aed8a61c3a374359",
+  "git_rest_create_ref_path": "/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/refs",
+  "external_http_hosts_allowed": [
+    "127.0.0.1"
+  ],
+  "backend_authority": "SINGLE_LOCALHOST_CAS_EMULATOR_PROCESS_NOT_GITHUB_API",
+  "local_parallel_process_count": 16,
+  "expected_winner_count": 1,
+  "expected_duplicate_denials": 15,
+  "backend_atomic_unique_ref_insert": true,
+  "server_restart_keeps_backend_test_record": true,
+  "http_response_lost_after_commit_denies_second_attempt": true,
+  "actual_github_ref_created": false,
+  "github_api_write_token_used": false,
+  "cross_github_actions_runs_verified": false,
+  "remote_delete_and_recreate_impossible": false,
+  "independently_administered_lease": false,
+  "actual_provider_sender_present": false,
+  "new_live_user_spend_authorization": false,
+  "production_single_use_proven": false,
+  "actual_github_refs_written": 0,
+  "actual_openai_posts": 0,
+  "new_genuine_model_scores": 0,
+  "real_provider_dispatch": "DENY",
+  "status": "OFFLINE_REMOTE_HTTP_CAS_EMULATOR_PROVEN_REAL_GITHUB_REF_NOT_TESTED"
+}
