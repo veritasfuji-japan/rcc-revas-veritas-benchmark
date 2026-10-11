@@ -1,0 +1,81 @@
+name: Task4 Future Provider Atomic OneUse Preflight Offline V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-future-provider-atomic-oneuse-preflight-v1.yml"
+      - "scripts/task4_future_provider_atomic_oneuse_preflight_v1.py"
+      - "tests/test_task4_future_provider_atomic_oneuse_preflight_v1.py"
+      - "contracts/TASK4_FUTURE_PROVIDER_ATOMIC_ONEUSE_PREFLIGHT_V1.json"
+      - "docs/TASK4_FUTURE_PROVIDER_ATOMIC_ONEUSE_PREFLIGHT_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-future-provider-atomic-oneuse-preflight-v1.yml"
+      - "scripts/task4_future_provider_atomic_oneuse_preflight_v1.py"
+      - "tests/test_task4_future_provider_atomic_oneuse_preflight_v1.py"
+      - "contracts/TASK4_FUTURE_PROVIDER_ATOMIC_ONEUSE_PREFLIGHT_V1.json"
+      - "docs/TASK4_FUTURE_PROVIDER_ATOMIC_ONEUSE_PREFLIGHT_V1.md"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  atomic-local-only-future-consent-oneuse-default-deny:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 11
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      TASK4_THIRD_APPROVAL_PHRASE: ""
+      TASK4_307_APPROVAL_PHRASE: ""
+      TASK4_308_OFFLINE_PROOF: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONNOUSERSITE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify original Task4 source pins and third-Provider consent already consumed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+          test "$(git hash-object task4_trusted_execution_date_profile_v1.py)" = "4eb8646b18cae7130c217fa3a04d05a3d71756d3"
+          test "$(git hash-object scripts/task4_prospective_model_wire_date_boundary_v1.py)" = "83ad7d3f229084633c28729d592330c477c76316"
+          test "$(git hash-object scripts/task4_prospective_offline_completion_envelope_bridge_v1.py)" = "b7ca0e41125a4a137397d41f8bc2650c7e179088"
+          test "$(git hash-object scripts/task4_prospective_local_envelope_native_rcc_bind_v1.py)" = "a287ff67878f22cd552552a31c9b8451be1e5751"
+          test "$(git hash-object scripts/task4_future_provider_sdk_predispatch_mock_v1.py)" = "f3d2bc13a813faa405f29bd276e93b8d4458d0ec"
+          test "$(git hash-object scripts/task4_future_provider_consent_evidence_default_deny_v1.py)" = "d45511882e9cb9fc9f89128dee7c36dac377e672"
+          echo "TASK4_308_PARENT_AND_SPENT_PROVIDER_PERMISSION_EXACT_PIN_PASS"
+      - name: Install only standalone offline test framework
+        shell: bash
+        run: python -m pip install --disable-pip-version-check "pytest==9.1.1"
+      - name: Verify one-use concurrent local atom and forced real execution DENY
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python -m pytest -q -o addopts= \
+            tests/test_task4_future_provider_atomic_oneuse_preflight_v1.py \
+            --junitxml=results/task4-308-atomic-oneuse-junit.xml \
+            | tee results/task4-308-atomic-oneuse-tests.log
+          python scripts/task4_future_provider_atomic_oneuse_preflight_v1.py \
+            --output results/task4-308-atomic-oneuse-evidence.json \
+            | tee results/task4-308-atomic-oneuse-report.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-future-provider-atomic-oneuse-preflight-v1
+          path: results/*
+          if-no-files-found: warn
