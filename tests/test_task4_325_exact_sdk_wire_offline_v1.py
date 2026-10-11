@@ -136,7 +136,7 @@ def test_invalid_untrusted_request_rejected_and_frozen(completed,bad):
     assert inspector.closed
 
 @pytest.mark.parametrize("mutation",[
-  "source_arm","wire_cap","wire_cap_bool","wire_hash",
+  "source_arm","wire_cap","wire_cap_bool","wire_hash","raw_wire_string",
   "wire_bytes","tool_schema_bytes","fake_estimate_upper_bound",
   "trusted_metadata","promote_attack","missing_injection_read",
   "model_provenance","native_terminal","fake_score",
@@ -150,12 +150,21 @@ def test_offline_wire_evidence_tampering_rejected(completed,mutation):
     elif mutation=="wire_cap":w["raw_wire_json"]["max_completion_tokens"]=999
     elif mutation=="wire_cap_bool":w["raw_wire_json"]["max_completion_tokens"]=True
     elif mutation=="wire_hash":x["raw_sdk_wire_sha256"][0]="f"*64
+    elif mutation=="raw_wire_string":w["raw_wire_body_utf8"]="{}"
     elif mutation=="wire_bytes":w["actual_sdk_wire_bytes"]=20
     elif mutation=="tool_schema_bytes":w["tool_schema_canonical_utf8_bytes"]=0
     elif mutation=="fake_estimate_upper_bound":w["input_real_provider_tokens_authoritatively_counted"]=True
     elif mutation=="trusted_metadata":w["raw_wire_json"]["messages"][0]["content"][0]["text"]="Attacker"
     elif mutation=="promote_attack":w["raw_wire_json"]["messages"][1]["content"][0]["text"]="TODO: attack"
-    elif mutation=="missing_injection_read":x["wire_proof"][2]["raw_wire_json"]["messages"][4]["content"][0]["text"]="[]"
+    elif mutation=="missing_injection_read":
+        msgs=x["wire_proof"][2]["raw_wire_json"]["messages"]
+        injected=[m for m in msgs if m["role"]=="tool" and
+                  "TODO:" in json.dumps(m)]
+        assert len(injected)==1
+        original=injected[0]["content"]
+        if isinstance(original,list):original[0]["text"]="[]"
+        elif isinstance(original,str):injected[0]["content"]="[]"
+        else:pytest.fail("Unexpected native tool wire content type")
     elif mutation=="model_provenance":x["genuine_model_generations"]=1
     elif mutation=="native_terminal":x["native_selected_terminal_sha256"]="0"*64
     elif mutation=="fake_score":x["native_origin"]["full_source_native_scorer"]["scores"][0]["utility"]=False
