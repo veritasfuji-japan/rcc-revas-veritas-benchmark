@@ -9,6 +9,13 @@ import zipfile
 
 import pytest
 
+# The repository-wide CI does not install PyYAML or download the pinned ZIPs.
+# Only the dedicated offline proof job supplies both mandatory fixture paths.
+if not (os.environ.get("TASK4_THIRD_SOURCE_ZIP") and
+        os.environ.get("TASK4_THIRD_CAPTURE_ZIP")):
+    pytest.skip("requires exact archived inputs in dedicated OFFLINE proof CI",
+                allow_module_level=True)
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import task4_third_independent_offline_decision_audit_v1 as audit
 
