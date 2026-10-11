@@ -183,7 +183,12 @@ def check_real_event_bytes(raw):
     grant=events[0]
     need(grant["sha"]==CONSUMED and grant["first_and_second_prior_consents_spent"] is True
          and grant["retry_permitted"] is False and
-         grant["A_B_source_request_sha256"]==REQUEST_SHA,
+         type(grant["max_allowed_provider_posts"]) is int
+         and grant["max_allowed_provider_posts"]==2
+         and grant["source_zip_sha256"]==
+             "bbc7ba1a16aaac67aed75bdbb7a5abc71bfa978599e1cfc42700779377e838f4"
+         and grant["workflow_run"]=="38097049813"
+         and grant["A_B_source_request_sha256"]==REQUEST_SHA,
          "CONSUMED_REAL_PROVIDER_GRANT_NOT_REUSABLE")
     rows=[]
     ids=set()
