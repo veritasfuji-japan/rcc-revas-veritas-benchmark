@@ -165,7 +165,12 @@ class OfflineSDKPreflight:
                     request.url.host==API_HOST and
                     request.url.path=="/v1/chat/completions" and
                     not request.url.query,
-                    "SDK_REQUEST_TARGET_DRIFT")
+                    "SDK_REQUEST_TARGET_DRIFT "+
+                    "method="+repr(request.method)+
+                    " scheme="+repr(request.url.scheme)+
+                    " host="+repr(request.url.host)+
+                    " path="+repr(request.url.path)+
+                    " query_len="+str(len(request.url.query)))
             # Observe exactly the real SDK's serialized JSON body.
             data=exact_json(request.content.decode("utf8"))
             require(type(data) is dict and canonical(data)==self.wire_bytes,
