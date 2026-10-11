@@ -191,7 +191,12 @@ class OfflineSDKPreflight:
         # replaced by a local MockTransport. No user-supplied transport/client.
         transport=httpx.MockTransport(intercept)
         with httpx.Client(transport=transport,trust_env=False) as http_client:
-            with openai.OpenAI(api_key=MOCK_ONLY_KEY,http_client=http_client,
+            # Pin literal SDK base URL: an empty OPENAI_BASE_URL environment
+            # variable otherwise becomes a relative /chat/completions target.
+            # MockTransport still prevents any external network traffic.
+            with openai.OpenAI(api_key=MOCK_ONLY_KEY,
+                               base_url="https://api.openai.com/v1",
+                               http_client=http_client,
                                max_retries=0,timeout=3.0) as client:
                 completion=client.chat.completions.create(**wire)
         require(self.intercepts==1 and self.captured_json is not None,
