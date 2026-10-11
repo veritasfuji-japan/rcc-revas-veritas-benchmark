@@ -1,0 +1,130 @@
+name: Task4 Genuine Third Terminal Scorer Eligibility V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-318-genuine-third-terminal-scorer-eligibility-v1.yml"
+      - "scripts/task4_318_genuine_terminal_scorer_eligibility_v1.py"
+      - "tests/test_task4_318_genuine_terminal_scorer_eligibility_v1.py"
+      - "contracts/TASK4_318_REAL_THIRD_TERMINAL_SCORER_ELIGIBILITY_V1.json"
+      - "docs/TASK4_318_GENUINE_THIRD_TERMINAL_SCORER_ELIGIBILITY_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-318-genuine-third-terminal-scorer-eligibility-v1.yml"
+      - "scripts/task4_318_genuine_terminal_scorer_eligibility_v1.py"
+      - "tests/test_task4_318_genuine_terminal_scorer_eligibility_v1.py"
+      - "contracts/TASK4_318_REAL_THIRD_TERMINAL_SCORER_ELIGIBILITY_V1.json"
+      - "docs/TASK4_318_GENUINE_THIRD_TERMINAL_SCORER_ELIGIBILITY_V1.md"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  genuine-third-bind-and-terminal-score-eligibility:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      ANTHROPIC_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      GITHUB_TOKEN: ""
+      TASK4_318_APPROVAL_PHRASE: ""
+      TASK4_318_GENUINE_TERMINAL_PROOF: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      PYTHONDONTWRITEBYTECODE: "1"
+      TASK4_318_SOURCE_ZIP: source/native-third-source.zip
+      TASK4_318_CAPTURE_ZIP: source/third-real-provider-capture.zip
+      TASK4_318_AGENTDOJO_ROOT: _pins/agentdojo
+      TASK4_318_VERITAS_ROOT: _pins/veritas
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Download ONLY prior genuine source and historical Provider output
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p source results
+          curl --fail --silent --show-error --location --retry 0 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11676881211/zip" \
+            -o "$TASK4_318_SOURCE_ZIP"
+          echo "bbc7ba1a16aaac67aed75bdbb7a5abc71bfa978599e1cfc42700779377e838f4  $TASK4_318_SOURCE_ZIP" | sha256sum -c -
+          curl --fail --silent --show-error --location --retry 0 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11686131074/zip" \
+            -o "$TASK4_318_CAPTURE_ZIP"
+          echo "6d9842caa8c017ae2bd4426ee7d4b0f1c02f79252d82c96767c048c88f176ab2  $TASK4_318_CAPTURE_ZIP" | sha256sum -c -
+      - name: Historical irrevocable third tag remains at original Provider capture main
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          value="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')"
+          test "$value" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+      - name: Read-only checkout of exact native benchmark and actual VERITAS Bind
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          test "$(git -C _pins/veritas hash-object veritas_os/benchmarks/agentdojo_banking_adapter.py)" = "c2c66b9186cf065132bc50a4b769874d04a78dc6"
+          test "$(git -C _pins/veritas hash-object veritas_os/policy/bind_core/core.py)" = "0f64201e2599495ce4e3991348aa320995716ffc"
+          test "$(git hash-object agentdojo_constraint_resolver_v0_1.py)" = "edbf513e67efa8719de3a1193a5f3ba937afdf52"
+      - name: Install fixed offline native benchmark requirements
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install "pytest==9.1.1" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock --output /tmp/task4-third-bind-lock.txt
+          pip install -r /tmp/task4-third-bind-lock.txt
+      - name: Replay authentic third Native VERITAS Bind, then deny incomplete scorer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/task4_318_genuine_terminal_scorer_eligibility_v1.py \
+            --source-zip "$TASK4_318_SOURCE_ZIP" \
+            --capture-zip "$TASK4_318_CAPTURE_ZIP" \
+            --agentdojo-root "$TASK4_318_AGENTDOJO_ROOT" \
+            --veritas-root "$TASK4_318_VERITAS_ROOT" \
+            --output results/task4-318-genuine-terminal-eligibility-report.json \
+            | tee results/task4-318-genuine-terminal-eligibility-run.log
+          python -m pytest -q -o addopts= \
+            tests/test_task4_318_genuine_terminal_scorer_eligibility_v1.py \
+            --junitxml=results/task4-318-genuine-terminal-eligibility-junit.xml \
+            | tee results/task4-318-genuine-terminal-eligibility-tests.log
+          python - <<'PY'
+          import json
+          r=json.load(open("results/task4-318-genuine-terminal-eligibility-report.json"))
+          assert r["genuine_bind_blocked"]==2
+          assert r["native_apply_attempts"]==0
+          assert r["official_native_agentdojo_scorer_invocations"]==0
+          assert r["new_model_api_calls"]==0
+          assert r["live_execution"]=="DENY"
+          print("TASK4_318_GENUINE_PROPOSAL_BIND_2_BLOCKED_NO_GENUINE_TERMINAL_SCORE")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-318-genuine-third-terminal-scorer-eligibility-v1
+          path: results/*
+          if-no-files-found: warn
