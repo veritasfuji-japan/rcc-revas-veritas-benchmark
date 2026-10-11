@@ -257,7 +257,7 @@ def run_variant(variant):
       "original_native_prestatedigest":sha_json(pre),
       "transport_intercepts":server.attempts,
       "transport_request_sha256":[sha_json(x) for x in server.requests],
-      "transport_request_messages":[x["messages"] for x in server.requests],
+      "transport_requests":copy.deepcopy(server.requests),
       "transport_fake_response_ids":[x["id"] for x in server.responses],
       "transport_fake_usage_tokens":0,
       "transport_source":"REAL_OPENAI_1_109_1_SDK_WITH_HTTPX_MOCKTRANSPORT_NOT_REAL_PROVIDER",
