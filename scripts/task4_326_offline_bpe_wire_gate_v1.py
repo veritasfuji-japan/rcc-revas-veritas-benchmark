@@ -102,8 +102,10 @@ class OfflineWireBudget:
                      type(data["max_completion_tokens"]) is int and
                      data["max_completion_tokens"]==CAP_OUTPUT and
                      data["tool_choice"]=="auto" and data["temperature"]==0.0 and
-                     type(data["messages"]) is list and
-                     type(data["tools"]) is list,
+                     type(data["messages"]) is list and len(data["messages"])>=2 and
+                     type(data["tools"]) is list and len(data["tools"])>=5 and
+                     any(type(t) is dict and t.get("function",{}).get("name")=="send_money"
+                         for t in data["tools"]),
                      "OUTPUT_CAP_OR_MODEL_OR_TASK_TOOLS_NOT_PINNED")
                 raw_sha=parent.hash_bytes(raw)
                 need(raw_sha not in self._seen_request_hashes,
