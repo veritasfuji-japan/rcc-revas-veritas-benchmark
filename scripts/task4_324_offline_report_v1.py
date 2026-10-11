@@ -4,11 +4,13 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
 from scripts.task4_324_offline_predispatch_guard_v1 import (
     exact_offline_example, digest, Denied,
 )
 
-ROOT=Path(__file__).resolve().parents[1]
 
 def main() -> None:
     p=argparse.ArgumentParser()
