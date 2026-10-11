@@ -1,0 +1,105 @@
+name: Task4 Prospective Local Envelope Native RCC Bind V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-prospective-local-envelope-native-rcc-bind-v1.yml"
+      - "scripts/task4_prospective_local_envelope_native_rcc_bind_v1.py"
+      - "tests/test_task4_prospective_local_envelope_native_rcc_bind_v1.py"
+      - "contracts/TASK4_PROSPECTIVE_LOCAL_ENVELOPE_NATIVE_RCC_BIND_V1.json"
+      - "docs/TASK4_PROSPECTIVE_LOCAL_ENVELOPE_NATIVE_RCC_BIND_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-prospective-local-envelope-native-rcc-bind-v1.yml"
+      - "scripts/task4_prospective_local_envelope_native_rcc_bind_v1.py"
+      - "tests/test_task4_prospective_local_envelope_native_rcc_bind_v1.py"
+      - "contracts/TASK4_PROSPECTIVE_LOCAL_ENVELOPE_NATIVE_RCC_BIND_V1.json"
+      - "docs/TASK4_PROSPECTIVE_LOCAL_ENVELOPE_NATIVE_RCC_BIND_V1.md"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  local-only-single-issuer-native-rcc-veritas-bind:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      ANTHROPIC_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      GITHUB_TOKEN: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      PYTHONDONTWRITEBYTECODE: "1"
+      TASK4_305_NATIVE_PROOF: "1"
+      TASK4_305_RCC_ROOT: _pins/rcc
+      TASK4_305_AGENTDOJO_ROOT: _pins/agentdojo
+      TASK4_305_VERITAS_ROOT: _pins/veritas
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Enforce immutable genuine-third consumption and existing parent source pins
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          third="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')"
+          test "$third" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+          test "$(git hash-object task4_trusted_execution_date_runner_integration_v1.py)" = "7a4c6335f6bda0fdb3f4afb373c31de80d747670"
+          test "$(git hash-object task4_trusted_execution_date_profile_v1.py)" = "4eb8646b18cae7130c217fa3a04d05a3d71756d3"
+          test "$(git hash-object agentdojo_constraint_resolver_v0_1.py)" = "edbf513e67efa8719de3a1193a5f3ba937afdf52"
+          test "$(git hash-object scripts/task4_prospective_model_wire_date_boundary_v1.py)" = "83ad7d3f229084633c28729d592330c477c76316"
+          test "$(git hash-object scripts/task4_prospective_offline_completion_envelope_bridge_v1.py)" = "defer-to-real-source-blob-305"
+          echo "TASK4_305_PRE_DISPATCH_PARENT_PIN_AND_CONSUMPTION_SUCCESS"
+      - name: Clone immutable RCC AgentDojo VERITAS sources read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/rcc rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+      - name: Install exact native simulator governance and test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install "pytest==9.1.1" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock --output /tmp/task4-prospective-305-deps.txt
+          pip install -r /tmp/task4-prospective-305-deps.txt
+      - name: One-session local synthetic response through native RCC and actual Bind
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_task4_prospective_local_envelope_native_rcc_bind_v1.py \
+            --junitxml=results/task4-305-native-rcc-bind-junit.xml \
+            | tee results/task4-305-native-rcc-bind-tests.log
+          python scripts/task4_prospective_local_envelope_native_rcc_bind_v1.py \
+            --rcc-root "$TASK4_305_RCC_ROOT" \
+            --agentdojo-root "$TASK4_305_AGENTDOJO_ROOT" \
+            --veritas-root "$TASK4_305_VERITAS_ROOT" \
+            --output results/task4-305-native-rcc-bind-evidence.json \
+            | tee results/task4-305-native-rcc-bind-report.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-prospective-local-envelope-native-rcc-bind-v1
+          path: results/*
+          if-no-files-found: warn
