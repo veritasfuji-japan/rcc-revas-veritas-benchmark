@@ -17,7 +17,7 @@ from task4_prospective_model_wire_date_boundary_v1 import (
 from task4_trusted_execution_date_profile_v1 import DateProfileViolation
 
 
-class TestClock:
+class FixtureClock:
     def __init__(self):
         from task4_prospective_model_wire_date_boundary_v1 import SYNTHETIC_CLOCK
         self.now = SYNTHETIC_CLOCK
@@ -37,7 +37,7 @@ def no_network_or_db(monkeypatch):
 
 @pytest.fixture()
 def sample():
-    clock = TestClock()
+    clock = FixtureClock()
     boundary = ProspectiveWireBoundary(date_session(clock))
     wire = boundary.issue_and_freeze()
     gate = bridge.OfflineCompletionBridge(boundary)
