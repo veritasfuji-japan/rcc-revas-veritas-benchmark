@@ -160,6 +160,10 @@ class RemoteMockHandler(BaseHTTPRequestHandler):
         self.respond(405,{"message":"CREATE_ONLY_NOT_A_READ_APPROVAL",
                           "real_provider_post_allowed":False})
 
+    def do_PUT(self):
+        self.respond(405,{"message":"CREATE_ONLY_NO_FORCE_UPDATE",
+                          "real_provider_post_allowed":False})
+
 def serve(db_path,port_path):
     forbid_real_keys()
     p=Path(db_path).resolve()
