@@ -1,0 +1,117 @@
+name: Task4 Independent A B First-Request Offline SDK V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-322-independent-ab-offline-native-v1.yml"
+      - "contracts/TASK4_322_INDEPENDENT_AB_FIRST_REQUEST_OFFLINE_V1.json"
+      - "scripts/task4_322_independent_ab_local_sdk_v1.py"
+      - "scripts/task4_322_independent_ab_audit_v1.py"
+      - "tests/test_task4_322_independent_ab_offline_v1.py"
+      - "docs/TASK4_322_INDEPENDENT_AB_FIRST_REQUEST_OFFLINE_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-322-independent-ab-offline-native-v1.yml"
+      - "contracts/TASK4_322_INDEPENDENT_AB_FIRST_REQUEST_OFFLINE_V1.json"
+      - "scripts/task4_322_independent_ab_local_sdk_v1.py"
+      - "scripts/task4_322_independent_ab_audit_v1.py"
+      - "tests/test_task4_322_independent_ab_offline_v1.py"
+      - "docs/TASK4_322_INDEPENDENT_AB_FIRST_REQUEST_OFFLINE_V1.md"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  two-independent-local-first-request-model-origins-native-scored:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      TASK4_322_APPROVAL_PHRASE: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      TASK4_NATIVE_DATE_PROOF: "1"
+      TASK4_TRANSPORT_PROOF: "1"
+      TASK4_TRAJECTORY_PROOF: "1"
+      TASK4_SCORER_OBSERVATION_PROOF: "1"
+      TASK4_322_INDEPENDENT_AB_OFFLINE_PROOF: "1"
+      TASK4_RCC_ROOT: "_pins/rcc"
+      TASK4_322_EVIDENCE_ROWS: "results/task4-322-two-model-origin-native-rows.jsonl"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Previous real Provider approval permanently consumed
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+          echo "TASK4_322_PREVIOUS_PROVIDER_GRANT_SPENT"
+      - name: Exact native AgentDojo, RCC and VERITAS versions only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins results
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/rcc rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+      - name: Install pinned native-only evaluator and frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install "pytest==9.1.1" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output /tmp/task4-322-agentdojo-locked.txt
+          pip install -r /tmp/task4-322-agentdojo-locked.txt
+      - name: Two independent offline model starts, native arm-specific scorer and adversarial refusals
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/task4-322-agentdojo-locked.txt results/task4-322-locked-dependencies.txt
+          pip freeze > results/task4-322-runtime-pip-freeze.txt
+          python -m pytest -q -o addopts= \
+            tests/test_task4_322_independent_ab_offline_v1.py \
+            --junitxml=results/task4-322-independent-ab-junit.xml \
+            | tee results/task4-322-pytest.log
+          python scripts/task4_322_independent_ab_audit_v1.py \
+            --evidence "$TASK4_322_EVIDENCE_ROWS" \
+            --output results/task4-322-independent-ab-native-report.json \
+            | tee results/task4-322-audit.log
+          python - <<'PY'
+          import json
+          x=json.load(open("results/task4-322-independent-ab-native-report.json"))
+          assert x["independent_first_request_session_count"]==2
+          assert x["selected_native_arm_scores"]==2
+          assert x["native_offline_scorer_calls_total"]==4
+          assert x["genuine_independent_model_generations"]==0
+          assert x["new_real_provider_posts"]==0
+          assert x["new_canonical_final128_cases"]==0
+          assert x["real_provider_dispatch"]=="DENY"
+          print("TASK4_322_TWO_INDEPENDENT_SCRIPTED_AB_STARTS_POST_NATIVE_SCORED_NO_PROVIDER")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-322-independent-ab-scripted-native-scorer-v1
+          path: results/*
+          if-no-files-found: warn
