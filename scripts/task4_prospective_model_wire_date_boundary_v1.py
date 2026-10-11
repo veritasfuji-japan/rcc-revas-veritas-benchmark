@@ -15,6 +15,11 @@ import json
 import os
 from pathlib import Path
 import secrets
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from task4_trusted_execution_date_profile_v1 import (
     DateProfileViolation, REQUEST, Task4DateProfileSession,
