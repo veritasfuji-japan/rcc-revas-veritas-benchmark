@@ -33,6 +33,7 @@ from task4_prospective_model_wire_date_boundary_v1 import (
 from task4_future_provider_consent_evidence_default_deny_v1 import (
     proposed_manifest, ensure_no_live_context, future_live_dispatch_decision,
     evidence_promotion_decision, HISTORICAL_THIRD_CONSUMED,
+    Refused as PriorOfflineRefused,
 )
 from task4_future_provider_sdk_predispatch_mock_v1 import (
     strict_estimated_cost, MAX_INPUT_TOKENS_FIXTURE, MAX_OUTPUT_TOKENS,
@@ -170,7 +171,10 @@ class OfflineSingleUseAdmission:
             terminal="UNKNOWN_OFFLINE_STOP_NEVER_RETRY"
             response_sha=None
             try:
-                ensure_no_live_context()
+                try:
+                    ensure_no_live_context()
+                except PriorOfflineRefused as exc:
+                    raise Rejected(str(exc)) from exc
                 check=self.plan if offered_plan is None else offered_plan
                 ack=self.ack if offered_ack is None else offered_ack
                 need(type(check) is dict and canonical(check)==self.plan_bytes and
