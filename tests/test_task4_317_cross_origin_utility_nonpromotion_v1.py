@@ -103,13 +103,8 @@ def test_contract_tamper_never_upgrades_production_or_scores(field,new_value):
 ])
 def test_historic_real_consumption_drift_refused(real_events,field,value):
     rows=copy.deepcopy(real_events);rows[0][field]=value
-    if field=="max_allowed_provider_posts":
-        # An old spend proposal MUST NOT grant permission; even this untrusted
-        # field alone is not acceptance of new human approval.
-        assert a.check_real_event_bytes(event_bytes(rows))[0]["issuer_bound_before_model"] is False
-    else:
-        with pytest.raises(a.Refused):
-            a.check_real_event_bytes(event_bytes(rows))
+    with pytest.raises(a.Refused):
+        a.check_real_event_bytes(event_bytes(rows))
 
 @pytest.mark.parametrize("arm_index,field,value",[
     (2,"provider_response_sha256","0"*64),
