@@ -1,0 +1,116 @@
+name: Task4 Full Real SDK Local Mock to Native Scorer V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-320-local-sdk-mock-full-native-v1.yml"
+      - "contracts/TASK4_320_SDK_MOCK_FULL_NATIVE_SCORER_V1.json"
+      - "scripts/task4_320_local_sdk_complete_native_v1.py"
+      - "scripts/task4_320_native_sdk_mock_crosscheck_v1.py"
+      - "tests/test_task4_320_local_sdk_mock_native_v1.py"
+      - "docs/TASK4_320_LOCAL_SDK_MOCK_FULL_NATIVE_SCORER_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-320-local-sdk-mock-full-native-v1.yml"
+      - "contracts/TASK4_320_SDK_MOCK_FULL_NATIVE_SCORER_V1.json"
+      - "scripts/task4_320_local_sdk_complete_native_v1.py"
+      - "scripts/task4_320_native_sdk_mock_crosscheck_v1.py"
+      - "tests/test_task4_320_local_sdk_mock_native_v1.py"
+      - "docs/TASK4_320_LOCAL_SDK_MOCK_FULL_NATIVE_SCORER_V1.md"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  one-injected-native-real-sdk-local-mock-five-steps-terminal-scorer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      TASK4_320_APPROVAL_PHRASE: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      TASK4_NATIVE_DATE_PROOF: "1"
+      TASK4_TRANSPORT_PROOF: "1"
+      TASK4_TRAJECTORY_PROOF: "1"
+      TASK4_SCORER_OBSERVATION_PROOF: "1"
+      TASK4_320_LOCAL_SDK_PROOF: "1"
+      TASK4_RCC_ROOT: "_pins/rcc"
+      TASK4_320_EVIDENCE_ROWS: "results/task4-320-full-sdk-local-native-rows.jsonl"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Previous real Provider approval permanently consumed
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+          echo "TASK4_320_PRIOR_PROVIDER_APPROVAL_CONSUMED_NO_SEND"
+      - name: Exact native AgentDojo, RCC and VERITAS versions only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins results
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/rcc rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+      - name: Install pinned native-only evaluator and frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install "pytest==9.1.1" "cryptography==50.0.0" "openai==1.109.1" "pydantic==2.11.10" "idna==3.15" "httpx==0.28.1" "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output /tmp/task4-320-agentdojo-locked.txt
+          pip install -r /tmp/task4-320-agentdojo-locked.txt
+      - name: Run real OpenAI SDK with local MockTransport through native Bind and scorer
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/task4-320-agentdojo-locked.txt results/task4-320-locked-dependencies.txt
+          pip freeze > results/task4-320-runtime-pip-freeze.txt
+          python -m pytest -q -o addopts= \
+            tests/test_task4_320_local_sdk_mock_native_v1.py \
+            --junitxml=results/task4-320-sdk-local-native-junit.xml \
+            | tee results/task4-320-native-tests.log
+          python scripts/task4_320_native_sdk_mock_crosscheck_v1.py \
+            --evidence "$TASK4_320_EVIDENCE_ROWS" \
+            --output results/task4-320-offline-sdk-native-audit.json \
+            | tee results/task4-320-audit.log
+          python - <<'PY'
+          import json
+          r=json.load(open("results/task4-320-offline-sdk-native-audit.json"))
+          assert r["local_sdk_interceptions"]==10
+          assert r["full_native_terminal_arms"]==4
+          assert r["true_local_agentdojo_scorer_arm_calls"]==4
+          assert r["new_real_provider_network_posts"]==0
+          assert r["new_genuine_real_model_generations"]==0
+          assert r["real_provider_dispatch"]=="DENY"
+          print("TASK4_320_SDK_MOCK_10_COMPLETE_NATIVE_SCORER_NO_REAL_PROVIDER")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-320-real-sdk-mocktransport-native-scorer-v1
+          path: results/*
+          if-no-files-found: warn
