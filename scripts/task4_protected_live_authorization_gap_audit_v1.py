@@ -121,7 +121,7 @@ def _source_file(base, name, path, pin, *, overrides=None):
 
 def verify_frozen_scope(*,base=ROOT,overrides=None):
     """Verify existing offline provenance only; never production attestations."""
-    need(type(base) in (str,Path),"REPOSITORY_ROOT_REQUIRED")
+    need(isinstance(base,(str,Path)),"REPOSITORY_ROOT_REQUIRED")
     result={}
     sources={}
     for key,(path,pin) in PINNED_BLOBS.items():
