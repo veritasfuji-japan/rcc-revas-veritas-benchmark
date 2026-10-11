@@ -1,0 +1,42 @@
+{
+  "schema_version": "veritas.task4-prospective-local-completion-envelope.v1",
+  "rule_of_one": "TASK4_PROSPECTIVE_LOCAL_COMPLETION_ENVELOPE_TO_CAPTURE_V1",
+  "status": "DRAFT_OFFLINE_NOT_PROVIDER_AUTHORITY",
+  "base_main_sha": "ad930d2344322d4e8a067ec170ad75c6f6c5b0dc",
+  "parent_303_source_blob": "83ad7d3f229084633c28729d592330c477c76316",
+  "original_date_profile_blob": "4eb8646b18cae7130c217fa3a04d05a3d71756d3",
+  "existing_resolver_blob": "edbf513e67efa8719de3a1193a5f3ba937afdf52",
+  "source_type": "synthetic offline Chat Completions-compatible fixture, never actual model response",
+  "central_invariant": "An explicitly synthetic tool-call envelope is correlated with exact issuer-frozen wire plus issued session, admitted at most once, strict-parsed to a candidate, captured through unchanged date profile, and rechecked before a hypothetical Bind without dispatch.",
+  "trust_boundaries": {
+    "issuer": "unchanged #303 prospective date session (independent ephemeral HMAC, synthetic date)",
+    "model_wire": "unchanged #303 frozen bytes hash",
+    "local_correlation": "SHA-256 of wire hash and issuer context digest (not Provider attestation)",
+    "reply": "synthetic-only fixture ID, zero billed tokens, strict one choice and one tool call",
+    "candidate": "exact typed send_money arguments, normalized to existing #303 candidate schema",
+    "final": "unchanged issuer/date/prestate/candidate Bind-facing recheck; no Bind execution"
+  },
+  "no_replay": true,
+  "no_model_provider_calls": true,
+  "no_real_bank_effects": true,
+  "no_native_bind_adjudication": true,
+  "no_api_consumption_or_reauthorization": true,
+  "no_official_scorer_or_final128": true,
+  "model_compatibility_not_real_Provider_authentication": true,
+  "forbidden": [
+    "No actual Provider response or API keys",
+    "No production service or bank network",
+    "No HMAC secret/signature in transmitted wire",
+    "No model output promoted to authority",
+    "No substituted request/candidate or repaired failed reply"
+  ],
+  "nonclaims": {
+    "production_authority_proven": false,
+    "real_model_utility_tested": false,
+    "full_native_bind_admission_tested_in_this_pr": false,
+    "real_time_verified": false,
+    "real_provider_authentication": false,
+    "attack_success_scored": false
+  },
+  "evidence": "Dedicated CI + JUnit/report ZIP must be audited at exact PR HEAD prior to merge."
+}
