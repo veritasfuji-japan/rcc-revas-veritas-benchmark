@@ -1,0 +1,62 @@
+{
+  "schema_version": "veritas.task4.future-provider-sdk-predispatch-mock.v1",
+  "rule_of_one": "TASK4_FUTURE_PROVIDER_SDK_PREDISPATCH_MOCK_V1",
+  "status": "DRAFT_UNPROVEN_UNTIL_CI",
+  "parent_main_sha": "92291f6bce099637a8c4d44ef7e5669e88e46d69",
+  "task4_case": "banking:user_task_4:prospective-local-offline-SDK-306",
+  "existing_date_profile_blob": "4eb8646b18cae7130c217fa3a04d05a3d71756d3",
+  "existing_303_wire_blob": "83ad7d3f229084633c28729d592330c477c76316",
+  "existing_304_synthetic_parser_blob": "b7ca0e41125a4a137397d41f8bc2650c7e179088",
+  "existing_305_native_bind_blob": "a287ff67878f22cd552552a31c9b8451be1e5751",
+  "existing_legacy_resolver_blob": "edbf513e67efa8719de3a1193a5f3ba937afdf52",
+  "real_sdk_exact_version": "openai==1.109.1",
+  "httpx_exact_version": "httpx==0.28.1",
+  "model_parameter": "gpt-4.1-mini-2025-04-14",
+  "trust_chain": [
+    "Unchanged issuer creates synthetic harness date BEFORE frozen model-compatible request",
+    "Exact frozen wire with output max 256, n=1, store=false, stream=false and fixed model",
+    "Offline local budget admits hypothetical input ceiling 10000 with frozen historical rate estimate only",
+    "Real Python OpenAI SDK serializes to a strictly in-memory httpx.MockTransport",
+    "Local-only SDK request body bytes, method, HTTPS path, dummy API key and one intercept checked",
+    "Deliberately synthetic fake response is checked as untrusted data through #303 issuer-owned date profile",
+    "One mock attempt consumed before validations, no retry or bypass to a live HTTP client",
+    "Bind-facing pairing verified only; no actual native Bind execution in this proof"
+  ],
+  "safety_limits": {
+    "input_token_ceiling_hypothetical": 10000,
+    "output_token_max": 256,
+    "historical_estimated_input_price_USD_per_million": "0.40",
+    "historical_estimated_output_price_USD_per_million": "1.60",
+    "max_offline_estimated_USD_not_a_billing_cap": "0.005",
+    "provider_request_posts": 0,
+    "online_requests": 0,
+    "bank_operations": 0,
+    "synthetic_sdk_mock_posts": 1,
+    "human_approval_for_live_calls": false,
+    "previous_consumption_tag": "refs/tags/task4-third-two-real-provider-v1-consumed",
+    "previous_consumption_sha_immutable": "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+  },
+  "negative_cases": [
+    "live API key or overridden SDK base url",
+    "untrusted model prompt/tool/role mutation or token limit change",
+    "stale date context and replay",
+    "output token/estimated cost rule violations",
+    "wrong/multiple SDK requests or wrong response",
+    "injected subject redirect, wrong recipient, amount, date, or malformed JSON",
+    "fake response masquerading as a genuine Provider reply",
+    "one-shot local attempt consumed on failure"
+  ],
+  "limits": {
+    "real_llm_utility": false,
+    "actual_authority_issuance": false,
+    "real_provider_identity_authentication": false,
+    "actual_credit_card_charge_cap": false,
+    "actual_provider_response": false,
+    "original_305_native_bind_called": false,
+    "production_execution_grant": false,
+    "real_bank_dispatch": false,
+    "canonical_final128_scoring": false,
+    "physical_clock_attestation": false
+  },
+  "merge_condition": "Exact PR-HEAD CI, report JSON, JUnit and independent SHA inspection; all general checks green. No auto-merge."
+}
