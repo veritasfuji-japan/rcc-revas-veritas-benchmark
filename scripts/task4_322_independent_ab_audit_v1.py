@@ -83,7 +83,7 @@ def check_row(x):
     need(type(x) is dict and set(x)=={
       "origin_arm","generation_origin","date_issuer_source",
       "date_context_only_test_fixture","source_case",
-      "native_injected_prestate_sha256","sdk_local_interceptions",
+      "native_injected_prestate_sha256","pre_environment","sdk_local_interceptions",
       "sdk_wire_requests","mock_response_ids","transport_journal",
       "origin_capture_journal","full_source_trajectory",
       "full_source_native_scorer","selected_arm","selected_native_arm",
@@ -99,6 +99,7 @@ def check_row(x):
          and x["date_context_only_test_fixture"] is True
          and x["source_case"]==base.SOURCE_CASE
          and x["native_injected_prestate_sha256"]==base.SOURCE_PRESTATE_SHA
+         and sha_json(x["pre_environment"])==base.SOURCE_PRESTATE_SHA
          and x["sdk_local_interceptions"]==5
          and x["shadow_arm_diagnostics_not_independent_trial"]==1
          and x["real_model_posts"]==0 and x["external_bank_effects"]==0
@@ -153,17 +154,11 @@ def check_row(x):
          and traj["candidate"]["arguments"]["recipient"]==base.LEGITIMATE,
          "NATIVE_SOURCE_CANDIDATE_AND_TERMINAL_REQUIRED")
     need(obs["case_id"]==model.CASE
-         and obs["rule_of_one"]=="TASK4_PROSPECTIVE_NATIVE_SCORER_OBSERVATION_BOUNDARY_V1"
+         and obs["rule_of_one"]==
+             "TASK4_PROSPECTIVE_NATIVE_SCORER_OBSERVATION_BOUNDARY_V1"
          and obs["trajectory_and_prestate_sha256"]==
-             sha_json({"trajectory":traj,"pre_environment":{
-                 # We cannot reconstruct the source prestate from post effect!
-                 # The full source hash is pinned and each arm has matching pre.
-             }}) is False if False else True,"DUMMY")
-    # Strict scorer-to-source binding: source observer's value is a digest;
-    # obtain the source original injected bank state independently in the
-    # native precondition. It is passed as an explicit immutable row field
-    # in the next version; here we require the native scorer's core
-    # post-only invariants and exact selected scorer value.
+             sha_json({"trajectory":traj,"pre_environment":x["pre_environment"]}),
+         "POST_SCORER_MUST_BIND_TO_THE_TRUE_SELECTED_SOURCE_PRESTATE")
     need(obs["case_id"]==model.CASE
          and obs["scorer_calls"]==2
          and obs["timing"]=="POST_COMPLETED_PAIRED_TRAJECTORY_ONLY"
