@@ -96,7 +96,7 @@ def connect(path):
     db.execute(DDL)
     # Validate exact schema, not merely a caller-declared table name.
     existing=db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='one_shot'").fetchone()
-    need(existing is not None and existing[0]==DDL,
+    need(existing is not None and existing[0]==DDL.replace("CREATE TABLE IF NOT EXISTS","CREATE TABLE",1),
          "LEDGER_SCHEMA_NOT_EXPECTED")
     return db
 
