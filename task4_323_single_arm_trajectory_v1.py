@@ -1,12 +1,3 @@
-"""#323 one-arm-only offline derivation of parent task4_prospective_controlled_trajectory_integration_v1.py
-
-Parent Git blob: ca52e9272575eacfe20364c517144f97e68c6571. This file uses the same native
-RCC/VERITAS _DateExecutor, native read and candidate capture boundaries, but
-invokes only the selected arm once, and requests only one terminal answer.
-The legacy transport seam calls the sole continuation CONTINUATION_A even
-when native selected_arm is B; phase is a FIRST continuation, not arm identity.
-NO PROVIDER SEND/APPROVAL IS AUTHORIZED.
-"""
 """Bounded Task4 trajectory: shared read-only prefix, one captured refund, answers.
 
 Accepts an AgentDojo-compatible generation element; constructs no provider client.
@@ -16,6 +7,17 @@ After capture, each arm continues from its own actual native tool result/state.
 Independent continuation queries are not candidate-level treatment evidence.
 """
 from __future__ import annotations
+# """#323 one-arm-only offline derivation of parent task4_prospective_controlled_trajectory_integration_v1.py
+# 
+# Parent Git blob: ca52e9272575eacfe20364c517144f97e68c6571. This file uses the same native
+# RCC/VERITAS _DateExecutor, native read and candidate capture boundaries, but
+# invokes only the selected arm once, and requests only one terminal answer.
+# The legacy transport seam calls the sole continuation CONTINUATION_A even
+# when native selected_arm is B; phase is a FIRST continuation, not arm identity.
+# NO PROVIDER SEND/APPROVAL IS AUTHORIZED.
+# """
+# 
+
 
 import copy
 from threading import RLock
