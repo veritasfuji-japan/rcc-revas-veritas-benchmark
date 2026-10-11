@@ -74,6 +74,7 @@ class OfflineWireBudget:
         self._lock=threading.Lock()
         self._previous="0"*64
         self._bpe_total=0
+        self._seen_request_hashes=set()
 
     def inspect(self,request):
         with self._lock:
@@ -104,6 +105,9 @@ class OfflineWireBudget:
                      type(data["messages"]) is list and
                      type(data["tools"]) is list,
                      "OUTPUT_CAP_OR_MODEL_OR_TASK_TOOLS_NOT_PINNED")
+                raw_sha=parent.hash_bytes(raw)
+                need(raw_sha not in self._seen_request_hashes,
+                     "DUPLICATE_RAW_WIRE_REQUEST_REPLAY_DENIED")
                 # This local BPE count includes actual wire JSON representation.
                 # The Provider's own message/tool framing and usage can differ.
                 text=raw.decode("utf-8",errors="strict")
@@ -115,7 +119,7 @@ class OfflineWireBudget:
                 ordinal=len(self.entries)
                 row={
                   "arm":self.arm,"ordinal":ordinal,
-                  "raw_sdk_http_body_sha256":parent.hash_bytes(raw),
+                  "raw_sdk_http_body_sha256":raw_sha,
                   "raw_sdk_json_utf8_bytes":len(raw),
                   "local_json_bpe_tokens_not_provider_usage":local_bpe,
                   "whole_arm_local_bpe_after":self._bpe_total+local_bpe,
@@ -129,6 +133,7 @@ class OfflineWireBudget:
                 }
                 row["receipt_sha256"]=parent.hash_bytes(parent.canonical(row))
                 self.entries.append(row)
+                self._seen_request_hashes.add(raw_sha)
                 self._previous=row["receipt_sha256"]
                 self._bpe_total+=local_bpe
                 return data
