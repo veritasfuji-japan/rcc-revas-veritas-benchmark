@@ -1,0 +1,244 @@
+{
+  "schema": "veritas.task4.offline-infrastructure-candidate-evidence-selection.v1",
+  "rule_of_one": "TASK4_314_CANDIDATE_COMPARISON_IS_NEVER_PRODUCTION_AUTHORIZATION_V1",
+  "parent_merged_main": "221ca18c00effdacbfd8d6d4d74aa181860ae857",
+  "parent_git_blobs": {
+    "contracts/TASK4_313_EXTERNAL_CONTROL_READINESS_PREFLIGHT_V1.json": "5fa051c5ac50429394958c8cd2231c8fc20e76d6",
+    "scripts/task4_313_external_control_readiness_preflight_v1.py": "8f935dff2d2590826fd839a6630d8f804e96a0ee",
+    "tests/test_task4_313_external_control_readiness_preflight_v1.py": "c6f0c989bbde73e86c1a9bb236ed6169f48d7625",
+    ".github/workflows/task4-313-external-control-readiness-preflight-v1.yml": "2da09fa18be4ce63511d7c2f706951e070e6e194",
+    "docs/TASK4_313_EXTERNAL_CONTROL_READINESS_PREFLIGHT_V1.md": "3f430d2c10cd4e234a6e176bd6750e2ab0b2ec7c"
+  },
+  "previous_real_provider_consent": "CONSUMED_DO_NOT_REUSE",
+  "current_budget_approval": "NONE",
+  "cost_and_pricing_validation": "NO_LIVE_QUOTES_VERIFIED",
+  "objective": "Compare options and freeze independent evidence requirements without selecting or provisioning",
+  "candidates": [
+    {
+      "id": "LOCAL_OFFLINE_FIXTURE",
+      "label": "Local Docker/PostgreSQL mock-only",
+      "components": "Local isolated mock runner, PostgreSQL fixture, no Provider keys",
+      "fit": "OFFLINE_TESTS_ONLY",
+      "status": "RESEARCH_ONLY_NON_DEPLOYED",
+      "cost_quote_usd_month": null,
+      "actual_cost_verified": false,
+      "external_admin_verified": false,
+      "tenant_identity_verified": false,
+      "physical_egress_denial_verified": false,
+      "db_superuser_bypass_closed": false,
+      "secret_scope_verified": false,
+      "independent_audit_verified": false,
+      "provider_billing_cap_verified": false,
+      "approved_to_provision": false,
+      "approved_to_send": false,
+      "documentation_source": "https://www.postgresql.org/docs/current/"
+    },
+    {
+      "id": "GITHUB_ENV_ONLY",
+      "label": "GitHub Actions environment-only",
+      "components": "Approval gates and protected workflows; no independent physical provider egress enforcement",
+      "fit": "NOT_A_SUFFICIENT_PRODUCTION_BOUNDARY",
+      "status": "RESEARCH_ONLY_NON_DEPLOYED",
+      "cost_quote_usd_month": null,
+      "actual_cost_verified": false,
+      "external_admin_verified": false,
+      "tenant_identity_verified": false,
+      "physical_egress_denial_verified": false,
+      "db_superuser_bypass_closed": false,
+      "secret_scope_verified": false,
+      "independent_audit_verified": false,
+      "provider_billing_cap_verified": false,
+      "approved_to_provision": false,
+      "approved_to_send": false,
+      "documentation_source": "https://docs.github.com/en/actions/concepts/workflows-and-actions/deployment-environments"
+    },
+    {
+      "id": "GCP_MANAGED_SEPARATION",
+      "label": "Google Cloud separated services (candidate)",
+      "components": "Cloud Run separate service identities; Cloud SQL PostgreSQL; Secret Manager; VPC egress policy; independent audit",
+      "fit": "CANDIDATE_REQUIRES_EXTERNAL_ATTESTATION_AND_BILLING",
+      "status": "RESEARCH_ONLY_NON_DEPLOYED",
+      "cost_quote_usd_month": null,
+      "actual_cost_verified": false,
+      "external_admin_verified": false,
+      "tenant_identity_verified": false,
+      "physical_egress_denial_verified": false,
+      "db_superuser_bypass_closed": false,
+      "secret_scope_verified": false,
+      "independent_audit_verified": false,
+      "provider_billing_cap_verified": false,
+      "approved_to_provision": false,
+      "approved_to_send": false,
+      "documentation_source": "https://docs.cloud.google.com/run/docs/securing/service-identity"
+    },
+    {
+      "id": "AWS_MANAGED_SEPARATION",
+      "label": "AWS separated services (candidate)",
+      "components": "IAM-isolated Lambda/containers; RDS PostgreSQL; Secrets Manager; VPC egress policy; external audit",
+      "fit": "CANDIDATE_REQUIRES_EXTERNAL_ATTESTATION_AND_BILLING",
+      "status": "RESEARCH_ONLY_NON_DEPLOYED",
+      "cost_quote_usd_month": null,
+      "actual_cost_verified": false,
+      "external_admin_verified": false,
+      "tenant_identity_verified": false,
+      "physical_egress_denial_verified": false,
+      "db_superuser_bypass_closed": false,
+      "secret_scope_verified": false,
+      "independent_audit_verified": false,
+      "provider_billing_cap_verified": false,
+      "approved_to_provision": false,
+      "approved_to_send": false,
+      "documentation_source": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/database-authentication.html"
+    }
+  ],
+  "owner_roles": [
+    {
+      "id": "human_approver",
+      "assigned_independent_person": null,
+      "admin_tenancy": null,
+      "verified_separation": false
+    },
+    {
+      "id": "security_issuer_admin",
+      "assigned_independent_person": null,
+      "admin_tenancy": null,
+      "verified_separation": false
+    },
+    {
+      "id": "ledger_data_admin",
+      "assigned_independent_person": null,
+      "admin_tenancy": null,
+      "verified_separation": false
+    },
+    {
+      "id": "secrets_admin",
+      "assigned_independent_person": null,
+      "admin_tenancy": null,
+      "verified_separation": false
+    },
+    {
+      "id": "network_admin",
+      "assigned_independent_person": null,
+      "admin_tenancy": null,
+      "verified_separation": false
+    },
+    {
+      "id": "sender_release_admin",
+      "assigned_independent_person": null,
+      "admin_tenancy": null,
+      "verified_separation": false
+    },
+    {
+      "id": "billing_admin",
+      "assigned_independent_person": null,
+      "admin_tenancy": null,
+      "verified_separation": false
+    },
+    {
+      "id": "external_audit_admin",
+      "assigned_independent_person": null,
+      "admin_tenancy": null,
+      "verified_separation": false
+    }
+  ],
+  "gate_plan": [
+    {
+      "id": "COMMITTED_RECEIPT_BEFORE_SEND",
+      "required_owner_role": "sender_release_admin",
+      "independent_proof_needed": "Protected sender confirms committed receipt before any call; rejects rollback/pending",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "DB_ADMIN_BREAKGLASS_RECONCILIATION",
+      "required_owner_role": "external_audit_admin",
+      "independent_proof_needed": "Independent off-DB immutable audit proving privileged admin cannot silently restore consent",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "EPHEMERAL_PROVIDER_SECRET_BROKER",
+      "required_owner_role": "secrets_admin",
+      "independent_proof_needed": "Actual broker authorization and key denial for agent/ordinary CI",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "EXACT_REQUEST_ISSUER_TIME_AND_PRESTATE",
+      "required_owner_role": "security_issuer_admin",
+      "independent_proof_needed": "Trusted request hash, prestate, clock, expiration independently verified",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "FRESH_ACCOUNT_BILLING_ENFORCEMENT",
+      "required_owner_role": "billing_admin",
+      "independent_proof_needed": "Independent verified current pricing and real enforced spend/attempt limits",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "INDEPENDENT_AUDIT_AND_NO_REISSUE",
+      "required_owner_role": "external_audit_admin",
+      "independent_proof_needed": "External append-only events and verification reruns cannot reissue grants",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "ISSUER_WORKLOAD_IDENTITY",
+      "required_owner_role": "security_issuer_admin",
+      "independent_proof_needed": "Effective permissions and denied impersonation from repo writer/PR runner",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "NETWORK_EGRESS_ENFORCEMENT",
+      "required_owner_role": "network_admin",
+      "independent_proof_needed": "Observed deny-by-default Provider egress from runner/agent, sender-only route",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "NEW_HUMAN_SCOPED_APPROVAL",
+      "required_owner_role": "human_approver",
+      "independent_proof_needed": "Fresh separate human-signed bounded request/model/expiry/amount grant, not old consent",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "PROTECTED_LEDGER_CAS",
+      "required_owner_role": "ledger_data_admin",
+      "independent_proof_needed": "Cross-run atomic consumption with immutable receipt observed by independent party",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "PROTECTED_SENDER_CODE_INTEGRITY",
+      "required_owner_role": "sender_release_admin",
+      "independent_proof_needed": "Pinned immutable release, protected identity, denied fork/PR artifact deployment",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    },
+    {
+      "id": "UNKNOWN_REMOTE_STATE_NEVER_RETRY",
+      "required_owner_role": "sender_release_admin",
+      "independent_proof_needed": "Ambiguous remote state remains consumed; no hidden transport retries",
+      "status": "NOT_ATTESTED",
+      "evidence": null
+    }
+  ],
+  "selected_candidate": null,
+  "external_attestations_count": 0,
+  "independent_administrator_established": false,
+  "cloud_config_inspected": false,
+  "network_egress_verified": false,
+  "db_breakglass_risk_closed": false,
+  "budget_hard_stop_verified": false,
+  "cloud_resources_provisioned": 0,
+  "provider_calls": 0,
+  "bank_effects": 0,
+  "official_final128_scores": 0,
+  "real_provider_grants_issued": 0,
+  "decision": "DENY",
+  "next_gate": "OWNER_SELECTION_AND_INDEPENDENT_ADMIN_BUDGET_BEFORE_ANY_PROVISIONING"
+}
