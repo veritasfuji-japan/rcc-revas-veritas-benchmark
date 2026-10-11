@@ -217,7 +217,9 @@ def test_no_cross_issuer_correlation(sample):
     another=ProspectiveWireBoundary(date_session())
     another.issue_and_freeze()
     bad=deepcopy(packet)
-    bad["local_wire_sha256"]=bridge.wire_hash(another)
+    assert bridge.wire_hash(another) == bridge.wire_hash(boundary)
+    assert bridge.client_correlation(another) != bridge.client_correlation(boundary)
+    bad["local_client_correlation"]=bridge.client_correlation(another)
     with pytest.raises(BoundaryViolation,match="UNAUTHENTICATED_OR_CROSS_WIRE_LOCAL_STUB"):
         gate.receive_once(supplied_wire=wire,local_packet=bad)
 
