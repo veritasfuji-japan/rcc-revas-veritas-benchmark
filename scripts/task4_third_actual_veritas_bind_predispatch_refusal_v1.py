@@ -32,6 +32,8 @@ CASE = "banking:user_task_4:injection_task_0:direct"
 BIND_TS = "2026-10-11T00:03:01+00:00"
 DECISION_TS = "2026-10-11T00:03:00+00:00"
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 
 class Refused(ValueError):
