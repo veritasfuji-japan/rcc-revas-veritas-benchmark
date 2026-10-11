@@ -1,0 +1,49 @@
+{
+  "schema": "veritas.task4.protected-live-authorization-gap-audit.v1",
+  "rule_of_one": "TASK4_PROTECTED_LIVE_AUTHORIZATION_GAP_AUDIT_V1",
+  "status": "DRAFT_OFFLINE_READINESS_BLOCKED_NOT_PRODUCTION_READY",
+  "parent_main": "89cf1a35135b019b62e8f2cf8f90a50e18be3072",
+  "immutable_real_permission_history": {
+    "third_round_consumed_ref": "refs/tags/task4-third-two-real-provider-v1-consumed",
+    "third_round_consumed_sha": "95ff6be8c5875ed3827a00fe71fb54bd9de48130",
+    "past_permission_reusable": false
+  },
+  "static_sources_pinned": {
+    "issuer_date_profile": "4eb8646b18cae7130c217fa3a04d05a3d71756d3",
+    "model_wire_303": "83ad7d3f229084633c28729d592330c477c76316",
+    "mock_completion_304": "b7ca0e41125a4a137397d41f8bc2650c7e179088",
+    "native_RCC_and_Bind_simulation_305": "a287ff67878f22cd552552a31c9b8451be1e5751",
+    "real_sdk_mock_306": "f3d2bc13a813faa405f29bd276e93b8d4458d0ec",
+    "local_rehearsal_default_deny_307": "d45511882e9cb9fc9f89128dee7c36dac377e672",
+    "sqlite_single_host_atomic_308": "9d14cf421a2d5e33b252bc2ae45662306cc2772b",
+    "sqlite_readonly_workflow_308": "204981a0cdf4b0df997e2329c8111ad41fb8b19a"
+  },
+  "scope": "AgentDojo Task4 prospective model test; only the #303-308 offline path is evaluated, not all GitHub workflows or production environment settings.",
+  "missing_independently_attested_production_controls": [
+    "HUMAN_APPROVAL_SCOPED",
+    "PROTECTED_GLOBAL_SINGLE_USE",
+    "CREDENTIAL_AND_EGRESS_ISOLATION",
+    "ACCOUNT_SPEND_ENFORCEMENT",
+    "PRODUCTION_ISSUER_CLOCK",
+    "REMOTE_UNKNOWN_NO_RETRY",
+    "PROVIDER_ORIGIN_RECEIPT",
+    "LIVE_NATIVE_BIND_EFFECT_COVERAGE",
+    "INDEPENDENT_UTILITY_AND_ATTACK_EVAL"
+  ],
+  "readiness": "BLOCKED_NOT_READY_FOR_REAL_PROVIDER_DISPATCH",
+  "offline_success_scope": "Verifies exact historic source blobs and readiness-denial invariant; no attempt to prove external controls absent, as their evidence is merely unavailable.",
+  "external_data_supplied_from_untrusted_manifest": "IGNORED_NEVER_GRANTS_APPROVAL",
+  "real_provider_calls": 0,
+  "actual_live_model_replies": 0,
+  "bank_effects": 0,
+  "new_human_approval_issued": false,
+  "independent_external_controls_verified": false,
+  "production_grant_or_protected_store_issued": false,
+  "consent_expiry_realtime_attested": false,
+  "cost_limit_enforced_by_provider": false,
+  "provider_account_secrets_read": false,
+  "official_FInal128_scores": 0,
+  "next_action": "Obtain a new authorized, audited external grant+ledger/credentials/spending architecture with scoped cost/one-post constraints BEFORE writing any real sender, and require separate explicit human consent.",
+  "audit_limit": "Git blob SHA-1 identifiers are source pins, not tamper-proof authorities. CI can be green while all live preconditions remain NOT_ATTESTED. A future different PR must be independently audited for actual live effects.",
+  "merge_policy": "Only after exact-head dedicated and ordinary CI green, JUnit JSON and SHA artifact audited; no automatic merge and no real API execution."
+}
