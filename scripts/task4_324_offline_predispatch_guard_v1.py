@@ -164,7 +164,7 @@ class OfflineReservationJournal:
                    "request_sha256": attempt.request_sha256,
                    "input_tokens_estimated_not_verified": attempt.input_tokens,
                    "output_tokens_reserved_not_used": attempt.max_output_tokens,
-                   "reserved_estimated_usd": format(next_cost,"f"),
+                   "reserved_estimated_usd": format(next_cost.normalize(),"f"),
                    "decision": "LOCAL_DRY_RUN_RESERVED_NO_SEND",
                    "previous_receipt_sha256": self._previous,
                    "real_provider_post_allowed": False}
@@ -196,7 +196,7 @@ class OfflineReservationJournal:
                     "per_arm": dict(self._per_arm),
                     "estimated_input_tokens": self._input,
                     "reserved_output_tokens": self._output,
-                    "worst_case_planning_usd_not_invoice":format(self._reserved,"f"),
+                    "worst_case_planning_usd_not_invoice":format(self._reserved.normalize(),"f"),
                     "simulated_unknown_or_closed": self._frozen,
                     "receipt_chain_head": self._previous,
                     "receipts": [dict(row) for row in self._rows]}
