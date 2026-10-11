@@ -43,8 +43,14 @@ def wire_hash(boundary):
 
 
 def client_correlation(boundary):
-    """Local ledger correlation, NOT a cryptographic Provider attestation."""
-    return "offline-304-" + wire_hash(boundary)[:24]
+    """Session-scoped local correlation, NOT a cryptographic Provider attestation."""
+    require(type(boundary) is ProspectiveWireBoundary and
+            boundary.context is not None, "ISSUED_SESSION_CONTEXT_REQUIRED")
+    context_scoped = sha({
+        "wire_sha256": wire_hash(boundary),
+        "issuer_context_digest": boundary.context.digest,
+    })
+    return "offline-304-" + context_scoped[:24]
 
 
 def exact_json(raw):
