@@ -1,0 +1,95 @@
+name: Task4 Offline Remote CreateRef CAS Server Emulation V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-328-remote-cas-emulation-offline-v1.yml"
+      - "scripts/task4_328_remote_mock_github_cas_v1.py"
+      - "scripts/task4_328_remote_mock_report_v1.py"
+      - "tests/test_task4_328_remote_cas_mock_offline_v1.py"
+      - "contracts/TASK4_328_REMOTE_GITREF_MOCK_OFFLINE_V1.json"
+      - "docs/TASK4_328_REMOTE_CAS_OFFLINE_PROOF_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-328-remote-cas-emulation-offline-v1.yml"
+      - "scripts/task4_328_remote_mock_github_cas_v1.py"
+      - "scripts/task4_328_remote_mock_report_v1.py"
+      - "tests/test_task4_328_remote_cas_mock_offline_v1.py"
+      - "contracts/TASK4_328_REMOTE_GITREF_MOCK_OFFLINE_V1.json"
+      - "docs/TASK4_328_REMOTE_CAS_OFFLINE_PROOF_V1.md"
+
+permissions:
+  contents: read
+
+jobs:
+  remote-cas-localhost-no-github-refs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Confirm exact commit and absence of privileged/API credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          for k in GITHUB_TOKEN GH_TOKEN OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL VERITAS_DATABASE_URL; do
+            test -z "${!k:-}"
+          done
+          git rev-parse HEAD > results/task4-328-actual-head.txt
+          echo "${{ github.event.pull_request.head.sha || github.sha }}" > results/task4-328-expected-head.txt
+          test "$(cat results/task4-328-actual-head.txt)" = "$(cat results/task4-328-expected-head.txt)"
+      - name: Test 16 separate HTTP client processes, mock CAS conflict and unknown
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+          python -m pytest -q -o addopts= tests/test_task4_328_remote_cas_mock_offline_v1.py \
+            --junitxml=results/task4-328-junit.xml | tee results/task4-328-pytest.log
+          python scripts/task4_328_remote_mock_report_v1.py results/task4-328-localhost-remote-cas-report.json \
+            | tee results/task4-328-audit.log
+          python - <<'PY'
+          import json,hashlib
+          result=json.load(open("results/task4-328-localhost-remote-cas-report.json"))
+          receipt=result.pop("report_sha256")
+          actual=hashlib.sha256(json.dumps(result,sort_keys=True,ensure_ascii=False,
+                       separators=(",",":"),allow_nan=False).encode()).hexdigest()
+          assert actual==receipt
+          assert result["separate_python_client_processes"]==16
+          assert result["remote_mock_atomic_create_successes"]==1
+          assert result["remote_mock_duplicate_refusals"]==15
+          assert result["remote_commit_then_lost_http_response_marked_unknown"] is True
+          assert result["retry_after_lost_response_and_server_restart_rejected"] is True
+          assert result["actual_github_remote_ref_writes"]==0
+          assert result["actual_distinct_github_actions_runs_tested"]==0
+          assert result["real_model_api_posts"]==0
+          assert result["real_provider_dispatch"]=="DENY"
+          print("TASK4_328_REMOTE_HTTP_CAS_MOCK_SUCCESS_ACTUAL_GITHUB_NOT_TESTED")
+          PY
+          sha256sum scripts/task4_328_remote_mock_github_cas_v1.py \
+            scripts/task4_328_remote_mock_report_v1.py \
+            tests/test_task4_328_remote_cas_mock_offline_v1.py \
+            contracts/TASK4_328_REMOTE_GITREF_MOCK_OFFLINE_V1.json \
+            results/task4-328-localhost-remote-cas-report.json \
+            > results/task4-328-source-evidence-sha256.txt
+          python -m pip freeze > results/task4-328-pip-freeze.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-328-http-remote-create-ref-mock-no-live-v1
+          path: results/*
+          if-no-files-found: warn
