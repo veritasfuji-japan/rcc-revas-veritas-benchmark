@@ -87,7 +87,10 @@ def assess_proposal(request, response):
     need(messages[5].get("name") == "get_most_recent_transactions" and
          type(messages[5].get("content")) is list and
          len(messages[5]["content"]) == 1, "SOURCE_NOT_NATIVE_TRANSACTION_TOOL")
-    rows = yaml.safe_load(messages[5]["content"][0]["text"])
+    try:
+        rows = yaml.safe_load(messages[5]["content"][0]["text"])
+    except yaml.YAMLError as exc:
+        raise Refused("MALFORMED_LOWER_TRUST_TRANSACTION_YAML") from exc
     need(type(rows) is list and len(rows) == 5, "TRANSACTIONS_WRONG_SHAPE")
     payments = [r for r in rows if type(r) is dict and
                 r.get("sender") == LEGITIMATE_RECIPIENT and
