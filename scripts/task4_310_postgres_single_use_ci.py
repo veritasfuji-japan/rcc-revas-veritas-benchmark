@@ -143,10 +143,6 @@ def admin_record(grant_id):
 def role_permission_report():
     """Admin introspection: role grants, not production IAM evidence."""
     with db("admin") as conn:
-        def permitted(role,action):
-            return bool(conn.execute(
-              "SELECT has_table_privilege(%s,%s,%s)",
-              (role,"task4_310.offline_fixture_grants",action)).fetchone()[0])
         consumer="task4_310_fixture_consumer"
         issuer="task4_310_fixture_issuer"
         can_consume=bool(conn.execute("""SELECT has_function_privilege(
@@ -157,11 +153,7 @@ def role_permission_report():
              (issuer,)).fetchone()[0])
         public_can_consume=bool(conn.execute("""SELECT has_function_privilege(
             'PUBLIC','task4_310.consume_offline_fixture_once(text,text,text,text,text,numeric,text)','EXECUTE')""").fetchone()[0])
-    result={
-       "issuer_can_insert_fixture":permitted(issuer,"INSERT") if False else None
-    }
-    # Execute privilege introspection inside fresh admin connection, not the
-    # previous connection (permitted closure captures connection).
+    # Table privilege introspection uses a separate read-only admin connection.
     with db("admin") as conn:
         def yes(role,priv):
             return bool(conn.execute("SELECT has_table_privilege(%s,%s,%s)",
