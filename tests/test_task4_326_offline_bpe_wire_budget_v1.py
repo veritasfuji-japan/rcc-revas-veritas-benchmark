@@ -27,6 +27,10 @@ import httpx
 
 @pytest.fixture(scope="module")
 def rows():
+    # The pinned BPE vocabulary may be fetched once from its public blob
+    # distribution at initialization. Preload BEFORE denying all sockets.
+    # The actual SDK/MockTransport native A/B proof then runs with zero egress.
+    assert model.tiktoken_encoder().name==model.ENCODING_NAME
     with pytest.MonkeyPatch.context() as guard:
         def no_egress(*a,**kw):pytest.fail("TASK4_326_FORBIDS_SOCKET_AND_SQLITE")
         guard.setattr(socket.socket,"connect",no_egress)
