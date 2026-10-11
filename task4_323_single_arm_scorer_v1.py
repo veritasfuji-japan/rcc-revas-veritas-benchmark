@@ -1,10 +1,12 @@
-"""#323 one-native-arm-only post-scorer derivation from pinned #210.
-Parent scorer Git blob: 9673b73fcdd10433c9df66e6c92ab17204bc8304. Uses actual pinned AgentDojo
-scorer invocation, but scores exactly the one selected native completed arm.
-Never fabricate shadow arms, scorer success or model terminal history.
-"""
 """Post-trajectory observer. No generation, authority, repair or dispatch API."""
 from __future__ import annotations
+# """#323 one-native-arm-only post-scorer derivation from pinned #210.
+# Parent scorer Git blob: 9673b73fcdd10433c9df66e6c92ab17204bc8304. Uses actual pinned AgentDojo
+# scorer invocation, but scores exactly the one selected native completed arm.
+# Never fabricate shadow arms, scorer success or model terminal history.
+# """
+# 
+
 import copy
 from scripts.agentdojo_clean_ab_canonical_final_runner_v2_8 import sha_json
 from scripts.agentdojo_final_runner_integration_v0_1 import ExecutionBarrier, score_after_execution
