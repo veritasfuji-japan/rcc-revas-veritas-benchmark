@@ -1,0 +1,50 @@
+{
+  "schema": "veritas.task4.postgres-role-separated-consumption.ci.v1",
+  "rule_of_one": "TASK4_POSTGRES_ROLE_SEPARATED_CONSUMPTION_CI_V1",
+  "base_main_exact": "cdcb5672e82f1c2109adff3bd9ae5404451d5359",
+  "implementation_type": "real PostgreSQL transactional CAS, EPHEMERAL CI ONLY, strictly synthetic grants",
+  "source_of_grant": "test-only fixture issuer; NOT a human approval",
+  "parent_proofs_pinned": {
+    "gap_audit_309": "9b87c87a98e30aaa16ebceb600437d3793361621",
+    "sqlite_local_308": "9d14cf421a2d5e33b252bc2ae45662306cc2772b",
+    "issuer_frozen_wire_303": "83ad7d3f229084633c28729d592330c477c76316"
+  },
+  "prior_third_real_provider_consumed_sha": "95ff6be8c5875ed3827a00fe71fb54bd9de48130",
+  "postgres_version": "16.6 official container tag (not content-digest pinned; CI only)",
+  "local_database": "postgresql://127.0.0.1:5432/postgres, GitHub Actions Postgres service only",
+  "roles": {
+    "issuer": "fixture role with INSERT only; cannot SELECT/UPDATE/DELETE/execute consume",
+    "consumer": "fixture role with EXECUTE on SECURITY DEFINER consume function only; cannot SELECT/UPDATE/DELETE/INSERT",
+    "admin": "CI service database owner; outside the unprivileged issuer/consumer privilege boundary"
+  },
+  "atomic_mechanism": {
+    "transaction": "single UPDATE conditional on exact scope, state ISSUED_FIXTURE_ONLY and DB-server expiry",
+    "final_state": "CONSUMED_FIXTURE_ONLY",
+    "read_back": "independent DB connection after commit",
+    "concurrency": "16 independent consumer database connections, exactly 1 committed and 15 refused",
+    "replay": "same grant cannot be consumed by any subsequent connection",
+    "timeout": "CI-side unknown/crash requires no external side effect; production commit evidence still unproven",
+    "external_effect_trigger": "NONE"
+  },
+  "planned_future_real_provider_calls_not_authorized": 1,
+  "authorized_real_provider_calls": 0,
+  "new_human_approval_issued": false,
+  "actual_provider_client_present": false,
+  "production_api_key_present": false,
+  "real_provider_posts": 0,
+  "real_bank_effects": 0,
+  "native_veritas_bind_adjudications": 0,
+  "official_task4_or_final128_scores": 0,
+  "historical_offline_estimate_not_hard_cap_usd": "0.00440960",
+  "remaining_unproven": [
+    "Production-grade protected independent grant issuance",
+    "Real cross-run deployment and privileged PostgreSQL administrator separation",
+    "Live IAM/environment protection and enforced network egress isolation",
+    "Actual Provider account/project spend enforcement and fresh model pricing",
+    "Commit-ack plus timeout/rollback-safe coupling to any real sender",
+    "New explicit human approval and real Provider response authentication",
+    "Production native VERITAS Bind and effect reconciliation"
+  ],
+  "restrictions": "Draft CI only. Never use CI passwords, SQL grant function, or fixture boolean as execution permission. Must design and verify real distributed issuer and sender separately.",
+  "merge_gates": "Exact head dedicated CI and existing checks; JUnit, evidence JSON, artifact ZIP digest. User merges; no auto merge."
+}
