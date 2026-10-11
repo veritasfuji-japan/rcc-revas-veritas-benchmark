@@ -1,0 +1,88 @@
+name: Task4 Protected Live Authorization Gap Audit V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-protected-live-authorization-gap-audit-v1.yml"
+      - "scripts/task4_protected_live_authorization_gap_audit_v1.py"
+      - "tests/test_task4_protected_live_authorization_gap_audit_v1.py"
+      - "contracts/TASK4_PROTECTED_LIVE_AUTHORIZATION_GAP_AUDIT_V1.json"
+      - "docs/TASK4_PROTECTED_LIVE_AUTHORIZATION_GAP_AUDIT_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-protected-live-authorization-gap-audit-v1.yml"
+      - "scripts/task4_protected_live_authorization_gap_audit_v1.py"
+      - "tests/test_task4_protected_live_authorization_gap_audit_v1.py"
+      - "contracts/TASK4_PROTECTED_LIVE_AUTHORIZATION_GAP_AUDIT_V1.json"
+      - "docs/TASK4_PROTECTED_LIVE_AUTHORIZATION_GAP_AUDIT_V1.md"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  offline-source-pins-and-live-provider-blocker-report:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      TASK4_THIRD_APPROVAL_PHRASE: ""
+      TASK4_307_APPROVAL_PHRASE: ""
+      TASK4_308_APPROVAL_PHRASE: ""
+      TASK4_309_APPROVAL_PHRASE: ""
+      TASK4_309_GAP_AUDIT: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Assert real third-round human authorization was already consumed
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          original="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/task4-third-two-real-provider-v1-consumed" --jq '.object.sha')"
+          test "$original" = "95ff6be8c5875ed3827a00fe71fb54bd9de48130"
+          echo "HISTORICAL_THIRD_PROVIDER_APPROVAL_CONSUMED_NO_REUSE"
+      - name: Install offline-only pytest, no Provider SDK dependencies
+        shell: bash
+        run: python -m pip install --disable-pip-version-check "pytest==9.1.1"
+      - name: Review exact source pins and nine unverified live controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python -m pytest -q -o addopts= \
+            tests/test_task4_protected_live_authorization_gap_audit_v1.py \
+            --junitxml=results/task4-309-gap-audit-junit.xml \
+            | tee results/task4-309-gap-audit-tests.log
+          python scripts/task4_protected_live_authorization_gap_audit_v1.py \
+            --output results/task4-309-gap-audit-report.json \
+            | tee results/task4-309-gap-audit-report.log
+          python - <<'PY'
+          import json
+          report=json.load(open("results/task4-309-gap-audit-report.json"))
+          assert report["readiness"]=="BLOCKED_NOT_READY_FOR_REAL_PROVIDER_DISPATCH"
+          assert report["approved_live_provider_calls"]==0
+          assert len(report["external_live_prerequisites"])==9
+          assert all(x["status"]=="NOT_ATTESTED"
+                     for x in report["external_live_prerequisites"])
+          print("NINE_LIVE_AUTHORIZATION_REQUIREMENTS_NOT_ATTESTED_NO_SEND")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-protected-live-authorization-gap-audit-v1
+          path: results/*
+          if-no-files-found: warn
