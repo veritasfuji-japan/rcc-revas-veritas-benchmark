@@ -97,7 +97,7 @@ def proposed_manifest(boundary):
         "target": "banking:user_task_4:prospective-new-date-future-provider-307",
         "original_request_sha256": sha(REQUEST),
         "issuer_context_sha256": boundary.context.digest,
-        "immutable_wire_sha256": sha(boundary.wire),
+        "immutable_wire_sha256": sha(json.loads(boundary.wire_bytes)),
         "model_id": MODEL,
         "sdk_package_version": SDK_VERSION,
         "proposed_future_provider_posts_not_authorized": PROPOSED_FUTURE_PROVIDER_CALLS,
@@ -254,7 +254,7 @@ class ConsentEvidenceOfflineRound:
             require(canonical(offered)==self._manifest_bytes and
                     canonical(self.manifest)==self._manifest_bytes,
                     "FROZEN_MANIFEST_CANNOT_CHANGE_OR_PROMOTE_AUTHORITY")
-            self.boundary._verify_wire(self.boundary.wire)
+            self.boundary._verify_wire(json.loads(self.boundary.wire_bytes))
             require(self.manifest["live_decision"]=="DENY" and
                     not self.manifest["human_approval_for_this_future_round_granted"] and
                     not self.manifest["new_protected_single_use_token_issued"] and
@@ -269,7 +269,7 @@ class ConsentEvidenceOfflineRound:
                 packet_mutator(packet)
             bridge=OfflineCompletionBridge(self.boundary)
             candidate_sha=bridge.receive_once(
-                supplied_wire=deepcopy(self.boundary.wire),
+                supplied_wire=json.loads(self.boundary.wire_bytes),
                 local_packet=packet)
             binding_sha=bridge.verify_before_bind(
                 supplied_wire=deepcopy(self.boundary.wire))
