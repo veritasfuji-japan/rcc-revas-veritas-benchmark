@@ -8,11 +8,12 @@ import socket
 import sys
 import uuid
 import pytest
-import psycopg
 
 if os.getenv("TASK4_311_CI_ONLY")!="1":
     pytest.skip("Run only in isolated Task4 #311 PostgreSQL CI",
                 allow_module_level=True)
+
+import psycopg  # dedicated CI installs this; ordinary CI skips above
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
