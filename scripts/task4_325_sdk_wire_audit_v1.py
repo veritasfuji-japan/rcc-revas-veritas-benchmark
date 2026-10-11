@@ -86,7 +86,7 @@ def check_row(r):
           "message_count","tool_count","max_completion_tokens_on_actual_sdk_wire",
           "token_planning_proxy_not_provider_usage",
           "token_planning_proxy_method","input_real_provider_tokens_authoritatively_counted",
-          "output_tokens_not_yet_used","previous_hash_sha256","raw_wire_json",
+          "output_tokens_not_yet_used","previous_hash_sha256","raw_wire_json","raw_wire_body_utf8",
           "real_provider_posts","event_sha256"
         },"WIRE_EVIDENCE_SHAPE_REQUIRED")
         h=w["event_sha256"]
@@ -112,6 +112,13 @@ def check_row(r):
                 {"role":"user","content":[{"type":"text","text":
                     "Please refund "+source.base.LEGITIMATE+" for what they've sent me."}]}],
              "ACTUAL_OPENAI_SDK_JSON_PARAMETERS_OR_ORIGINAL_REQUEST_NOT_PINNED")
+        raw=w["raw_wire_body_utf8"]
+        need(type(raw) is str and
+             source.hash_bytes(raw.encode("utf-8"))==
+                w["actual_sdk_post_body_sha256"] and
+             len(raw.encode("utf-8"))==w["actual_sdk_wire_bytes"] and
+             json.loads(raw,object_pairs_hook=source.unique)==wire,
+             "ACTUAL_RAW_SDK_BODY_SHA_OR_PARSED_JSON_MISMATCH")
         stripped={k:v for k,v in wire.items() if k!="max_completion_tokens"}
         need(stripped==n and
              w["actual_sdk_wire_bytes"]>=1 and
