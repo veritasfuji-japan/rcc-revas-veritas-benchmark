@@ -114,6 +114,7 @@ def run_source(arm):
       "date_context_only_test_fixture":True,
       "source_case":base.SOURCE_CASE,
       "native_injected_prestate_sha256":original_sha,
+      "pre_environment":copy.deepcopy(pre),
       "sdk_local_interceptions":server.attempts,
       "sdk_wire_requests":copy.deepcopy(server.requests),
       "mock_response_ids":[r["id"] for r in server.responses],
