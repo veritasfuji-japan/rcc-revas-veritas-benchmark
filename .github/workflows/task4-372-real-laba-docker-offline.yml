@@ -1,0 +1,104 @@
+name: Task4 372 Real LABA Issuance Verify Consume Offline Docker
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-372-real-laba-docker-offline.yml"
+      - "scripts/task4_372_real_laba_docker_proof_v1.py"
+      - "scripts/task4_372_real_laba_docker_audit_v1.py"
+      - "docker/task4_372_real_laba_docker_proof_v1.Dockerfile"
+      - "docs/TASK4_372_REAL_LABA_ISSUE_VERIFY_CONSUME_DOCKER_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-372-real-laba-docker-offline.yml"
+      - "scripts/task4_372_real_laba_docker_proof_v1.py"
+      - "scripts/task4_372_real_laba_docker_audit_v1.py"
+      - "docker/task4_372_real_laba_docker_proof_v1.Dockerfile"
+      - "docs/TASK4_372_REAL_LABA_ISSUE_VERIFY_CONSUME_DOCKER_V1.md"
+permissions:
+  contents: read
+jobs:
+  formal-signed-authorization-single-use-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+      VERITAS_DATABASE_URL: ""
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      TASK4_372_VERITAS_PIN: "b1835c9f5044855a7b69f82de997056bba8847ab"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Pin upstream VERITAS OS full formal authorization source and test fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results _pins/veritas
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          git -C _pins/veritas init
+          git -C _pins/veritas remote add origin https://github.com/veritasfuji-japan/veritas_os.git
+          git -C _pins/veritas sparse-checkout init --cone
+          git -C _pins/veritas sparse-checkout set veritas_os schemas
+          git -C _pins/veritas fetch --depth 1 --filter=blob:none origin "$TASK4_372_VERITAS_PIN"
+          git -C _pins/veritas checkout --detach FETCH_HEAD
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "$TASK4_372_VERITAS_PIN"
+          test -f _pins/veritas/veritas_os/policy/live_adapter_bind_authorization_consumption.py
+          python -m py_compile \
+            scripts/task4_372_real_laba_docker_proof_v1.py \
+            scripts/task4_372_real_laba_docker_audit_v1.py
+          git -C _pins/veritas rev-parse HEAD > results/veritas-os-pin.txt
+          git rev-parse HEAD > results/benchmark-head.txt
+          sha256sum _pins/veritas/veritas_os/policy/live_adapter_bind_authorization_consumption.py \
+            > results/upstream-real-consumer-sha256.txt
+          docker version > results/docker-version.txt
+      - name: Execute formal upstream issuance verification and single-use in networkless Docker
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/task4_372_real_laba_docker_audit_v1.py \
+            --output-dir results | tee results/task4-372-run.log
+          python - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          x=json.loads(Path("results/task4-372-formal-laba-docker-evidence.json").read_text())
+          y=x["upstream"]
+          assert y["exact_os_pin"]=="b1835c9f5044855a7b69f82de997056bba8847ab"
+          assert y["actual_formal_veritas_functions_executed"] is True
+          assert len(y["arms"])==2 and len(y["checks"])==16 and all(y["checks"].values())
+          assert y["formal_target_mismatch_prevents_docker_sink_dispatch"] is True
+          assert y["in_memory_atomic_consumption_store_production_safe"] is False
+          assert y["full_prod_authority_end_to_end"] is False
+          assert y["real_provider_calls"]==y["real_bank_effects"]==y["real_spend_usd"]==0
+          assert x["docker"]["runtime_network_mode"]=="none"
+          assert ET.parse("results/task4-372-junit.xml").getroot().attrib["tests"]=="16"
+          print("TASK4_372_REAL_FORMAL_VERITAS_CONSUMPTION_PROVEN_ONLY_FOR_TEST_FIXTURES")
+          PY
+          sha256sum \
+            scripts/task4_372_real_laba_docker_proof_v1.py \
+            scripts/task4_372_real_laba_docker_audit_v1.py \
+            docker/task4_372_real_laba_docker_proof_v1.Dockerfile \
+            docs/TASK4_372_REAL_LABA_ISSUE_VERIFY_CONSUME_DOCKER_V1.md \
+            results/task4-372-formal-laba-docker-evidence.json \
+            results/task4-372-junit.xml \
+            results/upstream-real-consumer-sha256.txt \
+            > results/task4-372-source-evidence-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-372-real-laba-issue-verify-consume-offline
+          path: results/*
+          if-no-files-found: warn
