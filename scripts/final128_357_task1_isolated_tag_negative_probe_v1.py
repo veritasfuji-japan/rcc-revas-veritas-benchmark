@@ -17,8 +17,8 @@ def safe_api_evidence(phase,status,body):
     message=body.get("message","") if isinstance(body,dict) else ""
     message=str(message).replace("\\n"," ")[:400]
     # API messages are untrusted; redact anything resembling credentials/URLs.
-    message=re.sub(r"https?://\\S+","[url]",message)
-    message=re.sub(r"(?i)(gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|Bearer\\s+\\S+)","[redacted]",message)
+    message=re.sub(r"https?://\S+","[url]",message)
+    message=re.sub(r"(?i)(gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|Bearer\s+\S+)","[redacted]",message)
     return {"phase":phase,"http_status":status,"api_message":message}
 
 
