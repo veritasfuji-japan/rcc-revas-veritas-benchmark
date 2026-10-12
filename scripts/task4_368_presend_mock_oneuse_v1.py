@@ -16,6 +16,7 @@ class PreSendOneUseMock(sdk.OfflineCappedMock):
         self.ordinal=0
         self.prior=None
         self.pre_send_receipts=[]
+        sdk.OfflineCappedMock.instances.append(self)
         PreSendOneUseMock.instances.append(self)
 
     def __call__(self,request):
