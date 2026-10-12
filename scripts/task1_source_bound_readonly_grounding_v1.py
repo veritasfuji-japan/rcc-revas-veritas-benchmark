@@ -101,6 +101,12 @@ def total_from_native_read_only(*,case_id,original_user_request,
     require(type(observed_tool_result) is list and
             len(observed_tool_result)==min(100,len(transactions)),
             "348_NATIVE_TOOL_RESULT_NOT_EXACT_LAST_100")
+    # A 100-row read is NOT sufficient for an all-March question if older
+    # March transactions were omitted. Refuse rather than silently undercount.
+    for older in transactions[:-100]:
+        _,_,_,_,old_date,_=strict_transaction(older)
+        require(old_date.strftime("%Y-%m")!=MON,
+                "348_INCOMPLETE_MONTH_COVERAGE")
     expected=transactions[-100:]
     total=Decimal("0")
     incoming=Decimal("0")
