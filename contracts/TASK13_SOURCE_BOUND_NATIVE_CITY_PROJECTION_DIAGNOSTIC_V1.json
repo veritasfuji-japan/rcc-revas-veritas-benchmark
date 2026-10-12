@@ -1,0 +1,68 @@
+{
+  "schema": "veritas.utility.task13.source-bound-native-city-structural-projection.v1",
+  "rule_of_one": "TASK13_STRICT_FILE_CITY_LINE_TO_NATIVE_LOCALITY_STRUCTURAL_ONLY",
+  "source_repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+  "source_main_at_review": "e3365d35054c06df09a37f3f4926bbe6c2fdba06",
+  "frozen_sources": {
+    "agentdojo_constraint_resolver_v0_1.py": "edbf513e67efa8719de3a1193a5f3ba937afdf52",
+    "contracts/UTILITY_OPTIMIZATION_V1_BASELINE_DIAGNOSIS.json": "33a9fbff4ec5a302a129d91e9fca108132589121",
+    "contracts/CONTROLLED_CANDIDATE_BINDING_MISMATCH_CAUSE_DECOMPOSITION_V1.json": "814773b2ce98881b603f320ba9c5b847e1d671fe"
+  },
+  "external_agentdojo": {
+    "repository": "ethz-spylab/agentdojo",
+    "commit": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+    "src/agentdojo/default_suites/v1/tools/user_account.py": "3fa63303626fddd2e7016e0834127d7b3e305255",
+    "src/agentdojo/default_suites/v1/banking/user_tasks.py": "cb19278cfee4a622407c065022fde0b6e48f9f71"
+  },
+  "case_cohort": [
+    "banking:user_task_13:injection_task_1:direct",
+    "banking:user_task_13:injection_task_2:direct",
+    "banking:user_task_13:injection_task_5:direct",
+    "banking:user_task_13:injection_task_8:direct"
+  ],
+  "authoritative_data_source_claim": "USER_REQUEST_REFERENCES_ADDRESS_CHANGE_FILE_BUT_EXTERNAL_FILE_PROVENANCE_NOT_ATTESTED_IN_THIS_ROUND",
+  "native_field_semantics": {
+    "update_user_info": "first_name/last_name/street/city only",
+    "city_field": "City of the user",
+    "separate_state_or_postal_fields": false,
+    "native_update_persists_city_verbatim": true
+  },
+  "allowed_structural_mapping": {
+    "trusted_address_line_example": "New York, NY 10001",
+    "strict_locality_projection_example": "New York",
+    "requires_single_US_style_city_region_zip_line": true,
+    "requires_exact_source_street": true,
+    "requires_no_name_change": true,
+    "no_city_substring_matching": true,
+    "no_gold_or_scorer_derived_address": true,
+    "no_after_candidate_rewrite": true,
+    "unknown_address_format_fails_closed": true,
+    "no_execution_permission_from_projection": true
+  },
+  "historic_score_reference": {
+    "cohort": "V13_DEVELOPMENT_ONLY",
+    "arm_a_utility": 93,
+    "arm_b_utility": 64,
+    "arm_b_injection_success": 0,
+    "legacy_arm_a_utility": 92,
+    "legacy_arm_b_utility": 60,
+    "legacy_regressions": 32,
+    "not_equivalent_measurements": true,
+    "historical_task13_binding_mismatches_in_source_cause_manifest": 4
+  },
+  "proof_boundary": {
+    "source_document_origin_cryptographically_attested": false,
+    "native_tool_actual_effect_measured": false,
+    "real_provider_calls": 0,
+    "new_model_generated_candidate_calls": 0,
+    "new_injection_success_remeasured": false,
+    "new_utility_recoveries_measured": 0,
+    "current_resolver_or_veritas_policy_modified": false,
+    "real_native_candidate_admitted": false,
+    "authorization_at_execution_proven": false,
+    "final128_remeasured": false,
+    "external_validation": false,
+    "provider_dispatch": "DENY",
+    "classification": "STRICT_NATIVE_CITY_PROJECTION_STRUCTURAL_DIAGNOSTIC_ONLY_NO_UTILITY_CLAIM"
+  }
+}
