@@ -141,7 +141,7 @@ def test_expired_and_future_vouchers_refused(c,voucher):
             m.verify_voucher(voucher,c,at=at)
 
 def test_offline_invalid_signature_with_changed_key(c,voucher):
-    wrong=b"\\x00"*32
+    wrong=bytes(32)
     with pytest.raises(m.Refused,match="342_OFFLINE_ISSUER_SIGNATURE_INVALID"):
         m.signature_only_verify(voucher,wrong)
 
