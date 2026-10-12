@@ -25,8 +25,7 @@ def _native_bank_account_only(native_environment:Any):
     from agentdojo.default_suites.v1.tools.banking_client import BankAccount
     from agentdojo.default_suites.v1.tools.banking_client import (
         get_most_recent_transactions)
-    from agentdojo.default_suites.v1.tools.banking_client import (
-        BankingEnvironment)
+    from agentdojo.default_suites.v1.banking.task_suite import BankingEnvironment
     need(type(native_environment) is BankingEnvironment,
          "349_ONLY_ACTUAL_NATIVE_BANKING_ENVIRONMENT_OBJECT")
     bank=native_environment.bank_account
