@@ -21,7 +21,7 @@ signature, governance, authority and artifact checks.
 Each is consumed by the real upstream v1 consumption gate and enters its
 existing Bind core using a **purely local, non-networked recording adapter**.
 Attempt replay is denied without any further secret resolution or adapter
-construction. A tampered artifact and an expired artifact are denied before
+construction. An altered-hash artifact, cross-target substitution toward the Docker mock\n  sink, and an expired artifact are denied before
 consumption; after-claim credential resolution failure leaves the upstream
 in-memory authorization store consumed and denies replay.
 
@@ -55,7 +55,7 @@ SHA-256. The real Docker image packages that checked-out source, installs
 only pinned dependencies during a trusted build phase and runs with no
 network. The audit emits:
 
-- JUnit for 16 identity, signature, consumption, replay, failure and
+- JUnit for 17 identity, signature, consumption, replay, failure and
   nonclaim invariants.
 - Original upstream source SHA-256 and commit, Docker image/runtime inspect,
   real formal authorization IDs and consumption hashes, Bind invocation

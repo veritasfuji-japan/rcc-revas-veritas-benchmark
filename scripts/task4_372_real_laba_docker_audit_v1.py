@@ -103,7 +103,7 @@ def audit(out):
         insist(evidence["rule"]=="TASK4_372_REAL_LABA_ISSUE_VERIFY_CONSUME_DOCKER_V1" and
                evidence["exact_os_pin"]==PIN and
                evidence["consumer_source_sha256"]==sha and
-               len(need)==16 and all(need.values()),
+               len(need)==17 and all(need.values()),
                "REAL_LABA_ISSUANCE_CONSUMPTION_VERIFICATION_FAILED")
         insist(evidence["formal_target_mismatch_prevents_docker_sink_dispatch"] is True
                and evidence["full_prod_authority_end_to_end"] is False and
@@ -131,7 +131,7 @@ def audit(out):
             ET.SubElement(suite,"testcase",classname=evidence["rule"],name=title)
         ET.ElementTree(suite).write(out/"task4-372-junit.xml",
                                   encoding="utf-8",xml_declaration=True)
-        print("TASK4_372_REAL_UPSTREAM_LABA_ISSUE_VERIFY_CONSUME_16_OF_16_PASS")
+        print("TASK4_372_REAL_UPSTREAM_LABA_ISSUE_VERIFY_CONSUME_17_OF_17_PASS")
         print("FORMAL_TARGET_MISMATCH_FAIL_CLOSED_NO_SINK_REUSE")
         print("REAL_PROVIDER_0_REAL_BANK_EFFECT_0_PRODUCTION_AUTHORITY_NOT_PROVEN")
         return recorded

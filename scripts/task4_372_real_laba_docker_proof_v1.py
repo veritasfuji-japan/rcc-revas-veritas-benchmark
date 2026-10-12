@@ -94,6 +94,18 @@ def evidence_for(arm,human_required):
     need(asyncio.run(store.get(auth_id)) is None,
          "TAMPERED_AUTH_CONSUMED")
 
+    # A legitimate signed billing authorization CANNOT be rewritten into
+    # permission for the unrelated #371 Docker mock-effect sink.
+    target_swapped=json.loads(json.dumps(original))
+    target_swapped["execution_intent"]["target_resource"]=SINK
+    target_reject=asyncio.run(denied(
+        consume(target_swapped,governance,trust,VERIFICATION_NOW,
+                store,resolver,header,factory),
+        "LABAC_AUTHORIZATION_VERIFICATION_FAILED"))
+    need(asyncio.run(store.get(auth_id)) is None and
+         resolver.calls==0 and header.calls==0 and factory.calls==0,
+         "CROSS_TARGET_FORGERY_MUST_NOT_CONSUME_OR_ACCESS_SECRETS")
+
     expired=asyncio.run(denied(
         consume(artifact,governance,trust,VERIFICATION_NOW+timedelta(days=1),
                 store,resolver,header,factory),
@@ -142,6 +154,7 @@ def evidence_for(arm,human_required):
         "consumption_hash":result.consumption_record.consumption_hash,
         "bind_final_outcome":str(result.bind_receipt.final_outcome),
         "tamper_rejection":bad,
+        "cross_target_substitution_rejection":target_reject,
         "expired_rejection":expired,
         "oneuse_replay_rejection":replay,
         "secret_resolution_calls":resolver.calls,
@@ -211,6 +224,9 @@ def main():
         "altered_formal_artifact_denied_without_consumption":
             all("LABAC_AUTHORIZATION_VERIFICATION_FAILED" in
                 x["tamper_rejection"] for x in arms),
+        "cross_target_substitution_rejected_before_consumption":
+            all("LABAC_AUTHORIZATION_VERIFICATION_FAILED" in
+                x["cross_target_substitution_rejection"] for x in arms),
         "expired_formal_artifact_denied_before_secret_access":
             all("LABAC_AUTHORIZATION_VERIFICATION_FAILED" in
                 x["expired_rejection"] for x in arms),
@@ -231,8 +247,8 @@ def main():
             x["live_provider_calls"]==x["real_bank_effects"]==0 for x in arms),
         "not_production_authority":True,
     }
-    need(len(checks)==16 and all(checks.values()),
-         "SIXTEEN_REAL_LABA_DOCKER_INVARIANTS_FAILED")
+    need(len(checks)==17 and all(checks.values()),
+         "SEVENTEEN_REAL_LABA_DOCKER_INVARIANTS_FAILED")
     print(json.dumps({
         "rule":"TASK4_372_REAL_LABA_ISSUE_VERIFY_CONSUME_DOCKER_V1",
         "exact_os_pin":EXPECTED_PIN,

@@ -78,13 +78,13 @@ jobs:
           y=x["upstream"]
           assert y["exact_os_pin"]=="b1835c9f5044855a7b69f82de997056bba8847ab"
           assert y["actual_formal_veritas_functions_executed"] is True
-          assert len(y["arms"])==2 and len(y["checks"])==16 and all(y["checks"].values())
+          assert len(y["arms"])==2 and len(y["checks"])==17 and all(y["checks"].values())
           assert y["formal_target_mismatch_prevents_docker_sink_dispatch"] is True
           assert y["in_memory_atomic_consumption_store_production_safe"] is False
           assert y["full_prod_authority_end_to_end"] is False
           assert y["real_provider_calls"]==y["real_bank_effects"]==y["real_spend_usd"]==0
           assert x["docker"]["runtime_network_mode"]=="none"
-          assert ET.parse("results/task4-372-junit.xml").getroot().attrib["tests"]=="16"
+          assert ET.parse("results/task4-372-junit.xml").getroot().attrib["tests"]=="17"
           print("TASK4_372_REAL_FORMAL_VERITAS_CONSUMPTION_PROVEN_ONLY_FOR_TEST_FIXTURES")
           PY
           sha256sum \
