@@ -68,3 +68,23 @@ def test_generic_422_delete_not_proof():
         return transport(req,timeout)
     with pytest.raises(ProbeDenied,match="DELETE_RULESET"):
         run(transport_override=denied)
+
+def test_real_github_422_cannot_delete_this_tag():
+    def denied(req,timeout):
+        if req.method=="PATCH":
+            return Response(422,{"message":"Repository rule violations found\\nCannot force-push to this tag\\nCannot update this protected ref."})
+        if req.method=="DELETE":
+            return Response(422,{"message":"Repository rule violations found\\nCannot delete this tag"})
+        return transport(req,timeout)
+    result=run(transport_override=denied)
+    assert result["update_status"]==422
+    assert result["delete_status"]==422
+    assert result["readback_unchanged"] is True
+
+def test_generic_cannot_delete_tag_without_ruleset_not_proof():
+    def denied(req,timeout):
+        if req.method=="DELETE":
+            return Response(422,{"message":"Cannot delete this tag"})
+        return transport(req,timeout)
+    with pytest.raises(ProbeDenied,match="DELETE_RULESET"):
+        run(transport_override=denied)
