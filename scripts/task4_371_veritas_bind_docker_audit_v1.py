@@ -86,10 +86,10 @@ def good_fields():
     }
 
 def build_pin_image(out):
-    insist(PINN.is_file(),"UPSTREAM_VERITAS_OS_SOURCE_NOT_PINNED")
+    insist(PINNED.is_file(),"UPSTREAM_VERITAS_OS_SOURCE_NOT_PINNED")
     pinhead=call(["git","-C","_pins/veritas","rev-parse","HEAD"]).stdout.strip()
     insist(pinhead==PIN,"UPSTREAM_VERITAS_OS_COMMIT_DRIFT")
-    src_sha=hashlib.sha256(PINN.read_bytes()).hexdigest()
+    src_sha=hashlib.sha256(PINNED.read_bytes()).hexdigest()
     insist(len(src_sha)==64,"VERITAS_SOURCE_SHA_REQUIRED")
     (out/"veritas-os-pinned-provenance.json").write_text(
         json.dumps({"repository":"veritasfuji-japan/veritas_os",
