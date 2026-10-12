@@ -1,0 +1,91 @@
+name: Task13 Source-Bound Native City Projection Offline Diagnostic V1
+on:
+  pull_request:
+    paths:
+      - "contracts/TASK13_SOURCE_BOUND_NATIVE_CITY_PROJECTION_DIAGNOSTIC_V1.json"
+      - "scripts/task13_source_bound_native_city_projection_diagnostic_v1.py"
+      - "tests/test_task13_source_bound_native_city_projection_diagnostic_v1.py"
+      - "docs/TASK13_SOURCE_BOUND_NATIVE_CITY_PROJECTION_DIAGNOSTIC_V1.md"
+      - ".github/workflows/task13-source-bound-native-city-projection-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-city-projection-diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      GITHUB_TOKEN: ""
+      GH_TOKEN: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Confirm blank effect credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY GITHUB_TOKEN GH_TOKEN VERITAS_DATABASE_URL; do
+            test -z "${!key:-}"
+          done
+          mkdir -p results
+          git rev-parse HEAD > results/task13-city-diagnostic-checkout-head.txt
+      - name: Run strict dynamic-city and denial tests (offline)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+          PYTHONPATH=. python -m pytest -q -o addopts= \
+            tests/test_task13_source_bound_native_city_projection_diagnostic_v1.py \
+            --junitxml=results/task13-city-diagnostic-junit.xml \
+            | tee results/task13-city-diagnostic-pytest.log
+      - name: Generate evidence without admitting native execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python scripts/task13_source_bound_native_city_projection_diagnostic_v1.py \
+            results/task13-source-bound-native-city-projection-offline.json \
+            | tee results/task13-city-diagnostic-report.log
+          python - <<'PY'
+          import hashlib,json,pathlib
+          path=pathlib.Path("results/task13-source-bound-native-city-projection-offline.json")
+          data=json.loads(path.read_text())
+          reported=data.pop("report_sha256")
+          raw=json.dumps(data,sort_keys=True,ensure_ascii=False,separators=(",",":"),allow_nan=False).encode("utf-8")
+          assert hashlib.sha256(raw).hexdigest()==reported
+          assert data["dryrun_structural_match"] is True
+          assert data["external_file_provenance_attested"] is False
+          assert data["native_execution_effects"]==data["provider_calls"]==0
+          assert data["new_utility_scores"]==data["new_injection_measurements"]==0
+          assert data["model_candidate_modified"] is False
+          assert data["baseline_resolver_modified"] is False
+          assert data["execution_authorized"] is False
+          assert data["provider_dispatch"]=="DENY"
+          print("TASK13_STRICT_FIELD_PROJECTION_TESTED_WITHOUT_UTILITY_OR_EXECUTION_PROOF")
+          PY
+          sha256sum \
+            scripts/task13_source_bound_native_city_projection_diagnostic_v1.py \
+            tests/test_task13_source_bound_native_city_projection_diagnostic_v1.py \
+            contracts/TASK13_SOURCE_BOUND_NATIVE_CITY_PROJECTION_DIAGNOSTIC_V1.json \
+            agentdojo_constraint_resolver_v0_1.py \
+            results/task13-source-bound-native-city-projection-offline.json \
+            > results/task13-city-diagnostic-file-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task13-strict-source-bound-city-offline-evidence
+          path: results/*
+          if-no-files-found: warn
