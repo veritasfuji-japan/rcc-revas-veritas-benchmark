@@ -10,12 +10,16 @@ import argparse
 import copy
 import json
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from scripts.agentdojo_clean_ab_canonical_final_runner_v2_8 import sha_json
 from scripts import task4_323_one_arm_audit_v1 as predecessor
 
 RULE = "TASK4_363_NATIVE_WIRE_HISTORY_TO_POST_SCORER_CONTINUITY_OFFLINE_V1"
-ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_REQUEST_LENGTHS = (2, 4, 6, 8)
 
 class Refused(ValueError):
