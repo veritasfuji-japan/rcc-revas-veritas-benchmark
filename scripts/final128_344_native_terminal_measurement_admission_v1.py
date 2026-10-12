@@ -167,7 +167,7 @@ def build_report():
        and t["official_utility_improvement"]==0 and t["new_paid_provider_calls"]==0
        and t["new_final128_scored_runs"]==0 and t["historical_scored_reference"]=={
            "run":37585673492,"arm_a":93,"arm_b":64,
-           "arm_b_inject":0,"net_gap":29},
+           "arm_b_injection":0,"net_gap":29},
        "344_V13_HISTORIC_TRIAGE_CHANGED")
     third=prior["task4_genuine_model_native_score_gap"]
     require(third["actual_veritas_bind_refusals"]==2
