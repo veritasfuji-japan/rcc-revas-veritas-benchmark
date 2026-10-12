@@ -1,0 +1,147 @@
+name: Task13 333 Dual Issuer Request and File Origin Preflight V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task13-333-dual-issuer-provenance-preflight-v1.yml"
+      - "contracts/TASK13_333_SIGNED_REQUEST_AND_READ_ORIGIN_PREFLIGHT_V1.json"
+      - "scripts/task13_333_dual_issuer_provenance_preflight_v1.py"
+      - "tests/test_task13_333_dual_issuer_provenance_preflight_v1.py"
+      - "docs/TASK13_333_SIGNED_REQUEST_AND_READ_ORIGIN_PREFLIGHT_V1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  independent-issuer-readonly-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      TASK13_333_PROOF: "1"
+      TASK13_333_AGENTDOJO_ROOT: _pins/agentdojo
+      TASK13_333_RCC_ROOT: _pins/rcc
+      TASK13_333_VERITAS_ROOT: _pins/veritas
+      TASK13_333_V13_ZIP: /tmp/task13-333-archive-v13.zip
+      TASK13_333_REPLAY_ZIP: /tmp/task13-333-archive-replay.zip
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      GITHUB_TOKEN: ""
+      GH_TOKEN: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: _pins/rcc
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Pin exact source and empty model/remote-bank secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/rcc rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL GITHUB_TOKEN GH_TOKEN VERITAS_DATABASE_URL; do
+            test -z "$(printenv "$key" || true)"
+          done
+          mkdir -p results
+          git rev-parse HEAD > results/task13-333-head.txt
+      - name: Install simulator crypto + native source verification (no provider run)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+          python -m pip install --disable-pip-version-check -e _pins/agentdojo
+          python -m pip install --disable-pip-version-check -e '_pins/rcc/external-eval/v0.3.9[crypto]'
+      - name: Download exact prior historical artifacts (GitHub Actions read only)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/11466539107/zip" > "$TASK13_333_V13_ZIP"
+          test "$(sha256sum "$TASK13_333_V13_ZIP" | awk '{print $1}')" = "9fbb2a1614c237e92c4239bb5d60f83d40d33b81e0092d3f82958931969c9e7a"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/11472402060/zip" > "$TASK13_333_REPLAY_ZIP"
+          test "$(sha256sum "$TASK13_333_REPLAY_ZIP" | awk '{print $1}')" = "449443501266eea9aa83ab08f261740acf2296787483a80853469c6a02684b95"
+          echo PASS_TASK13_333_HISTORIC_ARCHIVE_EXACT_SHA256
+      - name: Verify dual signed-issuer roles and DENY all unsigned V13 sources
+        shell: bash
+        env:
+          PYTHONPATH: ".:_pins/agentdojo/src:_pins/rcc/external-eval/v0.3.9/src:_pins/veritas"
+        run: |
+          set -euo pipefail
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL GITHUB_TOKEN GH_TOKEN VERITAS_DATABASE_URL; do
+            test -z "$(printenv "$key" || true)"
+          done
+          python -m pytest -q -o addopts= \
+            tests/test_task13_333_dual_issuer_provenance_preflight_v1.py \
+            --junitxml=results/task13-333-preflight-junit.xml \
+            | tee results/task13-333-preflight-pytest.log
+          python scripts/task13_333_dual_issuer_provenance_preflight_v1.py \
+            --v13-zip "$TASK13_333_V13_ZIP" \
+            --replay-zip "$TASK13_333_REPLAY_ZIP" \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --output results/task13-333-dual-issuer-provenance-preflight.json \
+            | tee results/task13-333-preflight-run.log
+          python - <<'PY'
+          import hashlib,json,pathlib
+          obj=json.loads(pathlib.Path("results/task13-333-dual-issuer-provenance-preflight.json").read_text())
+          h=obj.pop("report_sha256")
+          digest=hashlib.sha256(json.dumps(
+              obj,sort_keys=True,separators=(",",":"),
+              ensure_ascii=False,allow_nan=False
+          ).encode("utf-8")).hexdigest()
+          assert h==digest
+          assert obj["archived_v13_case_count"]==4
+          assert obj["archived_v13_missing_issuer_denials"]==4
+          assert obj["archived_v13_admissions"]==0
+          assert obj["native_tool_effects"]==obj["native_Bind_calls"]==0
+          assert obj["new_model_utility_scores"]==0
+          assert obj["new_injection_success_measurements"]==0
+          assert obj["provider_calls"]==obj["remote_bank_effects"]==0
+          assert obj["external_origin_proven"] is False
+          assert obj["live_authority_issued"] is False
+          assert obj["provider_dispatch"]=="DENY"
+          print("TASK13_333_FROZEN_V13_ALL_FOUR_UNSIGNED_SOURCES_DENIED_ZERO_LIVE_AUTHORITY")
+          PY
+          sha256sum \
+            scripts/task13_333_dual_issuer_provenance_preflight_v1.py \
+            tests/test_task13_333_dual_issuer_provenance_preflight_v1.py \
+            contracts/TASK13_333_SIGNED_REQUEST_AND_READ_ORIGIN_PREFLIGHT_V1.json \
+            results/task13-333-dual-issuer-provenance-preflight.json \
+            > results/task13-333-file-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task13-333-dual-issuer-readonly-preflight-evidence
+          path: results/*
+          if-no-files-found: warn
