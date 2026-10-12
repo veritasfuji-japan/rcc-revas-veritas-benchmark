@@ -1,0 +1,99 @@
+name: Task4 370 Docker Dual-Network Bypass Denial Offline
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-370-docker-network-bypass-denial.yml"
+      - "docker/task4_370_network_boundary_v1.Dockerfile"
+      - "scripts/task4_370_docker_network_service_v1.py"
+      - "scripts/task4_370_docker_network_agent_v1.py"
+      - "scripts/task4_370_docker_network_audit_v1.py"
+      - "docs/TASK4_370_DOCKER_NETWORK_BYPASS_DENIAL_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-370-docker-network-bypass-denial.yml"
+      - "docker/task4_370_network_boundary_v1.Dockerfile"
+      - "scripts/task4_370_docker_network_service_v1.py"
+      - "scripts/task4_370_docker_network_agent_v1.py"
+      - "scripts/task4_370_docker_network_audit_v1.py"
+      - "docs/TASK4_370_DOCKER_NETWORK_BYPASS_DENIAL_V1.md"
+
+permissions:
+  contents: read
+
+jobs:
+  two-internal-docker-networks-and-one-use-mock-effect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      OPENAI_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+      VERITAS_DATABASE_URL: ""
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Confirm real Docker daemon and exact checked out SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          docker version > results/docker-version.txt
+          docker info --format '{{json .SecurityOptions}}' > results/docker-daemon-security.json
+          git rev-parse HEAD > results/task4-370-head.txt
+          test "$(cat results/task4-370-head.txt)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          python -m py_compile \
+            scripts/task4_370_docker_network_service_v1.py \
+            scripts/task4_370_docker_network_agent_v1.py \
+            scripts/task4_370_docker_network_audit_v1.py
+      - name: Execute bounded Docker internal-network bypass/refusal tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/task4_370_docker_network_audit_v1.py --output-dir results \
+            | tee results/task4-370-run.log
+          python - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          p=Path("results/task4-370-docker-network-evidence.json")
+          x=json.loads(p.read_text())
+          assert x["rule"]=="TASK4_370_DOCKER_NETWORK_BYPASS_DENIAL_V1"
+          assert x["predecessor_merged_main"]=="a88cb0332b8f498417d2febffa88514be71ac15c"
+          assert len(x["checks"])==19 and all(x["checks"].values())
+          assert x["agent_trials"]["direct-ip"]["direct_sink_tcp_blocked"] is True
+          assert x["agent_trials"]["outside"]["external_tcp_blocked"] is True
+          assert x["agent_trials"]["rogue-back"]["http_status"]==403
+          assert len(x["sink_effects"])==len(x["broker_consumed_rows"])==2
+          assert x["model_calls"]==x["real_bank_effects"]==x["provider_spend_usd"]==0
+          assert x["production_IAM_credential_network_evidence"] is False
+          assert ET.parse("results/task4-370-docker-network-junit.xml").getroot().attrib["tests"]=="19"
+          print("TASK4_370_REAL_DOCKER_BRIDGE_ISOLATION_SUCCESS_NOT_PRODUCTION_BOUND")
+          PY
+          sha256sum \
+            docker/task4_370_network_boundary_v1.Dockerfile \
+            scripts/task4_370_docker_network_service_v1.py \
+            scripts/task4_370_docker_network_agent_v1.py \
+            scripts/task4_370_docker_network_audit_v1.py \
+            docs/TASK4_370_DOCKER_NETWORK_BYPASS_DENIAL_V1.md \
+            results/task4-370-docker-network-evidence.json \
+            results/task4-370-docker-network-junit.xml \
+            > results/task4-370-source-evidence-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-370-docker-dual-network-denial-v1
+          path: results/*
+          if-no-files-found: warn
