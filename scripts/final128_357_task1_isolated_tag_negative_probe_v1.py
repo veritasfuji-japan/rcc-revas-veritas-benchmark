@@ -66,6 +66,7 @@ def probe(*,token,sha,run_id,target_sha,consent=False,transport=None):
         return ("repository rule violations found" in msg and
                 ("cannot update this protected ref" in msg or
                  "cannot delete this protected ref" in msg or
+                 "cannot delete this tag" in msg or
                  "cannot force-push to this tag" in msg))
     assert_unchanged("CREATED")
     update_status,update_body=call("PATCH",url,{"sha":target_sha,"force":True})
