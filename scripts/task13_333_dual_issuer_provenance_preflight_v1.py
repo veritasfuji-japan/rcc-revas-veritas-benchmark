@@ -17,6 +17,7 @@ from datetime import datetime, timezone, timedelta
 import hashlib
 import hmac
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -73,6 +74,12 @@ def canonical(value):
     def enforce(obj,depth=0):
         need(depth<=30,"JSON_TOO_DEEP")
         if obj is None or type(obj) in (str,bool,int):
+            return
+        # The pinned RCC canonical JSON profile permits finite float values.
+        # Original AgentDojo banking prestates include native monetary floats;
+        # NaN/Infinity remain forbidden for stable SHA-256 source binding.
+        if type(obj) is float:
+            need(math.isfinite(obj),"NONFINITE_JSON_NUMBER")
             return
         if type(obj) is list:
             for x in obj:
