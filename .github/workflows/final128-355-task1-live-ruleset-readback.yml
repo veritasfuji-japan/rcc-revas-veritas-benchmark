@@ -1,0 +1,51 @@
+name: Final128 355 Task1 Live Ruleset Readback
+on:
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: "Exact main SHA to check (40 lowercase hex)"
+        required: true
+        type: string
+      target_run_id:
+        description: "Future protected Task1 run ID (decimal)"
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  read-only-ruleset-evidence:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      GH_RULESET_READ_TOKEN: ${{ github.token }}
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Validate tag parameters
+        id: tag
+        shell: bash
+        env:
+          TARGET_SHA: ${{ inputs.target_sha }}
+          TARGET_RUN_ID: ${{ inputs.target_run_id }}
+        run: |
+          [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          [[ "$TARGET_RUN_ID" =~ ^[1-9][0-9]{5,19}$ ]] || exit 1
+          echo "tag=final128-task1-real-ab-once-v1-${TARGET_SHA}-${TARGET_RUN_ID}" >> "$GITHUB_OUTPUT"
+      - name: Fetch and inspect active immutable tag ruleset
+        env:
+          TAG_NAME: ${{ steps.tag.outputs.tag }}
+        run: |
+          python -m scripts.final128_355_task1_live_ruleset_evidence_v1 --tag-name "$TAG_NAME" --output task1-ruleset-readback.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: success()
+        with:
+          name: task1-ruleset-readback
+          path: task1-ruleset-readback.json
+          retention-days: 30
