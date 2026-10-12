@@ -60,8 +60,9 @@ def test_no_official_utility_security_or_external_effect_claims(report):
     assert report["external_bank_effects"]==0
     assert report["final128_remeasured"] is False
     assert report["provider_dispatch"]=="DENY"
-    h=report.pop("report_sha256")
-    assert h==m.digest(report)
+    copied=deepcopy(report)
+    h=copied.pop("report_sha256")
+    assert h==m.digest(copied)
 
 def test_exact_source_and_full_external_pin_checked():
     assert m.validate_frozen(
@@ -136,6 +137,7 @@ def test_invalid_checkout_path_fails_pin_before_any_effect(tmp_path):
         m.validate_frozen(agentdojo_root=tmp_path,veritas_root=tmp_path)
 
 def test_unrecognized_argument_shape_does_not_invoke_tool():
-    with pytest.raises(m.Denied):
-        m.run_pair(candidate={"street":"Dalton Street 123","city":"New York"},
-                   fixture_issuer_enrolled=True)
+    r=m.run_pair(candidate={"street":"Dalton Street 123","city":"New York"},
+                 fixture_issuer_enrolled=True)
+    assert r["native_B_bind_outcome"]!="COMMITTED"
+    assert r["native_A_tool_effects"]==r["native_B_bind_effects"]==0
