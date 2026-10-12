@@ -1,0 +1,43 @@
+name: Final128 361 Task1 GitHub Denial Evidence Freeze
+on:
+  pull_request:
+    paths:
+      - "evidence/final128_task1_github_denial_run_38254439093_v1.json"
+      - "evidence/final128_task1_github_denial_run_38254439093_v1.json.sha256"
+      - "evidence/README_task1_github_denial_freeze_v1.md"
+      - "scripts/final128_361_task1_github_denial_freeze_v1.py"
+      - "tests/test_final128_361_task1_github_denial_freeze_v1.py"
+      - ".github/workflows/final128-361-task1-github-denial-evidence-freeze-v1.yml"
+permissions:
+  contents: read
+jobs:
+  offline-evidence-freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify frozen evidence with negative controls
+        env:
+          OPENAI_API_KEY: ""
+          VERITAS_DATABASE_URL: ""
+        run: |
+          set -euo pipefail
+          python -m pip install pytest==9.1.1
+          python -m pytest -q -o addopts= tests/test_final128_361_task1_github_denial_freeze_v1.py
+          mkdir -p freeze-artifact
+          python scripts/final128_361_task1_github_denial_freeze_v1.py --report freeze-artifact/audit.json
+          cp evidence/final128_task1_github_denial_run_38254439093_v1.json freeze-artifact/
+          cp evidence/final128_task1_github_denial_run_38254439093_v1.json.sha256 freeze-artifact/
+          cp evidence/README_task1_github_denial_freeze_v1.md freeze-artifact/
+      - name: Upload derived evidence snapshot
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: final128-task1-real-github-denial-evidence-v1
+          path: freeze-artifact/
+          if-no-files-found: error
+          retention-days: 30
