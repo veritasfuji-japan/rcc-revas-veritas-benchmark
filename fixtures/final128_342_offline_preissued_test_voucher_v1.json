@@ -1,0 +1,35 @@
+{
+  "payload": {
+    "schema": "veritas.rcc.offline-preissued-test-mandate.v1",
+    "issuer_id": "offline-fixture-issuer-alpha",
+    "issuer_key_id": "offline-fixture-alpha-ed25519-20261012",
+    "audience": "veritas/rcc-revas-benchmark/final128",
+    "case_id": "fixture:30a220e37794e975131841bff70fc271e1a441b39efd95b93e45bc248b30ceef",
+    "issued_at": "2026-10-12T06:15:00Z",
+    "not_before": "2026-10-12T06:15:00Z",
+    "expires_at": "2027-10-12T06:15:00Z",
+    "purpose": "offline-signed-synthetic-trust-fixture",
+    "mandate": {
+      "actor_identity": "operator:iam-admin-01",
+      "action_class": "saas_permission_change",
+      "canonical_action": "grant_admin_role",
+      "target_system": "saas-directory",
+      "target_resource": "user:contractor-17",
+      "requested_scope": [
+        "role:admin"
+      ],
+      "parameters": {},
+      "required_human_approval": true,
+      "risk_level": "low",
+      "regulated_or_high_impact": false,
+      "test_authority_grant": [
+        "role:admin"
+      ],
+      "issuer": "isolated-test-governance-issuer",
+      "source": "PREDECLARED_TEST_FIXTURE_NOT_RCC"
+    }
+  },
+  "signature_b64": "++Z3WGKFtL2sNRlfgW2c5HUJEyBeBPqZMS49Bj7LTJG4EM5VPR6g3GN43GU8RBMlwBpQB0yuD8m4ofxVwFF0Aw==",
+  "signature_algorithm": "Ed25519",
+  "issuer_key_id": "offline-fixture-alpha-ed25519-20261012"
+}
