@@ -66,10 +66,15 @@ def validate_frozen(*,agentdojo_root,veritas_root):
     for name,root,sha in (("AgentDojo",agentdojo_root,AGENTDOJO_PIN),
                           ("VERITAS",veritas_root,VERITAS_PIN)):
         p=Path(root).resolve()
-        need(p.is_dir() and
-             subprocess.check_output(["git","-C",str(p),"rev-parse","HEAD"],
-                                     text=True).strip()==sha,
-             "WRONG_"+name+"_CHECKOUT_SHA")
+        need(p.is_dir(),"MISSING_"+name+"_CHECKOUT")
+        try:
+            actual=subprocess.check_output(
+                ["git","-C",str(p),"rev-parse","HEAD"],
+                text=True,stderr=subprocess.DEVNULL
+            ).strip()
+        except (OSError,subprocess.CalledProcessError) as exc:
+            raise Denied("UNVERIFIABLE_"+name+"_CHECKOUT_SHA") from exc
+        need(actual==sha,"WRONG_"+name+"_CHECKOUT_SHA")
     need(blob(Path(agentdojo_root)/
         "src/agentdojo/default_suites/v1/tools/user_account.py")==
         pins["agentdojo_native_account_tool_blob"],"NATIVE_TOOL_SOURCE_DRIFT")
