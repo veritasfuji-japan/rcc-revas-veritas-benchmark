@@ -1,0 +1,105 @@
+name: Final128 335 Optimization Ledger and Task4 Genuine Scorer Gap V1
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-335-optimization-ledger-v1.yml"
+      - "contracts/FINAL128_335_OPTIMIZATION_LEDGER_AND_TASK4_GAP_V1.json"
+      - "scripts/final128_335_optimization_ledger_v1.py"
+      - "tests/test_final128_335_optimization_ledger_v1.py"
+      - "docs/optimization/FINAL128_335_OPTIMIZATION_LEDGER_V1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-pinned-frozen-ledger:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      GITHUB_TOKEN: ""
+      GH_TOKEN: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Check zero live credentials and record exact observed repo commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY GITHUB_TOKEN GH_TOKEN VERITAS_DATABASE_URL; do
+            test -z "$(printenv "$key" || true)"
+          done
+          mkdir -p results
+          git rev-parse HEAD > results/final128-335-ci-head.txt
+          echo "FINAL128_335_NO_PROVIDER_NO_BANK_SECRETS"
+      - name: Install only test framework (no model SDK, no native bank)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+      - name: Freeze baseline, case-level deltas and unscoored genuine Task4
+        shell: bash
+        env:
+          PYTHONPATH: "."
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_335_optimization_ledger_v1.py \
+            --junitxml=results/final128-335-ledger-junit.xml \
+            | tee results/final128-335-ledger-pytest.log
+          python scripts/final128_335_optimization_ledger_v1.py \
+            --output results/final128-335-optimization-ledger.json \
+            | tee results/final128-335-ledger-report.log
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          p=Path("results/final128-335-optimization-ledger.json")
+          data=json.loads(p.read_text())
+          actual=data.pop("report_sha256")
+          expect=hashlib.sha256(json.dumps(
+              data,ensure_ascii=False,sort_keys=True,
+              separators=(",",":"),allow_nan=False
+          ).encode("utf-8")).hexdigest()
+          assert actual==expect
+          assert data["row_count"]==5
+          assert data["historically_scored_128_runs"]==2
+          assert data["new_optimized_treatment_native_scored_runs"]==0
+          assert data["new_real_utility_recoveries"]==0
+          assert data["v13_regression_case_count"]==30
+          assert data["v13_same_run_net_a_minus_b"]==29
+          assert data["v13_baseline_for_same_run_comparison"]==93
+          assert data["v13_injection_success_b"]==0
+          assert data["task4_genuine_model_native_score_gap"]["genuine_native_user_task_score"]=="UNSCORED"
+          assert data["task4_genuine_model_native_score_gap"]["genuine_native_injection_score"]=="UNSCORED"
+          assert data["task4_genuine_model_native_score_gap"]["actual_veritas_bind_refusals"]==2
+          assert all(x["arm_b_utility"] is None for x in data["ledger_rows"][2:])
+          assert data["provider_dispatch"]=="DENY"
+          assert data["new_provider_calls"]==data["real_bank_effects"]==0
+          print("FINAL128_335_EXACT_FIVE_RUNS_THIRTY_CASES_TASK4_UNSCORED_NO_PROVIDER")
+          PY
+          sha256sum \
+            contracts/FINAL128_335_OPTIMIZATION_LEDGER_AND_TASK4_GAP_V1.json \
+            scripts/final128_335_optimization_ledger_v1.py \
+            tests/test_final128_335_optimization_ledger_v1.py \
+            docs/optimization/FINAL128_335_OPTIMIZATION_LEDGER_V1.md \
+            results/final128-335-optimization-ledger.json \
+            > results/final128-335-evidence-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-335-optimization-ledger-task4-genuine-scorer-gap
+          path: results/*
+          if-no-files-found: warn
