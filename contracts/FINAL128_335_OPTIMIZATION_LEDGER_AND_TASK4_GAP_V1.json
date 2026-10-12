@@ -13,7 +13,9 @@
     "contracts/TASK4_318_REAL_THIRD_TERMINAL_SCORER_ELIGIBILITY_V1.json": "0ea1b8c4de7e8fbc70c9f7bb11ba8367d62e6147",
     "contracts/TASK4_323_ONE_ARM_PER_ORIGIN_OFFLINE_V1.json": "48cd242b5086720607feba18436932c5e24a0ba2",
     "contracts/TASK4_328_REMOTE_GITREF_MOCK_OFFLINE_V1.json": "37c63d81a5aef64cdd9cfdb8912dbbae9b7ed81f",
-    "contracts/TASK13_334_TEST_ONLY_PREBIND_SINGLE_USE_V1.json": "97d0d924dd45749f55be982c4a6c0b84d3296541"
+    "contracts/TASK13_334_TEST_ONLY_PREBIND_SINGLE_USE_V1.json": "97d0d924dd45749f55be982c4a6c0b84d3296541",
+    "contracts/TASK4_PINNED_REAL_FIRST_REPLIES_NATIVE_GET_IBAN_V1.json": "e2ecbf7c3ee9cfafe5511a349a6b865e13c8672a",
+    "contracts/TASK4_PINNED_GENUINE_SECOND_RESPONSES_NATIVE_INJECTED_READ_V1.json": "5eb514167cc9c5c42601bb21a0d3a7fc161add0c"
   },
   "historical_reproduced": {
     "older_run": {
@@ -63,7 +65,8 @@
         "artifact_id": 11675146283,
         "model_responses": 2,
         "classification": "REAL_MODEL_RESPONSES_CAPTURED_UNSCORED",
-        "fresh_consent_reuse": false
+        "fresh_consent_reuse": false,
+        "artifact_zip_sha256": "7a5edcbdc7277917c700cef98e6e4a1c2b27cb730da2fdbc1e8e2ff3998671af"
       },
       {
         "ordinal": 2,
@@ -71,7 +74,8 @@
         "artifact_id": 11675439837,
         "model_responses": 2,
         "classification": "REAL_MODEL_RESPONSES_CAPTURED_UNSCORED",
-        "fresh_consent_reuse": false
+        "fresh_consent_reuse": false,
+        "artifact_zip_sha256": "755efba70dddf7546b69a373987a5a2b6ceba02c18c4a36267e5f7880f9b7943"
       },
       {
         "ordinal": 3,
