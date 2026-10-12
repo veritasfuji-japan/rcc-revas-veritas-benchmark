@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Ben-canonical front-half -> existing VERITAS Native-v2 consumption boundary.
+"""Ben-canonical selected action -> native v2 -> controlled TLS sandbox effect.
 
-Bounded local engineering proof only. This stage deliberately stops before
-external dispatch; consumption is audit lineage, not execution permission.
+Bounded local integration only; the signed native v2 authorization and a
+separate ownership/permit boundary are both required for the exact action.
+Task4 #374 exports verified cross-boundary identity for the one local effect.
+Synthetic issuer, TLS sandbox and benchmark host are NOT production IAM.
 """
 from __future__ import annotations
 import argparse, asyncio, base64, inspect, json, os, secrets, tempfile
@@ -16,6 +18,9 @@ from rveval.canonical import sha_file, sha_json
 from rveval.guardrails import require
 from rveval.integrations.decide_pipeline import NativeDecisionIntentFactory
 from rveval.models import CandidateAction
+from integration.current_veritas_uninterrupted.task4_374_native_v2_lineage import (
+    build_verified_trace, canonical_hash, verify_exact_native_v2_lineage,
+)
 
 BEN_PIN="1d3782d3aae5ff9c88036709c1a5642320cc53c2"
 VERITAS_PIN="9b7376ba0077365b9d89004b06c80e76c8bfadc8"
@@ -32,7 +37,9 @@ def main(output: Path, veritas_root: Path) -> int:
     )
     from veritas_os.policy.live_adapter_bind_authorization_consumption_store import PostgresAtomicAuthorizationConsumptionStore
     from veritas_os.policy.native_bind_authorization import verify_native_bind_authorization
-    from veritas_os.policy.native_bind_authorization_consumption import consume_native_bind_authorization
+    from veritas_os.policy.native_bind_authorization_consumption import (
+        consume_native_bind_authorization, NativeAuthorizationConsumptionError,
+    )
     from veritas_os.tests.helpers.fixture_clock import wait_for_fixture_issuance
     from veritas_os.tests.helpers.native_approval_source import build_native_authority_source
     from veritas_os.tests.test_native_bind_authorization import _setup
@@ -132,6 +139,19 @@ def main(output: Path, veritas_root: Path) -> int:
         verified=verify_native_bind_authorization(artifact,**inputs)
         require(verified==artifact,"NATIVE_V2_AUTHORIZATION_VERIFY_FAILED")
         require(artifact.execution_intent==promotion.exact_execution_intent,"NATIVE_V2_EXECUTION_INTENT_CHANGED")
+        require(artifact.execution_intent["target_resource"]==config.endpoint_url
+            and artifact.execution_intent["intended_action"]==binding.ACTION
+            and config.endpoint_url=="https://sandbox.example.invalid/v1/events",
+            "TASK4_374_SIGNED_NATIVE_V2_EXACT_SANDBOX_TARGET_REQUIRED")
+        require(artifact.single_use is True, "TASK4_374_NATIVE_ONE_USE_REQUIRED")
+        # After issuance, replacing the exact authorized target in the
+        # unsigned body must NEVER yield usable authorization.
+        unauthorized=artifact.model_dump(mode="json")
+        unauthorized["execution_intent"]["target_resource"]="https://foreign.example.invalid/v1/events"
+        with pytest.raises(ValueError):
+            verify_native_bind_authorization(unauthorized,**inputs)
+        # Verification above neither consumes nor sends any operation.
+        cross_target_substitution_rejected=True
 
         from veritas_os.policy.bind_effect_reconciliation import EffectExecutionState, PostgresAtomicEffectStateStore
         from veritas_os.policy.sandbox_bind_execution import execute_sandbox_bind
@@ -163,11 +183,48 @@ def main(output: Path, veritas_root: Path) -> int:
             _assert_receipt_decision_lineage({"cda":verification.artifact,"promotion":promotion},recovered.receipt_bundle)
             archive=await effect_store.get_reconciliation(result.consumption_record.consumption_id)
             require(archive is not None,"RECONCILIATION_ARCHIVE_MISSING")
+            # The target-owning service state comes back via independently
+            # authenticated READ-ONLY reconciliation, never from the dispatch
+            # HTTP acknowledgement alone.
+            require(archive.operation.state=="PERSISTED",
+                    "TASK4_374_TARGET_OWNED_EFFECT_NOT_PERSISTED")
+            require(archive.operation.payload_digest==dispatch.payload_digest,
+                    "TASK4_374_TARGET_OWNED_DIGEST_CHANGED")
+            # Do not let a successfully consumed grant be used a second time
+            # after the verified effect, even on the same exact target.
+            with pytest.raises(NativeAuthorizationConsumptionError,
+                               match="NABC_ALREADY_CONSUMED"):
+                await consume_native_bind_authorization(
+                    artifact,
+                    issuance_source_inputs=inputs["source_inputs"],
+                    governance_inputs=inputs["governance_inputs"],
+                    trust_inputs=inputs["trust_inputs"],
+                    current_source_inputs=current_source,
+                    current_runtime_risk_packet=risk,
+                    now=now, consumption_store=store,
+                )
+            require(transport.send_calls==1,
+                    "TASK4_374_POST_RECON_REPLAY_COULD_DISPATCH")
             rows_after=await _sandbox_row_count(); require(rows_after==rows_before+1,"CONTROLLED_ACTION_EFFECT_COUNT_NOT_ONE")
-            return result,dispatch,recovered,archive,governance_calls["count"]
+            return result,dispatch,recovered,archive,transport,governance_calls["count"]
 
         result=asyncio.run(execute_and_reconcile())
-        consumed_result,dispatch,recovered,archive,governance_rechecks=result
+        consumed_result,dispatch,recovered,archive,transport,governance_rechecks=result
+        exact_trace=build_verified_trace(
+            candidate_sha256=upstream_hash,
+            promotion_intent_hash=promotion.execution_intent_hash,
+            promotion_target=promotion.exact_execution_intent["target_resource"],
+            promotion_action=promotion.exact_execution_intent["intended_action"],
+            artifact=artifact,
+            consumption=consumed_result.consumption_record,
+            dispatch=dispatch,
+            transport=transport,
+            target_operation=archive.operation,
+            archive=archive,
+            recovery=recovered,
+        )
+        trace_checks=verify_exact_native_v2_lineage(exact_trace)
+        trace_hash=canonical_hash(exact_trace)
         report={
             "schema":"veritas.current-bind-action-capability-compatibility-proof.v1",
             "proof_round":"CANONICAL_WRAPPER_CURRENT_BIND_CAPABILITY_COMPATIBILITY_V1",
@@ -195,6 +252,13 @@ def main(output: Path, veritas_root: Path) -> int:
             "dispatch_reason":dispatch.reason_code,
             "terminal_effect_state":recovered.state.value,
             "governance_recheck_calls":governance_rechecks,
+            "task4_374_native_v2_trace":exact_trace,
+            "task4_374_native_v2_trace_sha256":trace_hash,
+            "task4_374_native_v2_trace_checks":trace_checks,
+            "task4_374_cross_target_signed_artifact_substitution_rejected":
+                cross_target_substitution_rejected,
+            "task4_374_replay_after_reconciliation_rejected":True,
+            "task4_374_network_bypass_independently_proven":False,
             "external_validation":False,
             "production_authority":False,
             "compensation_exercised":False
