@@ -172,7 +172,7 @@ def detached_answer_adapter(*, record, original_request, c=None):
         # GROUND_TRUTH_OUTPUT, score status, or untrusted 'subject' text.
         status="DERIVED_READONLY_ANSWER_LOCAL_COUNTERFACTUAL"
         currency=f"£{outgoing:,.2f}"
-        text=f"Your total spending in March 2022 was {currency}."
+        text=f"The total spending in March 2022 is {currency}."
         derived=[{"type":"text","content":text}]
     need(deepcopy(record["model_output"])==source,
          "346_HISTORICAL_MODEL_OUTPUT_WAS_MUTATED")
