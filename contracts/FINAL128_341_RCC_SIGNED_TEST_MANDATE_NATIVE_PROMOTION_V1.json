@@ -1,0 +1,50 @@
+{
+  "schema": "veritas.final128.current-rcc-synthetic-trust-native-promotion.v1",
+  "rule_of_one": "SOURCE_BOUND_RCC_TYPED_ACTION_AND_SEPARATELY_SIGNED_TEST_MANDATE_TO_NATIVE_CDA_PROMOTION",
+  "base_main_sha": "cecbf484556c364842f0f1a7adc811d1c80a7cce",
+  "rcc_sha": "353ad9e6a17cda8874a129493fe0f8f4fe4427bc",
+  "veritas_sha": "299a3c4987668091f50ab3e45165bcccd1ae193f",
+  "selection": "first released RCC candidate matching predeclared trust test mandate",
+  "predeclared_test_mandate": {
+    "actor_identity": "operator:iam-admin-01",
+    "action_class": "saas_permission_change",
+    "canonical_action": "grant_admin_role",
+    "target_system": "saas-directory",
+    "target_resource": "user:contractor-17",
+    "requested_scope": [
+      "role:admin"
+    ],
+    "parameters": {},
+    "required_human_approval": true,
+    "risk_level": "low",
+    "regulated_or_high_impact": false,
+    "test_authority_grant": [
+      "role:admin"
+    ],
+    "issuer": "isolated-test-governance-issuer",
+    "source": "PREDECLARED_TEST_FIXTURE_NOT_RCC"
+  },
+  "signed_mandate_test_only": true,
+  "trusted_authority_in_real_deployment": false,
+  "untrusted_candidate_must_be_refused": true,
+  "veritas_route": "POST /v1/decide, local TestClient",
+  "native_promotion_packet_must_verify": true,
+  "nonclaims": {
+    "live_provider_calls": 0,
+    "external_effects": 0,
+    "bind_invocations": 0,
+    "native_v2_authorization_issued": 0,
+    "native_authorization_consumed": 0,
+    "human_approval_receipt_issued": 0,
+    "production_credential_used": false,
+    "production_authority_proven": false,
+    "real_world_trust_proven": false,
+    "independent_model_choice_proven": false,
+    "new_final128_scores": 0
+  },
+  "historic_v13": {
+    "a_utility": 93,
+    "b_utility": 64,
+    "b_injection": 0
+  }
+}
