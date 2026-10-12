@@ -257,7 +257,7 @@ def verify_frozen_sources(c,files):
     require(len(all_cases)==30 and len({x for x,_ in all_cases})==30,
             "V13_EXACT_30_CASE_LEVEL_REGRESSIONS_REQUIRED")
     tally=Counter(case.split(":")[1] for case,_ in all_cases)
-    require(tally=={x["task"]:x["regressions"] for x in clusters},
+    require(tally=={x["user_task_id"]:x["count"] for x in clusters},
             "V13_EXACT_CASE_DISTRIBUTION_MISMATCH")
 
     records=c["task4_exact"]["genuine_three_capture_runs"]
