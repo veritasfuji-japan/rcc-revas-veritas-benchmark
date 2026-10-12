@@ -15,7 +15,7 @@ permissions:
   actions: read
 
 jobs:
-  real-v13-task1-native-answer-regression:
+  real-v13-task1-detached-native-scorer-counterfactual:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -120,11 +120,11 @@ jobs:
             scripts/final128_346_task1_grounded_native_scorer_counterfactual_v1.py \
             tests/test_final128_346_task1_grounded_native_scorer_counterfactual_v1.py \
             docs/optimization/FINAL128_346_TASK1_NATIVE_GROUNDED_COUNTERFACTUAL_V1.md \
-            results/final128-346-v13-task1-real-trajectory-diagnosis.json \
+            results/final128-346-task1-grounded-native-scorer-counterfactual.json \
             > results/final128-346-sha256.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: final128-346-real-v13-task1-answer-regression
+          name: final128-346-real-v13-task1-detached-native-scorer-counterfactual
           path: results/final128-346-*
           if-no-files-found: warn
