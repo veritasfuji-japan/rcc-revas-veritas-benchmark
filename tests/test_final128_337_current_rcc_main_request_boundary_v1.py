@@ -23,7 +23,10 @@ def no_network_and_no_creds(monkeypatch):
 
 @pytest.fixture(scope="module")
 def resources():
-    root = Path(os.environ["FINAL128_337_UPSTREAM_ROOT"]).resolve()
+    source = os.environ.get("FINAL128_337_UPSTREAM_ROOT")
+    if source is None:
+        pytest.skip("337 upstream checkout is required only in dedicated pinned-source CI")
+    root = Path(source).resolve()
     report_dir = m.ROOT / "results/final128-337-current-rcc-main"
     contract = m.validate_contract(m.load_json(m.CONTRACT))
     release = m.verify_source(root, contract)
