@@ -1,0 +1,40 @@
+{
+  "schema": "veritas.final128.offline-voucher-to-native-cda-promotion.v1",
+  "rule_of_one": "PINNED_PREISSUED_OFFLINE_TEST_ISSUER_RCCR_SOURCE_NATIVE_CDA_PROMOTION_SINGLE_LINEAGE",
+  "base_main_sha": "320b52ade0d346756a72f03c048fa072804207cd",
+  "rcc_sha": "353ad9e6a17cda8874a129493fe0f8f4fe4427bc",
+  "veritas_sha": "299a3c4987668091f50ab3e45165bcccd1ae193f",
+  "source_case_id": "fixture:30a220e37794e975131841bff70fc271e1a441b39efd95b93e45bc248b30ceef",
+  "offline_voucher_sha256": "93c40d0c25b2a019b253826cb3aaa362fc6d5c07465cd82396fd0e32a883e6bd",
+  "offline_public_key_sha256": "f0945df663c54edd3c9dc7033d1d8702975489175c02fbbc8d97c77ce4fca612",
+  "issuer_private_key_generated_in_ci": false,
+  "issuer_signature_generated_in_ci": false,
+  "frozen_fixture_only": true,
+  "source_candidate_from_rcc": true,
+  "controlled_model_transcript_only": true,
+  "native_route": "POST /v1/decide",
+  "require_independent_native_cda_verification": true,
+  "require_native_selected_action_hash_exact": true,
+  "require_native_promotion_packet_verification": true,
+  "must_reject_untrusted_rcc_without_offline_voucher": true,
+  "must_reject_wrong_scope_or_target": true,
+  "must_reject_expired_or_altered_voucher": true,
+  "never_treat_required_human_approval_as_granted": true,
+  "limits": {
+    "real_external_provider_calls": 0,
+    "real_external_effects": 0,
+    "native_v2_authorizations_issued": 0,
+    "native_v2_bind_calls": 0,
+    "native_authorization_consumptions": 0,
+    "real_human_approval_receipts": 0,
+    "actual_production_authority": false,
+    "independent_business_issuer_verified": false,
+    "independent_model_choice_verified": false,
+    "official_final128_scores_recomputed": false
+  },
+  "historical_v13_reference_only": {
+    "a_utility": 93,
+    "b_utility": 64,
+    "b_injection_success": 0
+  }
+}
