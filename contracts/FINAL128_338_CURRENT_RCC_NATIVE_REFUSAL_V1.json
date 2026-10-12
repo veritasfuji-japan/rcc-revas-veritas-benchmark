@@ -1,0 +1,42 @@
+{
+  "schema": "veritas.final128.current-rcc-native-refusal.v1",
+  "rule_of_one": "CURRENT_RCC_ONE_RELEASED_CANDIDATE_HAS_NO_NATIVE_CDA_OR_EXECUTION_AUTHORITY",
+  "benchmark_parent_main_sha": "7dae4f3f8309a4e32c0049b971d5a6b3b6defb8d",
+  "upstream_repository": "effacermonexistence/rcc-revas-veritas-benchmark",
+  "upstream_commit": "353ad9e6a17cda8874a129493fe0f8f4fe4427bc",
+  "upstream_release_root": "rcc-revas-eval/v0.1.0/runtime",
+  "veritas_repository": "veritasfuji-japan/veritas_os",
+  "veritas_commit": "299a3c4987668091f50ab3e45165bcccd1ae193f",
+  "veritas_source_git_blobs": {
+    "veritas_os/policy/decision_candidate.py": "c9f59bbcae8ab6e007bc07f694b14b4a86699742",
+    "veritas_os/governance/canonical_decision_artifact.py": "3a80e0fe2aa015dcaa0b54a23f796d7fcb39b327",
+    "veritas_os/policy/bind_core/core.py": "0f64201e2599495ce4e3991348aa320995716ffc",
+    "veritas_os/policy/bind_artifacts.py": "d25ec429e6c854f0b14dac9ec4e14eea03ee7675",
+    "veritas_os/policy/native_bind_authorization.py": "8823dcbd0cfe4ce49df62ddce4137cc6947678a5"
+  },
+  "scope": {
+    "current_rcc_real_evaluate_and_prepare": true,
+    "selected_candidate_count": 1,
+    "deterministic_selection": "lexically first released case id",
+    "native_verified_decision_candidate_promotion_attempt": true,
+    "upstream_decision_lock_is_not_veritas_cda": true,
+    "independent_cda_provided": false,
+    "verified_cda_promotion_must_fail": true,
+    "provisional_bind_refusal_probe": true,
+    "provisional_probe_is_verified_execution_intent": false,
+    "native_bind_authorization_issued": false,
+    "native_bind_authorization_consumed": false,
+    "provider_calls": 0,
+    "http_decide_requests": 0,
+    "http_bind_requests": 0,
+    "external_effects": 0,
+    "official_agentdojo_scores": 0,
+    "no_new_utility_claim": true,
+    "current_rcc_to_actual_native_effect_continuity": "NOT_PROVEN"
+  },
+  "historical_v13": {
+    "arm_a_utility": 93,
+    "arm_b_utility": 64,
+    "arm_b_injection_success": 0
+  }
+}
