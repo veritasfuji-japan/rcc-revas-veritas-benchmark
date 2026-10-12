@@ -141,7 +141,7 @@ def child(input_path,child_output,veritas_root):
         poc._configure_environment(runtime,"test-"+secrets.token_urlsafe(24),
             base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())
         key_id=poc._configure_secure_test_infrastructure(runtime,
-            "test-"+secrets.token_urlsafe(32))
+            secrets.token_hex(32))
         signed_bundle=poc._configure_verified_policy_bundle(runtime)
         route_calls=[]
         def request_factory(bundle_dir):
