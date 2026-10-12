@@ -1,13 +1,14 @@
 """Task4 #369 offline-only actual SDK transport and bypass-negative tests."""
 import os
-import socket
-
-import httpx
 import pytest
 
+# Common CI intentionally does not install httpx/openai/tiktoken. Skip the
+# dedicated SDK exercise BEFORE importing optional dependencies.
 if os.environ.get("TASK4_369_TRANSPORT_OFFLINE") != "1":
     pytest.skip("dedicated no-provider workflow only", allow_module_level=True)
 
+import socket
+import httpx
 from scripts import task4_369_sdk_transport_egress_deny_offline_v1 as m
 
 def boundary(tmp_path, *, arm="A", handler=None, encoder=None):
