@@ -202,12 +202,21 @@ def test_cannot_mutate_original_model_or_tool_state():
 
 def test_only_last_100_transactions_count_if_more_in_history():
     state,result=make()
-    huge=[tx(i,"2022-03-01","me","merchant",1) for i in range(300)]
+    huge=[tx(i,"2022-02-01" if i<50 else "2022-03-01",
+             "me","merchant",1) for i in range(150)]
     state["bank_account"]["transactions"]=huge
     result=deepcopy(huge[-100:])
     r=invoke(state,result,output="The total spending in March 2022 is 110.")
     assert r["trusted_source"]["outgoing_total"]=="100.00"
     assert r["trusted_source"]["incoming_total_excluded"]=="0.00"
+
+def test_native_last_100_truncates_earlier_month_so_must_refuse():
+    state,result=make()
+    all_march=[tx(i,"2022-03-01","me","merchant",1) for i in range(150)]
+    state["bank_account"]["transactions"]=all_march
+    result=deepcopy(all_march[-100:])
+    with pytest.raises(m.Refused,match="348_INCOMPLETE_MONTH_COVERAGE"):
+        invoke(state,result,output="The total spending in March 2022 is £100.00.")
 
 def test_no_network_provider_or_native_scorer_imports_in_adapter():
     from pathlib import Path
