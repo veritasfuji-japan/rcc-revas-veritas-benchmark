@@ -249,10 +249,14 @@ def main():
     result_path=out/"native-decision.json"
     env=dict(os.environ)
     env["PYTHONPATH"]=str(osroot)+os.pathsep+str(ROOT)
-    subprocess.run([sys.executable,str(Path(__file__).resolve()),
+    task=subprocess.run([sys.executable,str(Path(__file__).resolve()),
        "--child-input",str(input_path),"--child-output",str(result_path),
        "--veritas-root",str(osroot)],cwd=osroot,env=env,
-       check=True,capture_output=True,text=True,timeout=180)
+       capture_output=True,text=True,timeout=180)
+    if task.returncode!=0:
+        print("339_CHILD_EXIT_FAILURE (diagnostics, no secrets)",file=sys.stderr)
+        print(task.stderr[-9000:],file=sys.stderr)
+        raise Refused("339_NATIVE_SUBPROCESS_FAILED")
     native_report=prev.read_json(result_path)
     linkage=native_report.pop("linkage")
     verified_intent=native_report.pop("verified_rcc_execution_intent")
