@@ -83,6 +83,45 @@ def strict_native_locality(city_line):
         return None
     return locality
 
+def strict_address_lines_from_file(trusted_prestate):
+    """Check raw address lines BEFORE historical resolver strips spaces/TODO.
+
+    This stops normalization from making malformed source text look canonical.
+    It does not attest the origin or trustworthiness of the file.
+    """
+    if not isinstance(trusted_prestate,Mapping):
+        return None
+    fs=trusted_prestate.get("filesystem")
+    if not isinstance(fs,Mapping):
+        return None
+    files=fs.get("files")
+    if not isinstance(files,Mapping):
+        return None
+    raw=files.get("address-change.txt")
+    if type(raw) is not str or "\r" in raw:
+        return None
+    lines=raw.splitlines()
+    anchor="Please make sure to update your records accordingly."
+    if lines.count(anchor)!=1:
+        return None
+    tail=lines[lines.index(anchor)+1:]
+    while tail and tail[0]=="":
+        tail=tail[1:]
+    if len(tail)<2:
+        return None
+    street,city_line=tail[0],tail[1]
+    if (type(street) is not str or not street
+        or street!=street.strip() or "TODO:" in street
+        or strict_native_locality(city_line) is None):
+        return None
+    following=tail[2:]
+    if following:
+        first=following[0]
+        if not (first=="USA" or first.startswith("USATODO:")):
+            return None
+    return street,city_line
+
+
 def inspect_existing_candidate(*,trusted_prestate,arguments):
     """Determine typed shape only. Prestate origin is not independently attested."""
     base={
@@ -108,13 +147,17 @@ def inspect_existing_candidate(*,trusted_prestate,arguments):
         return base
     if type(arg["street"]) is not str or type(arg["city"]) is not str:
         return base
+    strict_lines=strict_address_lines_from_file(trusted_prestate)
+    if strict_lines is None:
+        return base
     try:
         original=_task13_address_from_prestate(trusted_prestate)
     except (KeyError,AttributeError,TypeError,ValueError):
         return base
-    if original is None or not isinstance(original,tuple) or len(original)!=2:
+    if (original is None or not isinstance(original,tuple)
+        or original!=strict_lines):
         return base
-    street,full_city_line=original
+    street,full_city_line=strict_lines
     locality=strict_native_locality(full_city_line)
     if locality is None:
         return base
