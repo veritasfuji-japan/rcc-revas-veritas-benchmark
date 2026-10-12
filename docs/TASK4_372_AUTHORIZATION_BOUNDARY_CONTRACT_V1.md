@@ -40,5 +40,10 @@ Exact benchmark and upstream commit SHAs, module and image source SHA-256, actua
 ## Nonclaims
 This document is a **specification-only checkpoint**. It does not implement or execute native VERITAS authorization issuance, native consumption, production IAM, a live banking effect, external provider inference or third-party audit. No API spend is authorized. #371's synthetic HMAC inputs remain synthetic until independently replaced and tested. CI passing for this contract must never be reported as full execution proof.
 
-## Release gate
-Do not implement the full runtime in a single blind change. First confirm native upstream interfaces and their tests; then implement a minimal executable slice with dedicated CI and independently inspect its evidence. Keep Draft until the actual runtime checks are green.
+## Relationship to the separate executable PR #373
+PR #373 exercises upstream VERITAS **Live Adapter Bind Authorization v1** issuance, verification and one-use consumption with official synthetic test fixtures, in a networkless Docker container. Its official signed test authorization targets a different billing test resource from the #371 Docker mock-effect sink; a substituted sink target must fail verification. The #373 in-memory consumption store is explicitly not production-safe. These partial proofs do **not** satisfy ALLOW_01 or RECON_01 as one integrated authorization-to-effect trace. The future implementation must select and pin the exact intended native/v1/v2 authorization contract and reject any cross-version or cross-target relabeling.
+
+## Separate merge and execution gates
+**This documentation-only PR (#372):** approve its scope, eight-case test matrix, nonclaims and review feedback, and require its own CI to pass against the exact HEAD. After review it may be merged **without waiting for the future executable runtime PR**. Merging this specification is not a runtime PROVEN declaration.
+
+**Future runtime PR(s):** do not implement the complete production path as one unreviewed change. First prove real upstream entrypoints and their trust inputs; then require dedicated CI with matching target-bound authorization, an atomic durable consume-before-effect boundary, Docker/IAM bypass-negative tests and independent target-owned reconciliation evidence. Keep each executable PR Draft until its own evidence and all applicable CI are verified.
