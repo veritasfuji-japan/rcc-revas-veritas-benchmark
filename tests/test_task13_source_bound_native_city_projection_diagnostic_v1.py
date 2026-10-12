@@ -16,10 +16,12 @@ def state(*,street="Dalton Street 123",city_line="New York, NY 10001",suffix="US
 def candidate(*,street="Dalton Street 123",city="New York",**extra):
     return {"street":street,"city":city,**extra}
 
-def inspect(s=None,args=None):
+_DEFAULT=object()
+
+def inspect(s=_DEFAULT,args=_DEFAULT):
     return m.inspect_existing_candidate(
-        trusted_prestate=state() if s is None else s,
-        arguments=candidate() if args is None else args
+        trusted_prestate=state() if s is _DEFAULT else s,
+        arguments=candidate() if args is _DEFAULT else args
     )
 
 def test_frozen_sources_and_no_runtime_utility_claim():
