@@ -58,9 +58,15 @@ def probe(*,token,sha,run_id,target_sha,consent=False,transport=None):
         if status!=200 or body.get("ref")!=ref or body.get("object",{}).get("sha")!=sha:
             raise ProbeDenied("357_"+phase+"_REF_NOT_UNCHANGED")
     def ruleset_denied(status,body):
-        if status!=403 or not isinstance(body,dict):return False
-        msg=(str(body.get("message",""))+" "+str(body.get("documentation_url",""))).lower()
-        return any(word in msg for word in ("repository rule","ruleset","gh013"))
+        if status not in (403,422) or not isinstance(body,dict):return False
+        msg=body.get("message","")
+        if not isinstance(msg,str):return False
+        msg=msg.lower()
+        # Explicit rule violation is required: generic 403/422 must never pass.
+        return ("repository rule violations found" in msg and
+                ("cannot update this protected ref" in msg or
+                 "cannot delete this protected ref" in msg or
+                 "cannot force-push to this tag" in msg))
     assert_unchanged("CREATED")
     update_status,update_body=call("PATCH",url,{"sha":target_sha,"force":True})
     print(json.dumps(safe_api_evidence("UPDATE",update_status,update_body),sort_keys=True),flush=True)
