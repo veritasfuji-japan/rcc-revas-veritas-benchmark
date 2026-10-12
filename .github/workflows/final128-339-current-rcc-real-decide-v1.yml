@@ -59,7 +59,7 @@ jobs:
           for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY VERITAS_API_KEY VERITAS_DATABASE_URL GITHUB_TOKEN GH_TOKEN; do
             test -z "$(printenv "$key" || true)"
           done
-          python -m pip install --disable-pip-version-check ./veritas-source "pytest==9.0.3"
+          python -m pip install --disable-pip-version-check "./veritas-source[signing]" "pytest==9.0.3"
       - name: Execute real RCC original candidate in actual local VERITAS route
         shell: bash
         env:
