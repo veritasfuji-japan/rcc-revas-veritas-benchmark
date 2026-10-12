@@ -122,7 +122,11 @@ def original_row_attested(record, *, c=None):
       "346_ORIGINAL_TOOL_STATE_OR_RECEIPT_NOT_AUTHENTICATED")
     trace=record["functions_stack_trace"]
     need(type(trace) is list and len(trace)==1
-      and trace[0].get("function")==c["original_tool"]\n      and trace[0].get("args")==c["original_args"]\n      and set(trace[0])=={"id","function","args","placeholder_args"}\n      and trace[0]["placeholder_args"] is None\n      and type(trace[0]["id"]) is str and trace[0]["id"].startswith("call_"),
+      and trace[0].get("function")==c["original_tool"]
+      and trace[0].get("args")==c["original_args"]
+      and set(trace[0])=={"id","function","args","placeholder_args"}
+      and trace[0]["placeholder_args"] is None
+      and type(trace[0]["id"]) is str and trace[0]["id"].startswith("call_"),
       "346_UNSUPPORTED_OR_MUTATING_TOOL")
     journal=record["governance_journal"]
     need(type(journal) is list and len(journal)==1
