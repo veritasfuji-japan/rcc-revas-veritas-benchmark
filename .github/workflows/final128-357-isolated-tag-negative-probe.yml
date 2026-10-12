@@ -1,0 +1,41 @@
+name: Final128 357 Isolated Tag Negative Probe
+on:
+  workflow_dispatch:
+    inputs:
+      explicit_consent:
+        description: "Type I AUTHORIZE ISOLATED TAG WRITE PROBE (creates tag and attempts update/delete)"
+        required: true
+        type: string
+permissions:
+  contents: write
+jobs:
+  isolated-negative-probe:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Explicit opt-in and isolated tag probe
+        shell: bash
+        env:
+          GH_TAG_PROBE_TOKEN: ${{ github.token }}
+          EXPLICIT_CONSENT: ${{ inputs.explicit_consent }}
+          OPENAI_API_KEY: ""
+        run: |
+          set -euo pipefail
+          [[ "$EXPLICIT_CONSENT" == "I AUTHORIZE ISOLATED TAG WRITE PROBE" ]] || exit 1
+          export TARGET_SHA="$(git rev-parse HEAD^)"
+          python - <<'PY'
+          import json,os
+          from scripts.final128_357_task1_isolated_tag_negative_probe_v1 import probe
+          result=probe(token=os.environ["GH_TAG_PROBE_TOKEN"],
+            sha=os.environ["GITHUB_SHA"],run_id=os.environ["GITHUB_RUN_ID"],
+            target_sha=os.environ["TARGET_SHA"],consent=True)
+          print(json.dumps(result,sort_keys=True))
+          PY
