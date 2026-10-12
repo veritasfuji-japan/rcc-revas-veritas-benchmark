@@ -143,6 +143,13 @@ def child(input_path,child_output,veritas_root):
         key_id=poc._configure_secure_test_infrastructure(runtime,
             secrets.token_hex(32))
         signed_bundle=poc._configure_verified_policy_bundle(runtime)
+        # The native POC modules may have imported core.config before the
+        # isolated environment was prepared; construct the real config from
+        # the now-populated ephemeral env. Never override or bypass validation.
+        from veritas_os.core import config as native_config
+        native_config.cfg=native_config.VeritasConfig()
+        require(native_config.cfg.api_secret_configured,
+                "339_NATIVE_EPHEMERAL_SECRET_NOT_CONFIGURED")
         route_calls=[]
         def request_factory(bundle_dir):
             require(bundle_dir==signed_bundle,"339_POLICY_BUNDLE_DRIFT")
