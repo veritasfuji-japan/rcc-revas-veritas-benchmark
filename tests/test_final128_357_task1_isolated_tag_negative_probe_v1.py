@@ -15,7 +15,7 @@ def transport(req,timeout):
     if req.method=="GET":
         return Response(200,{"ref":REF,"object":{"sha":SHA}})
     if req.method in ("PATCH","DELETE"):
-        return Response(403,{"message":"Repository rule violations found for refs/tags"})
+        return Response(403,{"message":"Repository rule violations found: Cannot update this protected ref. Cannot delete this protected ref."})
     raise AssertionError(req.method)
 def run(transport_override=None):
     return probe(token="mock",sha=SHA,target_sha=OTHER,run_id="38235658146",
@@ -50,3 +50,21 @@ def test_changed_ref_not_proof():
         return transport(req,timeout)
     with pytest.raises(ProbeDenied,match="REF_NOT_UNCHANGED"):
         run(transport_override=bad)
+
+def test_explicit_422_ruleset_update_and_delete():
+    def denied(req,timeout):
+        if req.method=="PATCH":
+            return Response(422,{"message":"Repository rule violations found\\nCannot force-push to this tag\\nCannot update this protected ref."})
+        if req.method=="DELETE":
+            return Response(422,{"message":"Repository rule violations found\\nCannot delete this protected ref."})
+        return transport(req,timeout)
+    result=run(transport_override=denied)
+    assert result["update_status"]==result["delete_status"]==422
+    assert result["readback_unchanged"] is True
+
+def test_generic_422_delete_not_proof():
+    def denied(req,timeout):
+        if req.method=="DELETE":return Response(422,{"message":"Validation failed"})
+        return transport(req,timeout)
+    with pytest.raises(ProbeDenied,match="DELETE_RULESET"):
+        run(transport_override=denied)
