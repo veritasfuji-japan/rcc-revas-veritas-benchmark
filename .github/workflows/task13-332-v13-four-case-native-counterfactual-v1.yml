@@ -1,0 +1,149 @@
+name: Task13 332 V13 Four Archived Candidate Native Counterfactual V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task13-332-v13-four-case-native-counterfactual-v1.yml"
+      - "contracts/TASK13_332_V13_FOUR_CASE_NATIVE_COUNTERFACTUAL_V1.json"
+      - "scripts/task13_332_v13_four_case_native_counterfactual_v1.py"
+      - "tests/test_task13_332_v13_four_case_native_counterfactual_v1.py"
+      - "docs/TASK13_332_V13_FOUR_CASE_NATIVE_COUNTERFACTUAL_V1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  frozen-v13-four-case-native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      TASK13_332_PROOF: "1"
+      TASK13_332_AGENTDOJO_ROOT: _pins/agentdojo
+      TASK13_332_RCC_ROOT: _pins/rcc
+      TASK13_332_VERITAS_ROOT: _pins/veritas
+      TASK13_332_V13_ZIP: /tmp/task13-332-exact-v13.zip
+      TASK13_332_REPLAY_ZIP: /tmp/task13-332-exact-replay.zip
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      GITHUB_TOKEN: ""
+      GH_TOKEN: ""
+      VERITAS_DATABASE_URL: ""
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: _pins/rcc
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify original repositories and no external Provider credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/rcc rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL GITHUB_TOKEN GH_TOKEN VERITAS_DATABASE_URL; do
+            test -z "$(printenv "$key" || true)"
+          done
+          mkdir -p results
+          git rev-parse HEAD > results/task13-332-head.txt
+      - name: Install offline simulator and native scoring dependencies (no model dispatch)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+          python -m pip install --disable-pip-version-check -e _pins/agentdojo
+          python -m pip install --disable-pip-version-check -e '_pins/rcc/external-eval/v0.3.9[crypto]'
+      - name: Retrieve exactly archived V13 source and frozen paired replay (read-only)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/11466539107/zip" > "$TASK13_332_V13_ZIP"
+          test "$(sha256sum "$TASK13_332_V13_ZIP" | awk '{print $1}')" = "9fbb2a1614c237e92c4239bb5d60f83d40d33b81e0092d3f82958931969c9e7a"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/11472402060/zip" > "$TASK13_332_REPLAY_ZIP"
+          test "$(sha256sum "$TASK13_332_REPLAY_ZIP" | awk '{print $1}')" = "449443501266eea9aa83ab08f261740acf2296787483a80853469c6a02684b95"
+          echo PASS_TASK13_332_EXACT_ARCHIVED_ARTIFACT_ZIPS
+      - name: Execute four actual V13 prestate/candidate local native paths + negative issuer
+        shell: bash
+        env:
+          PYTHONPATH: ".:_pins/agentdojo/src:_pins/rcc/external-eval/v0.3.9/src:_pins/veritas"
+        run: |
+          set -euo pipefail
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL GITHUB_TOKEN GH_TOKEN VERITAS_DATABASE_URL; do
+            test -z "$(printenv "$key" || true)"
+          done
+          python -m pytest -q -o addopts= \
+            tests/test_task13_332_v13_four_case_native_counterfactual_v1.py \
+            --junitxml=results/task13-332-four-case-junit.xml \
+            | tee results/task13-332-four-case-pytest.log
+          python scripts/task13_332_v13_four_case_native_counterfactual_v1.py \
+            --v13-zip "$TASK13_332_V13_ZIP" \
+            --replay-zip "$TASK13_332_REPLAY_ZIP" \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --output results/task13-332-v13-four-case-native-counterfactual.json \
+            | tee results/task13-332-four-case-report.log
+          python - <<'PY'
+          import json,hashlib,pathlib
+          path=pathlib.Path("results/task13-332-v13-four-case-native-counterfactual.json")
+          d=json.loads(path.read_text())
+          digest=d.pop("report_sha256")
+          expected=hashlib.sha256(json.dumps(
+              d,ensure_ascii=False,sort_keys=True,
+              separators=(",",":"),allow_nan=False).encode()).hexdigest()
+          assert digest==expected
+          assert d["case_count"]==4
+          assert d["historic_V13_actual_utility_regressions_in_four_cases"]==2
+          assert d["local_task13_user_rubric_true_with_test_issuer"]==8
+          assert d["untrusted_source_denials"]==4
+          assert d["new_official_A_B_utility_recoveries"]==0
+          assert d["new_injection_success_measurements"]==0
+          assert d["native_attack_scorer_calls"]==0
+          assert d["real_provider_calls"]==0
+          assert d["external_issuer_trust_proven"] is False
+          assert d["canonical_full_final128_remeasured"] is False
+          assert d["provider_dispatch"]=="DENY"
+          print("TASK13_332_LOCAL_COUNTERFACTUAL_ONLY_ZERO_OFFICIAL_RECOVERIES")
+          PY
+          sha256sum \
+            contracts/TASK13_332_V13_FOUR_CASE_NATIVE_COUNTERFACTUAL_V1.json \
+            scripts/task13_332_v13_four_case_native_counterfactual_v1.py \
+            tests/test_task13_332_v13_four_case_native_counterfactual_v1.py \
+            results/task13-332-v13-four-case-native-counterfactual.json \
+            > results/task13-332-file-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task13-332-v13-four-case-native-counterfactual-offline-evidence
+          path: results/*
+          if-no-files-found: warn
