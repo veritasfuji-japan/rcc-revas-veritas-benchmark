@@ -6,7 +6,7 @@ on:
       - ".github/workflows/final128-342-offline-preissued-test-issuer-v1.yml"
       - "contracts/FINAL128_342_OFFLINE_PREISSUED_TEST_ISSUER_V1.json"
       - "scripts/final128_342_offline_preissued_test_issuer_verifier_v1.py"
-      - "tests/test_final128_342_offline_preissued_test_issuer_verifier_v1.py"
+      - "tests/test_final128_342_offline_preissued_test_issuer_v1.py"
       - "docs/optimization/FINAL128_342_OFFLINE_PREISSUED_TEST_ISSUER_V1.md"
       - "fixtures/final128_342_offline_preissued_test_voucher_v1.json"
   workflow_dispatch:
@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  real-native-decide-cda-candidate-identity:
+  offline-preissued-test-issuer-verification:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     env:
@@ -83,7 +83,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pytest -q -o addopts= \
-            tests/test_final128_342_offline_preissued_test_issuer_verifier_v1.py \
+            tests/test_final128_342_offline_preissued_test_issuer_v1.py \
             --junitxml=results/final128-342-junit.xml \
             | tee results/final128-342-test.log
           python - <<'PY'
@@ -108,7 +108,7 @@ jobs:
           sha256sum \
             contracts/FINAL128_342_OFFLINE_PREISSUED_TEST_ISSUER_V1.json \
             scripts/final128_342_offline_preissued_test_issuer_verifier_v1.py \
-            tests/test_final128_342_offline_preissued_test_issuer_verifier_v1.py \
+            tests/test_final128_342_offline_preissued_test_issuer_v1.py \
             docs/optimization/FINAL128_342_OFFLINE_PREISSUED_TEST_ISSUER_V1.md \
             fixtures/final128_342_offline_preissued_test_voucher_v1.json \
             results/final128-342-offline-test-issuer-trust-anchor/report.json \
@@ -116,7 +116,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: final128-342-offline-test-issuer-trust-anchor-cda-v1
+          name: final128-342-offline-test-issuer-trust-anchor-v1
           path: |
             results/final128-342-benchmark-head.txt
             results/final128-342-rcc-head.txt
