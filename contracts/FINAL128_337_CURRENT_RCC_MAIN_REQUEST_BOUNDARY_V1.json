@@ -1,0 +1,47 @@
+{
+  "schema": "veritas.final128.current-rcc-main-request-boundary.v1",
+  "rule_of_one": "EXECUTE_CURRENT_RCC_MAIN_RELEASE_NATIVE_REQUEST_PREPARATION_WITHOUT_BIND_PROMOTION",
+  "parent_main_sha": "4b403e5f2c2156b8d1443dc4310f3a4feebfcb55",
+  "upstream_repository": "effacermonexistence/rcc-revas-veritas-benchmark",
+  "upstream_main_sha": "353ad9e6a17cda8874a129493fe0f8f4fe4427bc",
+  "upstream_release_root": "rcc-revas-eval/v0.1.0/runtime",
+  "upstream_release": "0.1.0",
+  "upstream_source_blob_pins": {
+    "rcc-revas-eval/CURRENT": "b82608c0bb54a84ae7b3d38112ccf1cb50aebe8d",
+    "rcc-revas-eval/v0.1.0/runtime/README.md": "ff3caf613e899f86f5b659795f8fa9e50711d0bd",
+    "rcc-revas-eval/v0.1.0/runtime/evaluation_manifest.json": "9d13c106f210ca2900b0189b2d1ae48e229b5c57",
+    "rcc-revas-eval/v0.1.0/runtime/rcc_revas_eval/native_veritas.py": "9e06d483c703e4c1ed5413026c83fecb2562eb42",
+    "rcc-revas-eval/v0.1.0/runtime/rcc_revas_eval/runtime.py": "5c2e58148ec7305698556c86ab7ebca095859bc0",
+    "rcc-revas-eval/v0.1.0/runtime/rcc_revas_eval/handoff.py": "5b79ca6bef79b5f12657ae25b18716e8ec5ed485",
+    "rcc-revas-eval/v0.1.0/runtime/rcc_revas_eval/cli.py": "e9f1c44690945c122dcb20471842291ac9526154"
+  },
+  "legacy_source_path": "external-eval/v0.3.9/src/rveval/integrations/agentdojo.py",
+  "expected_partner_cases": 36,
+  "expected_adapter_version": "rcc-revas-veritas-native-adapter-v0.1.0",
+  "expected_endpoint": "/v1/decide",
+  "historical_final128": {
+    "run_id": 37585673492,
+    "arm_a_utility": 93,
+    "arm_b_utility": 64,
+    "arm_b_injection": 0,
+    "official_new_utility": 0
+  },
+  "boundary": {
+    "runs_current_upstream_code": true,
+    "source_side_candidate_prestate_provenance_only": true,
+    "candidate_hash_is_execution_authority": false,
+    "veritas_decide_http_posts": 0,
+    "veritas_native_bind_invocations": 0,
+    "veritas_native_execution_evidence": false,
+    "physical_bank_prestate_verified": false,
+    "canonical_agentdojo_128_enrolled": false,
+    "official_new_final128_scores": 0,
+    "provider_calls": 0,
+    "real_bank_effects": 0,
+    "legacy_main_path_expected_present": false,
+    "historic_rcc_release_v0_3_9_remains_unchanged": true,
+    "reconciliation_or_independent_validation": false,
+    "current_full_wrapper_continuity_status": "NOT_PROVEN",
+    "real_provider_dispatch": "DENY"
+  }
+}
