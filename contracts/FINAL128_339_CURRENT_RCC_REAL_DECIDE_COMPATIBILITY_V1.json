@@ -1,0 +1,44 @@
+{
+  "schema": "veritas.final128.current-rcc-real-decide-compatibility.v1",
+  "rule_of_one": "EXERCISE_EXACT_RELEASED_RCC_REQUEST_AT_REAL_VERITAS_DECIDE_AND_AUDIT_NATIVE_CDA_CANDIDATE_BINDING",
+  "benchmark_base_main_sha": "1b3d3a3d574a721a0e73513927b343b67f5aba19",
+  "upstream_rcc_sha": "353ad9e6a17cda8874a129493fe0f8f4fe4427bc",
+  "upstream_veritas_sha": "299a3c4987668091f50ab3e45165bcccd1ae193f",
+  "veritas_reference_proof_files": {
+    "scripts/run_decision_to_external_bind_poc.py": "c6e9466a742c069a39403264f0b6abdbc9b39752",
+    "scripts/run_decide_pipeline_poc.py": "f6e3fca949bcda117722ce5fe6f7af2dac9e4e0d",
+    "veritas_os/tests/helpers/live_decision_capture.py": "4650af2adf93cd4fccd0e72729d88d85275510c2",
+    "veritas_os/governance/canonical_decision_artifact.py": "3a80e0fe2aa015dcaa0b54a23f796d7fcb39b327",
+    "veritas_os/policy/decision_candidate.py": "c9f59bbcae8ab6e007bc07f694b14b4a86699742"
+  },
+  "selected_case_count": 1,
+  "selection_rule": "lexicographically first RCC released case by immutable case_id",
+  "request_mutation_allowed": false,
+  "route": "POST /v1/decide via in-process TestClient",
+  "inference": "controlled local model transcript, no provider transport",
+  "proof_requirements": [
+    "execute_real_current_rcc_release",
+    "rebuild_exact_upstream_request",
+    "capture_exact_request_at_real_route",
+    "verify_actual_native_cda_if_returned",
+    "recheck_native_candidate_linkage",
+    "attempt_native_verified_cda_promotion_without_input_substitution",
+    "report_fail_closed_gap_when_unbound"
+  ],
+  "nonclaims": {
+    "native_execution_intent_previously_established": false,
+    "native_authorization_issued": false,
+    "authorization_consumed": false,
+    "native_bind_executed": false,
+    "production_external_effect": false,
+    "live_model_provider_calls": 0,
+    "physical_bank_prestate_proven": false,
+    "official_final128_rescored": false,
+    "end_to_end_same_candidate_proven": false
+  },
+  "historic_v13": {
+    "arm_a": 93,
+    "arm_b": 64,
+    "injection_success_b": 0
+  }
+}
