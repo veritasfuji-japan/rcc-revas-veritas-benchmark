@@ -10,8 +10,8 @@
   "files": [
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 521,
-      "sha256": "402151cb347e2142bd3eb8224f41f6cebe7cb544582304ebbd269b2e2c2442e2"
+      "bytes": 544,
+      "sha256": "c69665d6b1ef2ec3f813508417d9fbb01171a3f09a9935c9f3d8e874beedd1a4"
     },
     {
       "path": "CLAIM_BOUNDARY.md",
