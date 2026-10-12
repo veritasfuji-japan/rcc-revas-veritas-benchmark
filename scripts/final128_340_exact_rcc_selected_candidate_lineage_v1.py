@@ -186,8 +186,8 @@ def main():
         child(a.child_request,a.child_result,a.veritas_root.resolve());return
     r337.forbid_credentials()
     c=contract_check(read(CONTRACT))
-    veritas_root=r339.verify_os(a.veritas_root,c if False else
-        r339.contract_check(r338.read_json(r339.CONTRACT_PATH)))
+    veritas_root=r339.verify_os(
+        a.veritas_root,r339.contract_check(r338.read_json(r339.CONTRACT_PATH)))
     out=a.output_dir.resolve()
     ensure(out==OUT.resolve() and not out.exists(),"340_FIXED_FRESH_OUTPUT_REQUIRED")
     out.mkdir(parents=True)
