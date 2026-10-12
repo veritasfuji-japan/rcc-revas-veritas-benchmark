@@ -43,10 +43,10 @@ def test_generic_403_not_proof():
         if req.method=="PATCH":return Response(403,{"message":"Resource not accessible"})
         return transport(req,timeout)
     with pytest.raises(ProbeDenied,match="UPDATE_RULESET"):
-        run(transport=bad)
+        run(transport_override=bad)
 def test_changed_ref_not_proof():
     def bad(req,timeout):
         if req.method=="GET":return Response(200,{"ref":REF,"object":{"sha":OTHER}})
         return transport(req,timeout)
     with pytest.raises(ProbeDenied,match="REF_NOT_UNCHANGED"):
-        run(transport=bad)
+        run(transport_override=bad)
