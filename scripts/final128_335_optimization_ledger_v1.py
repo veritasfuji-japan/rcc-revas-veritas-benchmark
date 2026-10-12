@@ -261,8 +261,8 @@ def verify_frozen_sources(c,files):
             "V13_EXACT_CASE_DISTRIBUTION_MISMATCH")
 
     records=c["task4_exact"]["genuine_three_capture_runs"]
-    require(first["original_provider_run_id"]==records[0]["run_id"] and
-            first["original_provider_artifact_id"]==records[0]["artifact_id"] and
+    require(int(first["original_provider_run_id"])==records[0]["run_id"] and
+            int(first["original_provider_artifact_id"])==records[0]["artifact_id"] and
             first["original_provider_artifact_zip_sha256"]==records[0]["artifact_zip_sha256"] and
             second["real_second_provider_run"]==str(records[1]["run_id"]) and
             second["real_second_provider_artifact_id"]==str(records[1]["artifact_id"]) and
