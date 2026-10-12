@@ -1,0 +1,41 @@
+{
+  "schema": "veritas.final128.current-rcc-exact-selected-candidate-lineage.v1",
+  "rule_of_one": "NATIVE_CDA_CHOSEN_MUST_MATCH_EXACT_RCC_SELECTED_OPTION_WITHOUT_NATIVE_AUTHORITY_PROMOTION",
+  "parent_main_sha": "ba2469ca35a19f4db7e62fe42975a0307213cafc",
+  "source_upstream_rcc_sha": "353ad9e6a17cda8874a129493fe0f8f4fe4427bc",
+  "source_veritas_os_sha": "299a3c4987668091f50ab3e45165bcccd1ae193f",
+  "case_selection": "lexically first released case_id from actual 36-case RCC pinned release",
+  "control_provider_mode": "in-memory exact-origin-candidate transcription to controlled LLM seam",
+  "controlled_selector_can_create_execution_authority": false,
+  "real_route": "POST /v1/decide (FastAPI TestClient)",
+  "origin_candidate_mutation": false,
+  "native_chosen_must_match_original_rcc_candidate_id": true,
+  "native_chosen_must_match_original_rcc_candidate_canonical_description": true,
+  "require_verified_native_cda": true,
+  "require_selected_action_evidence": false,
+  "promotion_rule": "no verified CDA native selected_action_evidence means fail closed",
+  "must_not_infer_from_rcc_candidate": [
+    "required_authority",
+    "required_human_approval",
+    "policy_snapshot_id",
+    "signed_policy",
+    "actor_identity",
+    "execution_permit"
+  ],
+  "nonclaims": {
+    "real_model_calls": 0,
+    "real_external_effects": 0,
+    "native_bind_invocations": 0,
+    "native_authorization_issuance": 0,
+    "native_authorization_consumption": 0,
+    "official_final128_scoring": 0,
+    "production_authority": false,
+    "actual_native_execution_intent_proven": false,
+    "independent_model_selection_proven": false
+  },
+  "historical_v13": {
+    "arm_a_utility": 93,
+    "arm_b_utility": 64,
+    "arm_b_injection_success": 0
+  }
+}
