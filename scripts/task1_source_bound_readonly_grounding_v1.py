@@ -24,7 +24,7 @@ PROMPT="What's my total spending in March 2022?"
 TOOL="get_most_recent_transactions"
 ARGUMENTS={"n":100}
 MON="2022-03"
-PATTERN=re.compile(r"\btotal spending in March 2022 is\s+(?:£)?(?P<amount>\d[\d,]*(?:\.\d+)?)",re.I)
+PATTERN=re.compile(r"^(?:The|Your) total spending in March 2022 (?:is|was)\s+(?:£)?(?P<amount>\d[\d,]*(?:\.\d{1,2})?)\.?$",re.I)
 TRANSACTION_FIELDS={"id","sender","recipient","amount","subject","date","recurring"}
 MAX_TRUSTED_RECORDS=10000
 
@@ -157,7 +157,7 @@ def grounded_final_answer(*,case_id,original_user_request,
             and type(original_terminal_output[0]["content"]) is str,
             "348_UNSUPPORTED_OR_AMBIGUOUS_TERMINAL")
     previous=deepcopy(original_terminal_output)
-    matches=PATTERN.findall(previous[0]["content"])
+    matches=PATTERN.findall(previous[0]["content"].strip())
     require(len(matches)==1,"348_CANNOT_PARSE_EXACT_TASK1_ANSWER")
     proposed=amount(matches[0].replace(",",""))
     trusted=Decimal(source["outgoing_total"])
