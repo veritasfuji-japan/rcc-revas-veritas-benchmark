@@ -12,6 +12,16 @@ import urllib.error
 REPO="veritasfuji-japan/rcc-revas-veritas-benchmark"
 class ProbeDenied(RuntimeError):pass
 
+def safe_api_evidence(phase,status,body):
+    """Allowlisted diagnostic fields only: never dump raw HTTP bodies or credentials."""
+    message=body.get("message","") if isinstance(body,dict) else ""
+    message=str(message).replace("\\n"," ")[:400]
+    # API messages are untrusted; redact anything resembling credentials/URLs.
+    message=re.sub(r"https?://\S+","[url]",message)
+    message=re.sub(r"(?i)(gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|Bearer\s+\S+)","[redacted]",message)
+    return {"phase":phase,"http_status":status,"api_message":message}
+
+
 def probe(*,token,sha,run_id,target_sha,consent=False,transport=None):
     if consent is not True:raise ProbeDenied("357_EXPLICIT_CONSENT_REQUIRED")
     if not isinstance(token,str) or not token:raise ProbeDenied("357_MISSING_TOKEN")
@@ -53,10 +63,12 @@ def probe(*,token,sha,run_id,target_sha,consent=False,transport=None):
         return any(word in msg for word in ("repository rule","ruleset","gh013"))
     assert_unchanged("CREATED")
     update_status,update_body=call("PATCH",url,{"sha":target_sha,"force":True})
+    print(json.dumps(safe_api_evidence("UPDATE",update_status,update_body),sort_keys=True),flush=True)
     assert_unchanged("UPDATE")
     if not ruleset_denied(update_status,update_body):
         raise ProbeDenied("357_UPDATE_RULESET_DENIAL_NOT_PROVEN")
     delete_status,delete_body=call("DELETE",url)
+    print(json.dumps(safe_api_evidence("DELETE",delete_status,delete_body),sort_keys=True),flush=True)
     assert_unchanged("DELETE")
     if not ruleset_denied(delete_status,delete_body):
         raise ProbeDenied("357_DELETE_RULESET_DENIAL_NOT_PROVEN")
