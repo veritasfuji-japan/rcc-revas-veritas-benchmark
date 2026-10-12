@@ -18,6 +18,9 @@ def no_network(monkeypatch):
 
 @pytest.fixture
 def native():
+    if not os.environ.get("FINAL128_349_AGENTDOJO_ROOT"):
+        pytest.skip("Pinned native AgentDojo runtime only on dedicated CI")
+    pytest.importorskip("agentdojo")
     from agentdojo.task_suite.load_suites import get_suite
     from agentdojo.default_suites.v1.tools.banking_client import BankAccount,Transaction
     p=os.environ.get("FINAL128_349_AGENTDOJO_ROOT")
