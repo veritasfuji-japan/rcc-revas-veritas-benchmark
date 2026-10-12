@@ -9,7 +9,7 @@ on:
       - "scripts/task4_323_one_arm_audit_v1.py"
       - "contracts/TASK4_323_ONE_ARM_PER_ORIGIN_OFFLINE_V1.json"
       - "tests/test_task4_323_one_arm_native_offline_v1.py"
-      - "docs/TASK4_323_ONE_ARM_PER_ORIGIN_OFFLINE_V1.md"
+      - "docs/TASK4_323_ONE_ARM_PER_ORIGIN_OFFLINE_V1.md"\n      - "scripts/task4_363_native_wire_lineage_audit_v1.py"\n      - "docs/TASK4_363_NATIVE_WIRE_TO_SCORER_CONTINUITY_V1.md"
   push:
     branches: [main]
     paths:
@@ -101,6 +101,10 @@ jobs:
             --evidence "$TASK4_323_EVIDENCE_ROWS" \
             --output results/task4-323-one-arm-per-source-report.json \
             | tee results/task4-323-audit.log
+          python scripts/task4_363_native_wire_lineage_audit_v1.py \\
+            --evidence "$TASK4_323_EVIDENCE_ROWS" \\
+            --output results/task4-363-native-wire-to-scorer-report.json \\
+            | tee results/task4-363-native-wire-to-scorer.log
           python - <<'PY'
           import json
           x=json.load(open("results/task4-323-one-arm-per-source-report.json"))

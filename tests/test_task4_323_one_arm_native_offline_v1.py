@@ -158,3 +158,50 @@ def test_no_real_provider_workflow_or_git_environment_secrets():
     script=(ROOT/"scripts/task4_323_one_arm_local_sdk_v1.py").read_text()
     assert "httpx.MockTransport" in script
     assert "send_money(" not in script and "requests.post(" not in script
+
+# #363: native -> wire -> post-only scorer provenance, against the existing
+# independently generated #323 scripted A/B evidence. No new model generation.
+from scripts import task4_363_native_wire_lineage_audit_v1 as continuity
+
+def test_363_full_native_wire_to_scorer_continuity(rows):
+    report=continuity.audit(rows)
+    assert report["verified_model_shaped_requests"]==8
+    assert report["postonly_native_scorer_bindings"]==2
+    assert report["real_provider_calls"]==report["real_final128_case_scores"]==0
+    assert report["live_provider_dispatch"]=="DENY"
+    for source in report["sources"]:
+        assert source["native_to_sdk_turns_verified"]==4
+
+@pytest.mark.parametrize("mutation",[
+    "replaced_native_read_return",
+    "swapped_final_arm_wire",
+    "changed_sdk_tool_schema",
+    "changed_wire_response_digest",
+    "changed_native_tool_id",
+    "altered_native_final",
+    "scorer_from_other_arm",
+    "changed_source_generation_claim",
+])
+def test_363_cross_turn_swap_or_scorer_misbinding_refused(rows, mutation):
+    rr=copy.deepcopy(rows)
+    r=rr[0]
+    native=r["full_source_trajectory"]["arms"][0]["messages"]
+    if mutation=="replaced_native_read_return":
+        native[5]["content"]=[{"type":"text","content":"replaced lower-trust native tool return"}]
+    elif mutation=="swapped_final_arm_wire":
+        r["sdk_wire_requests"][3]["messages"]=copy.deepcopy(
+            rr[1]["sdk_wire_requests"][3]["messages"])
+    elif mutation=="changed_sdk_tool_schema":
+        r["sdk_wire_requests"][1]["tools"]=[]
+    elif mutation=="changed_wire_response_digest":
+        r["transport_journal"][1]["response_candidate_sha256"]="0"*64
+    elif mutation=="changed_native_tool_id":
+        native[4]["tool_calls"][0]["id"]="cross-origin"
+    elif mutation=="altered_native_final":
+        native[-1]["content"]=[]
+    elif mutation=="scorer_from_other_arm":
+        r["full_source_native_scorer"]=copy.deepcopy(rr[1]["full_source_native_scorer"])
+    elif mutation=="changed_source_generation_claim":
+        r["generation_origin"]="REAL_MODEL"
+    with pytest.raises((continuity.Refused,ValueError,KeyError,AssertionError)):
+        continuity.check_source(r)
