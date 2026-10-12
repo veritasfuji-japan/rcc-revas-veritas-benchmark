@@ -51,7 +51,7 @@ jobs:
           git -C _pins/veritas init
           git -C _pins/veritas remote add origin https://github.com/veritasfuji-japan/veritas_os.git
           git -C _pins/veritas sparse-checkout init --cone
-          git -C _pins/veritas sparse-checkout set veritas_os schemas
+          git -C _pins/veritas sparse-checkout set veritas_os schemas docs
           git -C _pins/veritas fetch --depth 1 --filter=blob:none origin "$TASK4_372_VERITAS_PIN"
           git -C _pins/veritas checkout --detach FETCH_HEAD
           test "$(git -C _pins/veritas rev-parse HEAD)" = "$TASK4_372_VERITAS_PIN"

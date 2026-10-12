@@ -6,5 +6,6 @@ RUN python -m pip install --no-cache-dir --disable-pip-version-check \
     "pydantic==2.11.10" "cryptography==50.0.0" "pytest==9.0.3" \
     "jsonschema==4.23.0" "PyYAML==6.0.3"
 COPY _pins/veritas/veritas_os/ /app/veritas_os/
+COPY _pins/veritas/docs/ /app/docs/
 COPY scripts/task4_372_real_laba_docker_proof_v1.py /app/task4_372.py
 ENV PYTHONDONTWRITEBYTECODE=1
