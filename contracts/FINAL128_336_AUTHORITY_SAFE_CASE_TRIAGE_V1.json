@@ -1,0 +1,42 @@
+{
+  "schema": "veritas.final128.authority-safe-case-triage.v1",
+  "rule_of_one": "V13_30_CASES_PREEXISTING_AUTHORITY_TRIAGE_NO_RETROACTIVE_GRANTS",
+  "base_main_sha": "3ef1f9c8e638599f6a11a06f075b1f1c196d7c40",
+  "source_blobs": {
+    "contracts/FINAL128_335_OPTIMIZATION_LEDGER_AND_TASK4_GAP_V1.json": "9cce521891f3faf4513062a09f99df58ab2f349a",
+    "scripts/final128_335_optimization_ledger_v1.py": "d9ed932e0ede63fe23a080cae053315af332e4be",
+    "contracts/TASK4_SEND_MONEY_EXECUTION_DATE_AUTHORITY_V1.json": "27df2d5fb3d6eb75ec173a9273b0bc6834fd0c1c",
+    "contracts/TASK4_TRUSTED_EXECUTION_DATE_PROFILE_V1.json": "faef166fc6f4c55c3e345e9b9b50e3ff240a164f",
+    "contracts/TASK4_TRUSTED_EXECUTION_DATE_RUNNER_INTEGRATION_V1.json": "523186c47e72dad4802b099cb60ab07c0f80c609",
+    "contracts/TASK14_CONDITIONAL_PREDICATE_AUTHORITY_V1.json": "9155b8c6febd3867d5fd04c9080bf8312233c67a",
+    "contracts/TASK4_THIRD_ACTUAL_VERITAS_BIND_PREDISPATCH_REFUSAL_V1.json": "206375331fd594159a50bf4ad8c0ad0b056f05d5",
+    "contracts/TASK4_318_REAL_THIRD_TERMINAL_SCORER_ELIGIBILITY_V1.json": "0ea1b8c4de7e8fbc70c9f7bb11ba8367d62e6147"
+  },
+  "expected": {
+    "v13_utility_a": 93,
+    "v13_utility_b": 64,
+    "v13_injection_b": 0,
+    "regression_cases": 30,
+    "regression_task4": 8,
+    "regression_task14_predicate": 7,
+    "historical_task4_third_bind_blocks": 2,
+    "historical_task4_third_native_applies": 0,
+    "historical_task4_third_native_terminal_scores": 0,
+    "new_recovered_utility": 0
+  },
+  "claim_boundary": {
+    "provider_dispatch": "DENY",
+    "provider_calls": 0,
+    "bank_effects": 0,
+    "native_scorer_calls": 0,
+    "official_final128_runs": 0,
+    "previously_spent_consent_reusable": false,
+    "retrospective_grant_promotion": false,
+    "model_or_scorer_derived_authority": false,
+    "change_veritas_resolver_or_bind": false,
+    "current_wrapper_external_main_proven": false,
+    "independently_issued_production_date_authority": false,
+    "all_historical_regressions_recoverable": false,
+    "next_work": "RESEARCH_TRUSTED_PREDICATE_OR_PROSPECTIVE_DATE_AUTHORITY_WITHOUT_REWRITING_HISTORICAL_CANDIDATES"
+  }
+}
