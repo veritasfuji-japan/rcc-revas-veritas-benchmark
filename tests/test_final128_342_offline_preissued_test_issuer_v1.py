@@ -184,8 +184,11 @@ def test_no_native_authorization_or_effect_claimed(proof):
     ("actual_cda_created_in_this_pr",True),
     ("real_external_effects",1),
 ])
-def test_false_evidence_does_not_pass(report_field=0,field=None,value=None,proof=None):
-    pass
+def test_false_evidence_does_not_pass(proof,field,value):
+    modified=deepcopy(proof)
+    modified["observation"][field]=value
+    with pytest.raises(m.Refused,match="342_OFFLINE_ISSUER_TRUST_OR_SCOPE_PROOF_MISSING"):
+        m.verify_report(modified)
 
 def test_report_digest_and_source_count(proof):
     p=deepcopy(proof)
