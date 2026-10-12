@@ -1,0 +1,126 @@
+name: Task13 331 RCC Native Bind and Post Scorer Local V1
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task13-331-rcc-native-post-scorer-local-v1.yml"
+      - "contracts/TASK13_331_RCC_NATIVE_POST_SCORER_LOCAL_V1.json"
+      - "scripts/task13_331_rcc_native_post_scorer_local_v1.py"
+      - "tests/test_task13_331_rcc_native_post_scorer_local_v1.py"
+      - "docs/TASK13_331_RCC_NATIVE_POST_SCORER_LOCAL_V1.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  local-rcc-native-task13-scorer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      TASK13_331_PROOF: "1"
+      TASK13_331_AGENTDOJO_ROOT: _pins/agentdojo
+      TASK13_331_RCC_ROOT: _pins/rcc
+      TASK13_331_VERITAS_ROOT: _pins/veritas
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+      VERITAS_DATABASE_URL: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: _pins/rcc
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Confirm immutable pins and blank effect credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/rcc rev-parse HEAD)" = "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL GITHUB_TOKEN GH_TOKEN VERITAS_DATABASE_URL; do
+            test -z "${!key:-}"
+          done
+          mkdir -p results
+          git rev-parse HEAD > results/task13-331-head.txt
+      - name: Install pinned local harness prerequisites only (no paid Provider)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -U pip
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+          python -m pip install --disable-pip-version-check -e _pins/agentdojo
+          python -m pip install --disable-pip-version-check -e '_pins/rcc/external-eval/v0.3.9[crypto]'
+      - name: Run actual RCC native hook, local VERITAS Bind and post-execution Task13 rubric
+        shell: bash
+        env:
+          PYTHONPATH: ".:_pins/agentdojo/src:_pins/rcc/external-eval/v0.3.9/src:_pins/veritas"
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_task13_331_rcc_native_post_scorer_local_v1.py \
+            --junitxml=results/task13-331-rcc-native-scorer-junit.xml \
+            | tee results/task13-331-rcc-native-scorer-pytest.log
+          python scripts/task13_331_rcc_native_post_scorer_local_v1.py \
+            --agentdojo-root _pins/agentdojo \
+            --rcc-root _pins/rcc \
+            --veritas-root _pins/veritas \
+            --output results/task13-331-rcc-native-post-scorer-local.json \
+            | tee results/task13-331-rcc-native-scorer-run.log
+          python - <<'PY'
+          import json,hashlib,pathlib
+          path=pathlib.Path("results/task13-331-rcc-native-post-scorer-local.json")
+          obj=json.loads(path.read_text())
+          claimed=obj.pop("report_sha256")
+          actual=hashlib.sha256(json.dumps(obj,ensure_ascii=False,sort_keys=True,separators=(",",":"),allow_nan=False).encode()).hexdigest()
+          assert claimed==actual
+          assert obj["RCC_only_real_native_executor_used"] is True
+          assert obj["RCC_gate_real_pinned"] is True
+          assert obj["VERITAS_B_real_pinned_Bind"] is True
+          assert obj["AgentDojo_native_user_task13_scorer_invocations"]==2
+          assert obj["generated_by_real_model"] is False
+          assert obj["official_attack_scorer_calls"]==0
+          assert obj["new_authentic_utility_recoveries"]==0
+          assert obj["new_injection_success_measurements"]==0
+          assert obj["canonical_full_runner_continuity_proven"] is False
+          assert obj["provider_dispatch"]=="DENY"
+          print("TASK13_331_RCC_NATIVE_POST_SCORER_LOCAL_ONLY_NO_REAL_MODEL_UTILITY")
+          PY
+          sha256sum \
+            scripts/task13_331_rcc_native_post_scorer_local_v1.py \
+            tests/test_task13_331_rcc_native_post_scorer_local_v1.py \
+            contracts/TASK13_331_RCC_NATIVE_POST_SCORER_LOCAL_V1.json \
+            scripts/task13_330_same_candidate_native_bind_local_v1.py \
+            results/task13-331-rcc-native-post-scorer-local.json \
+            > results/task13-331-rcc-native-file-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task13-331-rcc-native-scorer-offline-evidence
+          path: results/*
+          if-no-files-found: warn
