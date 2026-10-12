@@ -393,7 +393,7 @@ def build_ledger(contract,attribution):
             classification="REAL_PROVIDER_TURN_CAPTURE_UNSCORED",
             run_id=row["run_id"],
             source_sha="99812fe1fdbc627e582ec7935a429a852e22703d" if row["ordinal"]==1 else
-                       "5528a7e5d6c63bcdce255fbab1ff0942cee96a35" if row["ordinal"]==2 else
+                       "6c13f90e116b0365c85cc3323ce60a2bf608cb3c" if row["ordinal"]==2 else
                        "95ff6be8c5875ed3827a00fe71fb54bd9de48130",
             artifact_id=row["artifact_id"],
             artifact_sha256=row["artifact_zip_sha256"],
