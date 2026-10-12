@@ -20,9 +20,24 @@ def test_replay_denied_before_mock_response():
     _,mocks=proof.run()
     mock=mocks[0]
     count=len(mock.responses)
-    from scripts.task4_366_offline_wire_admission_v1 import admit
-    first=mock.byte_bpe_gate.entries[0]["raw_body_utf8"].encode()
-    with pytest.raises(ValueError):
-        admit(mock.ledger,mock.origin_arm,mock.session,1,None,first,
-              lambda s:proof.sdk.tiktoken_encoder().encode(s,disallowed_special=()))
+    import httpx
+    first=mock.byte_bpe_gate.entries[0]["raw_body_utf8"].encode("utf-8")
+    replay=httpx.Request(
+        "POST","https://api.openai.com/v1/chat/completions",
+        headers={"Authorization":"Bearer "+proof.sdk.base.LOCAL_KEY,
+                 "Content-Type":"application/json"},content=first)
+    # Exercise the actual offline MockTransport handler boundary, not just
+    # a direct SQLite insert. Fifth attempt is consumed BEFORE #326 refuses
+    # the duplicate SDK wire, and cannot yield any scripted reply.
+    with pytest.raises(ValueError,match="DUPLICATE_RAW_WIRE_REQUEST_REPLAY_DENIED"):
+        mock(replay)
+    attempts=report(mock.ledger)["attempts"]
+    assert len(attempts)==5
+    assert attempts[-1]["ordinal"]==5
+    assert attempts[-1]["state"]=="CONSUMED_UNKNOWN"
+    assert mock.byte_bpe_gate.closed is True
     assert len(mock.responses)==count
+    with pytest.raises(ValueError):
+        mock(replay)
+    assert len(mock.responses)==count
+    assert len(report(mock.ledger)["attempts"])==5
