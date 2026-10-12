@@ -16,7 +16,7 @@ class PreSendOneUseMock(sdk.OfflineCappedMock):
         self.ordinal=0
         self.prior=None
         self.pre_send_receipts=[]
-        PreSendOneUseMock.instances.append(self)
+        # sdk.OfflineCappedMock.__init__ already registers on the patched class.
 
     def __call__(self,request):
         # Called by actual SDK via httpx.MockTransport, before fake response.
