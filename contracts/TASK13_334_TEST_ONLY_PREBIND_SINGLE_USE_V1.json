@@ -1,0 +1,45 @@
+{
+  "schema": "veritas.utility.task13.prebind-test-only.v1",
+  "rule_of_one": "TASK13_THREE_ROLE_SOURCE_APPROVAL_EXACT_PREBIND_CAS_TEST_ONLY_V1",
+  "parent_main": "5c38fa43006b4fb735639ca94563fb38f85cd3d9",
+  "source_blobs": {
+    "scripts/task13_333_dual_issuer_provenance_preflight_v1.py": "a3c5d5598c77864ee18ab898c071ef859f4012d2",
+    "scripts/task13_330_same_candidate_native_bind_local_v1.py": "89da7794ee62bf092a1a7547e1d603c8a92fcbb8",
+    "sql/task4_310_offline_postgres_consume_v1.sql": "0b891930f50fc17747a9854666450c9438ef7945"
+  },
+  "provenance": {
+    "prior_task13_333_preflight_real_dispatch": false,
+    "previous_V13_original_signed_request_and_file_receipts": 0,
+    "original_model_traces_not_reexecuted": true,
+    "test_signers_are_not_external_issuers": true
+  },
+  "handoff_invariants": {
+    "signed_request_and_read_file_evidence": true,
+    "third_distinct_scoped_approval_signature": true,
+    "exact_original_prestate_and_candidate_hash": true,
+    "external_trusted_time_argument_required": true,
+    "max_approval_lifetime_seconds": 300,
+    "source_receipt_expiry_binds_approval": true,
+    "immediate_pre_and_post_consume_snapshot": true,
+    "atomic_consume_and_committed_receipt_test_only": true,
+    "duplicate_and_concurrent_consume_rejected": true,
+    "production_issuer_and_ledger_verified": false,
+    "production_prebind_handoff_permitted": false
+  },
+  "claim_boundary": {
+    "test_ledger_type": "EPHEMERAL_SQLITE_CI_FIXTURE_ONLY",
+    "external_root_ownership_attested": false,
+    "external_IAM_enforced": false,
+    "credential_egress_bypass_rejected": false,
+    "production_single_use_receipt_verified": false,
+    "execution_authorized": false,
+    "dispatch_allowed": false,
+    "native_bind_calls": 0,
+    "native_bank_effects": 0,
+    "real_provider_calls": 0,
+    "new_authentic_utility_recoveries": 0,
+    "new_injection_success_measurements": 0,
+    "final128_remeasured": false,
+    "status": "TEST_ONLY_SINGLE_USE_PREBIND_SEAM_NO_EXTERNAL_ISSUER_NO_DISPATCH"
+  }
+}
