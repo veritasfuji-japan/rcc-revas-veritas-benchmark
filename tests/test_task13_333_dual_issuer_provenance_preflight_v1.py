@@ -13,12 +13,13 @@ from pathlib import Path
 import socket
 
 import pytest
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives.serialization import Encoding,PublicFormat
 
 if os.environ.get("TASK13_333_PROOF")!="1":
     pytest.skip("#333 requires pinned read-only dual issuer proof job",
                 allow_module_level=True)
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding,PublicFormat
 
 from scripts import task13_333_dual_issuer_provenance_preflight_v1 as m
 
