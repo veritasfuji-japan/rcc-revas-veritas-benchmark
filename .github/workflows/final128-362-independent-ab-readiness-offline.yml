@@ -1,0 +1,36 @@
+name: Final128 362 Independent AB Readiness Offline Audit
+on:
+  pull_request:
+    paths:
+      - "evidence/final128_362_independent_ab_readiness_v1.json"
+      - "scripts/final128_362_independent_ab_readiness_audit_v1.py"
+      - "tests/test_final128_362_independent_ab_readiness_audit_v1.py"
+      - ".github/workflows/final128-362-independent-ab-readiness-offline.yml"
+permissions:
+  contents: read
+jobs:
+  readiness-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Read-only readiness audit
+        run: |
+          set -euo pipefail
+          python -m pip install pytest==9.1.1
+          python -m pytest -q -o addopts= tests/test_final128_362_independent_ab_readiness_audit_v1.py
+          mkdir -p readiness-artifact
+          python scripts/final128_362_independent_ab_readiness_audit_v1.py > readiness-artifact/report.json
+          cp evidence/final128_362_independent_ab_readiness_v1.json readiness-artifact/
+      - name: Upload readiness gap report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: final128-362-independent-ab-readiness-gap-v1
+          path: readiness-artifact/
+          retention-days: 30
+          if-no-files-found: error
