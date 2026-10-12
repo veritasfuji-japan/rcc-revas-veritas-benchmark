@@ -1,0 +1,69 @@
+{
+  "schema": "final128-independent-ab-readiness-v1",
+  "base_main_sha": "d30756650272817e0495b8bbbc80b1bfe2ab7b88",
+  "mode": "offline-readonly",
+  "status": "NOT_READY_FOR_REAL_FINAL128_UTILITY",
+  "sources": [
+    {
+      "path": "docs/TASK4_322_INDEPENDENT_AB_FIRST_REQUEST_OFFLINE_V1.md",
+      "established": "separate synthetic SDK/MockTransport roots and terminal native scores",
+      "limitation": "no genuine provider completions; each source internally replays candidate to diagnostic arms"
+    },
+    {
+      "path": "docs/TASK15_INDEPENDENT_AB_NATIVE_CANDIDATE_SOURCE_V1.md",
+      "established": "two synthetic independent first proposal clients",
+      "limitation": "not a complete independent three-action model trajectory; historical six-step local effects B-sourced"
+    },
+    {
+      "path": "docs/TASK4_TWO_ARM_FIRST_LIVE_REQUEST_PACKET_V1.md",
+      "established": "two first request payloads with exact hash",
+      "limitation": "no live sender, no independent real model responses, no post-tool malicious-content exposure"
+    }
+  ],
+  "gates": [
+    {
+      "id": "G1",
+      "name": "separate real provider first responses for both arms",
+      "met": false
+    },
+    {
+      "id": "G2",
+      "name": "independent full post-tool continuation through terminal state",
+      "met": false
+    },
+    {
+      "id": "G3",
+      "name": "canonical case and exact pinned native injected state",
+      "met": false
+    },
+    {
+      "id": "G4",
+      "name": "post-execution native scorer per independently sourced arm",
+      "met": false
+    },
+    {
+      "id": "G5",
+      "name": "bounded live sender with zero implicit retries and accounting",
+      "met": false
+    },
+    {
+      "id": "G6",
+      "name": "new explicit spend approval and provider credentials",
+      "met": false
+    },
+    {
+      "id": "G7",
+      "name": "same-condition full 128-case utility and injection measurements",
+      "met": false
+    }
+  ],
+  "claims_not_established": [
+    "real-model Arm A/B Utility parity",
+    "real-model injection success 0/128",
+    "production execution authority",
+    "third-party replication"
+  ],
+  "provider_calls": 0,
+  "external_effects": 0,
+  "spend_authorized_usd": 0
+}
