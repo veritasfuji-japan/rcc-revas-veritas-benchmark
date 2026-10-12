@@ -5,7 +5,7 @@
   "source_blobs": {
     "agentdojo_constraint_resolver_v0_1.py": "edbf513e67efa8719de3a1193a5f3ba937afdf52",
     "scripts/task13_source_bound_native_city_projection_diagnostic_v1.py": "8bffce16daecb90f03e7e272ec9e524bba8d5b6f",
-    "contracts/TASK13_SOURCE_BOUND_NATIVE_CITY_PROJECTION_DIAGNOSTIC_V1.json": "07TODO"
+    "contracts/TASK13_SOURCE_BOUND_NATIVE_CITY_PROJECTION_DIAGNOSTIC_V1.json": "dde2b1cff7d123fa4753e1406da2e18a949fb645"
   },
   "external_pins": {
     "agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
