@@ -1,0 +1,67 @@
+{
+  "schema_version": "final128-task1-real-github-denial-evidence-v1",
+  "claim_scope": "GitHub tag Ruleset rejects update and deletion; tag SHA unchanged. This is not a VERITAS runtime execution-boundary proof.",
+  "provenance": {
+    "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+    "run_id": 38254439093,
+    "job_id": 114828743640,
+    "workflow_name": "Final128 357 Isolated Tag Negative Probe",
+    "workflow_event": "workflow_dispatch",
+    "run_attempt": 1,
+    "run_conclusion": "success",
+    "job_name": "isolated-negative-probe",
+    "job_conclusion": "success",
+    "run_created_at_utc": "2026-10-12T13:15:37Z",
+    "run_updated_at_utc": "2026-10-12T13:16:00Z",
+    "main_head_sha": "9cb4345545dd17e9071d248ea8102f7d455e8c7f",
+    "run_url": "https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38254439093",
+    "job_url": "https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38254439093/job/114828743640",
+    "explicit_consent_in_job_log": "I AUTHORIZE ISOLATED TAG WRITE PROBE"
+  },
+  "ruleset_readback": {
+    "id": 24921425,
+    "name": "Task1 Single-Use Protection",
+    "target": "tag",
+    "enforcement": "active",
+    "include": [
+      "refs/tags/final128-task1-real-ab-once-v1-*"
+    ],
+    "exclude": [],
+    "rule_types": [
+      "deletion",
+      "non_fast_forward",
+      "update"
+    ],
+    "bypass_actors": [],
+    "current_user_can_bypass": "never",
+    "url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/rulesets/24921425"
+  },
+  "probe_job_log": {
+    "creation_status": 201,
+    "update": {
+      "http_status": 422,
+      "api_message": "Repository rule violations found\n\nCannot force-push to this tag\n\nCannot update this protected ref.\n\n"
+    },
+    "delete": {
+      "http_status": 422,
+      "api_message": "Repository rule violations found\n\nCannot delete this tag\n\n"
+    },
+    "readback_unchanged": true,
+    "runner_reported_no_provider_calls": true,
+    "note": "Diagnostic tag; not provider lease",
+    "tag_ref": "refs/tags/final128-task1-real-ab-once-v1-9cb4345545dd17e9071d248ea8102f7d455e8c7f-38254439093"
+  },
+  "post_run_git_ref_readback": {
+    "ref": "refs/tags/final128-task1-real-ab-once-v1-9cb4345545dd17e9071d248ea8102f7d455e8c7f-38254439093",
+    "object_type": "commit",
+    "object_sha": "9cb4345545dd17e9071d248ea8102f7d455e8c7f",
+    "url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/ref/tags/final128-task1-real-ab-once-v1-9cb4345545dd17e9071d248ea8102f7d455e8c7f-38254439093"
+  },
+  "limitations": [
+    "Evidence copies allowlisted fields and job-log excerpts; it is not a raw immutable GitHub log archive.",
+    "GitHub Ruleset and ref state were read after the run; historical API state is not independently timestamp-attested.",
+    "No original artifact was uploaded by Run 38254439093; any CI artifact from this freeze is a derived snapshot.",
+    "No independent provider-egress or IAM/network bypass proof is claimed.",
+    "No independent third-party reproduction is claimed."
+  ]
+}
