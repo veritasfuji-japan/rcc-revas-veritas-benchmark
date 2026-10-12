@@ -1,0 +1,90 @@
+name: Task4 369 Offline SDK Transport and Egress Deny
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-369-offline-transport-egress-deny.yml"
+      - "scripts/task4_369_sdk_transport_egress_deny_offline_v1.py"
+      - "tests/test_task4_369_sdk_transport_egress_deny_offline_v1.py"
+      - "docs/TASK4_369_SDK_TRANSPORT_EGRESS_DENY_OFFLINE_V1.md"
+      - "scripts/task4_365_oneuse_session_rehearsal_v1.py"
+      - "scripts/task4_366_offline_wire_admission_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-369-offline-transport-egress-deny.yml"
+      - "scripts/task4_369_sdk_transport_egress_deny_offline_v1.py"
+      - "tests/test_task4_369_sdk_transport_egress_deny_offline_v1.py"
+      - "docs/TASK4_369_SDK_TRANSPORT_EGRESS_DENY_OFFLINE_V1.md"
+      - "scripts/task4_365_oneuse_session_rehearsal_v1.py"
+      - "scripts/task4_366_offline_wire_admission_v1.py"
+permissions:
+  contents: read
+jobs:
+  sdk-transport-mock-only-and-python-egress-denial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      TASK4_369_TRANSPORT_OFFLINE: "1"
+      PYTHONNOUSERSITE: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Install only pinned SDK transport and tokenizer
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install "pytest==9.1.1" "openai==1.109.1" "httpx==0.28.1" "tiktoken==0.12.0"
+      - name: Offline actual SDK MockTransport and direct socket-bypass denial
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          git rev-parse HEAD > results/task4-369-head.txt
+          test "$(cat results/task4-369-head.txt)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          pip freeze > results/task4-369-python-pins.txt
+          python -m pytest -q -o addopts= \
+            tests/test_task4_369_sdk_transport_egress_deny_offline_v1.py \
+            --junitxml=results/task4-369-junit.xml \
+            | tee results/task4-369-tests.log
+          python -m scripts.task4_369_sdk_transport_egress_deny_offline_v1 \
+            > results/task4-369-eight-sdk-requests-evidence.json
+          python - <<'PY'
+          import json
+          p="results/task4-369-eight-sdk-requests-evidence.json"
+          x=json.load(open(p))
+          assert x["offline_test_only"] is True
+          assert x["live_api_calls"]==x["model_generated_responses"]==0
+          assert x["mock_hits"]=={"A":4,"B":4}
+          assert len(x["states"])==2
+          assert sum(len(s["attempts"]) for s in x["states"])==8
+          assert all(s["real_provider_post_allowed"] is False and
+                     s["kernel_egress_enforcement_proven"] is False and
+                     s["native_task4_scorer_called"] is False
+                     for s in x["states"])
+          print("TASK4_369_OFFLINE_MOCK_ONLY_BYPASS_ATTEMPT_DENIED_NOT_PRODUCTION_PROVEN")
+          PY
+          sha256sum \
+            scripts/task4_369_sdk_transport_egress_deny_offline_v1.py \
+            tests/test_task4_369_sdk_transport_egress_deny_offline_v1.py \
+            docs/TASK4_369_SDK_TRANSPORT_EGRESS_DENY_OFFLINE_V1.md \
+            results/task4-369-eight-sdk-requests-evidence.json \
+            > results/task4-369-source-evidence-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-369-sdk-transport-mock-egress-denial-v1
+          path: results/*
+          if-no-files-found: warn
