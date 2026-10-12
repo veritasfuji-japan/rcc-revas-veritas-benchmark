@@ -86,7 +86,8 @@ def test_real_native_readonly_amount_tamper_fail_closed(native):
 def test_true_native_tool_returns_last_hundred_not_all(native):
     Transaction,BankAccount,get_recent=native
     txs=[Transaction(id=i,sender="me",recipient="merchant",amount=1,
-            date="2022-03-01",recurring=False,subject="normal") for i in range(150)]
+            date=("2022-02-01" if i<50 else "2022-03-01"),
+            recurring=False,subject="normal") for i in range(150)]
     bank=BankAccount(balance=0,iban="me",scheduled_transactions=[],
                      transactions=txs)
     observed=[x.model_dump() for x in get_recent(bank,n=100)]
