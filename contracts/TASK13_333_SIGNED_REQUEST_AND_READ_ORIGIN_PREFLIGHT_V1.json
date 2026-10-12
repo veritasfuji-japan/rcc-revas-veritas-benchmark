@@ -1,0 +1,56 @@
+{
+  "schema": "veritas.utility.task13.dual-issuer-source-preflight.v1",
+  "rule_of_one": "TASK13_TWO_INDEPENDENT_SIGNED_ISSUERS_REQUEST_AND_READ_RECEIPT_PREFLIGHT_V1",
+  "base_main": "9a26e6e364d7cc2a00e9c318e1aba059414b29c4",
+  "source_blobs": {
+    "scripts/task13_332_v13_four_case_native_counterfactual_v1.py": "55a2c7f6527ecd74577b9a533591221435875b7b",
+    "scripts/task13_330_same_candidate_native_bind_local_v1.py": "89da7794ee62bf092a1a7547e1d603c8a92fcbb8",
+    "scripts/task13_source_bound_native_city_projection_diagnostic_v1.py": "8bffce16daecb90f03e7e272ec9e524bba8d5b6f",
+    "agentdojo_constraint_resolver_v0_1.py": "edbf513e67efa8719de3a1193a5f3ba937afdf52"
+  },
+  "archived": {
+    "v13_artifact_id": 11466539107,
+    "v13_zip_sha256": "9fbb2a1614c237e92c4239bb5d60f83d40d33b81e0092d3f82958931969c9e7a",
+    "replay_artifact_id": 11472402060,
+    "replay_zip_sha256": "449443501266eea9aa83ab08f261740acf2296787483a80853469c6a02684b95",
+    "case_ids": [
+      "banking:user_task_13:injection_task_1:direct",
+      "banking:user_task_13:injection_task_2:direct",
+      "banking:user_task_13:injection_task_5:direct",
+      "banking:user_task_13:injection_task_8:direct"
+    ],
+    "original_signed_request_receipts": 0,
+    "original_signed_file_read_receipts": 0
+  },
+  "required_issuer_separation": {
+    "request_authority_role": "USER_REQUEST_AUTHORITY_ORIGIN",
+    "file_read_origin_role": "TRUSTED_FILE_READ_RECEIPT",
+    "same_issuer_disallowed": true,
+    "same_key_disallowed": true,
+    "max_receipt_lifetime_seconds": 300,
+    "issuers_must_be_external_to_repo_ci_agent_and_candidate": true,
+    "no_issuer_private_keys_in_repository_or_ci": true,
+    "benchmark_authority_fixture_is_not_independent_issuer": true,
+    "signed_file_data_alone_grants_execution_authority": false,
+    "protected_one_use_ledger_and_runtime_Bind_still_required": true
+  },
+  "claim_boundary": {
+    "signed_v13_request_receipts_available": false,
+    "signed_v13_tool_read_receipts_available": false,
+    "historic_task13_four_case_b_native_execution_admitted": false,
+    "real_external_issuer_connected": false,
+    "external_trust_root_origin_verified": false,
+    "production_signed_approval_proven": false,
+    "credential_and_egress_bypass_rejection_proven": false,
+    "fresh_real_provider_calls": 0,
+    "native_bank_effects": 0,
+    "native_bind_calls": 0,
+    "native_attack_scorer_calls": 0,
+    "new_authentic_utility_recoveries": 0,
+    "new_injection_success_measurements": 0,
+    "final128_remeasured": false,
+    "live_authorization": false,
+    "provider_dispatch": "DENY",
+    "classification": "CRYPTO_VERIFIER_AND_ARCHIVED_NEGATIVE_ONLY_NO_DISPATCH"
+  }
+}
