@@ -214,24 +214,26 @@ def run_proof(out):
                 (secret,"/run/task4-370-private.key",True),
                 (sinkdata,"/sinkdata",False)])
             created.append(sinkcid)
+            command(["docker","start",sinkcid],timeout=30)
+            wait_health(sinkcid,"sink")
+            # Docker create may show an empty IP; inspect the RUNNING
+            # container only after its network endpoint is assigned.
             sinkinspect=inspect_container(
                 sinkcid,role="sink",networks={back},
                 mounts={"/run/task4-370-private.key":(False,"bind"),
                         "/sinkdata":(True,"bind")},imageid=imageid,out=out)
-            command(["docker","start",sinkcid],timeout=30)
-            wait_health(sinkcid,"sink")
             brokercid=make_container(brokername,back,"broker-back","broker",[
                 (secret,"/run/task4-370-private.key",True),
                 (brokerdata,"/brokerdata",False)])
             created.append(brokercid)
             command(["docker","network","connect","--alias","broker",
                      front,brokercid],timeout=30)
+            command(["docker","start",brokercid],timeout=30)
+            wait_health(brokercid,"broker")
             brokerinspect=inspect_container(
                 brokercid,role="broker",networks={front,back},
                 mounts={"/run/task4-370-private.key":(False,"bind"),
                         "/brokerdata":(True,"bind")},imageid=imageid,out=out)
-            command(["docker","start",brokercid],timeout=30)
-            wait_health(brokercid,"broker")
             effect_ip=sinkinspect["network_ips"][back]
             insist(effect_ip and effect_ip != brokerinspect["network_ips"][back],
                    "REAL_DOCKER_BACKEND_DISTINCT_IP_REQUIRED")
