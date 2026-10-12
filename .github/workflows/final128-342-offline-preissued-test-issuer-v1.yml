@@ -1,0 +1,129 @@
+name: Final128 342 Offline Preissued Test Issuer Pinned Trust Anchor V1
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-342-offline-preissued-test-issuer-v1.yml"
+      - "contracts/FINAL128_342_OFFLINE_PREISSUED_TEST_ISSUER_V1.json"
+      - "scripts/final128_342_offline_preissued_test_issuer_verifier_v1.py"
+      - "tests/test_final128_342_offline_preissued_test_issuer_verifier_v1.py"
+      - "docs/optimization/FINAL128_342_OFFLINE_PREISSUED_TEST_ISSUER_V1.md"
+      - "fixtures/final128_342_offline_preissued_test_voucher_v1.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-native-decide-cda-candidate-identity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      VERITAS_API_KEY: ""
+      VERITAS_DATABASE_URL: ""
+      GITHUB_TOKEN: ""
+      GH_TOKEN: ""
+      FINAL128_342_RCC_ROOT: "${{ github.workspace }}/current-rcc-upstream"
+      FINAL128_342_VERITAS_ROOT: "${{ github.workspace }}/veritas-source"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 353ad9e6a17cda8874a129493fe0f8f4fe4427bc
+          path: current-rcc-upstream
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 299a3c4987668091f50ab3e45165bcccd1ae193f
+          path: veritas-source
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify frozen source HEADs and install real VERITAS dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C current-rcc-upstream rev-parse HEAD)" = "353ad9e6a17cda8874a129493fe0f8f4fe4427bc"
+          test "$(git -C veritas-source rev-parse HEAD)" = "299a3c4987668091f50ab3e45165bcccd1ae193f"
+          test -z "$(git -C current-rcc-upstream status --porcelain)"
+          test -z "$(git -C veritas-source status --porcelain)"
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY VERITAS_API_KEY VERITAS_DATABASE_URL GITHUB_TOKEN GH_TOKEN; do
+            test -z "$(printenv "$key" || true)"
+          done
+          python -m pip install --disable-pip-version-check "./veritas-source[signing]" "pytest==9.0.3"
+      - name: Verify preissued Ed25519 voucher with pinned trust anchor against original RCC case
+        shell: bash
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          git rev-parse HEAD > results/final128-342-benchmark-head.txt
+          git -C current-rcc-upstream rev-parse HEAD > results/final128-342-rcc-head.txt
+          git -C veritas-source rev-parse HEAD > results/final128-342-veritas-head.txt
+          python scripts/final128_342_offline_preissued_test_issuer_verifier_v1.py \
+            --upstream-root current-rcc-upstream \
+            --veritas-root veritas-source \
+            --output-dir results/final128-342-offline-test-issuer-trust-anchor \
+            | tee results/final128-342-route.log
+      - name: Verify offline root, anti-forgery checks and no real issuer/Bind claim
+        shell: bash
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_342_offline_preissued_test_issuer_verifier_v1.py \
+            --junitxml=results/final128-342-junit.xml \
+            | tee results/final128-342-test.log
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          r=json.loads(Path("results/final128-342-offline-test-issuer-trust-anchor/report.json").read_text())
+          digest=r.pop("report_sha256")
+          assert digest==hashlib.sha256(json.dumps(r,sort_keys=True,
+            separators=(",",":"),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+          assert r["observation"]["signature_verified"] is True
+          assert r["observation"]["trust_anchor_pinned"] is True
+          assert r["observation"]["issuer_private_key_loaded"] is False
+          assert r["observation"]["original_action_identity_preserved"] is True
+          assert r["observation"]["untrusted_without_voucher_refused"] is True
+          assert r["observation"]["native_schema_candidate_promotable_for_test"] is True
+          assert r["observation"]["actual_cda_created_in_this_pr"] is False
+          assert r["observation"]["real_issuer_authentication_proven"] is False
+          assert r["nonclaims"]["real_external_effects"]==0
+          assert r["nonclaims"]["live_provider_calls"]==0
+          print("342_OFFLINE_PREISSUED_TEST_ISSUER_SIGNATURE_VERIFIED_WITH_PINNED_ROOT_NO_MINTING")
+          PY
+          sha256sum \
+            contracts/FINAL128_342_OFFLINE_PREISSUED_TEST_ISSUER_V1.json \
+            scripts/final128_342_offline_preissued_test_issuer_verifier_v1.py \
+            tests/test_final128_342_offline_preissued_test_issuer_verifier_v1.py \
+            docs/optimization/FINAL128_342_OFFLINE_PREISSUED_TEST_ISSUER_V1.md \
+            fixtures/final128_342_offline_preissued_test_voucher_v1.json \
+            results/final128-342-offline-test-issuer-trust-anchor/report.json \
+            > results/final128-342-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-342-offline-test-issuer-trust-anchor-cda-v1
+          path: |
+            results/final128-342-benchmark-head.txt
+            results/final128-342-rcc-head.txt
+            results/final128-342-veritas-head.txt
+            results/final128-342-route.log
+            results/final128-342-test.log
+            results/final128-342-junit.xml
+            results/final128-342-sha256.txt
+            results/final128-342-offline-test-issuer-trust-anchor/report.json
+          if-no-files-found: warn
