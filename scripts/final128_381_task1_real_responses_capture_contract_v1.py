@@ -173,6 +173,7 @@ def parse_untrusted_first_capture(*,arm:str,
         "model_call_id":call["call_id"],
         "response_id":response["id"],
         "first_response_function_call_item":retained,
+        "first_response_function_call_sha256":sha(retained),
         "trust_origin":"UNTRUSTED_OFFLINE_FIXTURE",
         "http_status_claim_only":asserted_http_status,
         "provider_tls_origin_independently_verified":False,
@@ -223,10 +224,13 @@ def prepare_untrusted_continuation_candidates(*,
         ("B",capture_b,paired["arm_B"])):
         need(capture["model_call_id_sha256"]==sha(capture["model_call_id"])
              and capture["response_id_sha256"]==sha(capture["response_id"])
-             and capture["first_response_function_call_item"].get("call_id")==
+             and capture["first_response_function_call_sha256"]==
+             sha(capture["first_response_function_call_item"])
+         and capture["first_response_function_call_item"].get("call_id")==
                  capture["model_call_id"]
              and capture["first_response_function_call_item"].get("name")==
-                 guard.TOOL,
+                 guard.TOOL
+             and type(capture["first_response_function_call_item"].get("arguments")) is str,
              "CLAIMED_CAPTURE_MUTATED_AFTER_PARSE")
         item=source["raw_model_input_envelope"]
         need(item[0]=={"role":"user","content":guard.PROMPT}
