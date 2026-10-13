@@ -17,7 +17,8 @@ permissions:
 
 jobs:
   task13-development:
-    if: ${{ inputs.confirmation == 'RUN_TASK13_DEVELOPMENT_VALIDATION_V1' }}
+    if: ${{ false }}  # #387 RETIRED: legacy conditional superseded by permanent default-deny
+    # Original historical condition: if: ${{ inputs.confirmation == 'RUN_TASK13_DEVELOPMENT_VALIDATION_V1' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
