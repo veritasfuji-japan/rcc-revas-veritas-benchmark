@@ -90,7 +90,7 @@ jobs:
              "exact_head":Path("results/final128-387-exact-head.txt").read_text().strip(),
              "exact_base":Path("results/final128-387-exact-base.txt").read_text().strip(),
              "tests":counts,
-             "workflows_scanned":data["workflows_scanned"],
+             "workflows_scanned":data["all_workflows_scanned"],
              "historical_provider_blobs_exactly_preserved":data["legacy_historical_workflows_source_unchanged"],
              "workflows_still_requiring_admin_disable":data["manual_provider_source_jobs_without_static_stop"],
              "scan_file_sha256":hashlib.sha256(raw.read_bytes()).hexdigest(),
