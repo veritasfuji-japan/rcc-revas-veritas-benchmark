@@ -14,8 +14,7 @@ permissions:
   contents: read
 jobs:
   task12-development:
-    if: ${{ false }}  # #387 RETIRED: legacy conditional superseded by permanent default-deny
-    # Original historical condition: if: ${{ inputs.confirmation == 'RUN_TASK12_DEVELOPMENT_VALIDATION_V1' }}
+    if: ${{ inputs.confirmation == 'RUN_TASK12_DEVELOPMENT_VALIDATION_V1' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
