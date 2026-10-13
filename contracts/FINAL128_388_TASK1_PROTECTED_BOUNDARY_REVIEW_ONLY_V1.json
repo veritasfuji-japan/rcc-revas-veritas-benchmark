@@ -1,0 +1,40 @@
+{
+  "schema": "veritas.final128.task1-protected-dispatch-review-only.v1",
+  "deployment": "NOT_INSTALLED_NO_PROVIDER_DISPATCH",
+  "proposed_job": {
+    "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+    "event": "workflow_dispatch",
+    "branch": "refs/heads/main",
+    "actor": "veritasfuji-japan",
+    "environment": "task1-real-model-pilot",
+    "credential": "ENVIRONMENT_SECRET_ONLY_OPENAI_API_KEY",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "max_first_provider_attempts": 2,
+    "proposed_spend_ceiling_usd": "1.00",
+    "max_run_attempt": 1,
+    "no_automatic_retry": true,
+    "global_single_use_tag": "refs/tags/final128-task1-first-two-real-responses-v1-consumed",
+    "consume_outcome_unknown": "STOP_PERMANENTLY_NO_RETRY",
+    "provider_step": "ABSENT_IN_THIS_PR"
+  },
+  "manually_observed_not_machine_attested": {
+    "required_reviewers": true,
+    "reviewer": "veritasfuji-japan",
+    "prevent_self_review": false,
+    "wait_timer_minutes": 10,
+    "admin_bypass_allowed": false,
+    "allowed_branches": [
+      "main"
+    ],
+    "repository_openai_secret_removed": true,
+    "task1_environment_openai_secret_present": true
+  },
+  "externally_unverified": {
+    "authenticated_fresh_one_case_consent": true,
+    "independent_review_or_comparable_external_auth": true,
+    "trusted_protected_issuer_and_credential_bound_runner": true,
+    "immutable_once_tag_enforcement_and_bypass_resistance": true,
+    "effective_provider_project_hard_spend_stop": true,
+    "authenticated_tls_provider_receipts_and_native_scoring": true
+  }
+}

@@ -1,0 +1,119 @@
+name: Final128 388 Task1 Protected Boundary Offline Review
+on:
+  pull_request:
+    paths:
+      - "contracts/FINAL128_388_TASK1_PROTECTED_BOUNDARY_REVIEW_ONLY_V1.json"
+      - "scripts/final128_388_task1_protected_boundary_offline_v1.py"
+      - "tests/test_final128_388_task1_protected_boundary_offline_v1.py"
+      - ".github/workflows/final128-388-task1-protected-boundary-offline-v1.yml"
+      - "docs/optimization/FINAL128_388_TASK1_PROTECTED_BOUNDARY_OFFLINE_V1.md"
+permissions:
+  contents: read
+jobs:
+  task1-offline-protected-execution-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      GITHUB_TOKEN: ""
+      GH_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Confirm exact PR HEAD and no Provider credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          for name in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL VERITAS_DATABASE_URL GITHUB_TOKEN GH_TOKEN; do
+            test -z "$(printenv "$name" || true)"
+          done
+          mkdir -p results
+          git rev-parse HEAD > results/final128-388-head.txt
+          python -m py_compile scripts/final128_388_task1_protected_boundary_offline_v1.py tests/test_final128_388_task1_protected_boundary_offline_v1.py
+      - name: Install offline test dependency only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+      - name: Run Task1 boundary negative tests and existing budget preflight regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_388_task1_protected_boundary_offline_v1.py \
+            tests/test_final128_351_task1_durable_lease_preflight_v1.py \
+            tests/test_final128_350_task1_responses_once_budget_v1.py \
+            --junitxml=results/final128-388-junit.xml | tee results/final128-388-tests.log
+          python scripts/final128_388_task1_protected_boundary_offline_v1.py \
+            --output results/final128-388-source-boundary-audit.json
+      - name: Refuse to report source audit as real Provider authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,xml.etree.ElementTree as ET
+          from pathlib import Path
+          root=ET.parse("results/final128-388-junit.xml").getroot()
+          suites=[root] if root.tag=="testsuite" else list(root.findall("testsuite"))
+          assert suites
+          counts={k:sum(int(s.attrib.get(k,"0")) for s in suites)
+                  for k in ("tests","failures","errors","skipped")}
+          assert counts["tests"]>=55
+          assert all(counts[x]==0 for x in ("failures","errors","skipped"))
+          source=Path("results/final128-388-source-boundary-audit.json")
+          data=json.loads(source.read_text())
+          assert data["status"]=="TASK1_LIVE_DISPATCH_DENIED_NOT_INSTALLED"
+          assert data["execution_authorized"] is False
+          assert data["actual_task1_provider_posts"]==0
+          assert data["actual_native_scorer_runs"]==0
+          assert data["provider_project_hard_spend_cap_verified"] is False
+          assert data["trusted_protected_singleton_issuer_verified"] is False
+          assert data["actual_environment_approval_on_paid_job_verified"] is False
+          assert not data["inventory"]["task1_environment_secret_binding_jobs_found"]
+          proof={
+            "schema":"veritas.final128.task1-388-offline-only-evidence.v1",
+            "exact_head":Path("results/final128-388-head.txt").read_text().strip(),
+            "tests":counts,
+            "source_audit_sha256":hashlib.sha256(source.read_bytes()).hexdigest(),
+            "actual_provider_posts":0,
+            "real_provider_spend_usd":"0.00",
+            "real_native_scorer_runs":0,
+            "official_utility_delta":None,
+            "actual_github_atomic_single_use_consume":False,
+            "external_environment_and_billing_proven":False,
+            "production_bypass_proven":False,
+            "task1_live_dispatch_authorized":False,
+          }
+          proof["self_sha256"]=hashlib.sha256(json.dumps(proof,sort_keys=True,
+              separators=(",",":"),allow_nan=False).encode()).hexdigest()
+          Path("results/final128-388-evidence.json").write_text(
+              json.dumps(proof,indent=2,sort_keys=True)+"\n")
+          print("FINAL128_388_NO_PAID_PROVIDER_NO_GITHUB_REF_WRITE_NO_UTILITY")
+          PY
+          sha256sum \
+            contracts/FINAL128_388_TASK1_PROTECTED_BOUNDARY_REVIEW_ONLY_V1.json \
+            scripts/final128_388_task1_protected_boundary_offline_v1.py \
+            tests/test_final128_388_task1_protected_boundary_offline_v1.py \
+            docs/optimization/FINAL128_388_TASK1_PROTECTED_BOUNDARY_OFFLINE_V1.md \
+            results/final128-388-source-boundary-audit.json \
+            results/final128-388-junit.xml \
+            results/final128-388-evidence.json > results/final128-388-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-388-task1-protected-execution-offline-only
+          path: results/final128-388-*
+          if-no-files-found: warn
