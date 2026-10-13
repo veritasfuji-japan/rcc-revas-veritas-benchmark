@@ -136,7 +136,13 @@ def parse_untrusted_first_capture(*,arm:str,
     need(type(out) is list and len(out)==1 and type(out[0]) is dict,
          "EXACT_ONE_FUNCTION_CALL_REQUIRED")
     call=out[0]
-    need(call.get("type")=="function_call"
+    need(set(call) in (
+             {"type","id","call_id","name","arguments"},
+             {"type","id","call_id","name","arguments","status"})
+         and type(call.get("id")) is str
+         and ID_RE.fullmatch(call["id"]) is not None
+         and (call.get("status") is None or call["status"]=="completed")
+         and call.get("type")=="function_call"
          and call.get("name")==guard.TOOL
          and type(call.get("call_id")) is str
          and CALL_RE.fullmatch(call["call_id"]) is not None
@@ -230,8 +236,17 @@ def prepare_untrusted_continuation_candidates(*,
                  capture["model_call_id"]
              and capture["first_response_function_call_item"].get("name")==
                  guard.TOOL
-             and type(capture["first_response_function_call_item"].get("arguments")) is str,
+             and type(capture["first_response_function_call_item"].get("arguments")) is str
+             and type(capture["first_response_function_call_item"].get("id")) is str,
              "CLAIMED_CAPTURE_MUTATED_AFTER_PARSE")
+        raw_arguments=capture["first_response_function_call_item"]["arguments"]
+        need(len(raw_arguments.encode("utf8"))<=512,
+             "CLAIMED_CAPTURE_ARGUMENTS_TOO_LARGE")
+        parsed_arguments=strict_json_bytes(raw_arguments.encode("utf8"))
+        need(type(parsed_arguments) is dict
+             and parsed_arguments==guard.ARGUMENTS
+             and type(parsed_arguments.get("n")) is int,
+             "CLAIMED_CAPTURE_ARGUMENTS_DRIFT")
         item=source["raw_model_input_envelope"]
         need(item[0]=={"role":"user","content":guard.PROMPT}
              and item[1]["name"]==guard.TOOL
