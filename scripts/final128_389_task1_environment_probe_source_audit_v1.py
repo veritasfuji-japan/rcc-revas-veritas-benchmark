@@ -6,13 +6,13 @@ import hashlib
 import json
 from pathlib import Path
 
-import yaml
 
 SCHEMA="veritas.final128.task1.389.zero-provider-environment-probe.source.v1"
 WORKFLOW=Path(".github/workflows/final128-389-task1-environment-approval-zero-provider-probe.yml")
 REPO="veritasfuji-japan/rcc-revas-veritas-benchmark"
 ENVIRONMENT="task1-real-model-pilot"
 ACK="ACKNOWLEDGE_ZERO_PROVIDER_DRY_RUN"
+EXPECTED_GIT_BLOB_SHA="e67dc16d065111bb622fdc454b43f53f672286cf"
 PRE=(
     'set -euo pipefail\n'
     'test "$GITHUB_EVENT_NAME" = "workflow_dispatch"\n'
@@ -53,49 +53,20 @@ def validate_source(text):
         "gh api", "git push", "checkout@", "uses:", "pull_request_target",
         "schedule:", "push:", "repository_dispatch:", "workflow_call:",
     )), "NO_SECRET_NETWORK_AUTO_EVENT_OR_EXTERNAL_ACTION")
-    try:
-        payload=yaml.load(text,Loader=yaml.BaseLoader)
-    except yaml.YAMLError as exc:
-        raise Denied("389_BAD_YAML") from exc
-    exact_keys(payload, ("name","on","permissions","concurrency","jobs"), "ROOT_FIELDS")
-    require(payload["name"]=="Final128 389 Task1 Environment Approval Zero Provider Probe", "NAME")
-    exact_keys(payload["on"], ("workflow_dispatch",), "MANUAL_ONLY")
-    exact_keys(payload["on"]["workflow_dispatch"], ("inputs",), "MANUAL_INPUTS")
-    inputs=payload["on"]["workflow_dispatch"]["inputs"]
-    exact_keys(inputs, ("acknowledgment",), "INPUT_SCOPE")
-    inp=inputs["acknowledgment"]
-    exact_keys(inp, ("description","required","type","options"), "INPUT_FIELDS")
-    require(inp["type"]=="choice" and inp["required"]=="true"
-            and inp["options"]==[ACK]
-            and "does NOT authorize real Task1 calls" in inp["description"], "ACK_NOT_AUTHORITY")
-    require(payload["permissions"]=={"contents":"read"}, "READ_ONLY_TOKEN")
-    require(payload["concurrency"]=={
-        "group":"final128-389-task1-environment-probe-serial",
-        "cancel-in-progress":"false"}, "NONCANCELLING_CONCURRENCY")
-    jobs=payload["jobs"]
-    exact_keys(jobs, ("preflight-no-environment","protected-marker-no-provider"), "TWO_JOBS_ONLY")
-    pre=jobs["preflight-no-environment"]
-    exact_keys(pre, ("runs-on","timeout-minutes","steps"), "PREFLIGHT_FIELDS")
-    require(pre["runs-on"]=="ubuntu-24.04" and pre["timeout-minutes"]=="5", "PREFLIGHT_RUNNER")
-    require(type(pre["steps"]) is list and len(pre["steps"])==1, "PREFLIGHT_STEP_COUNT")
-    step=pre["steps"][0]
-    exact_keys(step, ("name","shell","env","run"), "PREFLIGHT_STEP_FIELDS")
-    require(step["name"]=="Reject wrong actor, branch, rerun, event or acknowledgment"
-            and step["shell"]=="bash"
-            and step["env"]=={"ACKNOWLEDGMENT":"$"+"{{ inputs.acknowledgment }}"}
-            and step["run"]==PRE, "PREFLIGHT_EXACT_REFUSAL_SCRIPT")
-    post=jobs["protected-marker-no-provider"]
-    exact_keys(post, ("needs","if","runs-on","timeout-minutes","environment","steps"), "PROTECTED_FIELDS")
-    require(post["needs"]=="preflight-no-environment"
-            and post["if"]=="needs.preflight-no-environment.result == 'success'"
-            and post["runs-on"]=="ubuntu-24.04"
-            and post["timeout-minutes"]=="5"
-            and post["environment"]=={"name":ENVIRONMENT}, "ENVIRONMENT_GATE")
-    require(type(post["steps"]) is list and len(post["steps"])==1, "PROTECTED_STEP_COUNT")
-    step=post["steps"][0]
-    exact_keys(step, ("name","shell","run"), "PROTECTED_STEP_FIELDS")
-    require(step["name"]=="Mark job start after GitHub Environment rules permit it"
-            and step["shell"]=="bash" and step["run"]==POST, "PROTECTED_EXACT_MARKER_SCRIPT")
+    # Exact Git blob pin. A changed YAML byte (including any new auto trigger,
+    # unauthorized step or secret access) is rejected. Standard library only.
+    raw=text.encode("utf8")
+    git_blob=b"blob "+str(len(raw)).encode("ascii")+b"\\0"+raw
+    require(hashlib.sha1(git_blob).hexdigest()==EXPECTED_GIT_BLOB_SHA,
+            "EXACT_REVIEWED_WORKFLOW_BLOB_MISMATCH")
+    require(text.count("    environment:\\n      name: task1-real-model-pilot\\n")==1,
+            "EXACT_PROTECTED_MARKER")
+    require(text.count("  workflow_dispatch:\\n")==1,
+            "MANUAL_ONLY")
+    require(all(("          "+line+"\\n") in text for line in PRE.splitlines()),
+            "PREFLIGHT_EXACT_SCRIPT")
+    require(all(("          "+line+"\\n") in text for line in POST.splitlines()),
+            "PROTECTED_EXACT_SCRIPT")
     return {
         "schema":SCHEMA,
         "status":"SOURCE_CONTRACT_VALID_BUT_NO_LIVE_GATE_OBSERVATION",
