@@ -119,14 +119,16 @@ def check_ruleset(rule):
     no_bypass=(type(bypass) is list and not bypass
                and rule.get("current_user_can_bypass")=="never")
     sufficient=(matched and TAG_RULES.issubset(types) and no_bypass)
+    condition=rule.get("conditions")
+    names=condition.get("ref_name") if type(condition) is dict else None
+    patterns=names.get("include") if type(names) is dict else None
+    if type(patterns) is not list:patterns=[]
     return {
         "ruleset_id":rid if type(rid) is int else None,
         "ruleset_name":name if type(name) is str else None,
         "enforcement_active":rule.get("enforcement")=="active",
         "targets_tag":rule.get("target")=="tag",
-        "ref_include_patterns":(
-            rule.get("conditions",{}).get("ref_name",{}).get("include",[])
-            if type(rule.get("conditions")) is dict else []),
+        "ref_include_patterns":patterns,
         "matching_fixed_tag":bool(matched),
         "required_deletion_update_nonfastforward_present":TAG_RULES.issubset(types),
         "no_explicit_bypass_actors_in_observed_detail":bool(no_bypass),
@@ -156,7 +158,8 @@ def audit_observations(*,rule_details,detail_collection_complete,
         "status":"LIVE_DISPATCH_DENIED_EXTERNAL_CONTROLS_UNVERIFIED",
         "fixed_protocol_ref":FIXED_REF,
         "observation_source":observation_source,
-        "actual_get_seen_by_script":observation_source=="public_github_get_unattested",
+        "actual_get_seen_by_script":(observation_source=="public_github_get_unattested"
+             and (detail_collection_complete or ref_status!="unknown")),
         "ruleset_details_complete":detail_collection_complete,
         "rulesets_evaluated":len(inspected),
         "rule_coverage_result":(
