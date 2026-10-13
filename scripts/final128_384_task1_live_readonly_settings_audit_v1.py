@@ -164,7 +164,7 @@ def audit_observations(*,rule_details,detail_collection_complete,
         "rulesets_evaluated":len(inspected),
         "rule_coverage_result":(
             "MATCHING_DEFENSIVE_RULE_OBSERVED_NOT_AUTHORITY"
-            if protective else
+            if protective and detail_collection_complete else
             "MISSING_MATCHING_DEFENSIVE_RULE"
             if mismatch else "UNKNOWN_INCOMPLETE_OR_FORBIDDEN"),
         "unprotected_fixed_ref_gap_observed":bool(mismatch),
