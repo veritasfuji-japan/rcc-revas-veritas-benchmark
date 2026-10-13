@@ -1,0 +1,128 @@
+name: Final128 391 Task1 Isolated Protected Git Tag Once Probe
+on:
+  workflow_dispatch:
+    inputs:
+      approval_phrase:
+        description: "Test-only GitHub tag creation, no Provider, no Task1 production lease"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: final128-391-isolated-protected-tag-global-once-v1
+  cancel-in-progress: false
+jobs:
+  safe-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      OPERATOR_APPROVAL: ${{ inputs.approval_phrase }}
+    steps:
+      - name: Fail closed before protected writer
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test "$GITHUB_REPOSITORY" = "veritasfuji-japan/rcc-revas-veritas-benchmark"
+          test "$GITHUB_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_TRIGGERING_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$OPERATOR_APPROVAL" = "I AUTHORIZE ONE TEST-ONLY GITHUB TAG CREATE NO PROVIDER"
+          printf '391_ZERO_PROVIDER_PREFLIGHT_SUCCESS_NOT_PAID_AUTHORIZATION\n'
+  protected-isolated-create-once:
+    needs: safe-preflight
+    if: needs.safe-preflight.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    permissions:
+      contents: write
+    environment:
+      name: task1-real-model-pilot
+    env:
+      GH_PROBE_TOKEN: ${{ github.token }}
+    steps:
+      - name: Exactly one protected GitHub tag creation attempt, zero Provider access
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test "$GITHUB_REPOSITORY" = "veritasfuji-japan/rcc-revas-veritas-benchmark"
+          test "$GITHUB_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_TRIGGERING_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          python - <<'PY'
+          import json, os, re, sys
+          import urllib.error
+          import urllib.request
+
+          repo = "veritasfuji-japan/rcc-revas-veritas-benchmark"
+          ref = "refs/tags/final128-task1-real-ab-once-v1-391-test-only-global-consumed"
+          sha = os.environ["GITHUB_SHA"]
+          token = os.environ["GH_PROBE_TOKEN"]
+          assert re.fullmatch(r"[a-f0-9]{40}", sha)
+          assert token and len(token) > 10
+          assert os.environ["GITHUB_REPOSITORY"] == repo
+          assert os.environ["GITHUB_REF"] == "refs/heads/main"
+          assert os.environ["GITHUB_RUN_ATTEMPT"] == "1"
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_ACTOR"] == "veritasfuji-japan"
+          assert os.environ["GITHUB_TRIGGERING_ACTOR"] == "veritasfuji-japan"
+          root = "https://api.github.com/repos/" + repo + "/git/refs"
+          body = json.dumps({"ref": ref, "sha": sha}, separators=(",", ":")).encode()
+          headers = {
+              "Authorization": "Bearer " + token,
+              "Accept": "application/vnd.github+json",
+              "Content-Type": "application/json",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "veritas-task1-391-isolated-zero-provider-once",
+          }
+          post = urllib.request.Request(root, data=body, headers=headers, method="POST")
+          # Exactly ONE POST, no retry. Unknown response remains terminal UNKNOWN.
+          print("391_BEFORE_ONE_TEST_ONLY_GITHUB_TAG_POST_NOT_TASK1_PROVIDER_LEASE", flush=True)
+          try:
+              with urllib.request.urlopen(post, timeout=12) as response:
+                  status = response.status
+                  raw = response.read(8192)
+          except urllib.error.HTTPError as exc:
+              print("391_GITHUB_TAG_CREATE_REFUSED_HTTP_" + str(exc.code), flush=True)
+              raise SystemExit(1)
+          except Exception:
+              print("391_GITHUB_TAG_CREATE_UNKNOWN_STOP_NO_RETRY", flush=True)
+              raise SystemExit(1)
+          if status != 201:
+              print("391_NOT_CREATED_UNEXPECTED_STATUS_STOP", flush=True)
+              raise SystemExit(1)
+          try:
+              result = json.loads(raw.decode("utf8"))
+          except (ValueError, UnicodeError):
+              print("391_CREATE_RESULT_UNKNOWN_STOP_NO_RETRY", flush=True)
+              raise SystemExit(1)
+          if result.get("ref") != ref or result.get("object", {}).get("sha") != sha:
+              print("391_CREATE_RESPONSE_MISMATCH_STOP", flush=True)
+              raise SystemExit(1)
+          # GET only, no deletion, update, retry, Provider or scorer.
+          get = urllib.request.Request(root + "/tags/" + ref.removeprefix("refs/tags/"),
+                      headers={"Authorization": "Bearer " + token,
+                               "Accept": "application/vnd.github+json",
+                               "X-GitHub-Api-Version": "2022-11-28"}, method="GET")
+          try:
+              with urllib.request.urlopen(get, timeout=12) as response:
+                  observed = json.loads(response.read(8192).decode("utf8"))
+                  if response.status != 200:
+                      raise ValueError("not 200")
+          except Exception:
+              print("391_READBACK_UNKNOWN_STOP_NO_RETRY", flush=True)
+              raise SystemExit(1)
+          if observed.get("ref") != ref or observed.get("object", {}).get("sha") != sha:
+              print("391_READBACK_MISMATCH_STOP", flush=True)
+              raise SystemExit(1)
+          # This is a test-only tag, not an authenticated Task1 issuer.
+          print("391_ISOLATED_TEST_ONLY_TAG_CREATED_ONCE_GITHUB_201_READBACK_200", flush=True)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf8") as out:
+              out.write("Isolated test-only GitHub tag created and read back.\n")
+              out.write("Ref: " + ref + "\n")
+              out.write("SHA: " + sha + "\n")
+              out.write("Test only. No Provider access, no production lease.\n")
+          PY
