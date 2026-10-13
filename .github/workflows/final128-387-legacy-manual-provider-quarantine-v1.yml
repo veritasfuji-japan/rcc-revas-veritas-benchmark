@@ -1,4 +1,4 @@
-name: Final128 387 Legacy Manual Provider Bypass Quarantine Offline
+name: Final128 387 Frozen Legacy Provider Disable Readiness Audit
 on:
   pull_request:
     paths:
@@ -9,7 +9,7 @@ on:
 permissions:
   contents: read
 jobs:
-  manual-provider-source-closure:
+  manual-provider-disable-readiness:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     env:
@@ -51,7 +51,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --disable-pip-version-check "pytest==9.1.1"
-      - name: Prove exact historical source edits and scan ALL manual Provider-secret jobs
+      - name: Preserve exact historical sources and INVENTORY manual Provider-secret disable targets
         shell: bash
         run: |
           set -euo pipefail
@@ -77,27 +77,27 @@ jobs:
           assert all(counts[k]==0 for k in ("failures","errors","skipped"))
           raw=Path("results/final128-387-manual-provider-scan.json")
           data=json.loads(raw.read_text())
-          assert data["legacy_paths_checked"]==15
-          assert data["unblocked_manual_provider_secret_workflows"]==0
-          assert data["workflows_scanned"]>=330
-          assert data["github_secrets_rotated_or_revoked"] is False
-          assert data["historical_git_ref_dispatch_resistance_verified"] is False
-          assert data["production_scope_complete"] is False
-          assert data["real_provider_requests"]==0
-          assert all(x["only_job_gate_changed"] is True for x in data["legacy_evidence"])
+          assert data["legacy_historical_workflows_source_unchanged"]==15
+          assert data["manual_provider_source_jobs_without_static_stop"]>=15
+          assert data["all_workflows_scanned"]>=330
+          assert data["github_repository_provider_secrets_revoked"] is False
+          assert data["github_actions_workflow_state_verified"] is False
+          assert data["all_provider_bypasses_closed"] is False
+          assert data["new_provider_calls"]==0
+          assert all(x["historical_source_matches_exact_base"] is True for x in data["historical_original_source_evidence"])
           proof={
              "schema":"veritas.final128.387-legacy-manual-quarantine-evidence.v1",
              "exact_head":Path("results/final128-387-exact-head.txt").read_text().strip(),
              "exact_base":Path("results/final128-387-exact-base.txt").read_text().strip(),
              "tests":counts,
              "workflows_scanned":data["workflows_scanned"],
-             "legacy_manual_provider_jobs_quarantined":data["legacy_paths_checked"],
-             "unblocked_manual_provider_secret_workflows":0,
+             "historical_provider_blobs_exactly_preserved":data["legacy_historical_workflows_source_unchanged"],
+             "workflows_still_requiring_admin_disable":data["manual_provider_source_jobs_without_static_stop"],
              "scan_file_sha256":hashlib.sha256(raw.read_bytes()).hexdigest(),
              "real_provider_posts":0,
              "real_provider_spend_usd":"0.00",
              "real_native_scorer_runs":0,
-             "old_refs_and_credential_bypass_verified":False,
+             "admin_workflow_disable_state_verified":False,
              "repository_secrets_revoked":False,
              "production_bypass_proven":False,
           }
@@ -105,7 +105,7 @@ jobs:
           proof["self_sha256"]=hashlib.sha256(canon(proof)).hexdigest()
           Path("results/final128-387-evidence.json").write_text(
               json.dumps(proof,sort_keys=True,indent=2)+"\n")
-          print("FINAL128_387_15_LEGACY_MANUAL_PROVIDER_JOBS_STATIC_DENY_NO_REAL_PROVIDER")
+          print("FINAL128_387_FROZEN_PROVIDER_SOURCES_PRESERVED_ADMIN_DISABLE_REQUIRED")
           PY
           sha256sum \
             scripts/final128_387_legacy_manual_provider_quarantine_audit_v1.py \
