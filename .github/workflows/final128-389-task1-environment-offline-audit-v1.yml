@@ -1,0 +1,118 @@
+name: Final128 389 Task1 Environment Probe Offline Audit
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-389-task1-environment-approval-zero-provider-probe.yml"
+      - ".github/workflows/final128-389-task1-environment-offline-audit-v1.yml"
+      - "scripts/final128_389_task1_environment_probe_source_audit_v1.py"
+      - "tests/test_final128_389_task1_environment_probe_source_audit_v1.py"
+      - "docs/optimization/FINAL128_389_TASK1_ENVIRONMENT_NO_PROVIDER_GATE_V1.md"
+permissions:
+  contents: read
+jobs:
+  exact-source-zero-provider-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      GITHUB_TOKEN: ""
+      GH_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Validate PR HEAD and no Provider secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY GITHUB_TOKEN GH_TOKEN; do
+            test -z "$(printenv "$key" || true)"
+          done
+          mkdir -p results
+          git rev-parse HEAD > results/final128-389-exact-head.txt
+          python -m py_compile scripts/final128_389_task1_environment_probe_source_audit_v1.py tests/test_final128_389_task1_environment_probe_source_audit_v1.py
+      - name: Install offline-only Python audit dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1" "PyYAML==6.0.2"
+      - name: Run source mutation matrix and create unscored audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_final128_389_task1_environment_probe_source_audit_v1.py \
+            --junitxml=results/final128-389-junit.xml | tee results/final128-389-tests.log
+          python scripts/final128_389_task1_environment_probe_source_audit_v1.py \
+            --output results/final128-389-source-audit.json
+      - name: Verify exact-source contract and no false live approval claims
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,xml.etree.ElementTree as ET
+          from pathlib import Path
+          root=ET.parse("results/final128-389-junit.xml").getroot()
+          suites=[root] if root.tag=="testsuite" else list(root.findall("testsuite"))
+          assert suites
+          counts={k:sum(int(s.attrib.get(k,"0")) for s in suites)
+                  for k in ("tests","failures","errors","skipped")}
+          assert counts["tests"]>=25
+          assert all(counts[x]==0 for x in ("failures","errors","skipped"))
+          raw=Path("results/final128-389-source-audit.json")
+          doc=json.loads(raw.read_text())
+          assert doc["status"]=="SOURCE_CONTRACT_VALID_BUT_NO_LIVE_GATE_OBSERVATION"
+          assert doc["manual_dispatch_only"] is True
+          assert doc["preflight_no_environment_no_secret_binding"] is True
+          assert doc["no_provider_or_secret_or_external_action"] is True
+          for key in ("wait_timer_runtime_observed",
+                      "required_reviewer_runtime_observed",
+                      "admin_bypass_runtime_verified",
+                      "manual_dry_run_executed_by_this_audit",
+                      "real_single_use_issuer_verified",
+                      "hard_provider_budget_cap_verified",
+                      "production_bypass_resistance_proven",
+                      "task1_live_execution_authorized"):
+            assert doc[key] is False
+          assert doc["real_provider_calls"]==0
+          assert doc["native_scorer_calls"]==0
+          evidence={
+            "schema":"veritas.final128.389-environment-no-provider-source-audit-evidence.v1",
+            "exact_head":Path("results/final128-389-exact-head.txt").read_text().strip(),
+            "tests":counts,
+            "source_audit_sha256":hashlib.sha256(raw.read_bytes()).hexdigest(),
+            "real_task1_paid_calls":0,
+            "actual_environment_pending_approval_run":False,
+            "actual_provider_cost_usd":"0.00",
+            "production_bypass_proven":False,
+            "live_task1_authorized":False,
+          }
+          evidence["self_sha256"]=hashlib.sha256(json.dumps(evidence,sort_keys=True,
+              separators=(",",":"),allow_nan=False).encode()).hexdigest()
+          Path("results/final128-389-evidence.json").write_text(
+              json.dumps(evidence,sort_keys=True,indent=2)+"\n")
+          print("FINAL128_389_SOURCE_AUDIT_ONLY_MANUAL_PROBE_NOT_RUN")
+          PY
+          sha256sum \
+            .github/workflows/final128-389-task1-environment-approval-zero-provider-probe.yml \
+            scripts/final128_389_task1_environment_probe_source_audit_v1.py \
+            tests/test_final128_389_task1_environment_probe_source_audit_v1.py \
+            docs/optimization/FINAL128_389_TASK1_ENVIRONMENT_NO_PROVIDER_GATE_V1.md \
+            results/final128-389-source-audit.json \
+            results/final128-389-evidence.json \
+            results/final128-389-junit.xml > results/final128-389-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-389-task1-environment-probe-source-only-unscored
+          path: results/final128-389-*
+          if-no-files-found: warn
