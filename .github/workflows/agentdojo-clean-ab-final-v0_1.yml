@@ -17,7 +17,8 @@ permissions:
 
 jobs:
   final-clean-ab:
-    if: ${{ inputs.confirmation == 'RUN_FROZEN_AGENTDOJO_CLEAN_AB_V0_1' }}
+    if: ${{ false }}  # #387 RETIRED: legacy conditional superseded by permanent default-deny
+    # Original historical condition: if: ${{ inputs.confirmation == 'RUN_FROZEN_AGENTDOJO_CLEAN_AB_V0_1' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
