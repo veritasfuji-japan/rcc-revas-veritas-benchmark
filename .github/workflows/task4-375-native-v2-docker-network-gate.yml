@@ -1,0 +1,122 @@
+name: Task4 375 Native-v2 Same TLS Target Docker Bypass Refusal
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-375-native-v2-docker-network-gate.yml"
+      - "scripts/task4_375_native_v2_docker_network_audit_v1.py"
+      - "scripts/task4_375_native_v2_agent_network_probe_v1.py"
+      - "docker/task4_375_native_v2_broker_runtime_v1.Dockerfile"
+      - "docs/TASK4_375_NATIVE_V2_DOCKER_NETWORK_BYPASS_DENIAL_V1.md"
+      - "integration/current_veritas_uninterrupted/native_v2_action_capability.py"
+      - "integration/current_veritas_uninterrupted/task4_374_native_v2_lineage.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-375-native-v2-docker-network-gate.yml"
+      - "scripts/task4_375_native_v2_docker_network_audit_v1.py"
+      - "scripts/task4_375_native_v2_agent_network_probe_v1.py"
+      - "docker/task4_375_native_v2_broker_runtime_v1.Dockerfile"
+      - "docs/TASK4_375_NATIVE_V2_DOCKER_NETWORK_BYPASS_DENIAL_V1.md"
+      - "integration/current_veritas_uninterrupted/native_v2_action_capability.py"
+      - "integration/current_veritas_uninterrupted/task4_374_native_v2_lineage.py"
+permissions:
+  contents: read
+jobs:
+  real-native-v2-sandbox-dual-internal-docker-networks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      VERITAS_SANDBOX_WRITER_TOKEN: ""
+      VERITAS_SANDBOX_READER_TOKEN: ""
+      BEN_CANONICAL_PIN: "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+      VERITAS_PIN: "9b7376ba0077365b9d89004b06c80e76c8bfadc8"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONNOUSERSITE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: benchmark
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: ${{ env.VERITAS_PIN }}
+          path: veritas_os_source
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/rcc-revas-veritas-benchmark
+          ref: ${{ env.BEN_CANONICAL_PIN }}
+          path: ben_canonical_source
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify exact heads and static scripts before test setup
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C benchmark rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git -C veritas_os_source rev-parse HEAD)" = "$VERITAS_PIN"
+          test "$(git -C ben_canonical_source rev-parse HEAD)" = "$BEN_CANONICAL_PIN"
+          python -m py_compile \
+            benchmark/scripts/task4_375_native_v2_docker_network_audit_v1.py \
+            benchmark/scripts/task4_375_native_v2_agent_network_probe_v1.py \
+            benchmark/integration/current_veritas_uninterrupted/task4_374_native_v2_lineage.py \
+            benchmark/integration/current_veritas_uninterrupted/native_v2_action_capability.py
+          mkdir -p benchmark/results/task4-375
+          docker version > benchmark/results/task4-375/docker-version.txt
+          docker info --format '{{json .SecurityOptions}}' > benchmark/results/task4-375/docker-security-options.json
+          git -C benchmark rev-parse HEAD > benchmark/results/task4-375/benchmark-exact-head.txt
+      - name: Docker front-agent vs actual Native-v2 TLS target with single authorized gateway effect
+        shell: bash
+        run: |
+          set -euo pipefail
+          python benchmark/scripts/task4_375_native_v2_docker_network_audit_v1.py \
+            --output-dir benchmark/results/task4-375 \
+            | tee benchmark/results/task4-375/runner-output.log
+          python - <<'PY'
+          import json,sys,xml.etree.ElementTree as ET
+          from pathlib import Path
+          sys.path.insert(0,"benchmark")
+          from integration.current_veritas_uninterrupted.task4_374_native_v2_lineage import (
+              verify_exact_native_v2_lineage,canonical_hash,
+          )
+          root=Path("benchmark/results/task4-375")
+          x=json.loads((root/"task4-375-native-v2-docker-network-evidence.json").read_text())
+          assert x["rule"]=="TASK4_375_NATIVE_V2_DOCKER_NETWORK_BYPASS_DENIAL_V1"
+          assert x["veritas_os_pin"]=="9b7376ba0077365b9d89004b06c80e76c8bfadc8"
+          assert x["ben_pin"]=="1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+          assert len(x["checks"])==25 and all(x["checks"].values())
+          assert len(verify_exact_native_v2_lineage(x["positive_native_v2_trace"]))==7
+          assert x["positive_native_v2_trace_hash"]==canonical_hash(x["positive_native_v2_trace"])
+          assert x["probe_front"]["real_sink_ip_tcp_refused"] is True
+          assert x["probe_front"]["sink_dns_hidden"] is True
+          assert x["probe_backend_without_credential"]["unauthenticated_direct_write_http_status"]==401
+          assert x["real_provider_calls"]==x["real_bank_effects"]==x["provider_spend_usd"]==0
+          assert x["actual_production_IAM_enforced"] is False
+          assert x["independent_external_audit"] is False
+          assert ET.parse(root/"task4-375-junit.xml").getroot().attrib["tests"]=="25"
+          print("TASK4_375_SAME_NATIVE_V2_REAL_TLS_TARGET_BYPASS_DENIED_NOT_PRODUCTION_PROVEN")
+          PY
+          sha256sum \
+            benchmark/scripts/task4_375_native_v2_docker_network_audit_v1.py \
+            benchmark/scripts/task4_375_native_v2_agent_network_probe_v1.py \
+            benchmark/docker/task4_375_native_v2_broker_runtime_v1.Dockerfile \
+            benchmark/docs/TASK4_375_NATIVE_V2_DOCKER_NETWORK_BYPASS_DENIAL_V1.md \
+            benchmark/results/task4-375/task4-375-native-v2-docker-network-evidence.json \
+            benchmark/results/task4-375/task4-375-junit.xml \
+            > benchmark/results/task4-375/source-and-evidence-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-375-same-native-v2-target-docker-network-denial
+          path: benchmark/results/task4-375/*
+          if-no-files-found: warn
