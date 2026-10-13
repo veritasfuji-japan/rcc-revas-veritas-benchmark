@@ -25,7 +25,7 @@ from integration.current_veritas_uninterrupted.task4_374_native_v2_lineage impor
 BEN_PIN="1d3782d3aae5ff9c88036709c1a5642320cc53c2"
 VERITAS_PIN="9b7376ba0077365b9d89004b06c80e76c8bfadc8"
 
-def main(output: Path, veritas_root: Path) -> int:
+def main(output: Path, veritas_root: Path, agent_request_json: Path | None = None) -> int:
     del veritas_root
     import pytest
     from scripts import run_decision_to_external_bind_poc as poc
@@ -51,6 +51,21 @@ def main(output: Path, veritas_root: Path) -> int:
     require(os.environ["BEN_CANONICAL_PIN"]==BEN_PIN,"BEN_PIN_CHANGED")
     require(os.environ["VERITAS_PIN"]==VERITAS_PIN,"VERITAS_PIN_CHANGED")
     payload={"event_id":"42345678-1234-4234-8234-123456789abc","message":"ben canonical native-v2 action capability"}
+    inbound_request_digest = None
+    inbound_request_id = None
+    if agent_request_json is not None:
+        # The untrusted bytes arrive via the broker's actual HTTP ingress, not
+        # from the native fixture constructor. Re-check at the effect boundary.
+        from scripts.task4_376_native_v2_agent_ingress_v1 import (
+            decode, validate_agent_request,
+        )
+        inbound=decode(agent_request_json.read_bytes())
+        inbound_request_digest=validate_agent_request(inbound)
+        inbound_request_id=inbound["request_id"]
+        payload=deepcopy(inbound["candidate"]["arguments"]["payload"])
+        require(inbound["candidate"]["name"]==binding.ACTION,
+                "TASK4_376_AGENT_CANDIDATE_ACTION_CHANGED")
+
     config=deployment()
     action_binding=binding.build_sandbox_action_binding(json.dumps(payload),deployment=config,expected_contract=contract())
     upstream=CandidateAction("tool_call",name=binding.ACTION,arguments={"payload":deepcopy(payload)})
@@ -263,10 +278,18 @@ def main(output: Path, veritas_root: Path) -> int:
             "production_authority":False,
             "compensation_exercised":False
         }
+        if agent_request_json is not None:
+            report.update({
+                "task4_376_ingress_request_digest":inbound_request_digest,
+                "task4_376_ingress_request_id":inbound_request_id,
+                "task4_376_input_candidate_sha256":upstream_hash,
+                "task4_376_untrusted_request_is_execution_authority":False,
+            })
         output.parent.mkdir(parents=True,exist_ok=True)
         output.write_text(json.dumps(report,indent=2,sort_keys=True)+"\n",encoding="utf-8")
         return 0
 
 if __name__=="__main__":
     p=argparse.ArgumentParser(); p.add_argument("--output",type=Path,required=True); p.add_argument("--veritas-root",type=Path,required=True)
-    a=p.parse_args(); raise SystemExit(main(a.output,a.veritas_root))
+    p.add_argument("--agent-request-json",type=Path)
+    a=p.parse_args(); raise SystemExit(main(a.output,a.veritas_root,a.agent_request_json))
