@@ -1,0 +1,143 @@
+name: Final128 385 Actions SHA Pin Inventory Stage1 Offline
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-385-actions-sha-pinning-inventory-v1.yml"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/native-veritas-benchmark.yml"
+      - "scripts/final128_385_actions_sha_pinning_inventory_v1.py"
+      - "tests/test_final128_385_actions_sha_pinning_inventory_v1.py"
+      - "docs/optimization/FINAL128_385_ACTIONS_SHA_PINNING_INVENTORY_STAGE1_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/final128-385-actions-sha-pinning-inventory-v1.yml"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/native-veritas-benchmark.yml"
+      - "scripts/final128_385_actions_sha_pinning_inventory_v1.py"
+      - "tests/test_final128_385_actions_sha_pinning_inventory_v1.py"
+      - "docs/optimization/FINAL128_385_ACTIONS_SHA_PINNING_INVENTORY_STAGE1_V1.md"
+permissions:
+  contents: read
+jobs:
+  actions-reference-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      GITHUB_TOKEN: ""
+      GH_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Assert exact HEAD, exact base and no Provider credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          git cat-file -e "${{ github.event.pull_request.base.sha || github.sha }}^{commit}"
+          for secret in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY GITHUB_TOKEN GH_TOKEN; do
+            test -z "$(printenv "$secret" || true)"
+          done
+          python -m py_compile \
+            scripts/final128_385_actions_sha_pinning_inventory_v1.py \
+            tests/test_final128_385_actions_sha_pinning_inventory_v1.py
+          mkdir -p results
+          git rev-parse HEAD > results/final128-385-exact-head.txt
+          git rev-parse "${{ github.event.pull_request.base.sha || github.sha }}" > results/final128-385-exact-base.txt
+      - name: Install frozen pytest for local-only audit
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+      - name: Exhaustive workflow Action reference regression
+        shell: bash
+        env:
+          PYTHONPATH: "."
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_385_actions_sha_pinning_inventory_v1.py \
+            --junitxml=results/final128-385-junit.xml \
+            | tee results/final128-385-tests.log
+          python scripts/final128_385_actions_sha_pinning_inventory_v1.py \
+            --baseline-sha "${{ github.event.pull_request.base.sha || github.sha }}" \
+            --output results/final128-385-full-workflow-action-ref-inventory.json \
+            | tee results/final128-385-inventory-summary.log
+      - name: Validate stage-one no-regression and sealed SHA evidence
+        shell: bash
+        env:
+          PYTHONPATH: "."
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts.final128_385_actions_sha_pinning_inventory_v1 import (
+              CORE_FILES,EXPECTED_CORE_ACTIONS)
+          root=ET.parse("results/final128-385-junit.xml").getroot()
+          suites=[root] if root.tag=="testsuite" else list(root.findall("testsuite"))
+          assert suites
+          tests={k:sum(int(s.attrib.get(k,"0")) for s in suites)
+                 for k in ("tests","failures","errors","skipped")}
+          assert tests["tests"]>=20
+          assert all(tests[k]==0 for k in ("failures","errors","skipped"))
+          path=Path("results/final128-385-full-workflow-action-ref-inventory.json")
+          inventory=json.loads(path.read_text(encoding="utf8"))
+          assert inventory["workflow_files"]>=330
+          assert inventory["stage1_core_sha_refs_fully_pinned"] is True
+          assert inventory["baseline_comparison"]["new_unsafe_ref_regression"] is False
+          assert inventory["repository_wide_sha_enforcement_ready"] is False
+          assert inventory["provider_authority_granted"] is False
+          assert inventory["github_settings_modified"] is False
+          assert inventory["real_provider_calls"]==0
+          assert set(CORE_FILES)==set(inventory["stage1_core_paths"])
+          head=Path("results/final128-385-exact-head.txt").read_text().strip()
+          base=Path("results/final128-385-exact-base.txt").read_text().strip()
+          summary={
+            "schema":"veritas.final128.actions-385-stage1-audit-evidence.v1",
+            "head_sha":head,"base_sha":base,
+            "test_counts":tests,
+            "workflow_files_scanned":inventory["workflow_files"],
+            "action_references_total":inventory["uses_references"],
+            "remaining_mutable_external_action_findings":inventory["unsafe_references_total"],
+            "known_explicit_write_scope_occurrences":inventory["explicit_write_scope_occurrences"],
+            "core_stage1_pinning_complete":True,
+            "new_unsafe_action_reference_regressions":0,
+            "full_inventory_sha256":hashlib.sha256(path.read_bytes()).hexdigest(),
+            "required_global_sha_setting_changed":False,
+            "actual_external_provider_calls":0,
+            "native_scorer_results":None,
+            "bypass_resistance_proven":False,
+          }
+          canon=lambda x:json.dumps(x,sort_keys=True,separators=(",",":"),allow_nan=False).encode()
+          summary["self_sha256"]=hashlib.sha256(canon(summary)).hexdigest()
+          Path("results/final128-385-redacted-evidence.json").write_text(
+              json.dumps(summary,sort_keys=True,indent=2)+"\n")
+          print("FINAL128_385_CORE_ACTION_SHA_PINNING_STAGE1_ALL_WORKFLOWS_SCANNED_NO_LIVE")
+          print("GLOBAL_SHA_SETTING_NOT_READY")
+          PY
+          sha256sum \
+            scripts/final128_385_actions_sha_pinning_inventory_v1.py \
+            tests/test_final128_385_actions_sha_pinning_inventory_v1.py \
+            docs/optimization/FINAL128_385_ACTIONS_SHA_PINNING_INVENTORY_STAGE1_V1.md \
+            .github/workflows/ci.yml \
+            .github/workflows/native-veritas-benchmark.yml \
+            results/final128-385-full-workflow-action-ref-inventory.json \
+            results/final128-385-redacted-evidence.json \
+            results/final128-385-junit.xml > results/final128-385-source-evidence-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-385-all-workflow-sha-inventory-stage1-no-provider
+          path: results/final128-385-*
+          if-no-files-found: warn
