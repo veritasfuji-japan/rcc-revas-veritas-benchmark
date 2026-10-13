@@ -23,11 +23,18 @@ secrets.ANTHROPIC_API_KEY. It records filenames, job IDs, source
 SHA256, whether all jobs are literally static-FALSE, and which
 workflows still need GitHub Actions administrative disabling.
 
-The known historical set comprises 15 Task2/12/13/15 development,
+The known historical unprotected set comprises 15 Task2/12/13/15 development,
 Clean A/B and Final128 V4 through V13 manual Provider workflows.
 The auditor checks that ALL 15 frozen historical files exactly equal
-their PR-base Git blobs; changing any one fails. Other matching files
-are included in the inventory automatically.
+their PR-base Git blobs; changing any one fails. Other matching files are classified separately: a job-level protected
+Environment declaration produces a NEEDS_INDEPENDENT_PROTECTION_REVIEW
+candidate, not an automatic disable recommendation. Three historical
+Task4 Provider workflows declare dedicated protected Environments,
+although their actual reviewer, billing and single-use settings are
+still unverified by this auditor. A freeze-audit workflow that merely
+quotes a Secret name is not an actual Secret injection; the detection
+now requires a YAML-shaped Secret binding. Do not disable the three
+Task4 workflows based only on a generic text match.
 
 PR-only CI is read-only, has no Provider API secret, triggers no
 historical manual workflow, and produces SHA-only evidence. An exit
