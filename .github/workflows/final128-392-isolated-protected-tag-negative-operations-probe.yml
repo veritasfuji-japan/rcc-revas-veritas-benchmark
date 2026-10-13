@@ -1,0 +1,190 @@
+name: Final128 392 Isolated Protected Tag Negative Operations Probe
+on:
+  workflow_dispatch:
+    inputs:
+      approval_phrase:
+        description: "Only the fixed existing test tag; attempts duplicate POST, PATCH and DELETE; no Provider"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: final128-392-isolated-tag-negative-operations-single-flight-v1
+  cancel-in-progress: false
+jobs:
+  offline-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      EXPLICIT_CONSENT: ${{ inputs.approval_phrase }}
+    steps:
+      - name: Deny unauthorized dispatch before Environment review
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test "$GITHUB_REPOSITORY" = "veritasfuji-japan/rcc-revas-veritas-benchmark"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_TRIGGERING_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$EXPLICIT_CONSENT" = "I AUTHORIZE TEST TAG DUPLICATE UPDATE DELETE DENIAL NO PROVIDER"
+          echo "392_PREFLIGHT_ONLY_NO_GITHUB_WRITE_NO_PROVIDER"
+  protected-negative-operations:
+    needs: offline-preflight
+    if: needs.offline-preflight.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    permissions:
+      contents: write
+    environment:
+      name: task1-real-model-pilot
+    env:
+      GH_NEGATIVE_TEST_TOKEN: ${{ github.token }}
+    steps:
+      - name: Verify exact fixed tag, attempt expected denials once, re-read each time
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test "$GITHUB_REPOSITORY" = "veritasfuji-japan/rcc-revas-veritas-benchmark"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_TRIGGERING_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import urllib.error
+          import urllib.request
+
+          REPO = "veritasfuji-japan/rcc-revas-veritas-benchmark"
+          REF = "refs/tags/final128-task1-real-ab-once-v1-391-test-only-global-consumed"
+          EXPECTED_SHA = "d9ba430e62d37c7b776bcfc93e3d46bc51f6ae3e"
+          DIFFERENT_SHA = "c9accc3a15d97b53d0d3e140b2410f659aa0391f"
+          ROOT = "https://api.github.com/repos/" + REPO + "/git/refs"
+          TAG_URL = ROOT + "/tags/" + REF.removeprefix("refs/tags/")
+          token = os.environ["GH_NEGATIVE_TEST_TOKEN"]
+          assert token and len(token) > 10
+          assert EXPECTED_SHA != DIFFERENT_SHA
+          assert re.fullmatch(r"[0-9a-f]{40}", os.environ["GITHUB_SHA"])
+          assert os.environ["GITHUB_REF"] == "refs/heads/main"
+          assert os.environ["GITHUB_REPOSITORY"] == REPO
+          assert os.environ["GITHUB_ACTOR"] == "veritasfuji-japan"
+          assert os.environ["GITHUB_TRIGGERING_ACTOR"] == "veritasfuji-japan"
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_RUN_ATTEMPT"] == "1"
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  raise ValueError("392_REDIRECT_DENIED")
+
+          opener = urllib.request.build_opener(NoRedirect())
+          HEADERS = {
+              "Authorization": "Bearer " + token,
+              "Accept": "application/vnd.github+json",
+              "Content-Type": "application/json",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "veritas-392-isolated-test-tag-negative-only",
+          }
+          def call(method, url, payload=None):
+              if (method == "GET" and url != TAG_URL or
+                  method == "POST" and url != ROOT or
+                  method in ("PATCH", "DELETE") and url != TAG_URL or
+                  method not in ("GET", "POST", "PATCH", "DELETE")):
+                  raise ValueError("392_UNEXPECTED_TARGET")
+              data = None if payload is None else json.dumps(
+                  payload, sort_keys=True, separators=(",", ":")).encode("utf8")
+              req = urllib.request.Request(url, data=data, headers=HEADERS,
+                                           method=method)
+              try:
+                  with opener.open(req, timeout=12) as response:
+                      status = response.status
+                      raw = response.read(16385)
+                      if response.geturl() != url or len(raw) > 16384:
+                          raise ValueError("392_RESPONSE_BOUND")
+              except urllib.error.HTTPError as err:
+                  status = err.code
+                  raw = err.read(16385)
+                  if len(raw) > 16384:
+                      raise ValueError("392_ERROR_RESPONSE_BOUND")
+              except Exception as err:
+                  raise ValueError("392_AMBIGUOUS_STOP_NO_RETRY") from err
+              try:
+                  obj = json.loads(raw.decode("utf8")) if raw else {}
+              except (ValueError, UnicodeError) as err:
+                  raise ValueError("392_INVALID_RESPONSE_STOP_NO_RETRY") from err
+              if type(obj) is not dict:
+                  raise ValueError("392_RESPONSE_NOT_OBJECT")
+              return status, obj
+
+          def assert_unchanged(step):
+              status, obj = call("GET", TAG_URL)
+              if not (status == 200 and obj.get("ref") == REF
+                      and type(obj.get("object")) is dict
+                      and obj["object"].get("type") == "commit"
+                      and obj["object"].get("sha") == EXPECTED_SHA):
+                  raise ValueError("392_" + step + "_TAG_CHANGED_OR_UNKNOWN")
+
+          def explicit_duplicate_denial(status, obj):
+              if status != 422:
+                  return False
+              message = obj.get("message", "")
+              errors = obj.get("errors", [])
+              codes = {e.get("code") for e in errors if type(e) is dict} if type(errors) is list else set()
+              return ("already_exists" in codes or
+                      type(message) is str and "reference already exists" in message.lower())
+
+          def explicit_ruleset_denial(status, obj, phase):
+              if status not in (403, 422):
+                  return False
+              message = obj.get("message", "")
+              if type(message) is not str:
+                  return False
+              msg = message.lower()
+              if "repository rule violations found" not in msg:
+                  return False
+              if phase == "UPDATE":
+                  return ("cannot update this protected ref" in msg
+                          or "cannot force-push to this tag" in msg)
+              if phase == "DELETE":
+                  return ("cannot delete this protected ref" in msg
+                          or "cannot delete this tag" in msg)
+              return False
+
+          assert_unchanged("BEFORE")
+          print("392_INITIAL_TAG_FIXED_READBACK_OK", flush=True)
+
+          # One intentional duplicate POST, no retries under any outcome.
+          status, body = call("POST", ROOT, {"ref": REF, "sha": EXPECTED_SHA})
+          assert_unchanged("AFTER_DUPLICATE")
+          print("392_DUPLICATE_POST_HTTP_" + str(status), flush=True)
+          if not explicit_duplicate_denial(status, body):
+              raise ValueError("392_DUPLICATE_NOT_EXPLICITLY_DENIED")
+
+          # One forced PATCH to a different, existing commit. On unexpected
+          # success or ambiguous response: stop, never attempt DELETE.
+          status, body = call("PATCH", TAG_URL,
+                              {"sha": DIFFERENT_SHA, "force": True})
+          assert_unchanged("AFTER_UPDATE")
+          print("392_UPDATE_PATCH_HTTP_" + str(status), flush=True)
+          if not explicit_ruleset_denial(status, body, "UPDATE"):
+              raise ValueError("392_UPDATE_NOT_EXPLICIT_RULESET_DENIED")
+
+          # One DELETE against same fixed test-only tag, only after all prior
+          # denials and exact-sha readbacks succeeded.
+          status, body = call("DELETE", TAG_URL)
+          assert_unchanged("AFTER_DELETE")
+          print("392_DELETE_HTTP_" + str(status), flush=True)
+          if not explicit_ruleset_denial(status, body, "DELETE"):
+              raise ValueError("392_DELETE_NOT_EXPLICIT_RULESET_DENIED")
+
+          print("392_REAL_GITHUB_TEST_TAG_DUPLICATE_UPDATE_DELETE_DENIED_UNCHANGED", flush=True)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf8") as out:
+              out.write("Test-only GitHub tag negative operations completed.\n")
+              out.write("Ref: " + REF + "\n")
+              out.write("Expected SHA: " + EXPECTED_SHA + "\n")
+              out.write("Duplicate POST, forced PATCH, DELETE rejected; readback unchanged after each.\n")
+              out.write("No production Task1 lease, no Provider credentials/calls, no native scorer.\n")
+          PY
