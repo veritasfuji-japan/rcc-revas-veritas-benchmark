@@ -1,0 +1,119 @@
+name: Task4 376 Native-v2 Agent HTTP Ingress Bounded Gate
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-376-native-v2-agent-http-ingress-gate.yml"
+      - "scripts/task4_376_native_v2_agent_ingress_v1.py"
+      - "scripts/task4_376_native_v2_docker_ingress_audit_v1.py"
+      - "scripts/task4_375_native_v2_docker_network_audit_v1.py"
+      - "integration/current_veritas_uninterrupted/native_v2_action_capability.py"
+      - "docs/TASK4_376_NATIVE_V2_AGENT_HTTP_INGRESS_GATE_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-376-native-v2-agent-http-ingress-gate.yml"
+      - "scripts/task4_376_native_v2_agent_ingress_v1.py"
+      - "scripts/task4_376_native_v2_docker_ingress_audit_v1.py"
+      - "scripts/task4_375_native_v2_docker_network_audit_v1.py"
+      - "integration/current_veritas_uninterrupted/native_v2_action_capability.py"
+      - "docs/TASK4_376_NATIVE_V2_AGENT_HTTP_INGRESS_GATE_V1.md"
+permissions:
+  contents: read
+jobs:
+  synthetic-front-agent-http-to-native-v2-broker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 38
+    env:
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      VERITAS_SANDBOX_WRITER_TOKEN: ""
+      VERITAS_SANDBOX_READER_TOKEN: ""
+      BEN_CANONICAL_PIN: "1d3782d3aae5ff9c88036709c1a5642320cc53c2"
+      VERITAS_PIN: "9b7376ba0077365b9d89004b06c80e76c8bfadc8"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONNOUSERSITE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: benchmark
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: ${{ env.VERITAS_PIN }}
+          path: veritas_os_source
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/rcc-revas-veritas-benchmark
+          ref: ${{ env.BEN_CANONICAL_PIN }}
+          path: ben_canonical_source
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify exact source pins and Python syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C benchmark rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git -C veritas_os_source rev-parse HEAD)" = "$VERITAS_PIN"
+          test "$(git -C ben_canonical_source rev-parse HEAD)" = "$BEN_CANONICAL_PIN"
+          python -m py_compile \
+            benchmark/scripts/task4_376_native_v2_agent_ingress_v1.py \
+            benchmark/scripts/task4_376_native_v2_docker_ingress_audit_v1.py \
+            benchmark/scripts/task4_375_native_v2_docker_network_audit_v1.py \
+            benchmark/integration/current_veritas_uninterrupted/native_v2_action_capability.py \
+            benchmark/integration/current_veritas_uninterrupted/task4_374_native_v2_lineage.py
+          mkdir -p benchmark/results/task4-376
+          git -C benchmark rev-parse HEAD > benchmark/results/task4-376/exact-head.txt
+          docker version > benchmark/results/task4-376/docker-version.txt
+      - name: Untrusted agent HTTP to real pinned Native-v2 with pre-effect refusals
+        shell: bash
+        run: |
+          set -euo pipefail
+          python benchmark/scripts/task4_376_native_v2_docker_ingress_audit_v1.py \
+            --output-dir benchmark/results/task4-376 \
+            | tee benchmark/results/task4-376/runner-output.log
+          python - <<'PY'
+          import json,sys,xml.etree.ElementTree as ET
+          from pathlib import Path
+          sys.path.insert(0,"benchmark")
+          from integration.current_veritas_uninterrupted.task4_374_native_v2_lineage import (
+              verify_exact_native_v2_lineage,canonical_hash,
+          )
+          root=Path("benchmark/results/task4-376")
+          ev=json.loads((root/"task4-376-native-v2-agent-http-ingress-evidence.json").read_text())
+          old=json.loads((root/"task4-375-native-v2-docker-network-evidence.json").read_text())
+          tr=old["positive_native_v2_trace"]
+          assert len(ev["checks"])==18 and all(ev["checks"].values())
+          assert len(old["checks"])==25 and all(old["checks"].values())
+          assert len(verify_exact_native_v2_lineage(tr))==7
+          assert ev["native_v2_trace_sha256"]==canonical_hash(tr)
+          assert [x["http"] for x in ev["agent_trials"]]==[403]*6+[400,415,200,409]
+          assert ev["real_provider_calls"]==ev["bank_effects"]==ev["spend_usd"]==0
+          assert ev["production_IAM_enforced"] is False
+          assert ev["independent_external_validation"] is False
+          assert ET.parse(root/"task4-376-junit.xml").getroot().attrib["tests"]=="18"
+          assert ET.parse(root/"task4-375-junit.xml").getroot().attrib["tests"]=="25"
+          print("TASK4_376_EXACT_AGENT_REQUEST_TO_NATIVE_V2_EFFECT_NOT_PRODUCTION_PROVEN")
+          PY
+          sha256sum \
+            benchmark/scripts/task4_376_native_v2_agent_ingress_v1.py \
+            benchmark/scripts/task4_376_native_v2_docker_ingress_audit_v1.py \
+            benchmark/scripts/task4_375_native_v2_docker_network_audit_v1.py \
+            benchmark/integration/current_veritas_uninterrupted/native_v2_action_capability.py \
+            benchmark/results/task4-376/task4-376-native-v2-agent-http-ingress-evidence.json \
+            benchmark/results/task4-376/task4-376-junit.xml \
+            > benchmark/results/task4-376/source-and-evidence-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-376-native-v2-agent-http-ingress-bounded-proof
+          path: benchmark/results/task4-376/*
+          if-no-files-found: warn
