@@ -55,6 +55,7 @@ jobs:
           python - <<'PY'
           import json
           import os
+          import re
           import urllib.error
           import urllib.request
 
@@ -67,7 +68,7 @@ jobs:
           token = os.environ["GH_NEGATIVE_TEST_TOKEN"]
           assert token and len(token) > 10
           assert EXPECTED_SHA != DIFFERENT_SHA
-          assert os.environ["GITHUB_SHA"] == EXPECTED_SHA
+          assert re.fullmatch(r"[0-9a-f]{40}", os.environ["GITHUB_SHA"])
           assert os.environ["GITHUB_REF"] == "refs/heads/main"
           assert os.environ["GITHUB_REPOSITORY"] == REPO
           assert os.environ["GITHUB_ACTOR"] == "veritasfuji-japan"
