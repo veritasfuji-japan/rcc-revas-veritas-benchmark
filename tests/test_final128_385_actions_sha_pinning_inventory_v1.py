@@ -84,3 +84,15 @@ def test_symlink_and_nonworkflow_files(tmp_path):
 def test_base_requires_full_commit_sha(tmp_path,sha):
     with pytest.raises(a.Refused,match="BASE_SHA_NOT_FULL_HEX"):
         a.scan_git_commit(tmp_path,sha)
+
+
+def test_no_live_authority_even_if_every_action_is_pinned():
+    f=a.audit_workflow(".github/workflows/safe.yml",
+        "permissions:\n  contents: read\nsteps:\n"
+        "  - uses: actions/checkout@"+PINS["actions/checkout"]+"\n")
+    report=a.summarize([f],[f])
+    assert report["unsafe_references_total"]==0
+    assert report["repository_wide_sha_enforcement_ready"] is False
+    assert report["github_settings_modified"] is False
+    assert report["real_provider_calls"]==0
+    assert report["production_bypass_resistance_verified"] is False
