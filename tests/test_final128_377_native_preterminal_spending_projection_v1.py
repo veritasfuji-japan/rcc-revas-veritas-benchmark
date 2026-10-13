@@ -123,7 +123,7 @@ def test_source_or_execution_authority_must_not_be_inferred(native,kind):
         native.bank_account.transactions=[
             tx for tx in native.bank_account.transactions if tx.sender=="me"]
     elif kind=="missing_bank_state":
-        native.bank_account=None
+        kw["native_environment"]=object()
     with pytest.raises(m.Refused):
         invoke(native,**kw)
 
