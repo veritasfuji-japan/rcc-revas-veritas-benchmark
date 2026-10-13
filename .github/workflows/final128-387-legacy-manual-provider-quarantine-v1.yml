@@ -1,0 +1,122 @@
+name: Final128 387 Legacy Manual Provider Bypass Quarantine Offline
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "scripts/final128_387_legacy_manual_provider_quarantine_audit_v1.py"
+      - "tests/test_final128_387_legacy_manual_provider_quarantine_audit_v1.py"
+      - "docs/optimization/FINAL128_387_LEGACY_MANUAL_PROVIDER_QUARANTINE_V1.md"
+permissions:
+  contents: read
+jobs:
+  manual-provider-source-closure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      FINAL128_387_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      GITHUB_TOKEN: ""
+      GH_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Exact HEAD/base with no Provider credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git cat-file -e "${FINAL128_387_BASE_SHA}^{commit}"
+          for k in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL VERITAS_DATABASE_URL GITHUB_TOKEN GH_TOKEN; do
+            test -z "$(printenv "$k" || true)"
+          done
+          mkdir -p results
+          git rev-parse HEAD > results/final128-387-exact-head.txt
+          git rev-parse "${FINAL128_387_BASE_SHA}" > results/final128-387-exact-base.txt
+          python -m py_compile scripts/final128_387_legacy_manual_provider_quarantine_audit_v1.py \
+            tests/test_final128_387_legacy_manual_provider_quarantine_audit_v1.py
+      - name: Install only offline test runner
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+      - name: Prove exact historical source edits and scan ALL manual Provider-secret jobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_387_legacy_manual_provider_quarantine_audit_v1.py \
+            --junitxml=results/final128-387-junit.xml | tee results/final128-387-tests.log
+          python scripts/final128_387_legacy_manual_provider_quarantine_audit_v1.py \
+            --base-sha "${FINAL128_387_BASE_SHA}" \
+            --output results/final128-387-manual-provider-scan.json \
+            | tee results/final128-387-scan-summary.log
+      - name: Report evidence but never mark as production PROVEN
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,hashlib,xml.etree.ElementTree as ET
+          from pathlib import Path
+          xml=ET.parse("results/final128-387-junit.xml").getroot()
+          suites=[xml] if xml.tag=="testsuite" else list(xml.findall("testsuite"))
+          counts={k:sum(int(s.attrib.get(k,"0")) for s in suites)
+                  for k in ("tests","failures","errors","skipped")}
+          assert counts["tests"]>=20
+          assert all(counts[k]==0 for k in ("failures","errors","skipped"))
+          raw=Path("results/final128-387-manual-provider-scan.json")
+          data=json.loads(raw.read_text())
+          assert data["legacy_paths_checked"]==15
+          assert data["unblocked_manual_provider_secret_workflows"]==0
+          assert data["workflows_scanned"]>=330
+          assert data["github_secrets_rotated_or_revoked"] is False
+          assert data["historical_git_ref_dispatch_resistance_verified"] is False
+          assert data["production_scope_complete"] is False
+          assert data["real_provider_requests"]==0
+          assert all(x["only_job_gate_changed"] is True for x in data["legacy_evidence"])
+          proof={
+             "schema":"veritas.final128.387-legacy-manual-quarantine-evidence.v1",
+             "exact_head":Path("results/final128-387-exact-head.txt").read_text().strip(),
+             "exact_base":Path("results/final128-387-exact-base.txt").read_text().strip(),
+             "tests":counts,
+             "workflows_scanned":data["workflows_scanned"],
+             "legacy_manual_provider_jobs_quarantined":data["legacy_paths_checked"],
+             "unblocked_manual_provider_secret_workflows":0,
+             "scan_file_sha256":hashlib.sha256(raw.read_bytes()).hexdigest(),
+             "real_provider_posts":0,
+             "real_provider_spend_usd":"0.00",
+             "real_native_scorer_runs":0,
+             "old_refs_and_credential_bypass_verified":False,
+             "repository_secrets_revoked":False,
+             "production_bypass_proven":False,
+          }
+          canon=lambda o:json.dumps(o,sort_keys=True,separators=(",",":"),allow_nan=False).encode()
+          proof["self_sha256"]=hashlib.sha256(canon(proof)).hexdigest()
+          Path("results/final128-387-evidence.json").write_text(
+              json.dumps(proof,sort_keys=True,indent=2)+"\n")
+          print("FINAL128_387_15_LEGACY_MANUAL_PROVIDER_JOBS_STATIC_DENY_NO_REAL_PROVIDER")
+          PY
+          sha256sum \
+            scripts/final128_387_legacy_manual_provider_quarantine_audit_v1.py \
+            tests/test_final128_387_legacy_manual_provider_quarantine_audit_v1.py \
+            docs/optimization/FINAL128_387_LEGACY_MANUAL_PROVIDER_QUARANTINE_V1.md \
+            results/final128-387-manual-provider-scan.json \
+            results/final128-387-evidence.json \
+            results/final128-387-junit.xml > results/final128-387-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-387-legacy-manual-provider-quarantine-unscored
+          path: results/final128-387-*
+          if-no-files-found: warn
