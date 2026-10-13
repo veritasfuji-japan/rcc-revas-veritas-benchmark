@@ -74,7 +74,7 @@ def prepare_two_first_packets():
 
 def _durable_append(logpath:Path,event:dict):
     """Durably append nonsecret event before attempted provider I/O."""
-    need(type(logpath) is Path and logpath.parent.is_dir()
+    need(isinstance(logpath,Path) and logpath.parent.is_dir()
          and type(event) is dict
          and "api_key" not in str(event).lower()
          and "authorization" not in str(event).lower(),
