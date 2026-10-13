@@ -16,7 +16,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   dispatch-once:
-    if: ${{ inputs.confirmation == 'RUN_FINAL_128_V4_ONCE' }}
+    if: ${{ false }}  # #387 RETIRED: unprotected historical provider job blocked
+    # Previous historical condition: if: ${{ inputs.confirmation == 'RUN_FINAL_128_V4_ONCE' }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
