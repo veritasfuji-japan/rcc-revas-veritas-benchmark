@@ -186,7 +186,11 @@ def new_container(name,network,alias,image,argv,*,mounts=(),env=(),
 
 def wait_pg(cid):
     for _ in range(80):
-        p=docker("exec",cid,"pg_isready","-U","veritas",
+        # PostgreSQL's first-time entrypoint starts a temporary UNIX-socket
+        # server, then shuts it down before starting the final TCP listener.
+        # A socket-only pg_isready can succeed during that transient phase.
+        p=docker("exec",cid,"pg_isready","-h","127.0.0.1",
+                 "-p","5432","-U","veritas",
                  "-d","veritas_action_capability",timeout=6,check=False)
         if p.returncode==0:return
         time.sleep(.35)
