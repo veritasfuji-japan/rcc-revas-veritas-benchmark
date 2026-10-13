@@ -1,0 +1,119 @@
+name: Final128 391 Task1 Isolated Tag Source Readonly Audit
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-391-task1-isolated-github-tag-once-probe.yml"
+      - ".github/workflows/final128-391-isolated-tag-source-readonly-audit-v1.yml"
+      - "scripts/final128_391_isolated_tag_once_source_audit_v1.py"
+      - "tests/test_final128_391_isolated_tag_once_source_audit_v1.py"
+      - "docs/optimization/FINAL128_391_TASK1_ISOLATED_SINGLETON_TAG_STAGE_V1.md"
+permissions:
+  contents: read
+jobs:
+  isolated-once-source-and-ruleset-readonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Confirm exact HEAD and zero Provider credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          for var in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY GH_TOKEN GITHUB_TOKEN; do
+            test -z "$(printenv "$var" || true)"
+          done
+          mkdir -p results
+          git rev-parse HEAD > results/final128-391-exact-head.txt
+          python -m py_compile scripts/final128_391_isolated_tag_once_source_audit_v1.py tests/test_final128_391_isolated_tag_once_source_audit_v1.py
+      - name: Install only the offline test runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+      - name: Negative source tests and public ruleset and ref GET only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_final128_391_isolated_tag_once_source_audit_v1.py \
+            --junitxml=results/final128-391-junit.xml | tee results/final128-391-tests.log
+          python scripts/final128_391_isolated_tag_once_source_audit_v1.py \
+            --output results/final128-391-offline-source-audit.json
+          python scripts/final128_391_isolated_tag_once_source_audit_v1.py \
+            --observe --output results/final128-391-github-readonly-rule-observation.json
+      - name: Verify zero-write evidence classification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,hashlib,xml.etree.ElementTree as ET
+          from pathlib import Path
+          root=ET.parse("results/final128-391-junit.xml").getroot()
+          suites=[root] if root.tag=="testsuite" else list(root.findall("testsuite"))
+          assert suites
+          counts={k:sum(int(s.attrib.get(k,"0")) for s in suites)
+                  for k in ("tests","failures","errors","skipped")}
+          assert counts["tests"]>=35
+          assert all(counts[k]==0 for k in ("failures","errors","skipped"))
+          offline=json.loads(Path("results/final128-391-offline-source-audit.json").read_text())
+          live=json.loads(Path("results/final128-391-github-readonly-rule-observation.json").read_text())
+          assert offline["status"]=="STAGED_ISOLATED_GITHUB_WRITE_NOT_EXECUTED"
+          assert offline["actual_github_tag_posts_in_this_audit"]==0
+          assert live["configured_rule_covers_isolated_tag"] is True
+          assert live["github_write_from_this_check"] is False
+          assert live["creation_delete_update_negative_experiments_executed"] is False
+          assert live["actual_tag_immutability_proven_by_this_readback"] is False
+          assert live["task1_paid_provider_authorized"] is False
+          assert live["actual_github_tag_posts_in_this_audit"]==0
+          assert live["isolated_tag_status"] in ("absent","present")
+          assert live["task1_live_provider_authorized"] is False
+          sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          report={
+            "schema":"veritas.final128.task1-391-source-rule-probe-readonly-evidence.v1",
+            "head_sha":Path("results/final128-391-exact-head.txt").read_text().strip(),
+            "tests":counts,
+            "source_sha256":sha("results/final128-391-offline-source-audit.json"),
+            "public_rule_observation_sha256":sha("results/final128-391-github-readonly-rule-observation.json"),
+            "actual_github_mutations":0,
+            "real_provider_calls":0,
+            "native_scorer_runs":0,
+            "production_issuer_proven":False,
+            "bypass_resistance_proven":False,
+            "task1_paid_run_allowed":False,
+          }
+          report["self_sha256"]=hashlib.sha256(json.dumps(report,sort_keys=True,
+             separators=(",",":"),allow_nan=False).encode()).hexdigest()
+          Path("results/final128-391-evidence.json").write_text(
+             json.dumps(report,sort_keys=True,indent=2)+"\n")
+          print("FINAL128_391_SOURCE_RULE_READONLY_NO_TAG_WRITE_NO_PROVIDER")
+          PY
+          sha256sum \
+            .github/workflows/final128-391-task1-isolated-github-tag-once-probe.yml \
+            scripts/final128_391_isolated_tag_once_source_audit_v1.py \
+            tests/test_final128_391_isolated_tag_once_source_audit_v1.py \
+            docs/optimization/FINAL128_391_TASK1_ISOLATED_SINGLETON_TAG_STAGE_V1.md \
+            results/final128-391-offline-source-audit.json \
+            results/final128-391-github-readonly-rule-observation.json \
+            results/final128-391-junit.xml \
+            results/final128-391-evidence.json > results/final128-391-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-391-isolated-test-tag-probe-source-readonly-unscored
+          path: results/final128-391-*
+          if-no-files-found: warn
