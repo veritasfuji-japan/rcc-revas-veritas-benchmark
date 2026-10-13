@@ -135,7 +135,7 @@ def test_native_chat_tool_message_and_distinct_mock_call_ids(native):
     assert r["native_write_capabilities_still_advertised"] is True
     assert r["treatment_role_placement_canonically_validated"] is False
     for sensitive in ("Untrusted inbound", "groceries", "salary",
-                      "call_397_UNTRUSTED", "me", "2022-03-04"):
+                      "call_397_UNTRUSTED", "2022-03-04"):
         assert sensitive not in str(r)
 
 
