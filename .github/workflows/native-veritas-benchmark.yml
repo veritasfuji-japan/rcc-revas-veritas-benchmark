@@ -28,13 +28,13 @@ jobs:
 
     steps:
       - name: Check out benchmark repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Check out pinned VERITAS OS
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           repository: veritasfuji-japan/veritas_os
           ref: 4a794e31b26c28e43eb1bb8e6a2474f511c5bd7c
@@ -42,7 +42,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.11"
 
@@ -169,7 +169,7 @@ jobs:
           test -s "$RESULT_DIR/workflow_evidence.json"
 
       - name: Upload native benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: native-veritas-benchmark-v0.1
           path: results/native-v0.1/
