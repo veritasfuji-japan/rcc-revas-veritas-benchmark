@@ -1,83 +1,72 @@
-# Final128 #387 — Historical manual Provider jobs: default-DENY source quarantine
+# Final128 #387 — Readiness audit for disabling historical manual Provider workflows
 
-## What is being stopped
+## Why the draft direction changed
 
-The 15 source files listed in `scripts/final128_387_legacy_manual_provider_quarantine_audit_v1.py`
-include the four Task2/12/13/15 development validation workflows,
-two historical clean A/B final runners, and nine Final128 legacy
-manual-dispatch workflows (V4/V5/V7/V7-v2/V8/V10/V11/V12/V13).
-The old workflows were manually dispatchable and directly referenced
-`secrets.OPENAI_API_KEY` without a protected job Environment.
+An initial draft inserted a literal static FALSE job condition in 15
+historical manually dispatchable workflows. Multiple frozen historical
+integrity audits failed because even one source-line change invalidates
+the pinned workflow blob. **Every old workflow was restored byte-for-byte
+from main before this PR can be merged.**
 
-**#387 makes the single executable job in each such file fail at
-GitHub's job admission stage**, before checkout, secret injection,
-network transport, Native bank work, or Provider billing.
-The exact job expression is `${{ false }}` (static,
-not operator-controlled). For historical jobs with an original
-confirmation expression, that line is preserved as an adjacent comment.
-The original scripts, historical argument shapes, and evidence remain
-in the repository. No historical artifacts or test score are altered.
+The durable solution for these frozen historical entries is to **disable
+the GitHub Actions workflow ID administratively** rather than change
+the tracked source. This PR builds the read-only inventory and evidence
+for that follow-on operation. The PR does NOT itself disable any live
+workflow, alter a GitHub setting, grant authority or make a paid call.
 
-This is a deliberate retirement of unprotected legacy live entries.
-A GitHub manual dispatch of these files on the updated main source
-may still show a workflow run, but the paid-capable job is skipped.
+## Scope and evidence
 
-## Whole-workflow survey, independent detection
+The new auditor scans every current repository workflow for a
+workflow_dispatch event plus references to one of the known Provider
+Secret names: secrets.OPENAI_API_KEY, secrets.TASK4_OPENAI_API_KEY or
+secrets.ANTHROPIC_API_KEY. It records filenames, job IDs, source
+SHA256, whether all jobs are literally static-FALSE, and which
+workflows still need GitHub Actions administrative disabling.
 
-The new script scans **every** actual workflow file in
-`.github/workflows` (expected at least 330), identifies
-manual-dispatch workflows that reference known Provider secrets
-`OPENAI_API_KEY`, `TASK4_OPENAI_API_KEY` or `ANTHROPIC_API_KEY`,
-and rejects any such file if it has any job without a literal
-`${{ false }}` at job level. It independently checks the
-15 edited workflows against the exact immutable PR-base Git blob:
-**only the job-level stop and historical-comment addition are allowed**.
-Unexpected changes to triggers, model code, billing flags, runner
-commits, README, Secret expressions, workflow permissions or
-external dependencies are rejected.
+The known historical set comprises 15 Task2/12/13/15 development,
+Clean A/B and Final128 V4 through V13 manual Provider workflows.
+The auditor checks that ALL 15 frozen historical files exactly equal
+their PR-base Git blobs; changing any one fails. Other matching files
+are included in the inventory automatically.
 
-The PR-only read-only CI installs no Provider client and supplies no
-credentials. No old manual workflow is dispatched by #387 CI.
+PR-only CI is read-only, has no Provider API secret, triggers no
+historical manual workflow, and produces SHA-only evidence. An exit
+code 0 from the inventory proves successful IDENTIFICATION; it does
+not claim the legacy Provider routes have actually been disabled.
 
-## Important bypass limitations — do not claim PROD PROVEN
+## Required GitHub administrative action (NOT done by #387)
 
-**Stopping jobs on the current branch is not a global execution
-authority proof.** The old workflows exist in earlier Git objects.
-GitHub may allow a user with sufficient privileges to dispatch old
-branches/refs or modify workflows. Repository-level secrets can be
-accessible to other workflow files or privileged authors, independent
-of which job is skipped. Separately installed API credentials may
-also exist outside this repository, and some historical jobs use a
-database secret without a Provider key.
+For each identified workflow, an authorized repository admin can
+use Actions -> choose workflow -> '...' -> Disable workflow.
+The equivalent REST call, when separately approved and available,
+is PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/disable.
 
-To close **credential-side** bypass rather than merely 15 source paths:
-1. **Immediately revoke/rotate** legacy shared Provider credentials
-   at the provider, and remove any repo-wide Provider secret from
-   Actions secrets after independent inventory. Avoid disclosing its
-   value and confirm whether other approved workflows still depend on it.
-2. Store a fresh, limited-capability Task1 API key **only in the
-   dedicated protected** `task1-real-model-pilot` Environment;
-   never provide that credential to old repo-wide workflows.
-3. Verify project/account hard spending stop, locked trusted workflow
-   source, exact main, protected issuer/tag creation and consumption,
-   unforgeable fresh approval, network/IAM/credential controls and
-   independent test of all bypasses before any paid run.
-4. Review DB-only manually dispatched workflows and other non-OpenAI
-   provider/secret aliases; this scanner only audits a specific
-   Provider Secret name set. Keep the #385/#386 repository-wide SHA
-   hardening separate and do not enable global pinning prematurely.
+Then independently read each workflow's GitHub Actions live status
+and verify disabled_manually (or GitHub's equivalent disabled state).
+The connected GitHub API available to this PR cannot inspect that
+administrative workflow state. Until verified, the inventory's
+workflow-state-verification flag MUST remain false.
 
-No GitHub admin settings or secrets were changed by this PR.
-No actual provider calls, Native scorer, billing charges or Utility
-measurements were made.
+## Remaining credential bypass
+
+Disabling a workflow does not revoke a repo-level Provider Secret,
+prevent an admin from re-enabling the workflow, or prove old-ref and
+alternate workflow routes blocked. A separate admin should inventory
+actual consumers, then revoke/rotate old Provider credentials and
+place newly scoped credentials ONLY in the protected Task1 Environment
+after independent project cost, approval and one-use issuer checks.
+
+DB-only effect workflows, unfamiliar secret aliases, privileged
+workflow mutation, GitHub account compromise and network-level bypass
+remain outside the claimed scope. No official Task1 Utility/Attack
+Scorer run is performed.
 
 ## Merge gate
 
-Check exact HEAD and exact base, no skipped/failed tests, all common
-CI success, dedicated artifact SHA and complete scan. Do not
-recommend paid Task1 execution or claim credential bypass resistance.
-Human/security review is needed before merging a high-impact
-retirement; legacy manual workflow operators must know they are disabled.
+Only four new files should change (auditor, tests, dedicated read-only
+CI, document). All 15 original manual Provider workflow blobs must be
+exactly unchanged. All shared CI and the dedicated audit must be green,
+artifact SHA checked, and unverified disablement explicitly reported.
 
-Historical V13 reported A Utility 93/128, B Utility 64/128,
-B injection success 0/128. **These are NOT updated here.**
+Historical V13 A Utility 93/128, B Utility 64/128 and B attack success
+0/128 remain historical, not new measurements.
