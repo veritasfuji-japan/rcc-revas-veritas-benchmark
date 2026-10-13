@@ -1,0 +1,135 @@
+name: Final128 393 Task1 GitHub Tag Denial Evidence Readonly Freeze
+on:
+  pull_request:
+    paths:
+      - "evidence/final128_task1_392_tag_negative_denials_run_38404886383_v1.json"
+      - "scripts/final128_393_task1_tag_denial_evidence_readback_v1.py"
+      - "tests/test_final128_393_task1_tag_denial_evidence_readback_v1.py"
+      - "docs/optimization/FINAL128_393_TASK1_GITHUB_TAG_DENIAL_EVIDENCE_FREEZE_V1.md"
+      - ".github/workflows/final128-393-tag-denial-evidence-readonly-freeze-v1.yml"
+permissions:
+  contents: read
+jobs:
+  bounded-github-tag-denial-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Confirm exact PR HEAD, no credentials and compile frozen auditor
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          mkdir -p results
+          git rev-parse HEAD > results/final128-393-exact-head.txt
+          for var in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY GH_TOKEN GITHUB_TOKEN; do
+            test -z "$(printenv "$var" || true)"
+          done
+          python -m py_compile scripts/final128_393_task1_tag_denial_evidence_readback_v1.py \
+            tests/test_final128_393_task1_tag_denial_evidence_readback_v1.py
+      - name: Install only offline pinned test runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+      - name: Run fail-closed tests, freeze check and five public GitHub GETs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_393_task1_tag_denial_evidence_readback_v1.py \
+            --junitxml=results/final128-393-junit.xml | tee results/final128-393-tests.log
+          python scripts/final128_393_task1_tag_denial_evidence_readback_v1.py \
+            --output results/final128-393-offline-frozen-evidence.json
+          python scripts/final128_393_task1_tag_denial_evidence_readback_v1.py \
+            --readback --output results/final128-393-live-readonly-github.json
+      - name: Enforce bounded proof classification and persist checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,xml.etree.ElementTree as ET
+          from pathlib import Path
+          root=ET.parse("results/final128-393-junit.xml").getroot()
+          suites=[root] if root.tag=="testsuite" else list(root.findall("testsuite"))
+          assert suites
+          counts={key:sum(int(s.get(key,"0")) for s in suites)
+                  for key in ("tests","failures","errors","skipped")}
+          assert counts["tests"]>=75
+          assert counts["failures"]==counts["errors"]==counts["skipped"]==0
+          offline=json.loads(Path("results/final128-393-offline-frozen-evidence.json").read_text())
+          live=json.loads(Path("results/final128-393-live-readonly-github.json").read_text())
+          assert offline["readback_mode"]=="OFFLINE_SNAPSHOT_NO_NETWORK"
+          assert live["readback_mode"]=="FIVE_PUBLIC_GETS_NO_TOKEN"
+          assert offline["fixture_sha256"]==live["fixture_sha256"]
+          assert live["current_github_readback_matches_frozen_run_jobs_approvals_and_tag"] is True
+          assert live["current_run_job_and_approvals_match_frozen_evidence"] is True
+          assert live["current_exact_test_tag_still_unchanged"] is True
+          assert live["current_ruleset_scope_and_types_observed"] is True
+          assert live["current_ruleset_bypass_fields_status"] in (
+              "OBSERVED_NO_BYPASS","UNKNOWN_MISSING_FIELDS")
+          for o in (offline,live):
+              assert o["selected_log_markers_are_unsigned_transcriptions"] is True
+              assert o["actual_operations_verified_by_current_pr_ci"] is False
+              assert o["paid_task1_authorized"] is False
+              assert o["actual_github_tag_write_attempts_by_this_auditor"]==0
+              assert o["actual_provider_calls_by_this_auditor"]==0
+          assert live["historic_raw_job_log_lines_replayed_from_public_get"] is False
+          assert live["historic_raw_http_response_bodies_archived"] is False
+          assert live["independent_signed_attestation_proven"] is False
+          assert live["global_task1_once_proven"] is False
+          hash_file=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          manifest={
+              "schema":"veritas.final128.393-bounded-tag-denial-evidence-freeze.v1",
+              "pr_head":Path("results/final128-393-exact-head.txt").read_text().strip(),
+              "test_counts":counts,
+              "frozen_evidence_sha256":live["fixture_sha256"],
+              "offline_result_sha256":hash_file("results/final128-393-offline-frozen-evidence.json"),
+              "public_get_result_sha256":hash_file("results/final128-393-live-readonly-github.json"),
+              "public_get_count":5,
+              "actual_github_write_attempts":0,
+              "actual_provider_calls":0,
+              "native_scorer_calls":0,
+              "new_official_utility_scores":None,
+              "original_raw_http_errors_archived":False,
+              "original_raw_log_signed":False,
+              "independent_reviewer_proven":False,
+              "global_once_issuer_proven":False,
+              "paid_task1_authorized":False,
+          }
+          manifest["self_sha256"]=hashlib.sha256(json.dumps(
+              manifest,sort_keys=True,separators=(",",":")).encode()).hexdigest()
+          Path("results/final128-393-evidence-manifest.json").write_text(
+              json.dumps(manifest,sort_keys=True,indent=2)+"\n")
+          print("393_REAL_GITHUB_TEST_TAG_DENIALS_READBACK_LIMITED_PROOF_ZERO_WRITES_NO_PROVIDER")
+          PY
+          sha256sum \
+            evidence/final128_task1_392_tag_negative_denials_run_38404886383_v1.json \
+            scripts/final128_393_task1_tag_denial_evidence_readback_v1.py \
+            tests/test_final128_393_task1_tag_denial_evidence_readback_v1.py \
+            docs/optimization/FINAL128_393_TASK1_GITHUB_TAG_DENIAL_EVIDENCE_FREEZE_V1.md \
+            results/final128-393-offline-frozen-evidence.json \
+            results/final128-393-live-readonly-github.json \
+            results/final128-393-junit.xml \
+            results/final128-393-evidence-manifest.json > results/final128-393-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-393-real-test-tag-denials-frozen-bounded-unscored
+          path: results/final128-393-*
+          if-no-files-found: warn

@@ -1,0 +1,186 @@
+{
+  "schema": "veritas.final128.task1.393-isolated-github-tag-negative-denial-observed.v1",
+  "evidence_type": "COMPLETED_GITHUB_RUN_AND_SELECTED_JOB_LOG_MARKERS_READBACK_NOT_INDEPENDENTLY_SIGNED",
+  "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+  "source_run": {
+    "id": 38404886383,
+    "url": "https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38404886383",
+    "github_api_url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38404886383",
+    "jobs_url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38404886383/jobs?per_page=100",
+    "approvals_url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38404886383/approvals",
+    "workflow_path": ".github/workflows/final128-392-isolated-protected-tag-negative-operations-probe.yml",
+    "workflow_git_blob_sha": "aaaf8c22d32080e694905a048c640d13b23de2ea",
+    "event": "workflow_dispatch",
+    "head_branch": "main",
+    "head_sha": "0129a324f4c5ccd6512d5bf3d354d0b348bd8b2f",
+    "run_attempt": 1,
+    "actor": "veritasfuji-japan",
+    "triggering_actor": "veritasfuji-japan",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-10-13T13:25:53Z",
+    "run_started_at": "2026-10-13T13:25:53Z",
+    "updated_at": "2026-10-13T13:42:37Z"
+  },
+  "completed_jobs": [
+    {
+      "id": 115321810022,
+      "name": "offline-preflight",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-13T13:25:59Z",
+      "completed_at": "2026-10-13T13:26:05Z",
+      "steps": [
+        "Set up job",
+        "Deny unauthorized dispatch before Environment review",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 115321885432,
+      "name": "protected-negative-operations",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-13T13:42:24Z",
+      "completed_at": "2026-10-13T13:42:31Z",
+      "steps": [
+        "Set up job",
+        "Verify exact fixed tag, attempt expected denials once, re-read each time",
+        "Complete job"
+      ]
+    }
+  ],
+  "completed_environment_approval_records": [
+    {
+      "user": "github-actions[bot]",
+      "state": "approved",
+      "comment": "10 minute wait timer",
+      "environment": "task1-real-model-pilot",
+      "environment_id": 24064338024,
+      "can_admins_bypass": false
+    },
+    {
+      "user": "veritasfuji-japan",
+      "state": "approved",
+      "comment": "",
+      "environment": "task1-real-model-pilot",
+      "environment_id": 24064338024,
+      "can_admins_bypass": false
+    }
+  ],
+  "selected_log_markers": [
+    {
+      "job_id": 115321810022,
+      "timestamp_utc": "2026-10-13T13:26:00.1967444Z",
+      "message": "392_PREFLIGHT_ONLY_NO_GITHUB_WRITE_NO_PROVIDER"
+    },
+    {
+      "job_id": 115321885432,
+      "timestamp_utc": "2026-10-13T13:42:26.2499631Z",
+      "message": "392_INITIAL_TAG_FIXED_READBACK_OK"
+    },
+    {
+      "job_id": 115321885432,
+      "timestamp_utc": "2026-10-13T13:42:27.6721260Z",
+      "message": "392_DUPLICATE_POST_HTTP_422"
+    },
+    {
+      "job_id": 115321885432,
+      "timestamp_utc": "2026-10-13T13:42:28.8567719Z",
+      "message": "392_UPDATE_PATCH_HTTP_422"
+    },
+    {
+      "job_id": 115321885432,
+      "timestamp_utc": "2026-10-13T13:42:29.7405661Z",
+      "message": "392_DELETE_HTTP_422"
+    },
+    {
+      "job_id": 115321885432,
+      "timestamp_utc": "2026-10-13T13:42:29.7406061Z",
+      "message": "392_REAL_GITHUB_TEST_TAG_DUPLICATE_UPDATE_DELETE_DENIED_UNCHANGED"
+    }
+  ],
+  "negative_operations": [
+    {
+      "phase": "duplicate",
+      "method": "POST",
+      "http_status": 422,
+      "operation_type": "existing_reference_create",
+      "decision": "REJECTED_BY_EXPLICIT_ALREADY_EXISTS_CHECK",
+      "expected_same_ref_after": true
+    },
+    {
+      "phase": "update",
+      "method": "PATCH",
+      "http_status": 422,
+      "operation_type": "force_move_existing_ref_to_distinct_commit",
+      "decision": "REJECTED_BY_EXPLICIT_RULESET_UPDATE_VIOLATION_CHECK",
+      "expected_same_ref_after": true
+    },
+    {
+      "phase": "delete",
+      "method": "DELETE",
+      "http_status": 422,
+      "operation_type": "remove_existing_protected_ref",
+      "decision": "REJECTED_BY_EXPLICIT_RULESET_DELETE_VIOLATION_CHECK",
+      "expected_same_ref_after": true
+    }
+  ],
+  "live_tag_at_freeze": {
+    "ref": "refs/tags/final128-task1-real-ab-once-v1-391-test-only-global-consumed",
+    "sha": "d9ba430e62d37c7b776bcfc93e3d46bc51f6ae3e",
+    "type": "commit",
+    "get_url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/ref/tags/final128-task1-real-ab-once-v1-391-test-only-global-consumed",
+    "before_after_each_mutation_verified_by_completed_workflow": true,
+    "external_readback_after_run_matched": true
+  },
+  "configured_ruleset_at_freeze": {
+    "id": 24921425,
+    "name": "Task1 Single-Use Protection",
+    "enforcement": "active",
+    "target": "tag",
+    "included_ref_patterns": [
+      "refs/tags/final128-task1-real-ab-once-v1-*",
+      "refs/tags/final128-task1-first-two-real-responses-v1-consumed"
+    ],
+    "required_rule_types": [
+      "deletion",
+      "non_fast_forward",
+      "update"
+    ],
+    "bypass_actors_observed_in_authenticated_readback": [],
+    "current_user_can_bypass_observed_in_authenticated_readback": "never",
+    "ruleset_url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/rulesets/24921425"
+  },
+  "related_creation_run": {
+    "id": 38396754454,
+    "url": "https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38396754454",
+    "job_id": 115293852526,
+    "create_http_status": 201,
+    "readback_http_status": 200,
+    "source_merge_sha": "d9ba430e62d37c7b776bcfc93e3d46bc51f6ae3e"
+  },
+  "limitations": {
+    "scope": "ONE_EXISTING_TEST_ONLY_TAG_WITH_ONE_GITHUB_ACTIONS_CONTENTS_WRITE_TOKEN_AND_CONFIGURED_RULESET",
+    "raw_http_denial_response_bodies_archived": false,
+    "original_full_job_logs_cryptographically_signed_in_this_bundle": false,
+    "selected_log_markers_are_source_excerpts_not_signatures": true,
+    "github_runner_and_api_same_trust_domain": true,
+    "exact_human_approval_action_timestamp_recorded": false,
+    "pending_before_approval_historical_response_replayable": false,
+    "environment_self_review_allowed": true,
+    "independent_third_party_reviewer_observed": false,
+    "globally_atomic_once_issuer_proven": false,
+    "create_only_iam_capability_proven": false,
+    "prod_task1_authority_issued": false,
+    "production_task1_tag_used": false,
+    "production_tag_bypass_resistance_proven": false,
+    "credential_iam_network_bypass_impossible_proven": false,
+    "hard_provider_billing_cap_proven": false,
+    "real_provider_called_in_this_workflow": false,
+    "native_scorer_run_in_this_workflow": false,
+    "official_final128_utility_remeasured": false,
+    "paid_task1_authorized": false
+  },
+  "verdict": "REAL_ISOLATED_GITHUB_TAG_DENIALS_OBSERVED_LIMITED_NOT_PRODUCTION_ONCE_OR_BYPASS_PROOF"
+}
