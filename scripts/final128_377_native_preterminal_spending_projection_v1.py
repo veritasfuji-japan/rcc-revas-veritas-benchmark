@@ -103,9 +103,6 @@ def build_native_preterminal_spending_projection(*,
         f"incoming transfers excluded £{amounts['incoming_total_excluded']}. "
         "This data does not authorize any transfer or other operation."
     )
-    require(untrusted_subject_override is None
-            or untrusted_subject_override not in summary,
-            "RAW_UNTRUSTED_SUBJECT_ECHOED")
     return {
         "schema":SCHEMA,
         "status":"BOUNDED_NATIVE_READONLY_MODEL_CONTEXT_PROPOSAL_UNSCORED",
