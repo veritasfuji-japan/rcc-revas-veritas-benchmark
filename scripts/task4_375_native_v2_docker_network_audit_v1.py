@@ -243,7 +243,7 @@ def probe_agent(name,role,network,sink_ip,root,ca_cert,out):
     finally:
         docker("rm","-f",cid,timeout=20,check=False)
 
-def proof(out):
+def proof(out, *, agent_ingress=False):
     out.mkdir(parents=True,exist_ok=True)
     insist(not any(os.environ.get(x) for x in SENSITIVE),
            "EXTERNAL_OR_PAID_API_SECRETS_IN_CI")
@@ -384,16 +384,64 @@ def proof(out):
                 migration.stdout+migration.stderr)
             insist(migration.returncode==0,"NATIVE_V2_POSTGRES_MIGRATION_FAILED")
 
-            native=docker("exec","--workdir","/source/veritas_os_source",
-                gateway,"python","-B",
-                "/source/benchmark/integration/current_veritas_uninterrupted/native_v2_action_capability.py",
-                "--veritas-root","/source/veritas_os_source",
-                "--output","/output/native-v2-authorized-lineage.json",
-                timeout=360,check=False)
-            (out/"native-v2-gateway-execution.log").write_text(
-                native.stdout+native.stderr)
-            insist(native.returncode==0,
-                   "REAL_NATIVE_V2_DOCKER_EXECUTION_FAILED")
+            ingress_client=None
+            ingress_client_snap=None
+            if agent_ingress:
+                # #376: the trusted broker cannot initiate this positive
+                # candidate by itself. Only a front-only untrusted agent HTTP
+                # request may trigger the native authorization/effect path.
+                launch=docker("exec","--detach",
+                    "--workdir","/source/veritas_os_source",gateway,
+                    "python","-B",
+                    "/source/benchmark/scripts/task4_376_native_v2_agent_ingress_v1.py",
+                    "server","--output","/output",
+                    timeout=20,check=False)
+                insist(launch.returncode==0,
+                       "AGENT_HTTP_INGRESS_LISTENER_START_FAILED")
+                client_id=new_container(
+                    "task4-376-agent-client-"+tag,front,
+                    "task4-376-agent-client",PYIMAGE,
+                    ["python","-B","/agent_ingress.py","client"],
+                    mounts=[(ROOT/"scripts/task4_376_native_v2_agent_ingress_v1.py",
+                             "/agent_ingress.py",True)],
+                    memory="128m")
+                containers.append(client_id)
+                ingress_client_snap=inspect(client_id,"task4-376-front-client",
+                    {front},source_mounts=["/agent_ingress.py"],
+                    strict_role=True)
+                agent_result=docker("start","--attach",client_id,
+                    timeout=480,check=False)
+                (out/"task4-376-agent-http-client.log").write_text(
+                    agent_result.stdout+agent_result.stderr)
+                final_state=json.loads(docker("inspect",client_id).stdout)[0]["State"]
+                insist(final_state["ExitCode"]==0,
+                       "AGENT_INGRESS_CLIENT_NOT_SUCCESSFUL")
+                records=[json.loads(line) for line in agent_result.stdout.splitlines()
+                         if line.startswith("{")]
+                insist(len(records)==1,"AGENT_INGRESS_SINGLE_RECORD_REQUIRED")
+                ingress_client=records[0]
+                insist(len(ingress_client["cases"])==10 and
+                       [x["http"] for x in ingress_client["cases"]]==
+                       [403]*6+[400,415,200,409],
+                       "AGENT_INGRESS_NEGATIVE_POSITIVE_REPLAY_WRONG")
+                receipt_path=output/"task4-376-broker-receipt.json"
+                insist(receipt_path.is_file(),"BROKER_INGRESS_RECEIPT_MISSING")
+                broker_receipt=json.loads(receipt_path.read_text())
+                insist(broker_receipt==ingress_client["ingress_positive"],
+                       "AGENT_CLIENT_BROKER_RECEIPT_MISMATCH")
+                (out/"task4-376-broker-receipt.json").write_text(
+                    json.dumps(broker_receipt,indent=2,sort_keys=True)+"\n")
+            else:
+                native=docker("exec","--workdir","/source/veritas_os_source",
+                    gateway,"python","-B",
+                    "/source/benchmark/integration/current_veritas_uninterrupted/native_v2_action_capability.py",
+                    "--veritas-root","/source/veritas_os_source",
+                    "--output","/output/native-v2-authorized-lineage.json",
+                    timeout=360,check=False)
+                (out/"native-v2-gateway-execution.log").write_text(
+                    native.stdout+native.stderr)
+                insist(native.returncode==0,
+                       "REAL_NATIVE_V2_DOCKER_EXECUTION_FAILED")
             report_path=output/"native-v2-authorized-lineage.json"
             insist(report_path.is_file(),"ACTUAL_NATIVE_V2_REPORT_REQUIRED")
             report=json.loads(report_path.read_text())
@@ -417,6 +465,23 @@ def proof(out):
                    "NATIVE_V2_SAME_TARGET_ONE_EFFECT_NOT_RECONCILED")
             (out/"native-v2-authorized-lineage.json").write_text(
                 json.dumps(report,sort_keys=True,indent=2)+"\n")
+            if agent_ingress:
+                insist(ingress_client is not None and
+                       ingress_client_snap["networks"]==[front],
+                       "INGRESS_CLIENT_NOT_FRONT_ONLY")
+                insist(report.get("task4_376_ingress_request_digest")==
+                       ingress_client["ingress_positive"]["request_digest"] and
+                       report.get("task4_376_ingress_request_id")==
+                       ingress_client["ingress_positive"]["request_id"] and
+                       report.get("task4_376_input_candidate_sha256")==
+                       trace["decision"]["candidate_sha256"]==
+                       ingress_client["ingress_positive"]["candidate_sha256"] and
+                       ingress_client["ingress_positive"]["trace_sha256"]==
+                       canonical_hash(trace) and
+                       report["task4_376_untrusted_request_is_execution_authority"] is False,
+                       "NATIVE_V2_INGRESS_REQUEST_TO_EFFECT_IDENTITY_BREAK")
+                (out/"task4-376-agent-http-evidence.json").write_text(
+                    json.dumps(ingress_client,indent=2,sort_keys=True)+"\n")
             for role,cid in (("sink",sink),("gateway",gateway),("postgres",pg)):
                 logs=docker("logs",cid,check=False,timeout=25)
                 (out/(role+"-service-logs.txt")).write_text(
@@ -481,7 +546,8 @@ def proof(out):
                     "sandbox_image":sink_snap["image_id"],
                     "postgres_image":pg_snap["image_id"]},
                 "networks":[front_info,back_info],
-                "roles":[sink_snap,gateway_snap,pg_snap,front_snap,rogue_snap],
+                "roles":[sink_snap,gateway_snap,pg_snap,front_snap,rogue_snap]+
+                    ([ingress_client_snap] if agent_ingress else []),
                 "tls":tls,
                 "probe_front":front_result,
                 "probe_backend_without_credential":rogue_result,
@@ -492,7 +558,9 @@ def proof(out):
                 "real_provider_calls":0,"real_bank_effects":0,
                 "provider_spend_usd":0,
                 "trusted_host_docker_administrator":True,
-                "untrusted_agent_cannot_submit_unreviewed_action_to_gateway_test":True,
+                "untrusted_agent_cannot_submit_unreviewed_action_to_gateway_test":not agent_ingress,
+                "agent_submitted_bounded_request_to_real_broker_http_ingress_test":
+                    bool(agent_ingress),
                 "all_authority_signals_are_synthetic":True,
                 "actual_production_IAM_enforced":False,
                 "independent_external_audit":False,
@@ -500,6 +568,7 @@ def proof(out):
                 "local_target_owned_effect_is_real_enterprise_effect":False,
                 "runtime_network_gate_is_production_deployed":False,
                 "test_key_or_token_material_exported":False,
+                "task4_376_agent_ingress_evidence":ingress_client if agent_ingress else None,
                 "source_sha256":{
                     f:sha256_file(ROOT/f) for f in SOURCE_FILES},
             }
