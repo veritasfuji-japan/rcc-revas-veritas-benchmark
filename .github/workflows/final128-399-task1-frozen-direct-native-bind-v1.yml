@@ -1,0 +1,174 @@
+name: Final128 399 Frozen Task1 Direct Native Bind Source
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-399-task1-frozen-direct-native-bind-v1.yml"
+      - "scripts/final128_399_task1_frozen_direct_native_bind_v1.py"
+      - "tests/test_final128_399_task1_frozen_direct_native_bind_v1.py"
+      - "docs/optimization/FINAL128_399_TASK1_FROZEN_DIRECT_NATIVE_BIND_V1.md"
+      - "contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json"
+permissions:
+  contents: read
+jobs:
+  canonical-direct-native-bind-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      FINAL128_399_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_399_VERITAS_ROOT: "_pins/veritas"
+      FINAL128_398_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_398_VERITAS_ROOT: "_pins/veritas"
+      FINAL128_397_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_396_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_395_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_394_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_381_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_378_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_377_AGENTDOJO_ROOT: "_pins/agentdojo"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Require exact HEAD and frozen source/roster blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git rev-parse HEAD > results/final128-399-exact-head.txt
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          test "$(git hash-object contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json)" = "054c79f2a83b48821ce57071185c8ceecda17ed3"
+          test "$(git -C _pins/agentdojo hash-object src/agentdojo/data/suites/banking/environment.yaml)" = "$(git -C _pins/agentdojo ls-tree HEAD src/agentdojo/data/suites/banking/environment.yaml | awk '{print $3}')"
+          test "$(git -C _pins/agentdojo hash-object src/agentdojo/attacks/baseline_attacks.py)" = "$(git -C _pins/agentdojo ls-tree HEAD src/agentdojo/attacks/baseline_attacks.py | awk '{print $3}')"
+          test "$(git -C _pins/veritas hash-object veritas_os/benchmarks/agentdojo_banking_adapter.py)" = "c2c66b9186cf065132bc50a4b769874d04a78dc6"
+          test "$(git -C _pins/veritas hash-object veritas_os/policy/bind_core/core.py)" = "0f64201e2599495ce4e3991348aa320995716ffc"
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL VERITAS_DATABASE_URL GH_TOKEN GITHUB_TOKEN; do
+            test -z "$(printenv "$key" || true)"
+          done
+          python -m py_compile scripts/final128_399_task1_frozen_direct_native_bind_v1.py tests/test_final128_399_task1_frozen_direct_native_bind_v1.py
+      - name: Install exact-pinned native and VERITAS runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          python -m pip install --disable-pip-version-check \
+            "pytest==9.1.1" "cryptography==50.0.0" \
+            "openai==1.109.1" "pydantic==2.11.10" \
+            "idna==3.15" "httpx==0.28.1" \
+            "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock --output /tmp/final128-399-native-lock.txt
+          python -m pip install --disable-pip-version-check -r /tmp/final128-399-native-lock.txt
+      - name: Exact frozen DirectAttack native and real A/B Bind regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_399_task1_frozen_direct_native_bind_v1.py \
+            tests/test_final128_398_task1_native_veritas_bind_predispatch_effect_v1.py \
+            tests/test_final128_397_task1_native_chat_fulltool_ab_offline_v1.py \
+            tests/test_final128_396_task1_native_canonical_fidelity_gate_v1.py \
+            tests/test_final128_395_task1_offline_native_postterminal_scorer_gate_v1.py \
+            tests/test_final128_394_task1_paired_second_turn_terminal_quarantine_v1.py \
+            tests/test_final128_381_task1_real_responses_capture_contract_v1.py \
+            tests/test_final128_378_native_paired_model_input_seam_v1.py \
+            tests/test_final128_377_native_preterminal_spending_projection_v1.py \
+            --junitxml=results/final128-399-junit.xml | tee results/final128-399-tests.log
+      - name: Fail on skips and issue redacted immutable evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import final128_399_task1_frozen_direct_native_bind_v1 as m
+          from agentdojo.task_suite.load_suites import get_suite
+          r=ET.parse("results/final128-399-junit.xml").getroot()
+          suites=[r] if r.tag=="testsuite" else list(r.findall("testsuite"))
+          assert suites
+          tests={k:sum(int(s.get(k,"0")) for s in suites)
+                 for k in ("tests","failures","errors","skipped")}
+          assert tests["tests"]>=250
+          assert all(tests[k]==0 for k in ("failures","errors","skipped"))
+          freeze=json.loads(m.ROSTER_FILE.read_text(encoding="utf8"))
+          frozen_sha=m.verify_frozen_task1_enrollment(freeze)
+          suite=get_suite("v1.2.2","banking")
+          source=m.native_task1_source(suite=suite,enrollment=freeze)
+          assert source["enrollment_sha256"]==frozen_sha
+          assert source["canonical_alias_gap"] is True
+          assert list(source["observed_map"])==[m.SLOT]
+          assert source["A"].model_dump(mode="json")==source["B"].model_dump(mode="json")
+          report={
+            "schema":"veritas.final128.399-task1-canonical-direct-native-bind-source-proof.v1",
+            "head":Path("results/final128-399-exact-head.txt").read_text().strip(),
+            "agentdojo_pin":m.NATIVE_PIN,
+            "veritas_pin":m.VERITAS_PIN,
+            "case_id":m.CASE,
+            "frozen_128_enrollment_sha256":frozen_sha,
+            "exact_native_direct_slot":m.SLOT,
+            "native_direct_payload_sha256":m.sha(source["payload"]),
+            "injected_native_initial_sha256":m.sha(source["initial"]),
+            "noninjected_native_initial_sha256":m.sha(source["clean_initial"]),
+            "native_full_tool_schema_sha256":source["catalog_sha256"],
+            "actual_native_ground_truth_slot_discovery_in_disposable_bank":True,
+            "real_native_A_disposable_effect_vs_real_B_bind_block_tested":True,
+            "B_native_write_dispatches":0,
+            "canonical_me_alias_projection_gap_unresolved":True,
+            "gold_derived_proposal_is_test_only":True,
+            "real_model_proposals":0,
+            "real_provider_calls":0,
+            "official_native_utility_scores":None,
+            "official_native_attack_scores":None,
+            "external_bank_effects":0,
+            "production_authority_proven":False,
+            "fresh_spend_authorization":False,
+            "official_final128_scoring_eligible":False,
+            "JUnit":tests,
+          }
+          canon=lambda x:json.dumps(x,sort_keys=True,separators=(",",":"),
+                                    ensure_ascii=False,allow_nan=False).encode()
+          report["sha256"]=hashlib.sha256(canon(report)).hexdigest()
+          Path("results/final128-399-redacted-direct-native-bind.json").write_text(
+            json.dumps(report,indent=2,sort_keys=True)+"\n",encoding="utf8")
+          print("399_FROZEN_TASK1_DIRECT_SOURCE_A_NATIVE_DISPOSABLE_EFFECT_B_REAL_BIND_BLOCK")
+          PY
+          sha256sum \
+            scripts/final128_399_task1_frozen_direct_native_bind_v1.py \
+            tests/test_final128_399_task1_frozen_direct_native_bind_v1.py \
+            docs/optimization/FINAL128_399_TASK1_FROZEN_DIRECT_NATIVE_BIND_V1.md \
+            results/final128-399-redacted-direct-native-bind.json \
+            results/final128-399-junit.xml > results/final128-399-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-399-task1-exact-direct-native-bind-local-no-real-model
+          path: results/final128-399-*
+          if-no-files-found: warn
