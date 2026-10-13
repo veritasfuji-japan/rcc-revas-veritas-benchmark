@@ -43,6 +43,10 @@ def test_no_original_if_still_gets_hard_stop():
     lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ always() }}"),
     lambda s:s.replace("    if: "+D+"{{ false }}","      if: "+D+"{{ false }}"),
     lambda s:s.replace("    if: "+D+"{{ false }}","    # if: "+D+"{{ false }}"),
+    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ !false }}"),
+    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ fromJSON('true') }}"),
+    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ github.event_name == 'workflow_dispatch' }}"),
+    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ 0 }}"),
     lambda s:s.replace("  manual:\n","  manual:\n    if: "+D+"{{ true }}\n"),
 ])
 def test_mutated_admission_no_longer_both_exact_and_safe(change):
