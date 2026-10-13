@@ -1,0 +1,52 @@
+name: Final128 389 Task1 Environment Approval Zero Provider Probe
+on:
+  workflow_dispatch:
+    inputs:
+      acknowledgment:
+        description: "Zero-Provider Environment gate observation only; does NOT authorize real Task1 calls"
+        required: true
+        type: choice
+        options:
+          - ACKNOWLEDGE_ZERO_PROVIDER_DRY_RUN
+permissions:
+  contents: read
+concurrency:
+  group: final128-389-task1-environment-probe-serial
+  cancel-in-progress: false
+jobs:
+  preflight-no-environment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Reject wrong actor, branch, rerun, event or acknowledgment
+        shell: bash
+        env:
+          ACKNOWLEDGMENT: ${{ inputs.acknowledgment }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test "$GITHUB_REPOSITORY" = "veritasfuji-japan/rcc-revas-veritas-benchmark"
+          test "$GITHUB_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$ACKNOWLEDGMENT" = "ACKNOWLEDGE_ZERO_PROVIDER_DRY_RUN"
+          printf 'TASK1_389_PREFLIGHT_ONLY_NO_PROVIDER_NO_SECRET_NO_REF_WRITE\n'
+          printf 'Pre-environment preflight succeeded for run %s on %s.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+  protected-marker-no-provider:
+    needs: preflight-no-environment
+    if: needs.preflight-no-environment.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment:
+      name: task1-real-model-pilot
+    steps:
+      - name: Mark job start after GitHub Environment rules permit it
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "veritasfuji-japan/rcc-revas-veritas-benchmark"
+          test "$GITHUB_ACTOR" = "veritasfuji-japan"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          printf 'TASK1_389_PROTECTED_MARKER_NO_PROVIDER_NO_SECRET_NO_REF_WRITE\n'
+          printf 'Protected-marker job started for run %s on %s. This proves only that GitHub allowed this job to begin.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
