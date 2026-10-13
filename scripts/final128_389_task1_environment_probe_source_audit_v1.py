@@ -56,16 +56,16 @@ def validate_source(text):
     # Exact Git blob pin. A changed YAML byte (including any new auto trigger,
     # unauthorized step or secret access) is rejected. Standard library only.
     raw=text.encode("utf8")
-    git_blob=b"blob "+str(len(raw)).encode("ascii")+b"\\0"+raw
+    git_blob=b"blob "+str(len(raw)).encode("ascii")+b"\0"+raw
     require(hashlib.sha1(git_blob).hexdigest()==EXPECTED_GIT_BLOB_SHA,
             "EXACT_REVIEWED_WORKFLOW_BLOB_MISMATCH")
-    require(text.count("    environment:\\n      name: task1-real-model-pilot\\n")==1,
+    require(text.count("    environment:\n      name: task1-real-model-pilot\n")==1,
             "EXACT_PROTECTED_MARKER")
-    require(text.count("  workflow_dispatch:\\n")==1,
+    require(text.count("  workflow_dispatch:\n")==1,
             "MANUAL_ONLY")
-    require(all(("          "+line+"\\n") in text for line in PRE.splitlines()),
+    require(all(("          "+line+"\n") in text for line in PRE.splitlines()),
             "PREFLIGHT_EXACT_SCRIPT")
-    require(all(("          "+line+"\\n") in text for line in POST.splitlines()),
+    require(all(("          "+line+"\n") in text for line in POST.splitlines()),
             "PROTECTED_EXACT_SCRIPT")
     return {
         "schema":SCHEMA,
