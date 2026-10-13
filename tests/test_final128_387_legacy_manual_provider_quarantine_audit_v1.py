@@ -115,3 +115,27 @@ def test_read_only_auditor_cannot_revoke_secrets_or_dispatch_provider():
     for bad in ("http.client.HTTPSConnection(","requests.post(",
                 "from openai import","gh api -X PUT","gh api -X POST"):
         assert bad not in code
+
+
+def test_false_positive_commentary_about_secret_is_not_credential_access():
+    txt=("on:\n  workflow_dispatch:\njobs:\n  audit:\n"
+         "    runs-on: ubuntu-24.04\n    steps:\n"
+         "      - run: python -c 'assert \"secrets.OPENAI_API_KEY\" in data'\n")
+    assert m.is_manual_provider(txt) is False
+
+def test_real_protected_env_like_task4_remains_review_candidate_not_disable_default():
+    protected=("on:\n  workflow_dispatch:\njobs:\n  task4:\n"
+        "    environment: task4-real-provider-first-two-calls\n"
+        "    runs-on: ubuntu-24.04\n    steps:\n"
+        "      - env:\n"
+        "          TASK4_OPENAI_API_KEY: ${{ secrets.TASK4_OPENAI_API_KEY }}\n"
+        "        run: python scripts/provider_request.py\n")
+    assert m.is_manual_provider(protected)
+    fs=files_fixture()
+    review_path=m.ROOT+"/task4-protected-rehearsal.yml"
+    fs[review_path]=protected
+    result=m.audit(files=fs)
+    assert review_path in result["protected_provider_environment_review_targets"]
+    assert review_path not in result["github_actions_disable_targets"]
+    assert result["environment_declaration_not_live_protection_proof"] is True
+    assert result["all_provider_bypasses_closed"] is False
