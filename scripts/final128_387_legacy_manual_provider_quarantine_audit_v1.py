@@ -33,7 +33,7 @@ LEGACY=(
 "final-128-v13-manual-dispatch-template.yml",
 )
 MANUAL=re.compile(r"(?m)^\s{2}workflow_dispatch\s*:")
-PROVIDER_SECRET=re.compile(r"secrets\.(?:OPENAI_API_KEY|TASK4_OPENAI_API_KEY|ANTHROPIC_API_KEY)")
+PROVIDER_SECRET=re.compile(r'(?m)^\s*(?:-\s*env:\s*\{\s*)?(?:OPENAI_API_KEY|TASK4_OPENAI_API_KEY|ANTHROPIC_API_KEY)\s*:\s*["\\\']?\$\{\{\s*secrets\.(?:OPENAI_API_KEY|TASK4_OPENAI_API_KEY|ANTHROPIC_API_KEY)')
 JOB=re.compile(r"(?m)^  ([A-Za-z0-9_-]+):\s*(?:#.*)?$")
 DISABLED_IF=re.compile(r"(?m)^    if:\s*\$\{\{\s*false\s*\}\}(?:\s*#.*)?$")
 SHA=re.compile(r"^[a-f0-9]{40}$")
@@ -89,12 +89,17 @@ def audit(*,files,base_sha=None,root="."):
     for path,content in sorted(files.items()):
         if not is_manual_provider(content):continue
         stopped=source_blocks_all_jobs(content)
+        declared=bool(jobs(content)) and all(
+            re.search(r"(?m)^    environment:\s*[^\s#][^\n]*$",body) is not None
+            for _,body in jobs(content))
         all_targets.append({
             "path":path,"workflow_filename":Path(path).name,
             "job_count":len(jobs(content)),
             "job_names":[name for name,_ in jobs(content)],
             "blocked_on_current_source_only":stopped,
-            "needs_external_disable_workflow":not stopped,
+            "protected_environment_declared_not_attested":bool(declared),
+            "needs_external_disable_workflow":not stopped and not declared,
+            "needs_protected_environment_review":not stopped and declared,
             "source_sha256":hexsha(content),
         })
     for name in LEGACY:
@@ -113,6 +118,8 @@ def audit(*,files,base_sha=None,root="."):
             "HISTORICAL_MANUAL_PROVIDER_COVERAGE_MISSING")
     action_list=sorted(x["path"] for x in all_targets
                        if x["needs_external_disable_workflow"])
+    protected_list=sorted(x["path"] for x in all_targets
+                          if x["needs_protected_environment_review"])
     return {
        "schema":SCHEMA,
        "status":"REQUIRES_GITHUB_ACTIONS_ADMIN_DISABLE_AND_SECRET_ROTATION",
@@ -121,6 +128,8 @@ def audit(*,files,base_sha=None,root="."):
        "legacy_historical_workflows_source_unchanged":len(preserved),
        "manual_provider_source_jobs_without_static_stop":len(action_list),
        "github_actions_disable_targets":action_list,
+       "protected_provider_environment_review_targets":protected_list,
+       "environment_declaration_not_live_protection_proof":True,
        "historical_original_source_evidence":preserved,
        "inventory":all_targets,
        "github_actions_workflow_state_verified":False,
@@ -149,6 +158,7 @@ def main():
     print("387_FULL_WORKFLOWS_SCANNED="+str(report["all_workflows_scanned"]))
     print("387_MANUAL_PROVIDER_WORKFLOWS="+str(report["manual_provider_secret_workflows_detected"]))
     print("387_FROZEN_HISTORICAL_SOURCES_PRESERVED="+str(report["legacy_historical_workflows_source_unchanged"]))
+    print("387_PROTECTED_ENVIRONMENT_REVIEW="+str(len(report["protected_provider_environment_review_targets"])))
     print("387_NEEDS_GITHUB_WORKFLOW_DISABLE="+str(report["manual_provider_source_jobs_without_static_stop"]))
     print("387_NO_GITHUB_ADMIN_WRITE_NO_PROVIDER_NO_SCORE")
 
