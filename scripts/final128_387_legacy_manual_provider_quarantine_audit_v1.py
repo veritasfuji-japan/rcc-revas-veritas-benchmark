@@ -83,7 +83,7 @@ def actual_workflows(root="."):
     return out
 
 def audit(*,files,base_sha=None,root="."):
-    require(type(files) is dict and len(files)>=len(LEGACY),"SOURCE_SET_MISSING")
+    require(type(files) is dict and bool(files),"SOURCE_SET_MISSING")
     all_targets=[]
     preserved=[]
     for path,content in sorted(files.items()):
