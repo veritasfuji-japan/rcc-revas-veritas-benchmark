@@ -66,3 +66,19 @@ def test_executable_proof_must_measure_real_native_v2_capability_path() -> None:
     # by fabricating evidence for a route the corrected contract excludes.
     assert report.get("consumed_authorization_lineage_transported") is not True
     assert report.get("generic_bind_core_invoked") is not True
+
+    # Task4 #374: a green architecture flag is not enough. Reconstruct the
+    # exact same Native-v2 target/authorization/consumption/dispatch/target-
+    # owned reconciliation/receipt trace exported by the live integration.
+    from integration.current_veritas_uninterrupted.task4_374_native_v2_lineage import (
+        canonical_hash, verify_exact_native_v2_lineage,
+    )
+    trace = report.get("task4_374_native_v2_trace")
+    assert isinstance(trace, dict), "TASK4_374_ACTUAL_TRACE_REQUIRED"
+    verified = verify_exact_native_v2_lineage(trace)
+    assert len(verified) == 7 and all(verified.values())
+    assert report.get("task4_374_native_v2_trace_checks") == verified
+    assert report.get("task4_374_native_v2_trace_sha256") == canonical_hash(trace)
+    assert report.get("task4_374_cross_target_signed_artifact_substitution_rejected") is True
+    assert report.get("task4_374_replay_after_reconciliation_rejected") is True
+    assert report.get("task4_374_network_bypass_independently_proven") is False

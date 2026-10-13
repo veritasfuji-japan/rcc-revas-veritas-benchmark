@@ -1,0 +1,71 @@
+name: Task4 374 Native-v2 Exact Effect Lineage Offline Checks
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-374-native-v2-exact-lineage-v1.yml"
+      - "integration/current_veritas_uninterrupted/task4_374_native_v2_lineage.py"
+      - "integration/current_veritas_uninterrupted/native_v2_action_capability.py"
+      - "tests/test_task4_374_native_v2_lineage_v1.py"
+      - "tests/test_current_bind_action_capability_compatibility_v1.py"
+      - "docs/TASK4_374_NATIVE_V2_EXACT_EFFECT_LINEAGE_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/task4-374-native-v2-exact-lineage-v1.yml"
+      - "integration/current_veritas_uninterrupted/task4_374_native_v2_lineage.py"
+      - "integration/current_veritas_uninterrupted/native_v2_action_capability.py"
+      - "tests/test_task4_374_native_v2_lineage_v1.py"
+      - "tests/test_current_bind_action_capability_compatibility_v1.py"
+      - "docs/TASK4_374_NATIVE_V2_EXACT_EFFECT_LINEAGE_V1.md"
+permissions:
+  contents: read
+jobs:
+  fail-closed-cross-boundary-verifier:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Pure validator must refuse forged lineage (no API or database)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python -m pip install "pytest==9.0.3"
+          python -m py_compile \
+            integration/current_veritas_uninterrupted/task4_374_native_v2_lineage.py \
+            integration/current_veritas_uninterrupted/native_v2_action_capability.py \
+            tests/test_task4_374_native_v2_lineage_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_task4_374_native_v2_lineage_v1.py \
+            --junitxml=results/task4-374-native-v2-lineage-negative-tests.xml \
+            | tee results/task4-374-validator-tests.log
+          sha256sum \
+            integration/current_veritas_uninterrupted/task4_374_native_v2_lineage.py \
+            integration/current_veritas_uninterrupted/native_v2_action_capability.py \
+            tests/test_task4_374_native_v2_lineage_v1.py \
+            tests/test_current_bind_action_capability_compatibility_v1.py \
+            docs/TASK4_374_NATIVE_V2_EXACT_EFFECT_LINEAGE_V1.md \
+            > results/task4-374-source-sha256.txt
+          git rev-parse HEAD > results/task4-374-head.txt
+          echo 'NOTE: Negative unit suite only. Native-v2 runtime proof requires Current Bind ACTION Capability Compatibility V1.' \
+            > results/task4-374-unit-scope.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-374-native-v2-exact-lineage-negative-regressions
+          path: results/*
+          if-no-files-found: warn
