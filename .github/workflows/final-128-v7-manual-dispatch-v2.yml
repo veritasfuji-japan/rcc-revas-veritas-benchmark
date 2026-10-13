@@ -9,6 +9,7 @@ on:
 permissions: {contents: read}
 jobs:
   dispatch:
+    if: ${{ false }}  # #387 RETIRED: unprotected historical provider job blocked
     runs-on: ubuntu-latest
     env:
       VERITAS_DATABASE_URL: ${{ secrets.VERITAS_ATOMIC_CONSUMPTION_DATABASE_URL }}
