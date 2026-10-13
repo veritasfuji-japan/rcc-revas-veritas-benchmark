@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-"""#387 static fail-closed audit of legacy manual Provider-secret jobs.
+"""#387 exact historical source preservation + manual Provider workflow disable inventory.
 
-On the edited main source, a literal job-level if: FALSE_EXPR prevents a
-manual dispatch job from accessing its secret or executing. Historical refs,
-GitHub admin rights, separate credential copies and other effect channels
-are NOT proven blocked. This audit never dispatches an action or Provider.
+No GitHub Actions admin mutation, secret access, Provider request or paid run.
+The source-level scan is NOT evidence that any workflow is disabled through
+GitHub Actions. It generates targets for separately authorized disable steps.
 """
 from __future__ import annotations
 import argparse
-import hashlib
+from hashlib import sha256
 import json
 from pathlib import Path
 import re
 import subprocess
 
-SCHEMA="veritas.final128.legacy-manual-provider-quarantine.387.v1"
+SCHEMA="veritas.final128.manual-provider-workflow-disable-readiness.v1"
 ROOT=".github/workflows"
 LEGACY=(
 "agentdojo-task2-development-validation-v1.yml",
@@ -33,142 +32,125 @@ LEGACY=(
 "final-128-v12-manual-dispatch-template.yml",
 "final-128-v13-manual-dispatch-template.yml",
 )
-MANUAL=re.compile(r"(?m)^  workflow_dispatch\s*:")
+MANUAL=re.compile(r"(?m)^\s{2}workflow_dispatch\s*:")
 PROVIDER_SECRET=re.compile(r"secrets\.(?:OPENAI_API_KEY|TASK4_OPENAI_API_KEY|ANTHROPIC_API_KEY)")
-JOB=re.compile(r"(?m)^  ([A-Za-z0-9_-]+):[ \t]*(?:#.*)?$")
-SHA=re.compile(r"^[0-9a-f]{40}$")
-STOP_IF="    if: ${{ false }}"
-RETIRE_A="    if: ${{ false }}  # #387 RETIRED: legacy conditional superseded by permanent default-deny"
-RETIRE_B="    if: ${{ false }}  # #387 RETIRED: unprotected historical provider job blocked"
-class Refused(ValueError):pass
+JOB=re.compile(r"(?m)^  ([A-Za-z0-9_-]+):\s*(?:#.*)?$")
+DISABLED_IF=re.compile(r"(?m)^    if:\s*\$\{\{\s*false\s*\}\}(?:\s*#.*)?$")
+SHA=re.compile(r"^[a-f0-9]{40}$")
+REPO="veritasfuji-japan/rcc-revas-veritas-benchmark"
+class Denied(ValueError):pass
 
-def need(ok,code):
-    if ok is not True:raise Refused("387_"+code)
+def require(ok,msg):
+    if ok is not True:raise Denied("387_"+msg)
 
-def sha256(s):
-    return hashlib.sha256(s.encode("utf8")).hexdigest()
+def hexsha(value):
+    return sha256(value.encode("utf8")).hexdigest()
 
 def jobs(text):
-    need(type(text) is str,"NOT_TEXT")
     m=re.search(r"(?m)^jobs:\s*$",text)
     if m is None:return []
-    body=text[m.end():]
-    end=re.search(r"(?m)^[a-zA-Z][a-zA-Z0-9_-]*:",body)
-    if end is not None:body=body[:end.start()]
-    hits=list(JOB.finditer(body))
-    return [(match.group(1),
-             body[match.end():hits[i+1].start() if i+1<len(hits) else len(body)])
-            for i,match in enumerate(hits)]
+    tail=text[m.end():]
+    end=re.search(r"(?m)^[a-zA-Z][\w-]*:",tail)
+    if end is not None:tail=tail[:end.start()]
+    hits=list(JOB.finditer(tail))
+    return [(z.group(1),tail[z.end():hits[i+1].start() if i+1<len(hits) else len(tail)])
+            for i,z in enumerate(hits)]
 
-def frozen(body):
-    return re.search(r"(?m)^    if: \$\{\{ false \}\}(?:\s*#.*)?$",body) is not None
+def is_manual_provider(text):
+    return isinstance(text,str) and bool(MANUAL.search(text) and PROVIDER_SECRET.search(text))
 
-def manual_provider(text):
-    return bool(MANUAL.search(text) and PROVIDER_SECRET.search(text))
+def source_blocks_all_jobs(text):
+    all_jobs=jobs(text)
+    return bool(all_jobs) and all(bool(DISABLED_IF.search(body)) for _,body in all_jobs)
 
-def expected_variants(old):
-    need(manual_provider(old),"BASE_MUST_BE_MANUAL_PROVIDER")
-    rows=old.split("\n")
-    start=rows.index("jobs:") if "jobs:" in rows else -1
-    need(start>=0,"JOBS_NOT_FOUND")
-    found=[i for i,s in enumerate(rows) if i>start and JOB.fullmatch(s)]
-    need(len(found)==1,"EXPECTED_ONE_LEGACY_JOB")
-    idx=found[0]
-    out=[]
-    if rows[idx+1].startswith("    if: "):
-        historical=rows[idx+1]
-        for label,comment in ((RETIRE_A,"    # Original historical condition: "),
-                              (RETIRE_B,"    # Previous historical condition: ")):
-            clone=list(rows)
-            clone[idx+1]=label
-            clone.insert(idx+2,comment+historical.strip())
-            out.append("\n".join(clone))
-    else:
-        for label in (RETIRE_A,RETIRE_B):
-            clone=list(rows)
-            clone.insert(idx+1,label)
-            out.append("\n".join(clone))
+def read_base_file(root,sha,path):
+    require(type(sha) is str and SHA.fullmatch(sha) is not None,"EXACT_BASE_SHA_REQUIRED")
+    require(path.startswith(ROOT+"/") and path.endswith((".yml",".yaml")),
+            "PATH_OUTSIDE_WORKFLOWS")
+    return subprocess.run(["git","-C",str(root),"show",f"{sha}:{path}"],
+         stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+         check=True).stdout.decode("utf8")
+
+def actual_workflows(root="."):
+    folder=Path(root)/ROOT
+    require(folder.is_dir(),"WORKFLOW_DIRECTORY_NOT_FOUND")
+    out={}
+    for p in sorted(folder.iterdir()):
+        if p.suffix not in (".yml",".yaml"):continue
+        require(p.is_file() and not p.is_symlink(),"WORKFLOW_SYMLINK_OR_BAD_FILE")
+        out[f"{ROOT}/{p.name}"]=p.read_text(encoding="utf8")
+    require(len(out)>=330,"WHOLE_REPOSITORY_INVENTORY_INCOMPLETE")
     return out
 
-def baseline_blob(sha,path,root="."):
-    need(type(sha) is str and SHA.fullmatch(sha) is not None,"BASE_SHA_MUST_BE_EXACT")
-    need(path.startswith(ROOT+"/") and path.endswith((".yml",".yaml")),
-         "BASE_PATH_INVALID")
-    return subprocess.run(["git","-C",str(root),"show",f"{sha}:{path}"],
-       check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE).stdout.decode("utf8")
-
-def all_files(root="."):
-    directory=Path(root)/ROOT
-    need(directory.is_dir(),"WORKFLOWS_DIR_MISSING")
-    result={}
-    for p in sorted(directory.iterdir()):
-        if p.suffix not in (".yml",".yaml"):continue
-        need(p.is_file() and not p.is_symlink(),"SYMLINK_OR_UNREADABLE_WORKFLOW")
-        result[f"{ROOT}/{p.name}"]=p.read_text(encoding="utf8")
-    need(len(result)>=330,"INCOMPLETE_WORKFLOW_INVENTORY")
-    return result
-
-def inspect(*,files,base_sha=None,root="."):
-    need(type(files) is dict and len(files)>=len(LEGACY),"BAD_FILE_COLLECTION")
-    records=[]
-    unblocked=[]
-    for path,text in sorted(files.items()):
-        if not manual_provider(text):continue
-        source_jobs=jobs(text)
-        is_safe=bool(source_jobs) and all(frozen(body) for _,body in source_jobs)
-        records.append({"path":path,"job_ids":[name for name,_ in source_jobs],
-            "all_jobs_statically_stopped":is_safe,
-            "source_sha256":sha256(text)})
-        if not is_safe:unblocked.append(path)
+def audit(*,files,base_sha=None,root="."):
+    require(type(files) is dict and len(files)>=len(LEGACY),"SOURCE_SET_MISSING")
+    all_targets=[]
     preserved=[]
-    for n in LEGACY:
-        path=f"{ROOT}/{n}"
-        need(path in files,"LEGACY_WORKFLOW_MISSING")
-        text=files[path]
-        need(manual_provider(text),"LEGACY_MANUAL_SECRET_MISSING")
-        need(len(jobs(text))==1 and frozen(jobs(text)[0][1]),
-             "LEGACY_JOB_NOT_STOPPED")
-        record={"path":path,"sha256":sha256(text),"disabled_before_job_execution":True}
+    for path,content in sorted(files.items()):
+        if not is_manual_provider(content):continue
+        stopped=source_blocks_all_jobs(content)
+        all_targets.append({
+            "path":path,"workflow_filename":Path(path).name,
+            "job_count":len(jobs(content)),
+            "job_names":[name for name,_ in jobs(content)],
+            "blocked_on_current_source_only":stopped,
+            "needs_external_disable_workflow":not stopped,
+            "source_sha256":hexsha(content),
+        })
+    for name in LEGACY:
+        path=f"{ROOT}/{name}"
+        require(path in files,"HISTORICAL_WORKFLOW_MISSING")
+        txt=files[path]
+        require(is_manual_provider(txt),"HISTORICAL_PROVIDER_WORKFLOW_DRIFT")
+        doc={"path":path,"source_sha256":hexsha(txt)}
         if base_sha is not None:
-            before=baseline_blob(base_sha,path,root)
-            need(text in expected_variants(before),"UNAPPROVED_LEGACY_SOURCE_CHANGE")
-            record["base_sha256"]=sha256(before)
-            record["only_job_gate_changed"]=True
-        preserved.append(record)
-    need(len(unblocked)==0,"UNCOVERED_MANUAL_PROVIDER_JOBS:"+",".join(unblocked[:10]))
+            old=read_base_file(root,base_sha,path)
+            require(txt==old,"FROZEN_HISTORICAL_WORKFLOW_CHANGED")
+            doc["historical_source_matches_exact_base"]=True
+        preserved.append(doc)
+    paths={x["path"] for x in all_targets}
+    require(set(f"{ROOT}/{name}" for name in LEGACY).issubset(paths),
+            "HISTORICAL_MANUAL_PROVIDER_COVERAGE_MISSING")
+    action_list=sorted(x["path"] for x in all_targets
+                       if x["needs_external_disable_workflow"])
     return {
-      "schema":SCHEMA,
-      "status":"CURRENT_BRANCH_MANUAL_PROVIDER_JOBS_STATICALLY_STOPPED_ONLY",
-      "workflows_scanned":len(files),
-      "legacy_paths_checked":len(preserved),
-      "manual_provider_secret_workflows_detected":len(records),
-      "unblocked_manual_provider_secret_workflows":len(unblocked),
-      "legacy_evidence":preserved,
-      "source_evidence":records,
-      "base_sha":base_sha,
-      "real_provider_requests":0,
-      "github_secrets_rotated_or_revoked":False,
-      "historical_git_ref_dispatch_resistance_verified":False,
-      "git_workflow_admin_bypass_resistance_verified":False,
-      "real_provider_execution_authorized":False,
-      "production_scope_complete":False,
+       "schema":SCHEMA,
+       "status":"REQUIRES_GITHUB_ACTIONS_ADMIN_DISABLE_AND_SECRET_ROTATION",
+       "all_workflows_scanned":len(files),
+       "manual_provider_secret_workflows_detected":len(all_targets),
+       "legacy_historical_workflows_source_unchanged":len(preserved),
+       "manual_provider_source_jobs_without_static_stop":len(action_list),
+       "github_actions_disable_targets":action_list,
+       "historical_original_source_evidence":preserved,
+       "inventory":all_targets,
+       "github_actions_workflow_state_verified":False,
+       "github_workflow_disable_operations_performed":0,
+       "github_repository_provider_secrets_revoked":False,
+       "provider_project_access_and_limits_verified":False,
+       "older_ref_dispatch_and_privileged_bypass_verified":False,
+       "all_provider_bypasses_closed":False,
+       "new_provider_calls":0,
+       "new_native_scorer_runs":0,
+       "task1_paid_run_authorized":False,
+       "base_sha":base_sha,
     }
 
 def main():
-    ap=argparse.ArgumentParser()
-    ap.add_argument("--base-sha",required=True)
-    ap.add_argument("--root",default=".")
-    ap.add_argument("--output",required=True)
-    args=ap.parse_args()
-    result=inspect(files=all_files(args.root),base_sha=args.base_sha,root=args.root)
-    out=Path(args.output)
-    need(out.parent.is_dir(),"OUTPUT_DIRECTORY_MISSING")
-    out.write_text(json.dumps(result,sort_keys=True,indent=2)+"\n",encoding="utf8")
-    print("387_WORKFLOW_FILES="+str(result["workflows_scanned"]))
-    print("387_LEGACY_STOPPED="+str(result["legacy_paths_checked"]))
-    print("387_MANUAL_PROVIDER_SECRET_WORKFLOWS="+str(result["manual_provider_secret_workflows_detected"]))
-    print("387_UNBLOCKED_MANUAL_PROVIDER_SECRET_WORKFLOWS="+str(result["unblocked_manual_provider_secret_workflows"]))
-    print("387_NEW_PAID_REQUESTS=0")
+    p=argparse.ArgumentParser()
+    p.add_argument("--base-sha",required=True)
+    p.add_argument("--root",default=".")
+    p.add_argument("--output",required=True)
+    args=p.parse_args()
+    report=audit(files=actual_workflows(args.root),
+                 base_sha=args.base_sha,root=args.root)
+    destination=Path(args.output)
+    require(destination.parent.is_dir(),"EVIDENCE_OUTPUT_PARENT_MISSING")
+    destination.write_text(json.dumps(report,sort_keys=True,indent=2)+"\n")
+    print("387_FULL_WORKFLOWS_SCANNED="+str(report["all_workflows_scanned"]))
+    print("387_MANUAL_PROVIDER_WORKFLOWS="+str(report["manual_provider_secret_workflows_detected"]))
+    print("387_FROZEN_HISTORICAL_SOURCES_PRESERVED="+str(report["legacy_historical_workflows_source_unchanged"]))
+    print("387_NEEDS_GITHUB_WORKFLOW_DISABLE="+str(report["manual_provider_source_jobs_without_static_stop"]))
+    print("387_NO_GITHUB_ADMIN_WRITE_NO_PROVIDER_NO_SCORE")
 
 if __name__=="__main__":
     main()
