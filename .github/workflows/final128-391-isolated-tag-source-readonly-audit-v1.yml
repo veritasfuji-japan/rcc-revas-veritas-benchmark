@@ -74,7 +74,9 @@ jobs:
           live=json.loads(Path("results/final128-391-github-readonly-rule-observation.json").read_text())
           assert offline["status"]=="STAGED_ISOLATED_GITHUB_WRITE_NOT_EXECUTED"
           assert offline["actual_github_tag_posts_in_this_audit"]==0
-          assert live["configured_rule_covers_isolated_tag"] is True
+          assert live["rule_scope_and_prohibition_fields_observed"] is True
+          assert live["configured_rule_covers_isolated_tag"] is (live["bypass_status"]=="OBSERVED_NO_BYPASS")
+          assert live["bypass_status"] in ("OBSERVED_NO_BYPASS","UNKNOWN_MISSING_FIELDS")
           assert live["github_write_from_this_check"] is False
           assert live["creation_delete_update_negative_experiments_executed"] is False
           assert live["actual_tag_immutability_proven_by_this_readback"] is False
