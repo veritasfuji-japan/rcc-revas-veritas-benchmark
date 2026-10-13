@@ -1,109 +1,117 @@
-"""#387: active manual Provider-secret jobs must be disabled at job admission."""
+"""#387: identify active legacy manual Provider endpoints without modifying freeze."""
 from __future__ import annotations
 from pathlib import Path
 import os
 import pytest
-from scripts import final128_387_legacy_manual_provider_quarantine_audit_v1 as g
+from scripts import final128_387_legacy_manual_provider_quarantine_audit_v1 as m
 
-D="$"
-def source(before_if=True,secret=True,second_job=False):
-    expr=("    if: "+D+"{{ inputs.confirmation == 'RUN' }}\n" if before_if else "")
-    extra=("  unsafe-other:\n    runs-on: ubuntu-latest\n"
-           "    steps:\n      - run: echo danger\n" if second_job else "")
-    return ("name: Offline-only historical\n"
-      "on:\n  workflow_dispatch:\n    inputs:\n      confirmation: {required: true}\n"
-      "permissions: {contents: read}\n"
-      "jobs:\n  manual:\n"+expr+"    runs-on: ubuntu-latest\n"
-      "    env:\n      OPENAI_API_KEY: "+(D+"{{ secrets.OPENAI_API_KEY }}" if secret else '""')+"\n"
+def source(*,manual=True,secret=True,stopped=False,extra_job=False):
+    event="workflow_dispatch:" if manual else "push:"
+    credential="OPENAI_API_KEY" if secret else "NO_PROVIDER"
+    gate=("    if: "+"$"+"{{ false }}\n") if stopped else ""
+    extra=("\n  secondary:\n    runs-on: ubuntu-latest\n"
+           "    steps:\n      - run: echo denied-by-audit\n") if extra_job else ""
+    return ("name: Historical Manual\non:\n  "+event+"\n"
+      "jobs:\n  primary:\n"+gate+"    runs-on: ubuntu-24.04\n"
+      "    env:\n      OPENAI_API_KEY: "+"$"+"{{ secrets."+credential+" }}\n"
       "    steps:\n      - run: python scripts/historical.py\n"+extra)
 
-def test_exact_old_if_transformation_has_single_false_job_admission():
-    src=source()
-    options=g.expected_variants(src)
-    assert len(options)==2
-    for x in options:
-        assert len(g.jobs(x))==1
-        assert g.frozen(g.jobs(x)[0][1])
-        assert g.STOP_IF in x
-        assert g.manual_provider(x)
-    assert "Original historical condition" in options[0]
-    assert "Previous historical condition" in options[1]
+def files_fixture(old=None):
+    return {m.ROOT+"/"+n:(source() if old is None else old) for n in m.LEGACY}
 
-def test_no_original_if_still_gets_hard_stop():
-    src=source(before_if=False)
-    opts=g.expected_variants(src)
-    assert len(opts)==2
-    assert all(g.frozen(g.jobs(x)[0][1]) for x in opts)
-
-@pytest.mark.parametrize("change",[
-    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ true }}"),
-    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ inputs.confirmation }}"),
-    lambda s:s.replace("if: "+D+"{{ false }}","if: true"),
-    lambda s:s.replace("if: "+D+"{{ false }}","if: False",1),
-    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ always() }}"),
-    lambda s:s.replace("    if: "+D+"{{ false }}","      if: "+D+"{{ false }}"),
-    lambda s:s.replace("    if: "+D+"{{ false }}","    # if: "+D+"{{ false }}"),
-    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ !false }}"),
-    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ fromJSON('true') }}"),
-    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ github.event_name == 'workflow_dispatch' }}"),
-    lambda s:s.replace("if: "+D+"{{ false }}","if: "+D+"{{ 0 }}"),
-    lambda s:s.replace("  manual:\n","  manual:\n    if: "+D+"{{ true }}\n"),
+@pytest.mark.parametrize("manual,secret,expected",[
+    (True,True,True),
+    (True,False,False),
+    (False,True,False),
+    (False,False,False),
 ])
-def test_mutated_admission_no_longer_both_exact_and_safe(change):
-    src=source()
-    good=g.expected_variants(src)[0]
-    poisoned=change(good)
-    assert poisoned not in g.expected_variants(src)
+def test_manual_provider_detection(manual,secret,expected):
+    assert m.is_manual_provider(source(manual=manual,secret=secret)) is expected
 
-def test_active_second_job_detected_even_if_provider_secret_is_in_first_job():
-    s=g.expected_variants(source())[0]
-    s=s+"\n  other:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo fake\n"
-    found=g.jobs(s)
-    assert len(found)==2
-    assert any(not g.frozen(body) for _,body in found)
+@pytest.mark.parametrize("stopped,extra_job,expected",[
+  (True,False,True),(False,False,False),
+  (True,True,False),(False,True,False),
+])
+def test_static_main_branch_block_not_github_disabled_status(stopped,extra_job,expected):
+    assert m.source_blocks_all_jobs(source(stopped=stopped,extra_job=extra_job)) is expected
 
-def test_all_real_15_files_have_one_statically_false_job():
-    files=g.all_files(".")
-    assert len(files)>=330
-    assert len(g.LEGACY)==15
-    for n in g.LEGACY:
-        path=g.ROOT+"/"+n
-        assert path in files
-        src=files[path]
-        assert g.manual_provider(src)
-        assert len(g.jobs(src))==1
-        assert g.frozen(g.jobs(src)[0][1])
+@pytest.mark.parametrize("expr",[
+    "true",
+    "always()",
+    "github.event_name == 'workflow_dispatch'",
+    "inputs.confirmation == 'RUN'",
+    "!false",
+    "fromJSON('true')",
+    "0",
+    "null",
+])
+def test_any_non_literal_false_expression_is_not_treated_as_disabled(expr):
+    txt=source(stopped=True).replace("if: "+"$"+"{{ false }}",
+                   "if: "+"$"+"{{ "+expr+" }}")
+    assert m.source_blocks_all_jobs(txt) is False
 
-def test_detect_any_new_manual_secret_workflow_that_has_not_been_stopped():
-    known={g.ROOT+"/"+n:g.expected_variants(source())[0] for n in g.LEGACY}
-    other=g.ROOT+"/rogue-provider-dispatch.yml"
-    known[other]=source()
-    # Without base, the synthetic old files are not checked for exact diff;
-    # the global active-provider check should independently refuse the rogue.
-    with pytest.raises(g.Refused,match="UNCOVERED_MANUAL_PROVIDER_JOBS"):
-        g.inspect(files=known)
+def test_all_exact_legacy_sources_exist_and_contain_original_manual_secrets():
+    current=m.actual_workflows(".")
+    assert len(current)>=330
+    assert len(m.LEGACY)==15
+    for name in m.LEGACY:
+        path=m.ROOT+"/"+name
+        assert path in current
+        assert m.is_manual_provider(current[path])
+        assert len(m.jobs(current[path]))==1
 
-def test_provider_secret_with_no_manual_dispatch_is_out_of_this_narrow_gate():
-    assert g.manual_provider(source().replace("workflow_dispatch:","push:")) is False
+def test_source_inventory_correctly_reports_admin_disable_not_did_disable():
+    report=m.audit(files=files_fixture())
+    assert report["legacy_historical_workflows_source_unchanged"]==15
+    assert report["manual_provider_secret_workflows_detected"]==15
+    assert report["manual_provider_source_jobs_without_static_stop"]==15
+    assert len(report["github_actions_disable_targets"])==15
+    assert report["github_actions_workflow_state_verified"] is False
+    assert report["github_workflow_disable_operations_performed"]==0
+    assert report["all_provider_bypasses_closed"] is False
 
-def test_baseline_requires_exact_sha_not_branch_name():
-    for value in ("main","1"*39,None,True):
-        with pytest.raises(g.Refused,match="BASE_SHA_MUST_BE_EXACT"):
-            g.baseline_blob(value,g.ROOT+"/x.yml")
+def test_other_unknown_legacy_provider_is_appended_to_action_list():
+    fs=files_fixture()
+    extra=m.ROOT+"/new-secret-provider.yml"
+    fs[extra]=source()
+    report=m.audit(files=fs)
+    assert extra in report["github_actions_disable_targets"]
+    assert report["manual_provider_secret_workflows_detected"]==16
 
-def test_exact_base_diff_validation_on_real_tree_when_configured():
+def test_false_gate_alone_removes_source_flag_without_claiming_hard_stop():
+    data=m.audit(files=files_fixture(source(stopped=True)))
+    assert data["manual_provider_source_jobs_without_static_stop"]==0
+    assert data["all_provider_bypasses_closed"] is False
+    assert data["github_actions_workflow_state_verified"] is False
+
+def test_history_missing_or_changed_is_rejected():
+    fs=files_fixture()
+    fs.pop(m.ROOT+"/"+m.LEGACY[0])
+    with pytest.raises(m.Denied,match="HISTORICAL_WORKFLOW_MISSING"):
+        m.audit(files=fs)
+    fs=files_fixture(source(manual=False))
+    with pytest.raises(m.Denied,match="HISTORICAL_PROVIDER_WORKFLOW_DRIFT"):
+        m.audit(files=fs)
+
+def test_base_requires_immutable_sha_and_cannot_read_arbitrary_paths():
+    for sha in ("main","1"*39,None,True):
+        with pytest.raises(m.Denied,match="EXACT_BASE_SHA_REQUIRED"):
+            m.read_base_file(".",sha,m.ROOT+"/sample.yml")
+    with pytest.raises(m.Denied,match="PATH_OUTSIDE_WORKFLOWS"):
+        m.read_base_file(".","a"*40,"secrets/openai.key")
+
+def test_actual_main_git_blobs_remain_identical_to_exact_PR_base_if_available():
     base=os.environ.get("FINAL128_387_BASE_SHA")
-    if not base:return
-    record=g.inspect(files=g.all_files("."),base_sha=base,root=".")
-    assert record["legacy_paths_checked"]==15
-    assert record["unblocked_manual_provider_secret_workflows"]==0
-    assert all(p["only_job_gate_changed"] is True for p in record["legacy_evidence"])
-    assert record["real_provider_requests"]==0
-    assert record["production_scope_complete"] is False
-    assert record["historical_git_ref_dispatch_resistance_verified"] is False
+    if base is None:return
+    report=m.audit(files=m.actual_workflows("."),base_sha=base,root=".")
+    assert report["legacy_historical_workflows_source_unchanged"]==15
+    assert all(x["historical_source_matches_exact_base"] for x in report["historical_original_source_evidence"])
+    assert report["all_provider_bypasses_closed"] is False
+    assert report["github_repository_provider_secrets_revoked"] is False
+    assert report["new_provider_calls"]==0
 
-def test_guard_is_read_only_and_not_paid_runner():
-    s=Path(g.__file__).read_text()
-    for bad in ("from openai import","http.client.HTTPSConnection(","requests.post(",
-                "workflow_dispatch:","gh api -X POST"):
-        assert bad not in s
+def test_read_only_auditor_cannot_revoke_secrets_or_dispatch_provider():
+    code=Path(m.__file__).read_text()
+    for bad in ("http.client.HTTPSConnection(","requests.post(",
+                "from openai import","gh api -X PUT","gh api -X POST"):
+        assert bad not in code
