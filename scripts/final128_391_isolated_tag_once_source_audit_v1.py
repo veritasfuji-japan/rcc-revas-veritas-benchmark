@@ -86,7 +86,7 @@ def source_contract(text):
 
 def ruleset_status(rule, ref_status):
     need(type(rule) is dict,"RULESET_JSON")
-    require_fields=("name","id","target","enforcement","conditions","rules","bypass_actors")
+    require_fields=("name","id","target","enforcement","conditions","rules")
     need(all(k in rule for k in require_fields),"RULESET_FIELDS")
     refs=rule["conditions"].get("ref_name") if type(rule["conditions"]) is dict else None
     need(type(refs) is dict and type(refs.get("include")) is list
@@ -97,21 +97,32 @@ def ruleset_status(rule, ref_status):
         fnmatchcase(TAG,s) for s in refs["exclude"])
     rules=rule["rules"]
     types={r.get("type") for r in rules if type(r) is dict} if type(rules) is list else set()
-    expected=(rule["id"]==RULESET_ID
+    rules_match=(rule["id"]==RULESET_ID
          and rule["name"]=="Task1 Single-Use Protection"
          and rule["target"]=="tag"
          and rule["enforcement"]=="active"
-         and covers and RULE_TYPES.issubset(types)
-         and rule["bypass_actors"]==[]
-         and rule.get("current_user_can_bypass")=="never")
+         and covers and RULE_TYPES.issubset(types))
+    # Public GitHub GET may omit privileged bypass fields. Missing != empty.
+    bypass_list=rule.get("bypass_actors")
+    bypass_current=rule.get("current_user_can_bypass")
+    bypass_observed=(type(bypass_list) is list and not bypass_list
+                     and bypass_current=="never")
+    fields_complete=("bypass_actors" in rule
+                     and "current_user_can_bypass" in rule)
+    expected=rules_match and bypass_observed and fields_complete
     need(ref_status in ("absent","present","unknown"),"REF_STATUS")
     return {
        "schema":SCHEMA,
        "ruleset_id":RULESET_ID,
        "configured_rule_covers_isolated_tag":bool(expected),
+       "rule_scope_and_prohibition_fields_observed":bool(rules_match),
+       "bypass_fields_complete":bool(fields_complete),
+       "bypass_status":("OBSERVED_NO_BYPASS" if bypass_observed else
+                        "UNKNOWN_MISSING_FIELDS" if not fields_complete else
+                        "BYPASS_OR_PRIVILEGE_DETECTED"),
        "ruleset_update_deletion_non_ff_in_detail":RULE_TYPES.issubset(types),
-       "no_bypass_actors_in_observed_rule":rule["bypass_actors"]==[],
-       "current_user_can_bypass_never":rule.get("current_user_can_bypass")=="never",
+       "no_bypass_actors_in_observed_rule":type(bypass_list) is list and not bypass_list,
+       "current_user_can_bypass_never":bypass_current=="never",
        "isolated_tag_status":ref_status,
        "creation_delete_update_negative_experiments_executed":False,
        "github_write_from_this_check":False,
@@ -154,8 +165,8 @@ def main():
             need(type(ref) is dict and ref.get("ref")==TAG, "OBSERVED_TAG_NOT_ISOLATED")
         observed=ruleset_status(rule,status)
         data.update(observed)
-        need(observed["configured_rule_covers_isolated_tag"],
-             "CURRENT_GITHUB_RULESET_NOT_PROTECTING_TAG")
+        need(observed["rule_scope_and_prohibition_fields_observed"],
+             "RULESET_SCOPE_OR_PROHIBITION_NOT_OBSERVED")
     else:
         data["configured_rule_covers_isolated_tag"]=False
         data["isolated_tag_status"]="unknown"
