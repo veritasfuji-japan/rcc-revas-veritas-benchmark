@@ -17,7 +17,8 @@ permissions:
 
 jobs:
   canonical-final-clean-ab:
-    if: ${{ inputs.confirmation == 'RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1' }}
+    if: ${{ false }}  # #387 RETIRED: unprotected historical provider job blocked
+    # Previous historical condition: if: ${{ inputs.confirmation == 'RUN_CANONICAL_AGENTDOJO_CLEAN_AB_V1' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
