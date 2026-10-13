@@ -1,0 +1,102 @@
+{
+  "schema": "veritas.final128.task1.environment-approval-zero-provider-observed.v1",
+  "evidence_type": "GITHUB_PUBLIC_REST_READBACK_WITH_NONREPLAYABLE_WAITING_CONTEXT",
+  "repo": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+  "workflow_path": ".github/workflows/final128-389-task1-environment-approval-zero-provider-probe.yml",
+  "urls": {
+    "run": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38386775595",
+    "jobs": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38386775595/jobs?per_page=100",
+    "approvals": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38386775595/approvals",
+    "historical_pending": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/38386775595/pending_deployments"
+  },
+  "completed_run": {
+    "id": 38386775595,
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "head_branch": "main",
+    "head_sha": "c9accc3a15d97b53d0d3e140b2410f659aa0391f",
+    "actor": "veritasfuji-japan",
+    "run_attempt": 1,
+    "created_at": "2026-10-13T10:56:26Z",
+    "started_at": "2026-10-13T10:56:26Z",
+    "updated_at": "2026-10-13T11:11:19Z"
+  },
+  "completed_jobs": [
+    {
+      "id": 115260406333,
+      "name": "preflight-no-environment",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-13T10:56:31Z",
+      "completed_at": "2026-10-13T10:56:33Z",
+      "steps": [
+        "Set up job",
+        "Reject wrong actor, branch, rerun, event or acknowledgment",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 115260436932,
+      "name": "protected-marker-no-provider",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-13T11:11:15Z",
+      "completed_at": "2026-10-13T11:11:19Z",
+      "steps": [
+        "Set up job",
+        "Mark job start after GitHub Environment rules permit it",
+        "Complete job"
+      ]
+    }
+  ],
+  "completed_approval_records": [
+    {
+      "user": "github-actions[bot]",
+      "state": "approved",
+      "comment": "10 minute wait timer",
+      "environment": "task1-real-model-pilot",
+      "environment_id": 24064338024,
+      "can_admins_bypass": false
+    },
+    {
+      "user": "veritasfuji-japan",
+      "state": "approved",
+      "comment": "",
+      "environment": "task1-real-model-pilot",
+      "environment_id": 24064338024,
+      "can_admins_bypass": false
+    }
+  ],
+  "historical_pending_observation_not_replayable": {
+    "observed_run_status": "waiting",
+    "observed_protected_job_status": "waiting",
+    "environment": "task1-real-model-pilot",
+    "wait_timer_minutes": 10,
+    "wait_timer_started_at": "2026-10-13T10:56:34.000Z",
+    "reviewer": "veritasfuji-japan",
+    "after_ten_minutes_waiting_shown_in_operator_screenshot": true,
+    "retrospective_get_currently_empty": true,
+    "original_pending_response_persisted_as_signed_raw_evidence": false,
+    "independent_third_party_can_reproduce_prior_waiting_now": false
+  },
+  "proof_boundary": {
+    "actual_environment_review_records_re_readable": true,
+    "actual_completed_job_timestamps_re_readable": true,
+    "approval_action_exact_timestamp_available_from_this_endpoint": false,
+    "before_after_runtime_transition_directly_replayable": false,
+    "self_review_permitted": true,
+    "independent_reviewer_observed": false,
+    "actual_provider_call_from_this_workflow": false,
+    "environment_provider_secret_was_not_read_by_this_workflow": true,
+    "git_tag_ref_mutations_from_this_workflow": false,
+    "global_atomic_oneuse_issuer_proven": false,
+    "real_task1_sender_protected_proven": false,
+    "account_hard_budget_cap_proven": false,
+    "iam_credential_network_bypass_resistance_proven": false,
+    "actual_native_model_or_scorer_run": false,
+    "new_native_utility_measurement": false,
+    "paid_task1_execution_authorized": false
+  },
+  "verdict": "ENVIRONMENT_APPROVAL_GATE_OBSERVED_LIMITED_NO_PRODUCTION_BYPASS_PROOF"
+}
