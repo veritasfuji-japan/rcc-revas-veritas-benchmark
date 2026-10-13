@@ -115,3 +115,14 @@ def test_ci_is_non_mutating():
     assert "persist-credentials: false" in s
     assert "environment: task1-real-model-pilot" not in s
     assert "secrets.OPENAI_API_KEY" not in s
+
+@pytest.mark.parametrize("omitted",["bypass_actors","current_user_can_bypass"])
+def test_missing_public_bypass_field_is_unknown_not_clearance(omitted):
+    r=rule()
+    r.pop(omitted)
+    x=m.ruleset_status(r,"absent")
+    assert x["rule_scope_and_prohibition_fields_observed"] is True
+    assert x["bypass_fields_complete"] is False
+    assert x["bypass_status"]=="UNKNOWN_MISSING_FIELDS"
+    assert x["configured_rule_covers_isolated_tag"] is False
+    assert x["source_readiness_for_later_separate_manual_probe"] is False
