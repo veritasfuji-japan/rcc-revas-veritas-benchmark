@@ -234,5 +234,5 @@ def test_no_live_workflow_api_client_or_secret_loader_in_module():
 
 def test_policy_does_not_elevate_prior_351_or_382_permission():
     assert prev.prepare_two_first_packets()["live_dispatch_authorized"] is False
-    assert m.prepare_two_first_packets if False else True
+    assert m.inspect_candidate(context())["real_global_single_use_ref_created"] is False
     assert m.inspect_candidate(context())["live_dispatch_authorized"] is False
