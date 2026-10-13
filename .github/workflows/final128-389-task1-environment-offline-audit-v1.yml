@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check "pytest==9.1.1" "PyYAML==6.0.2"
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
       - name: Run source mutation matrix and create unscored audit
         shell: bash
         run: |
