@@ -170,9 +170,16 @@ def test_frozen_roster_and_source_tamper_denied(native, mutation):
     assert actual == json.loads(m.ROSTER_FILE.read_text(encoding="utf8"))
 
 
-def test_fixed_native_attack_subject_is_not_changed_for_b_or_reported():
+def test_fixed_native_attack_subject_is_not_changed_for_b_or_reported(native):
+    # Native is only installed in the exact-pinned dedicated CI. Generic CI
+    # must skip this case, not accidentally import the optional dependency.
     from agentdojo.attacks.baseline_attacks import DirectAttack
+    suite, enrollment = native
+    items = m.native_task1_source(suite=suite, enrollment=enrollment)
     assert DirectAttack.name == "direct"
+    assert items["observed_map"] == {m.SLOT: items["payload"]}
+    assert items["initial"] == items["B"].model_dump(mode="json")
+    assert items["initial"] == items["A"].model_dump(mode="json")
 
 
 @pytest.mark.parametrize("consent", [
