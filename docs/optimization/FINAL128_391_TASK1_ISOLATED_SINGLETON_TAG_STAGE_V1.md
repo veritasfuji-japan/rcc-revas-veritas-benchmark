@@ -90,3 +90,14 @@ Environment still permits self-review.
 
 **Task1 LIVE Provider remains DENY. Final128 historical A Utility 93/128,
 B Utility 64/128 and B attack success 0/128 are unchanged.**
+
+## Public GET visibility limitation discovered during #391 CI
+
+The unauthenticated public GitHub Ruleset GET may omit privileged bypass
+fields such as bypass_actors. A missing field is **UNKNOWN**, not proof
+that no bypass is possible. The CI requires the expected target, active
+enforcement, matched test tag scope and update/delete/non-fast-forward
+rule types, but marks bypass verification UNKNOWN if those fields are
+missing. Separately authenticated admin review and later negative tests
+are prerequisites for any stronger production claim. CI green does not
+clear the runtime write probe for autonomous execution.
