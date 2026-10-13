@@ -1,0 +1,158 @@
+name: Final128 398 Task1 Actual Native A Effect vs VERITAS B Bind
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-398-task1-native-veritas-bind-predispatch-effect-v1.yml"
+      - "scripts/final128_398_task1_native_veritas_bind_predispatch_effect_v1.py"
+      - "tests/test_final128_398_task1_native_veritas_bind_predispatch_effect_v1.py"
+      - "docs/optimization/FINAL128_398_TASK1_NATIVE_VERITAS_BIND_PREDISPATCH_EFFECT_V1.md"
+permissions:
+  contents: read
+jobs:
+  native-real-a-effect-veritas-real-b-block:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      FINAL128_398_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_398_VERITAS_ROOT: "_pins/veritas"
+      FINAL128_397_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_396_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_395_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_394_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_381_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_378_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_377_AGENTDOJO_ROOT: "_pins/agentdojo"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Exact source pins / no secrets / no provider
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git rev-parse HEAD > results/final128-398-exact-head.txt
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          test "$(git -C _pins/agentdojo hash-object src/agentdojo/default_suites/v1/tools/banking_client.py)" = "941c27467b7890cced7ab70e5fd5ca32241f99a5"
+          test "$(git -C _pins/veritas hash-object veritas_os/benchmarks/agentdojo_banking_adapter.py)" = "c2c66b9186cf065132bc50a4b769874d04a78dc6"
+          test "$(git -C _pins/veritas hash-object veritas_os/policy/bind_core/core.py)" = "0f64201e2599495ce4e3991348aa320995716ffc"
+          for key in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL VERITAS_DATABASE_URL GH_TOKEN GITHUB_TOKEN; do
+            test -z "$(printenv "$key" || true)"
+          done
+          python -m py_compile \
+            scripts/final128_398_task1_native_veritas_bind_predispatch_effect_v1.py \
+            tests/test_final128_398_task1_native_veritas_bind_predispatch_effect_v1.py
+      - name: Install fixed Native + VERITAS source and offline runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-deps \
+            -e ./_pins/agentdojo -e ./_pins/veritas
+          python -m pip install --disable-pip-version-check \
+            "pytest==9.1.1" "cryptography==50.0.0" \
+            "openai==1.109.1" "pydantic==2.11.10" \
+            "idna==3.15" "httpx==0.28.1" \
+            "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output /tmp/final128-398-native-agentdojo-lock.txt
+          python -m pip install --disable-pip-version-check \
+            -r /tmp/final128-398-native-agentdojo-lock.txt
+      - name: Run actual Native A and actual pinned VERITAS Bind B tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_398_task1_native_veritas_bind_predispatch_effect_v1.py \
+            tests/test_final128_397_task1_native_chat_fulltool_ab_offline_v1.py \
+            tests/test_final128_396_task1_native_canonical_fidelity_gate_v1.py \
+            tests/test_final128_395_task1_offline_native_postterminal_scorer_gate_v1.py \
+            tests/test_final128_394_task1_paired_second_turn_terminal_quarantine_v1.py \
+            tests/test_final128_381_task1_real_responses_capture_contract_v1.py \
+            tests/test_final128_378_native_paired_model_input_seam_v1.py \
+            tests/test_final128_377_native_preterminal_spending_projection_v1.py \
+            --junitxml=results/final128-398-junit.xml | tee results/final128-398-tests.log
+      - name: Enforce no skips and redacted native/bind evidence only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,xml.etree.ElementTree as ET
+          from pathlib import Path
+          root=ET.parse("results/final128-398-junit.xml").getroot()
+          suites=[root] if root.tag=="testsuite" else list(root.findall("testsuite"))
+          assert suites
+          c={k:sum(int(s.get(k,"0")) for s in suites)
+             for k in ("tests","failures","errors","skipped")}
+          assert c["tests"]>=220
+          assert all(c[k]==0 for k in ("failures","errors","skipped"))
+          from veritas_os.benchmarks.agentdojo_banking_adapter import (
+              TASK_MUTATION_POLICY, DISPOSITION_NO_MUTATION)
+          assert TASK_MUTATION_POLICY[1].disposition==DISPOSITION_NO_MUTATION
+          proof={
+            "schema":"veritas.final128.398-native-sandbox-a-real-bind-b-no-apply.v1",
+            "exact_head":Path("results/final128-398-exact-head.txt").read_text().strip(),
+            "agentdojo_pin":"a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+            "veritas_pin":"a1d66aef02262cf8a913295270c3aafd159c6adb",
+            "task1_native_no_mutation_policy_verified":True,
+            "real_pinned_native_A_disposable_in_memory_effect_tested":True,
+            "real_pinned_veritas_B_bind_block_before_apply_tested":True,
+            "B_native_apply_callbacks_in_success_test":0,
+            "real_model_proposals":0,
+            "actual_provider_calls":0,
+            "real_bank_or_external_effects":0,
+            "official_native_utility_scores":None,
+            "official_native_attack_scores":None,
+            "fresh_spend_approval":False,
+            "production_authority_proven":False,
+            "complete_canonical_final128_eligibility":False,
+            "JUnit":c,
+          }
+          canon=lambda x:json.dumps(x,sort_keys=True,separators=(",",":"),
+                                    allow_nan=False).encode()
+          proof["sha256"]=hashlib.sha256(canon(proof)).hexdigest()
+          Path("results/final128-398-redacted-sandbox-bind.json").write_text(
+            json.dumps(proof,sort_keys=True,indent=2)+"\n")
+          print("398_PINNED_NATIVE_A_LOCAL_EFFECT_ACTUAL_VERITAS_B_BIND_REFUSAL_NO_PROVIDER")
+          PY
+          sha256sum \
+            scripts/final128_398_task1_native_veritas_bind_predispatch_effect_v1.py \
+            tests/test_final128_398_task1_native_veritas_bind_predispatch_effect_v1.py \
+            docs/optimization/FINAL128_398_TASK1_NATIVE_VERITAS_BIND_PREDISPATCH_EFFECT_V1.md \
+            results/final128-398-redacted-sandbox-bind.json \
+            results/final128-398-junit.xml > results/final128-398-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-398-native-A-disposable-effect-veritas-B-bind-no-provider
+          path: results/final128-398-*
+          if-no-files-found: warn
