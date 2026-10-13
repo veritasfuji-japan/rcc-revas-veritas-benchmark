@@ -1,0 +1,116 @@
+name: Final128 394 Task1 Paired Second Turn and Terminal Quarantine Offline
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-394-task1-second-turn-quarantine-offline-v1.yml"
+      - "scripts/final128_394_task1_paired_second_turn_terminal_quarantine_v1.py"
+      - "tests/test_final128_394_task1_paired_second_turn_terminal_quarantine_v1.py"
+      - "docs/optimization/FINAL128_394_TASK1_PAIRED_SECOND_TURN_TERMINAL_QUARANTINE_V1.md"
+permissions:
+  contents: read
+jobs:
+  task1-second-turn-terminal-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      FINAL128_394_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_381_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_378_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_377_AGENTDOJO_ROOT: "_pins/agentdojo"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Require PR exact HEAD, immutable native and no credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git rev-parse HEAD > results/final128-394-exact-head.txt
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/agentdojo hash-object src/agentdojo/default_suites/v1/tools/banking_client.py)" = "941c27467b7890cced7ab70e5fd5ca32241f99a5"
+          for var in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL GH_TOKEN GITHUB_TOKEN; do
+            test -z "$(printenv "$var" || true)"
+          done
+          python -m py_compile \
+            scripts/final128_394_task1_paired_second_turn_terminal_quarantine_v1.py \
+            tests/test_final128_394_task1_paired_second_turn_terminal_quarantine_v1.py
+      - name: Install only pinned AgentDojo and pytest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+          python -m pip install --disable-pip-version-check -e _pins/agentdojo
+      - name: Real Native read, offline second-turn and refusal matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_394_task1_paired_second_turn_terminal_quarantine_v1.py \
+            tests/test_final128_381_task1_real_responses_capture_contract_v1.py \
+            tests/test_final128_378_native_paired_model_input_seam_v1.py \
+            tests/test_final128_377_native_preterminal_spending_projection_v1.py \
+            --junitxml=results/final128-394-junit.xml | tee results/final128-394-tests.log
+      - name: Check JUnit and emit SHA-only UNSCORED evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,xml.etree.ElementTree as ET
+          from pathlib import Path
+          x=ET.parse("results/final128-394-junit.xml").getroot()
+          suites=[x] if x.tag=="testsuite" else list(x.findall("testsuite"))
+          assert suites
+          counts={k:sum(int(s.get(k,"0")) for s in suites)
+                  for k in ("tests","failures","errors","skipped")}
+          assert counts["tests"]>=80 and all(counts[k]==0 for k in ("failures","errors","skipped"))
+          manifest={
+            "schema":"veritas.final128.394-offline-native-second-turn-quarantine-evidence.v1",
+            "head":Path("results/final128-394-exact-head.txt").read_text().strip(),
+            "agentdojo_pin":"a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+            "counts":counts,
+            "actual_provider_calls":0,"actual_github_writes":0,
+            "native_bank_writes":0,"real_native_scorer_calls":0,
+            "official_utility_or_attack_scores":None,
+            "genuine_provider_origin_proven":False,
+            "live_dispatch_authorized":False,
+            "independent_full_final128_scoring_proven":False,
+          }
+          data=json.dumps(manifest,sort_keys=True,separators=(",",":")).encode()
+          manifest["sha256"]=hashlib.sha256(data).hexdigest()
+          Path("results/final128-394-unscored-evidence.json").write_text(
+            json.dumps(manifest,sort_keys=True,indent=2)+"\n")
+          print("394_NATIVE_SECOND_TURN_AND_FAKE_FINAL_QUARANTINE_NO_PROVIDER_NO_SCORE")
+          PY
+          sha256sum \
+            scripts/final128_394_task1_paired_second_turn_terminal_quarantine_v1.py \
+            tests/test_final128_394_task1_paired_second_turn_terminal_quarantine_v1.py \
+            docs/optimization/FINAL128_394_TASK1_PAIRED_SECOND_TURN_TERMINAL_QUARANTINE_V1.md \
+            results/final128-394-unscored-evidence.json \
+            results/final128-394-junit.xml > results/final128-394-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-394-native-second-turn-unscored-offline
+          path: results/final128-394-*
+          if-no-files-found: warn
