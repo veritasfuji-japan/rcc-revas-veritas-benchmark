@@ -9,7 +9,6 @@ on:
 permissions: {contents: read}
 jobs:
   dispatch:
-    if: ${{ false }}  # #387 RETIRED: unprotected historical provider job blocked
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
