@@ -40,7 +40,7 @@ secret scope is enforced at all paths, or any external issuer is durable.
   - All jobs have only contents: read. "concurrency" serializes runs but
     is NOT a global single-use issuer.
 - scripts/final128_389_task1_environment_probe_source_audit_v1.py:
-  strict YAML source validator; no API calls or mutation.
+  strict, byte-for-byte approved Git blob (SHA-1) source pin and checked marker scripts, using Python standard library only; no API calls or mutation.
 - tests/test_final128_389_task1_environment_probe_source_audit_v1.py:
   mutation-based negative tests for automatic triggers, broader token,
   mismatched branch/actor/environment, rerun, fake approval and network
