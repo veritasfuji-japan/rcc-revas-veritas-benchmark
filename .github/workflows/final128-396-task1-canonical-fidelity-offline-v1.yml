@@ -1,0 +1,132 @@
+name: Final128 396 Task1 Native Canonical Fidelity Gap Offline
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-396-task1-canonical-fidelity-offline-v1.yml"
+      - "scripts/final128_396_task1_native_canonical_fidelity_gate_v1.py"
+      - "tests/test_final128_396_task1_native_canonical_fidelity_gate_v1.py"
+      - "docs/optimization/FINAL128_396_TASK1_CANONICAL_FIDELITY_GAP_V1.md"
+permissions:
+  contents: read
+jobs:
+  task1-real-native-fidelity-gap:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      FINAL128_396_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_395_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_394_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_381_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_378_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_377_AGENTDOJO_ROOT: "_pins/agentdojo"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Require exact immutable Native and no keys
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git rev-parse HEAD > results/final128-396-exact-head.txt
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/agentdojo hash-object src/agentdojo/default_suites/v1/tools/banking_client.py)" = "941c27467b7890cced7ab70e5fd5ca32241f99a5"
+          for name in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL GH_TOKEN GITHUB_TOKEN; do
+            test -z "$(printenv "$name" || true)"
+          done
+          python -m py_compile \
+            scripts/final128_396_task1_native_canonical_fidelity_gate_v1.py \
+            tests/test_final128_396_task1_native_canonical_fidelity_gate_v1.py
+      - name: Install pinned Native AgentDojo and pytest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "pytest==9.1.1"
+          python -m pip install --disable-pip-version-check -e _pins/agentdojo
+      - name: Native suite comparison and inherited fake-score rejection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_396_task1_native_canonical_fidelity_gate_v1.py \
+            tests/test_final128_395_task1_offline_native_postterminal_scorer_gate_v1.py \
+            tests/test_final128_394_task1_paired_second_turn_terminal_quarantine_v1.py \
+            tests/test_final128_381_task1_real_responses_capture_contract_v1.py \
+            tests/test_final128_378_native_paired_model_input_seam_v1.py \
+            tests/test_final128_377_native_preterminal_spending_projection_v1.py \
+            --junitxml=results/final128-396-junit.xml | tee results/final128-396-tests.log
+      - name: Fail if any tests skipped; SHA-only honest BLOCKED finding
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,xml.etree.ElementTree as ET
+          from pathlib import Path
+          root=ET.parse("results/final128-396-junit.xml").getroot()
+          suites=[root] if root.tag=="testsuite" else list(root.findall("testsuite"))
+          assert suites
+          counts={k:sum(int(s.attrib.get(k,"0")) for s in suites)
+                  for k in ("tests","failures","errors","skipped")}
+          assert counts["tests"]>=175
+          assert all(counts[k]==0 for k in ("failures","errors","skipped"))
+          from agentdojo.task_suite.load_suites import get_suite
+          from scripts import final128_396_task1_native_canonical_fidelity_gate_v1 as m
+          profile=m._frozen_native_profile(get_suite("v1.2.2","banking"))
+          assert profile["native_declared_tool_count"]>1
+          assert profile["native_has_write_tool"] is True
+          proof={
+            "schema":"veritas.final128.396-task1-native-canonical-fidelity-gap-evidence.v1",
+            "head":Path("results/final128-396-exact-head.txt").read_text().strip(),
+            "agentdojo_pin":m.PIN,
+            "native_tool_count":profile["native_declared_tool_count"],
+            "native_tool_schema_sha256":profile["tool_schema_hash"],
+            "native_chat_completions_vs_pilot_responses":True,
+            "native_tool_choice_auto_vs_pilot_second_none":True,
+            "canonical_fidelity_blockers":list(m.BLOCKERS),
+            "JUnit":counts,
+            "canonical_final128_eligible":False,
+            "production_provider_dispatch_eligible":False,
+            "actual_paid_provider_calls":0,
+            "actual_native_official_scores":None,
+            "fresh_spend_approval":False,
+            "real_external_effects":0,
+          }
+          canonical=lambda obj:json.dumps(obj,sort_keys=True,separators=(",",":"),
+                                           ensure_ascii=False,allow_nan=False).encode()
+          proof["sha256"]=hashlib.sha256(canonical(proof)).hexdigest()
+          Path("results/final128-396-fidelity-gap-no-admission.json").write_text(
+            json.dumps(proof,sort_keys=True,indent=2)+"\n")
+          print("396_SOURCE_PROVEN_NATIVE_PILOT_MISMATCH_NO_LIVE_DISPATCH_NO_OFFICIAL_SCORE")
+          PY
+          sha256sum \
+            scripts/final128_396_task1_native_canonical_fidelity_gate_v1.py \
+            tests/test_final128_396_task1_native_canonical_fidelity_gate_v1.py \
+            docs/optimization/FINAL128_396_TASK1_CANONICAL_FIDELITY_GAP_V1.md \
+            results/final128-396-fidelity-gap-no-admission.json \
+            results/final128-396-junit.xml > results/final128-396-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-396-task1-actual-native-canonical-fidelity-gap-no-official-score
+          path: results/final128-396-*
+          if-no-files-found: warn
