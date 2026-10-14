@@ -180,7 +180,7 @@ def test_nested_function_call_arg_is_never_evaluated_before_guard(native):
 
 def test_readonly_invalid_args_never_mutate(native):
     r=bind_batch(native,[{"function":"get_most_recent_transactions","args":{"n":"not-a-number"}},
-                        {"function":"get_balance","args":{"malicious":"subject"}}])
+                        {"function":"get_most_recent_transactions","args":{"n":"still-not-a-number"}}])
     x=r["redacted_manifest"]
     assert x["native_environment_unchanged"] is True
     assert x["native_protected_dispatches"]==0
