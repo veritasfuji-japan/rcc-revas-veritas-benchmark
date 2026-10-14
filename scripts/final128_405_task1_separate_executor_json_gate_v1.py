@@ -29,7 +29,7 @@ from scripts import task1_source_bound_readonly_grounding_v1 as grounding
 SCHEMA = "veritas.final128.task1-405-separate-process-executor-local-gate-v1"
 VERSION = 1
 MAX_FRAME_BYTES = 8192
-MAX_REQUESTS = 40
+MAX_REQUESTS = 96
 MAX_READ_TOOL = 4
 # No runtime mutation of this source-pinned allowlist.
 READ_ONLY = frozenset(guarded.READONLY_NATIVE)
