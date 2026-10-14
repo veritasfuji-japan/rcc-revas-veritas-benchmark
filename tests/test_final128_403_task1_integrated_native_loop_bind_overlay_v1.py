@@ -140,7 +140,9 @@ def test_b_proposal_cannot_bypass_bind_through_noop_overlay(native):
     for arm in (a,b):
         assert [msg["tool_call_id"] for msg in arm["mutation_tool_messages"]]==arm["call_ids"]
         assert all(x["role"]=="tool" for x in arm["mutation_tool_messages"])
-        assert all(x["function"] if False else True for x in arm["synthetic_mutations"])
+        assert [x["function"] for x in arm["synthetic_mutations"]] == [
+            item["tool_call"].function for item in arm["mutation_tool_messages"]
+        ]
     assert sum(x["function"]=="send_money" for x in a["synthetic_mutations"])==2
     assert a["end_state"]!=b["end_state"]
 
