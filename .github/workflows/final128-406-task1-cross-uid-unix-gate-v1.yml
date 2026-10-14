@@ -1,0 +1,280 @@
+name: Final128 406 Task1 Linux OS UID DAC SO_PEERCRED Native Bind Offline
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-406-task1-cross-uid-unix-gate-v1.yml"
+      - "scripts/final128_406_task1_cross_uid_unix_effect_owner_gate_v1.py"
+      - "tests/test_final128_406_task1_cross_uid_unix_effect_owner_gate_v1.py"
+      - "docs/optimization/FINAL128_406_TASK1_CROSS_UID_UNIX_EFFECT_OWNER_GATE_V1.md"
+      - "contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json"
+permissions:
+  contents: read
+jobs:
+  native-linux-uid-dac-peercred-guard-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      FINAL128_406_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_405_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_404_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_403_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_402_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_401_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_400_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_399_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_399_VERITAS_ROOT: "_pins/veritas"
+      FINAL128_398_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_398_VERITAS_ROOT: "_pins/veritas"
+      FINAL128_397_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_396_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_395_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_394_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_381_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_378_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_377_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_406_LINUX_DAC_READY: "1"
+      FINAL128_406_OWNER_USER: "veritas406owner"
+      FINAL128_406_AGENT_USER: "veritas406agent"
+      FINAL128_406_STRANGER_USER: "veritas406stranger"
+      FINAL128_406_SANDBOX_ROOT: "/tmp/veritas406-${{ github.run_id }}-${{ github.run_attempt }}"
+      FINAL128_406_PROJECT_ROOT: "/tmp/veritas406-${{ github.run_id }}-${{ github.run_attempt }}/project"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Exact PR HEAD, Native/VERITAS pins and unmodified canonical corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git rev-parse HEAD > results/final128-406-exact-head.txt
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          test "$(git hash-object contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json)" = "054c79f2a83b48821ce57071185c8ceecda17ed3"
+          for p in src/agentdojo/data/suites/banking/environment.yaml src/agentdojo/attacks/baseline_attacks.py src/agentdojo/default_suites/v1_2/banking/injection_tasks.py; do
+            test "$(git -C _pins/agentdojo hash-object "$p")" = "$(git -C _pins/agentdojo ls-tree HEAD "$p" | awk '{print $3}')"
+          done
+          test "$(git -C _pins/veritas hash-object veritas_os/benchmarks/agentdojo_banking_adapter.py)" = "c2c66b9186cf065132bc50a4b769874d04a78dc6"
+          test "$(git -C _pins/veritas hash-object veritas_os/policy/bind_core/core.py)" = "0f64201e2599495ce4e3991348aa320995716ffc"
+          test "$(git hash-object scripts/final128_377_native_preterminal_spending_projection_v1.py)" = "28e39eb1019a2514c6dbfbdb48c7492696887472"
+          test "$(git hash-object scripts/final128_378_native_paired_model_input_seam_v1.py)" = "a5d6e993b4efb503550cbb8f0957e816d434f91c"
+          test "$(git hash-object scripts/task1_source_bound_readonly_grounding_v1.py)" = "b2f5590857d9df43baed08fbe881fa2b028911bc"
+          for k in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL VERITAS_DATABASE_URL GH_TOKEN GITHUB_TOKEN; do test -z "$(printenv "$k" || true)"; done
+          python -m py_compile scripts/final128_406_task1_cross_uid_unix_effect_owner_gate_v1.py tests/test_final128_406_task1_cross_uid_unix_effect_owner_gate_v1.py
+      - name: Install exact-pinned Native and VERITAS offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          python -m pip install --disable-pip-version-check \
+            "pytest==9.1.1" "cryptography==50.0.0" \
+            "openai==1.109.1" "pydantic==2.11.10" \
+            "idna==3.15" "httpx==0.28.1" \
+            "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock --output /tmp/final128-406-agentdojo-lock.txt
+          python -m pip install --disable-pip-version-check \
+            -r /tmp/final128-406-agentdojo-lock.txt
+      - name: Create distinct unprivileged Linux UIDs and owner-only offline canary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -s)" = "Linux"
+          sudo -n groupadd -r veritas406ipc
+          for account in veritas406owner veritas406agent veritas406stranger; do
+            sudo -n useradd -r -M -s /usr/sbin/nologin -g veritas406ipc "$account"
+          done
+          test "$(id -u veritas406owner)" != "$(id -u veritas406agent)"
+          test "$(id -u veritas406agent)" != "$(id -u veritas406stranger)"
+          test "$(id -u veritas406owner)" != "0"
+          sudo -n install -d -m 0755 -o root -g root "$FINAL128_406_SANDBOX_ROOT"
+          sudo -n install -d -m 2770 -o veritas406owner -g veritas406ipc "$FINAL128_406_SANDBOX_ROOT/ipc"
+          sudo -n install -d -m 0700 -o veritas406owner -g veritas406ipc "$FINAL128_406_SANDBOX_ROOT/private"
+          sudo -n -u veritas406owner sh -c 'umask 077; printf "OFFLINE-NON-AUTHENTICATED-SENTINEL-CANARY-406\\n" > "$1"; chmod 600 "$1"' sh "$FINAL128_406_SANDBOX_ROOT/private/owner-only-simulated-credential.txt"
+          test "$(stat -c %a "$FINAL128_406_SANDBOX_ROOT/private")" = 700
+          test "$(sudo -n stat -c %a "$FINAL128_406_SANDBOX_ROOT/private/owner-only-simulated-credential.txt")" = 600
+          test "$(stat -c %a "$FINAL128_406_SANDBOX_ROOT/ipc")" = 2770
+          # Copy ONLY the public frozen sources (never secrets) to a neutral
+          # read-only fixture location: the runner checkout itself stays private.
+          sudo -n install -d -m 0755 -o root -g root "$FINAL128_406_PROJECT_ROOT"
+          sudo -n cp -a scripts contracts _pins "$FINAL128_406_PROJECT_ROOT/"
+          sudo -n chmod -R a+rX "$FINAL128_406_PROJECT_ROOT"
+          test -r "$FINAL128_406_PROJECT_ROOT/scripts/final128_406_task1_cross_uid_unix_effect_owner_gate_v1.py"
+          test -r "$FINAL128_406_PROJECT_ROOT/contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json"
+
+      - name: Verify me alias, unmodified Native tool result, injection and pair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_406_task1_cross_uid_unix_effect_owner_gate_v1.py \
+            tests/test_final128_405_task1_separate_executor_json_gate_v1.py \
+            tests/test_final128_404_task1_native_alternate_sink_bypass_inventory_v1.py \
+            tests/test_final128_403_task1_integrated_native_loop_bind_overlay_v1.py \
+            tests/test_final128_402_task1_native_tools_executor_bind_guard_v1.py \
+            tests/test_final128_401_task1_native_postexecutor_prellm_overlay_v1.py \
+            tests/test_final128_400_task1_canonical_me_alias_projection_v1.py \
+            tests/test_final128_399_task1_frozen_direct_native_bind_v1.py \
+            tests/test_final128_398_task1_native_veritas_bind_predispatch_effect_v1.py \
+            tests/test_final128_397_task1_native_chat_fulltool_ab_offline_v1.py \
+            tests/test_final128_396_task1_native_canonical_fidelity_gate_v1.py \
+            tests/test_final128_395_task1_offline_native_postterminal_scorer_gate_v1.py \
+            tests/test_final128_394_task1_paired_second_turn_terminal_quarantine_v1.py \
+            tests/test_final128_381_task1_real_responses_capture_contract_v1.py \
+            tests/test_final128_378_native_paired_model_input_seam_v1.py \
+            tests/test_final128_377_native_preterminal_spending_projection_v1.py \
+            --junitxml=results/final128-406-junit.xml | tee results/final128-406-tests.log
+      - name: Enforce zero skips and publish redacted hashes only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import final128_406_task1_cross_uid_unix_effect_owner_gate_v1 as m
+          from agentdojo.task_suite.load_suites import get_suite
+          r=ET.parse("results/final128-406-junit.xml").getroot()
+          suites=[r] if r.tag=="testsuite" else list(r.findall("testsuite"))
+          assert suites
+          counts={k:sum(int(s.get(k,"0")) for s in suites)
+                  for k in ("tests","failures","errors","skipped")}
+          assert counts["tests"]>=470
+          assert all(counts[k]==0 for k in ("failures","errors","skipped"))
+          import os,subprocess,sys,time
+          socket_path=os.path.join(os.environ["FINAL128_406_SANDBOX_ROOT"],
+                                   "ipc","native_task1.sock")
+          private=os.path.join(os.environ["FINAL128_406_SANDBOX_ROOT"],"private")
+          repo=os.environ["FINAL128_406_PROJECT_ROOT"]
+          py=sys.executable
+          native=os.path.join(repo,"_pins/agentdojo")
+          veritas=os.path.join(repo,"_pins/veritas")
+          owner=os.environ["FINAL128_406_OWNER_USER"]
+          agent=os.environ["FINAL128_406_AGENT_USER"]
+          owner_uid=int(subprocess.check_output(["id","-u",owner],text=True).strip())
+          agent_uid=int(subprocess.check_output(["id","-u",agent],text=True).strip())
+          execution_env={
+              "PATH":os.environ.get("PATH","/usr/bin:/bin"),
+              "HOME":"/tmp","PYTHONPATH":os.pathsep.join((
+                  repo,os.path.join(native,"src"),veritas)),
+              "PYTHONDONTWRITEBYTECODE":"1",
+              "FINAL128_405_AGENTDOJO_ROOT":native,
+              "FINAL128_399_VERITAS_ROOT":veritas,
+              "GIT_CONFIG_COUNT":"2",
+              "GIT_CONFIG_KEY_0":"safe.directory","GIT_CONFIG_VALUE_0":native,
+              "GIT_CONFIG_KEY_1":"safe.directory","GIT_CONFIG_VALUE_1":veritas,
+          }
+          def as_user(user,args):
+              cmd=["sudo","-n","-u",user,"--","/usr/bin/env"]+[
+                  f"{key}={value}" for key,value in execution_env.items()
+              ]+[py,"-m","scripts.final128_406_task1_cross_uid_unix_effect_owner_gate_v1"]+args
+              return subprocess.run(cmd,text=True,capture_output=True,
+                                    timeout=15,check=False)
+          start_cmd=["sudo","-n","-u",owner,"--","/usr/bin/env"]+[
+              f"{key}={value}" for key,value in execution_env.items()
+          ]+[py,"-m","scripts.final128_406_task1_cross_uid_unix_effect_owner_gate_v1",
+             "--server",socket_path,private,str(agent_uid)]
+          child=subprocess.Popen(start_cmd,stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,text=True)
+          try:
+              start=time.monotonic()
+              while (subprocess.run(["sudo","-n","test","-S",socket_path],
+                                    capture_output=True).returncode!=0
+                     and child.poll() is None):
+                  assert time.monotonic()-start<25,"406 worker not started"
+                  time.sleep(0.1)
+              assert child.poll() is None,"406 worker exited before test"
+              def ask(req):
+                  call=as_user(agent,["--agent",socket_path,
+                       json.dumps(req,separators=(",",":"),sort_keys=True)])
+                  assert call.returncode==0,call.stderr[-2000:]
+                  return json.loads(call.stdout)
+              first=ask({"v":1,"op":"status"})
+              reading=ask({"v":1,"op":"tool","name":"get_balance","args":{}})
+              denied=ask({"v":1,"op":"tool","name":"send_money",
+                          "args":{"recipient":"local-test-only","amount":1}})
+              last=ask({"v":1,"op":"status"})
+              probe=as_user(agent,["--probe-file",os.path.join(
+                     private,m.CANARY_FILENAME)])
+              assert probe.returncode==0
+              file_denied=json.loads(probe.stdout)["os_denial_observed"] is True
+              signal=as_user(agent,["--probe-signal",str(first["worker_pid"])])
+              assert signal.returncode==0
+              signal_denied=json.loads(signal.stdout)["os_signal_permission_denied"] is True
+              redacted=m.redacted_summary(
+                  worker_uid=owner_uid,agent_uid=agent_uid,first=first,
+                  reading=reading,denied=denied,last=last,
+                  os_file_denied=file_denied,signal_denied=signal_denied)
+              assert redacted["real_iam_or_egress_boundary_proven"] is False
+              assert redacted["globally_nonbypassable_production_effect_proven"] is False
+              assert redacted["real_external_bank_effects"]==0
+              assert redacted["paid_provider_requests"]==0
+              assert redacted["official_native_scorer_calls"]==0
+          finally:
+              if child.poll() is None:
+                  as_user(agent,["--agent",socket_path,
+                          '{"v":1,"op":"close"}'])
+                  child.wait(timeout=12)
+              assert child.returncode==0,child.stderr.read()[-1500:]
+              child.stdout.close();child.stderr.close()
+          redacted["exact_head"]=Path("results/final128-406-exact-head.txt").read_text().strip()
+          redacted["JUnit"]=counts
+          blob=lambda x:json.dumps(x,sort_keys=True,separators=(",",":"),
+                                   ensure_ascii=False,allow_nan=False).encode("utf8")
+          redacted["evidence_sha256"]=hashlib.sha256(blob(redacted)).hexdigest()
+          Path("results/final128-406-redacted-native-ab.json").write_text(
+            json.dumps(redacted,indent=2,sort_keys=True)+"\n",encoding="utf8")
+          print("406_ACTUAL_LINUX_UID_DAC_PEERCRED_NATIVE_BIND_TASK1_NO_EFFECT_OFFLINE")
+          PY
+          sha256sum \
+            scripts/final128_406_task1_cross_uid_unix_effect_owner_gate_v1.py \
+            tests/test_final128_406_task1_cross_uid_unix_effect_owner_gate_v1.py \
+            docs/optimization/FINAL128_406_TASK1_CROSS_UID_UNIX_EFFECT_OWNER_GATE_V1.md \
+            results/final128-406-redacted-native-ab.json \
+            results/final128-406-junit.xml > results/final128-406-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-406-task1-linux-uid-peercred-native-bind-no-provider
+          path: results/final128-406-*
+          if-no-files-found: warn
+
+      - name: Remove temporary OS principals and synthetic files
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -n "${FINAL128_406_SANDBOX_ROOT:-}"; then
+            sudo -n rm -rf -- "$FINAL128_406_SANDBOX_ROOT"
+          fi
+          for account in veritas406stranger veritas406agent veritas406owner; do
+            sudo -n userdel "$account" 2>/dev/null || true
+          done
+          sudo -n groupdel veritas406ipc 2>/dev/null || true
