@@ -241,7 +241,7 @@ def test_local_synthetic_grant_never_implies_real_authority(bad):
 
 
 @pytest.mark.parametrize("bad",[
-    None,False,True,1,[],{},set(),
+    None,False,True,1,[],set(),
 ])
 def test_gateway_protocol_serializes_only_json_object(bad):
     with pytest.raises(m.Refused,match="STRICT_CLIENT_OBJECT"):
