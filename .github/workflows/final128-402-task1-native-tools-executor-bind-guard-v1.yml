@@ -118,7 +118,7 @@ jobs:
           python - <<'PY'
           import hashlib,json,xml.etree.ElementTree as ET
           from pathlib import Path
-          from scripts import final128_401_task1_native_postexecutor_prellm_overlay_v1 as m
+          from scripts import final128_402_task1_native_tools_executor_bind_guard_v1 as m
           from agentdojo.task_suite.load_suites import get_suite
           r=ET.parse("results/final128-402-junit.xml").getroot()
           suites=[r] if r.tag=="testsuite" else list(r.findall("testsuite"))
@@ -141,7 +141,7 @@ jobs:
             ])
           redacted=source["redacted_manifest"]
           assert redacted["all_native_runner_paths_governed_proven"] is False
-          assert redacted["real_provider_requests"]==0
+          assert redacted["real_provider_tool_calls"]==0
           assert redacted["native_protected_dispatches"]==0
           assert redacted["native_readonly_dispatches"]==1
           assert redacted["real_veritas_bind_adjudications"]==2
