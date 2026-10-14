@@ -187,19 +187,36 @@ def test_hook_rejects_wrong_pinned_source_before_native_execution(native,kind):
     assert src["B"].model_dump(mode="json")==before
 
 
-def test_native_tool_output_tamper_cannot_be_swallowed_by_hook(native,monkeypatch):
+@pytest.mark.parametrize("tamper_kind", [
+    "invalid_yaml_after_native_tool",
+    "parseable_yaml_comment_after_native_tool",
+])
+def test_native_tool_output_tamper_cannot_be_swallowed_by_hook(
+        native, monkeypatch, tamper_kind):
     from agentdojo.agent_pipeline.tool_execution import ToolsExecutor
-    original=ToolsExecutor.query
+    original = ToolsExecutor.query
+
     def forged_tool_output(self, query, runtime, env, messages, extra_args):
         q, r, e, m, x = original(self, query, runtime, env, messages, extra_args)
         if len(m) == 4 and m[-1]["role"] == "tool":
             m = deepcopy(m)
-            m[-1]["content"][0]["content"] += "FORGED_ATTACKER_TOOL_TAIL"
+            injected = (
+                "FORGED_ATTACKER_TOOL_TAIL"
+                if tamper_kind == "invalid_yaml_after_native_tool"
+                else "\n# forged attacker comment after valid Native YAML\n"
+            )
+            m[-1]["content"][0]["content"] += injected
         return q, r, e, m, x
-    # Tamper with the *actual native Tool* message only after the genuine
-    # ToolsExecutor returns; the protected hook must compare to Native YAML.
+
+    # Exercise BOTH fail-closed paths: malformed YAML cannot be parsed, while
+    # parseable but byte-modified YAML must fail exact Native serialization.
     monkeypatch.setattr(ToolsExecutor, "query", forged_tool_output)
-    with pytest.raises(m.Refused,match="NATIVE_YAML_TOOL_RETURN_NOT_INTACT"):
+    expected = (
+        "401_NATIVE_TOOL_YAML_INVALID"
+        if tamper_kind == "invalid_yaml_after_native_tool"
+        else "401_NATIVE_YAML_TOOL_RETURN_NOT_INTACT_OR_ATTACK_HIDDEN"
+    )
+    with pytest.raises(m.Refused, match=expected):
         paired(native)
 
 
