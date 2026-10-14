@@ -287,7 +287,9 @@ def test_runner_has_no_direct_access_to_child_owner_only_sentinel(os_boundary):
 
 
 def test_expected_public_report_and_no_production_proof(os_boundary):
-    first=os_boundary["initial"]
+    # The OS-boundary fixture is shared across earlier retry tests; count
+    # this report's own decision from its immediate pre-operation snapshot.
+    first=ask(os_boundary,{"v":1,"op":"status"})
     reading=ask(os_boundary,{"v":1,"op":"tool","name":"get_balance","args":{}})
     denied=ask(os_boundary,{"v":1,"op":"tool","name":"send_money",
                             "args":{"recipient":"local","amount":1.0}})
