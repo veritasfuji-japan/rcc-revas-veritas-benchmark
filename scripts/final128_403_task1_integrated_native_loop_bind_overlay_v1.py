@@ -10,7 +10,6 @@ No scored Native model trace or production bypass-resistance claim.
 from __future__ import annotations
 from copy import deepcopy
 import json
-import yaml
 
 from scripts import final128_399_task1_frozen_direct_native_bind_v1 as source
 from scripts import final128_400_task1_canonical_me_alias_projection_v1 as spending
@@ -114,6 +113,7 @@ def _arm_native_loop(*,arm,suite,env,initial,source_payload,
                      and messages[3]["error"] is None
                      and env.model_dump(mode="json")==initial,
                      "FIRST_REAL_NATIVE_TRANSACTION_READ_NOT_FIDELITY_SAFE")
+                import yaml  # exact Native dependency; absent in lightweight generic CI
                 native_yaml=get_text_content_as_str(messages[3]["content"])
                 expected=tool_result_to_str(list(owner.bank_account.transactions[-100:]))
                 try:
