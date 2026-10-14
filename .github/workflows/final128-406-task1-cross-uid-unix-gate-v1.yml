@@ -194,7 +194,9 @@ jobs:
                                  stderr=subprocess.PIPE,text=True)
           try:
               start=time.monotonic()
-              while not os.path.exists(socket_path) and child.poll() is None:
+              while (subprocess.run(["sudo","-n","test","-S",socket_path],
+                                    capture_output=True).returncode!=0
+                     and child.poll() is None):
                   assert time.monotonic()-start<25,"406 worker not started"
                   time.sleep(0.1)
               assert child.poll() is None,"406 worker exited before test"
