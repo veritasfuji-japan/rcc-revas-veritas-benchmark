@@ -177,6 +177,18 @@ def run_crossuid_e2e_fixture():
         assert applied["backend_effect_count"]==1
         assert applied["backend_grant_consumed"] is True
         assert applied["backend_state_sha256"]!=before["backend_state_sha256"]
+        # Even the *authorized gateway UID* cannot replay the consumed
+        # grant at the separately owned sink. This is stronger than only
+        # checking the gateway's in-memory replay flag.
+        backend_repeat=_client(names["gateway"],backend_socket,
+            {"v":1,"op":"apply","target":m.TARGET,
+             "units":m.UNITS,"grant":m.GRANT})
+        assert backend_repeat.returncode==0,backend_repeat.stderr[-1200:]
+        sink_repeat=json.loads(backend_repeat.stdout)
+        assert sink_repeat["schema"]==m.SCHEMA
+        assert sink_repeat["ok"] is False
+        assert sink_repeat["code"]=="407_BACKEND_UNBOUND_OR_CONSUMED"
+        assert sink_repeat["state_sha256"]==applied["backend_state_sha256"]
         replay=_ask(names["agent"],gateway_socket,authorized)
         assert replay["ok"] is False
         assert replay["code"]=="407_GATE_SINGLEUSE_REPLAY_DENIED"
