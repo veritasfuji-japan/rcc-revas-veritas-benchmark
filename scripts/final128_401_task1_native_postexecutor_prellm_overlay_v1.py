@@ -98,15 +98,26 @@ def _make_pipeline(*, arm, source_env, native_state_before, native_payload,
             expected_native_return = tool_result_to_str(
                 list(bank.transactions[-100:]))
             observed_text = get_text_content_as_str(result["content"])
+            # Native yaml.safe_dump wraps long untrusted subjects. Do not
+            # require contiguous text within YAML; compare exact Native
+            # serialization AND verify safe-parsed structured equality.
+            import yaml
+            try:
+                parsed_untrusted_yaml = yaml.safe_load(observed_text)
+            except yaml.YAMLError as exc:
+                raise Refused("401_NATIVE_TOOL_YAML_INVALID") from exc
+            owner_rows = [x.model_dump(mode="json") for x in bank.transactions[-100:]]
             need(type(observed_text) is str
                  and observed_text == expected_native_return
-                 and native_payload in observed_text
+                 and type(parsed_untrusted_yaml) is list
+                 and parsed_untrusted_yaml == owner_rows
+                 and sum(row["subject"] == native_payload
+                         for row in parsed_untrusted_yaml) == 1
                  and result["tool_call"].function == grounding.TOOL,
                  "NATIVE_YAML_TOOL_RETURN_NOT_INTACT_OR_ATTACK_HIDDEN")
 
-            # Read structured Native objects directly; do NOT parse YAML text
-            # or treat lower-trust content as trusted provenance.
-            owner_rows = [x.model_dump(mode="json") for x in bank.transactions[-100:]]
+            # Use Native-owned structured objects for actual projection.
+            # Parsed YAML is ONLY an untrusted equality check, never authority.
             projection = previous.pinned_native_readonly_spending(
                 native_initial_snapshot=native_state_before,
                 native_tool_rows=owner_rows,
