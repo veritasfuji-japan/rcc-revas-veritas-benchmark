@@ -119,7 +119,7 @@ jobs:
           sudo -n install -d -m 0700 -o veritas406owner -g veritas406ipc "$FINAL128_406_SANDBOX_ROOT/private"
           sudo -n -u veritas406owner sh -c 'umask 077; printf "OFFLINE-NON-AUTHENTICATED-SENTINEL-CANARY-406\\n" > "$1"; chmod 600 "$1"' sh "$FINAL128_406_SANDBOX_ROOT/private/owner-only-simulated-credential.txt"
           test "$(stat -c %a "$FINAL128_406_SANDBOX_ROOT/private")" = 700
-          test "$(stat -c %a "$FINAL128_406_SANDBOX_ROOT/private/owner-only-simulated-credential.txt")" = 600
+          test "$(sudo -n stat -c %a "$FINAL128_406_SANDBOX_ROOT/private/owner-only-simulated-credential.txt")" = 600
           test "$(stat -c %a "$FINAL128_406_SANDBOX_ROOT/ipc")" = 2770
       - name: Verify me alias, unmodified Native tool result, injection and pair
         shell: bash
