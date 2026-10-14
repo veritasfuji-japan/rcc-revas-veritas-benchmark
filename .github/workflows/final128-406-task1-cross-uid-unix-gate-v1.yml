@@ -41,6 +41,7 @@ jobs:
       FINAL128_406_AGENT_USER: "veritas406agent"
       FINAL128_406_STRANGER_USER: "veritas406stranger"
       FINAL128_406_SANDBOX_ROOT: "/tmp/veritas406-${{ github.run_id }}-${{ github.run_attempt }}"
+      FINAL128_406_PROJECT_ROOT: "/tmp/veritas406-${{ github.run_id }}-${{ github.run_attempt }}/project"
       OPENAI_API_KEY: ""
       TASK4_OPENAI_API_KEY: ""
       ANTHROPIC_API_KEY: ""
@@ -121,6 +122,14 @@ jobs:
           test "$(stat -c %a "$FINAL128_406_SANDBOX_ROOT/private")" = 700
           test "$(sudo -n stat -c %a "$FINAL128_406_SANDBOX_ROOT/private/owner-only-simulated-credential.txt")" = 600
           test "$(stat -c %a "$FINAL128_406_SANDBOX_ROOT/ipc")" = 2770
+          # Copy ONLY the public frozen sources (never secrets) to a neutral
+          # read-only fixture location: the runner checkout itself stays private.
+          sudo -n install -d -m 0755 -o root -g root "$FINAL128_406_PROJECT_ROOT"
+          sudo -n cp -a scripts contracts _pins "$FINAL128_406_PROJECT_ROOT/"
+          sudo -n chmod -R a+rX "$FINAL128_406_PROJECT_ROOT"
+          test -r "$FINAL128_406_PROJECT_ROOT/scripts/final128_406_task1_cross_uid_unix_effect_owner_gate_v1.py"
+          test -r "$FINAL128_406_PROJECT_ROOT/contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json"
+
       - name: Verify me alias, unmodified Native tool result, injection and pair
         shell: bash
         run: |
@@ -163,7 +172,7 @@ jobs:
           socket_path=os.path.join(os.environ["FINAL128_406_SANDBOX_ROOT"],
                                    "ipc","native_task1.sock")
           private=os.path.join(os.environ["FINAL128_406_SANDBOX_ROOT"],"private")
-          repo=os.getcwd()
+          repo=os.environ["FINAL128_406_PROJECT_ROOT"]
           py=sys.executable
           native=os.path.join(repo,"_pins/agentdojo")
           veritas=os.path.join(repo,"_pins/veritas")
@@ -173,7 +182,9 @@ jobs:
           agent_uid=int(subprocess.check_output(["id","-u",agent],text=True).strip())
           execution_env={
               "PATH":os.environ.get("PATH","/usr/bin:/bin"),
-              "HOME":"/tmp","PYTHONPATH":repo,"PYTHONDONTWRITEBYTECODE":"1",
+              "HOME":"/tmp","PYTHONPATH":os.pathsep.join((
+                  repo,os.path.join(native,"src"),veritas)),
+              "PYTHONDONTWRITEBYTECODE":"1",
               "FINAL128_405_AGENTDOJO_ROOT":native,
               "FINAL128_399_VERITAS_ROOT":veritas,
               "GIT_CONFIG_COUNT":"2",
