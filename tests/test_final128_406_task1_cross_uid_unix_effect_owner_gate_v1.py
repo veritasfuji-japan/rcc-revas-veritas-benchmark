@@ -68,11 +68,16 @@ def os_boundary():
     assert len({owner_uid,agent_uid,stranger_uid,os.geteuid()})==4
     assert owner_uid>0 and agent_uid>0 and stranger_uid>0
     ds=secret.stat()
-    fs=secret_file.stat()
     assert ds.st_uid==owner_uid
     assert stat.S_IMODE(ds.st_mode)==0o700
-    assert fs.st_uid==owner_uid
-    assert stat.S_IMODE(fs.st_mode)==0o600
+    # The runner CANNOT traverse this 0700 directory. File metadata is
+    # inspected only by the test administrator, never by agent/runner.
+    with pytest.raises(PermissionError):
+        secret_file.stat()
+    checked=subprocess.run(
+        ["sudo","-n","stat","-c","%u:%a",str(secret_file)],
+        capture_output=True,text=True,check=True)
+    assert checked.stdout.strip()==f"{owner_uid}:600"
     assert not socket_path.exists()
     cmd=["sudo","-n","-u",owner,"--","/usr/bin/env",
          *[f"{k}={v}" for k,v in _env_for_cross_uid().items()],
