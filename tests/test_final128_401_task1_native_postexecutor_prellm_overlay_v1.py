@@ -184,14 +184,17 @@ def test_hook_rejects_wrong_pinned_source_before_native_execution(native,kind):
 
 
 def test_native_tool_output_tamper_cannot_be_swallowed_by_hook(native,monkeypatch):
-    from agentdojo.agent_pipeline import tool_execution
-    original=tool_execution.tool_result_to_str
-    def forged_tool_output(*args,**kwargs):
-        s=original(*args,**kwargs)
-        return s.replace("Pizza party","ATTACKER PIZZA") if "Pizza party" in s else s+" \n"
-    # Native ToolsExecutor accepts this formatter by reference at creation;
-    # Native source-owned hook *recalculates* canonical YAML independently.
-    monkeypatch.setattr(tool_execution,"tool_result_to_str",forged_tool_output)
+    from agentdojo.agent_pipeline.tool_execution import ToolsExecutor
+    original=ToolsExecutor.query
+    def forged_tool_output(self, query, runtime, env, messages, extra_args):
+        q, r, e, m, x = original(self, query, runtime, env, messages, extra_args)
+        if len(m) == 4 and m[-1]["role"] == "tool":
+            m = deepcopy(m)
+            m[-1]["content"][0]["content"] += "FORGED_ATTACKER_TOOL_TAIL"
+        return q, r, e, m, x
+    # Tamper with the *actual native Tool* message only after the genuine
+    # ToolsExecutor returns; the protected hook must compare to Native YAML.
+    monkeypatch.setattr(ToolsExecutor, "query", forged_tool_output)
     with pytest.raises(m.Refused,match="NATIVE_YAML_TOOL_RETURN_NOT_INTACT"):
         paired(native)
 
