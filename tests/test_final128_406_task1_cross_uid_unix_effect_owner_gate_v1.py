@@ -16,14 +16,17 @@ from scripts import final128_406_task1_cross_uid_unix_effect_owner_gate_v1 as m
 
 
 def _env_for_cross_uid():
-    work=Path.cwd()
+    # The GitHub Runner checkout may be inside a 0700 home. Do not weaken
+    # host workspace permissions; owner/agent use a public-source-only copy.
+    work=Path(os.environ.get("FINAL128_406_PROJECT_ROOT",Path.cwd()))
     original=os.environ.copy()
     native_root=work/"_pins/agentdojo"
     veritas_root=work/"_pins/veritas"
     safe={
         "PATH":original.get("PATH","/usr/bin:/bin"),
         "HOME":"/tmp",
-        "PYTHONPATH":str(work),
+        "PYTHONPATH":os.pathsep.join((str(work),str(native_root/"src"),
+                                     str(veritas_root))),
         "PYTHONDONTWRITEBYTECODE":"1",
         "FINAL128_405_AGENTDOJO_ROOT":str(native_root),
         "FINAL128_399_VERITAS_ROOT":str(veritas_root),
