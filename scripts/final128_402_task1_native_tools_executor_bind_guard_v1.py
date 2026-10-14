@@ -96,7 +96,7 @@ def guard_native_task1_runtime(*, native_environment, suite, pinned_catalog_sha2
          and not READONLY_NATIVE.intersection(PROTECTED_TOOLS),
          "FULL_UNCHANGED_NATIVE_CATALOG_NOT_PROTECTED")
     # The complete pinned runtime remains model-visible. Every name partitions
-    into exact Native read-only, registered protected, or unknown/deny.
+    # into exact Native read-only, registered protected, or unknown/deny.
     protected = frozenset(PROTECTED_TOOLS.intersection(declared))
     unclassified = frozenset(set(declared) - READONLY_NATIVE - protected)
     journal = {
