@@ -78,7 +78,9 @@ def os_boundary():
         ["sudo","-n","stat","-c","%u:%a",str(secret_file)],
         capture_output=True,text=True,check=True)
     assert checked.stdout.strip()==f"{owner_uid}:600"
-    assert not socket_path.exists()
+    # Runner UID is intentionally unable to traverse the 2770 IPC dir.
+    assert subprocess.run(["sudo","-n","test","!","-e",str(socket_path)],
+                          capture_output=True).returncode==0
     cmd=["sudo","-n","-u",owner,"--","/usr/bin/env",
          *[f"{k}={v}" for k,v in _env_for_cross_uid().items()],
          sys.executable,"-m",
@@ -88,17 +90,21 @@ def os_boundary():
                           text=True)
     try:
         start=time.monotonic()
-        while not socket_path.exists() and proc.poll() is None:
+        while (subprocess.run(["sudo","-n","test","-S",str(socket_path)],
+                              capture_output=True).returncode!=0
+               and proc.poll() is None):
             if time.monotonic()-start>25:
                 pytest.fail("Cross-UID Native owner socket did not start")
             time.sleep(0.1)
         if proc.poll() is not None:
             pytest.fail("Owner exited before accepting: "+
                         proc.stderr.read()[-4000:])
-        ss=socket_path.stat()
-        assert ss.st_uid==owner_uid
-        assert stat.S_IMODE(ss.st_mode)==0o660
-        assert stat.S_ISSOCK(ss.st_mode)
+        # Use setup administrator ONLY for metadata; direct agent/stranger
+        # access is independently proved via Linux connect and SO_PEERCRED.
+        metadata=subprocess.run(["sudo","-n","stat","-c","%u:%a:%F",
+                                 str(socket_path)],
+                                capture_output=True,text=True,check=True)
+        assert metadata.stdout.strip()==f"{owner_uid}:660:socket"
         first=_run_as(agent,["--agent",str(socket_path),
                       '{"v":1,"op":"status"}'])
         assert first.returncode==0,first.stderr
@@ -114,7 +120,7 @@ def os_boundary():
             "initial":response,
         }
     finally:
-        if proc.poll() is None and socket_path.exists():
+        if proc.poll() is None:
             _run_as(agent,["--agent",str(socket_path),
                             '{"v":1,"op":"close"}'])
         if proc.poll() is None:
