@@ -129,7 +129,7 @@ jobs:
                   for k in ("tests","failures","errors","skipped")}
           assert counts["tests"]>=370
           assert all(counts[k]==0 for k in ("failures","errors","skipped"))
-          freeze=json.loads(m.native.ROSTER_FILE.read_text(encoding="utf8"))
+          freeze=json.loads(m.source.ROSTER_FILE.read_text(encoding="utf8"))
           source=m.run_frozen_task1_integrated_native_ab(
             suite=get_suite("v1.2.2","banking"), enrollment=freeze,
             write_count=2)
