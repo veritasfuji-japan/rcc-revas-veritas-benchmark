@@ -75,25 +75,24 @@ def test_exact_native_full_tool_classification_no_rewrite(native):
     assert x["official_utility_A"] is x["official_utility_B"] is None
     assert x["official_attack_success_A"] is x["official_attack_success_B"] is None
 
-@pytest.mark.parametrize("tool", [
-    "send_money","schedule_transaction","update_scheduled_transaction",
-    "update_password","update_user_info"
-])
-def test_each_mapped_protected_native_tool_reaches_real_bind_not_native_mutation(native,tool):
-    if tool not in protected_calls(native):
-        pytest.skip("Tool not advertised by exact pinned banking suite")
-    r=bind_batch(native,[{"function":tool,"args":{"offline_probe":"402_untrusted"}}])
-    x=r["redacted_manifest"]
-    assert x["real_veritas_bind_adjudications"]==1
-    assert x["real_veritas_bind_blocked"]==1
-    assert x["native_protected_dispatches"]==0
-    assert x["native_environment_unchanged"] is True
-    assert len(x["bind_receipt_sha256"])==1
-    assert r["ephemeral_guard_journal"]["last_bind_outcome"]=="BLOCKED"
-    rows=r["ephemeral_actual_native_tool_messages"]
-    assert len(rows)==1
-    assert rows[0]["error"].startswith("VERITAS_402_DENIED:")
-    assert "REAL_VERITAS_TASK1_BIND_BLOCKED" in rows[0]["error"]
+def test_each_mapped_protected_native_tool_reaches_real_bind_not_native_mutation(native):
+    # Do not pretend unavailable tools were checked; enumerate exactly the
+    # native suite's advertised protected tool set and require nonempty.
+    actual=protected_calls(native)
+    assert "send_money" in actual and len(actual)>=3
+    for tool in actual:
+        r=bind_batch(native,[{"function":tool,"args":{"offline_probe":"402_untrusted"}}])
+        x=r["redacted_manifest"]
+        assert x["real_veritas_bind_adjudications"]==1, tool
+        assert x["real_veritas_bind_blocked"]==1, tool
+        assert x["native_protected_dispatches"]==0
+        assert x["native_environment_unchanged"] is True
+        assert len(x["bind_receipt_sha256"])==1
+        assert r["ephemeral_guard_journal"]["last_bind_outcome"]=="BLOCKED"
+        rows=r["ephemeral_actual_native_tool_messages"]
+        assert len(rows)==1
+        assert rows[0]["error"].startswith("VERITAS_402_DENIED:")
+        assert "REAL_VERITAS_TASK1_BIND_BLOCKED" in rows[0]["error"]
 
 def test_native_multi_tool_same_turn_all_protected_blocked_and_one_read_allowed(native):
     tools=protected_calls(native)
