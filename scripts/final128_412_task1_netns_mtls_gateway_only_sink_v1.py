@@ -391,7 +391,7 @@ def main(argv):
     elif len(argv)==4 and argv[1]=="--client":
         print(json.dumps(prev.socket_query(argv[2],json.loads(argv[3])),
                          sort_keys=True))
-    elif len(argv)==9 and argv[1]=="--tls-client":
+    elif len(argv)==8 and argv[1]=="--tls-client":
         print(json.dumps(query(argv[2],int(argv[3]),argv[4],argv[5],
                                argv[6],json.loads(argv[7])),sort_keys=True))
     else:
