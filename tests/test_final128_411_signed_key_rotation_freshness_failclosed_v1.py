@@ -189,6 +189,12 @@ def _run_real_linux_rotation():
         assert s["old_key_revoked"] is True and s["active_kid"]=="new"
         # OLD B signature is cryptographically valid, but is now revoked.
         denied.append(must_deny(old_b,"411_REVOKED_OR_RETIRED_SIGNING_KEY"))
+        # Even an admitted gateway UID cannot bypass rotated key policy
+        # by directly calling the effectful sink apply endpoint.
+        direct_old=_ask(names["gateway"],sink_sock,
+                        {"v":1,"op":"apply","permit":old_b})
+        assert direct_old["ok"] is False
+        assert direct_old["code"]=="411_REVOKED_OR_RETIRED_SIGNING_KEY"
         changed=deepcopy(phase1)
         denied.append(install(changed))
         assert denied[-1]["code"]=="411_OLD_OR_REPLAYED_CONTROL_EPOCH"
@@ -223,6 +229,10 @@ def _run_real_linux_rotation():
         stale=_ask(names["agent"],gate_sock,{"v":1,"op":"status"})
         assert stale["backend_policy_fresh"] is False
         denied.append(must_deny(new_c,"411_POLICY_STALE_FAIL_CLOSED"))
+        direct_stale=_ask(names["gateway"],sink_sock,
+                          {"v":1,"op":"apply","permit":new_c})
+        assert direct_stale["ok"] is False
+        assert direct_stale["code"]=="411_POLICY_STALE_FAIL_CLOSED"
         denied.append(install(phase2))
         assert denied[-1]["code"]=="411_OLD_OR_REPLAYED_CONTROL_EPOCH"
         end=_ask(names["agent"],gate_sock,{"v":1,"op":"status"})
