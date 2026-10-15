@@ -76,8 +76,9 @@ class CurrentMainProfileTests(unittest.TestCase):
             root = Path(d)
             out = root / "existing"
             out.mkdir()
-            with self.assertRaisesRegex(ValueError, "416_OUTPUT_ALREADY_EXISTS"):
-                mod.run_current(root, root, out)
+            with patch.object(mod, "git_head", return_value=mod.BEN_PIN):
+                with self.assertRaisesRegex(ValueError, "416_OUTPUT_ALREADY_EXISTS"):
+                    mod.run_current(root, root, out)
 
 
 if __name__ == "__main__":
