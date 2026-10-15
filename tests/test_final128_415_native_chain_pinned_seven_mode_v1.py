@@ -110,7 +110,7 @@ class NativeSevenModeVerifierTests(unittest.TestCase):
         value["observations"]["verified_authority"]["verification_proof_hash"] = ""
         with self.assertRaisesRegex(ValueError, "VERIFIED_AUTHORITY_PROOF_MISSING"):
             verify_continuity(value)
-        with self.assertRaisesRegex(ValueError, "CONTINUITY_MISSING"):
+        with self.assertRaisesRegex(ValueError, "CONTINUITY_OBSERVATIONS_MISSING"):
             verify_continuity({})
 
     def test_real_valid_mode_shape(self):
