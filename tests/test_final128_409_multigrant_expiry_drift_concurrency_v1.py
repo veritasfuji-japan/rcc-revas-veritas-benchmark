@@ -13,7 +13,7 @@ from scripts import final128_409_multigrant_expiry_drift_concurrency_v1 as m
 
 CLIENT_MODULE="scripts.final128_409_multigrant_expiry_drift_concurrency_v1"
 
-def test_env():
+def _crossuid_subprocess_env():
     root=Path(os.environ["FINAL128_407_PROJECT_ROOT"])
     native=root/"_pins/agentdojo"
     veritas=root/"_pins/veritas"
@@ -33,7 +33,7 @@ def test_env():
 
 def command(user,*argv):
     return ["sudo","-n","-u",user,"--","/usr/bin/env"]+[
-        f"{name}={value}" for name,value in test_env().items()
+        f"{name}={value}" for name,value in _crossuid_subprocess_env().items()
     ]+[sys.executable,"-m",CLIENT_MODULE,*[str(x) for x in argv]]
 
 def start(user,*argv):
