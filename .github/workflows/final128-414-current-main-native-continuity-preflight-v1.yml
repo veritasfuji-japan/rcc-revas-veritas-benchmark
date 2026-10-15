@@ -1,0 +1,26 @@
+name: Final128 #414 current-main continuity preflight
+on:
+  pull_request:
+    paths:
+      - 'scripts/final128_414_current_main_native_continuity_preflight_v1.py'
+      - 'tests/test_final128_414_current_main_native_continuity_preflight_v1.py'
+      - 'contracts/SINGLE_CANDIDATE_UNINTERRUPTED_CANONICAL_CHAIN_V1.json'
+      - 'contracts/CURRENT_VERITAS_CRITICAL_SOURCE_HASHES_V1.json'
+      - 'integration/current_veritas_uninterrupted/sandbox.py'
+      - '.github/workflows/final128-414-current-main-native-continuity-preflight-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify read-only source hashes
+        run: python scripts/final128_414_current_main_native_continuity_preflight_v1.py
+      - name: Run negative preflight tests
+        run: python -m unittest discover -s tests -p 'test_final128_414_current_main_native_continuity_preflight_v1.py' -v
