@@ -14,6 +14,8 @@ remote network, production IAM or paid provider is tested.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
 import os
@@ -247,10 +249,18 @@ def install_policy(db,control_public,signed):
     if claims["active_kid"]!=expected[0] or claims["revoked_kids"]!=expected[1]:
         return {"schema":SCHEMA,"ok":False,"code":"411_POLICY_KEY_REVOKE_INCONSISTENCY"}
     try:
-        decoded={k:base.unb64(v) for k,v in claims["keys"].items()}
-    except base.Refused:
+        decoded={}
+        for kid,value in claims["keys"].items():
+            if type(value) is not str or len(value)>50 or not value or any(
+                c not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+                for c in value):
+                return {"schema":SCHEMA,"ok":False,"code":"411_CONTROL_KEY_ENCODING_REFUSED"}
+            decoded[kid]=base64.b64decode(
+                (value+"="*((-len(value))%4)).encode("ascii"),
+                altchars=b"-_",validate=True)
+    except (binascii.Error,ValueError):
         return {"schema":SCHEMA,"ok":False,"code":"411_CONTROL_KEY_ENCODING_REFUSED"}
-    # Explicitly verify that public keys are valid Ed25519 sizes.
+    # Public-key length is 32, unlike 64-byte Ed25519 signatures.
     if any(len(x)!=32 for x in decoded.values()):
         return {"schema":SCHEMA,"ok":False,"code":"411_PUBLIC_KEY_NOT_RAW32"}
     db.execute("BEGIN IMMEDIATE")
