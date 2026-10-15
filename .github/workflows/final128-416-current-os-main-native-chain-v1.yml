@@ -1,0 +1,103 @@
+name: "Final128 416 Current OS Main Native Chain Seven Mode"
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-416-current-os-main-native-chain-v1.yml"
+      - "contracts/CURRENT_VERITAS_OS_MAIN_416_SOURCE_PROFILE_V1.json"
+      - "scripts/final128_416_current_main_native_chain_v1.py"
+      - "scripts/final128_415_native_chain_pinned_seven_mode_v1.py"
+      - "tests/test_final128_416_current_main_native_chain_v1.py"
+      - "tests/test_final128_415_native_chain_pinned_seven_mode_v1.py"
+      - "integration/current_veritas_uninterrupted/sandbox.py"
+      - "contracts/CURRENT_VERITAS_CRITICAL_SOURCE_HASHES_V1.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reviewed-main:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      BEN_PIN: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+      VERITAS_REVIEWED_MAIN: 73b73a75c5605aaf779ea291436722fae52ed1a7
+      GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: upstream
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 73b73a75c5605aaf779ea291436722fae52ed1a7
+          path: veritas_os_checkout
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
+      - name: Verify exact three source commits and unchanged frozen fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_HEAD_SHA"
+          test "$(git -C upstream rev-parse HEAD)" = "$BEN_PIN"
+          test "$(git -C veritas_os_checkout rev-parse HEAD)" = "$VERITAS_REVIEWED_MAIN"
+          test "$(git hash-object integration/current_veritas_uninterrupted/sandbox.py)" = "db63ea47d07f75b288fd5a64108e91a6230ce6c4"
+          python scripts/final128_414_current_main_native_continuity_preflight_v1.py
+      - name: Verify legacy and new independent verifier negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_final128_415_native_chain_pinned_seven_mode_v1.py' -v
+          python -m unittest discover -s tests -p 'test_final128_416_current_main_native_chain_v1.py' -v
+      - name: Install exact reviewed OS and canonical upstream runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install ./veritas_os_checkout
+          python -m pip install './upstream/external-eval/v0.3.9[crypto]'
+      - name: Execute unchanged source fixture under independent current-main pin
+        run: |
+          python scripts/final128_416_current_main_native_chain_v1.py \
+            --ben-root upstream/external-eval/v0.3.9 \
+            --veritas-root veritas_os_checkout \
+            --output final128-416-redacted
+      - name: Independently check report and scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd final128-416-redacted
+          sha256sum --check manifest.sha256
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('report.json').read_text())
+          assert report['status'] == 'CURRENT_OS_MAIN_COMMIT_416_PINNED_LOCAL_CHAIN_REPLAY_NOT_PRODUCTION'
+          assert report['veritas_tested_current_main_commit'] == '73b73a75c5605aaf779ea291436722fae52ed1a7'
+          assert report['actual_native_fixture_processes'] == 7
+          assert report['positive_mock_commits'] == 1
+          assert report['negative_cases'] == 6
+          assert report['negative_additional_effects'] == 0
+          assert report['real_provider_calls'] == 0
+          assert report['official_agentdojo_scorer_calls'] == 0
+          assert report['new_official_utility_recovery'] is False
+          assert report['production_or_customer_effects'] == 0
+          assert report['independent_validation'] is False
+          print('FINAL128_416_CURRENT_MAIN_BOUNDED_NATIVE_CHAIN_REPLAY_VERIFIED')
+          PY
+      - name: Upload redacted CI proof result, not fixture secrets
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: final128-416-current-main-seven-mode-redacted
+          path: |
+            final128-416-redacted/report.json
+            final128-416-redacted/manifest.sha256
+          if-no-files-found: error
+          retention-days: 30
