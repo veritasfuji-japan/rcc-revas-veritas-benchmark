@@ -114,12 +114,14 @@ def _state(db):
 
 def _reply_status(db):
     state=_state(db)
+    effect = db.execute("SELECT receipt_sha256 FROM effects ORDER BY id DESC LIMIT 1").fetchone()
     return {
         "schema":prev.SCHEMA,"ok":True,"code":"407_BACKEND_STATUS",
         "backend_uid":os.geteuid(),"backend_pid":os.getpid(),
         "counter":state["counter"],"consumed":state["consumed"],
         "effect_count":len(state["effects"]),
         "state_sha256":prev.digest(state),
+        "last_effect_receipt_sha256":effect[0] if effect else None,
         "durable_mock_sqlite":True,
     }
 
