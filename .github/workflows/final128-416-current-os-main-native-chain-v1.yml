@@ -65,7 +65,7 @@ jobs:
           python -m pip install './upstream/external-eval/v0.3.9[crypto]'
       - name: Execute unchanged source fixture under independent current-main pin
         run: |
-          python scripts/final128_416_current_main_native_chain_v1.py \
+          python -m scripts.final128_416_current_main_native_chain_v1 \
             --ben-root upstream/external-eval/v0.3.9 \
             --veritas-root veritas_os_checkout \
             --output final128-416-redacted
