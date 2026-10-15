@@ -389,8 +389,14 @@ def main(argv):
         gateway(argv[2],argv[3],int(argv[4]),argv[5],argv[6],argv[7],
                 int(argv[8]),int(argv[9]))
     elif len(argv)==4 and argv[1]=="--client":
-        print(json.dumps(prev.socket_query(argv[2],json.loads(argv[3])),
-                         sort_keys=True))
+        with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as conn:
+            conn.settimeout(10)
+            conn.connect(argv[2])
+            conn.sendall(prev._frame(json.loads(argv[3])))
+            result=prev._read(conn)
+        need(type(result) is dict and result.get("schema")==SCHEMA,
+             "LOCAL_GATE_RESPONSE_SCHEMA")
+        print(json.dumps(result,sort_keys=True))
     elif len(argv)==8 and argv[1]=="--tls-client":
         print(json.dumps(query(argv[2],int(argv[3]),argv[4],argv[5],
                                argv[6],json.loads(argv[7])),sort_keys=True))
