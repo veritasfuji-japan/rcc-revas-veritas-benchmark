@@ -302,8 +302,18 @@ def adjudicate(db,permit):
     if row[1] or kid!=p[1]:
         return "411_REVOKED_OR_RETIRED_SIGNING_KEY",None
     try:
-        pub=Ed25519PublicKey.from_public_bytes(base.unb64(row[0]))
-    except (ValueError,base.Refused):
+        public_text=row[0]
+        if (type(public_text) is not str or len(public_text)>50 or not public_text
+            or any(c not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+                   for c in public_text)):
+            raise ValueError("invalid 411 signer public key encoding")
+        public_raw=base64.b64decode(
+            (public_text+"="*((-len(public_text))%4)).encode("ascii"),
+            altchars=b"-_",validate=True)
+        if len(public_raw)!=32:
+            raise ValueError("Ed25519 public key must be exactly 32 bytes")
+        pub=Ed25519PublicKey.from_public_bytes(public_raw)
+    except (ValueError,binascii.Error,base.Refused):
         return "411_INVALID_PINNED_LEAF_KEY",None
     verified=_verify(pub,permit,PERMIT_FIELDS)
     if verified is None:
