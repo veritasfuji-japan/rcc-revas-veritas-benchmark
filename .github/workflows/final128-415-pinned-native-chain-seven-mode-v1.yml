@@ -1,0 +1,96 @@
+name: "Final128 415 Pinned Native Chain Seven Mode Offline"
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-415-pinned-native-chain-seven-mode-v1.yml"
+      - "scripts/final128_415_native_chain_pinned_seven_mode_v1.py"
+      - "tests/test_final128_415_native_chain_pinned_seven_mode_v1.py"
+      - "integration/current_veritas_uninterrupted/sandbox.py"
+      - "contracts/CURRENT_VERITAS_CRITICAL_SOURCE_HASHES_V1.json"
+      - "contracts/CURRENT_VERITAS_SOURCE_PIN_PROFILE_V1.json"
+      - "tools/verify_current_veritas_source_pin_v1.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  seven-mode:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      BEN_PIN: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+      VERITAS_PIN: 9b7376ba0077365b9d89004b06c80e76c8bfadc8
+      GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: effacermonexistence/rcc-revas-veritas-benchmark
+          ref: 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          path: upstream
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 9b7376ba0077365b9d89004b06c80e76c8bfadc8
+          path: veritas_os_checkout
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
+      - name: Verify actual source pins and frozen RCC inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_HEAD_SHA"
+          test "$(git -C upstream rev-parse HEAD)" = "$BEN_PIN"
+          test "$(git -C veritas_os_checkout rev-parse HEAD)" = "$VERITAS_PIN"
+          python scripts/final128_414_current_main_native_continuity_preflight_v1.py
+          python tools/verify_current_veritas_source_pin_v1.py veritas_os_checkout
+      - name: Run verifier negative tests before any fixture execution
+        run: python -m unittest discover -s tests -p 'test_final128_415_native_chain_pinned_seven_mode_v1.py' -v
+      - name: Install frozen fixture runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install ./veritas_os_checkout
+          python -m pip install './upstream/external-eval/v0.3.9[crypto]'
+      - name: Execute the original seven-mode local canonical chain
+        run: |
+          python scripts/final128_415_native_chain_pinned_seven_mode_v1.py \
+            --ben-root upstream/external-eval/v0.3.9 \
+            --veritas-root veritas_os_checkout \
+            --output final128-415-redacted
+      - name: Check redacted artifact integrity and scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd final128-415-redacted
+          sha256sum --check manifest.sha256
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('report.json').read_text())
+          assert report['status'] == 'BOUNDED_PINNED_FIXTURE_PASS_NOT_CURRENT_OS_MAIN'
+          assert len(report['cases']) == 7
+          assert report['positive_commits'] == 1
+          assert report['negative_cases'] == 6
+          assert report['negative_additional_effects'] == 0
+          assert report['paid_provider_calls'] == 0
+          assert report['latest_veritas_os_main_tested'] is False
+          assert report['new_utility_recovery_proven'] is False
+          assert report['enterprise_execution_authority_proven'] is False
+          print('FINAL128_415_BOUNDED_SEVEN_MODE_PINNED_REPLAY_VERIFIED')
+          PY
+      - name: Upload only redacted evidence and manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: final128-415-seven-mode-pinned-native-chain-redacted
+          path: |
+            final128-415-redacted/report.json
+            final128-415-redacted/manifest.sha256
+          if-no-files-found: error
+          retention-days: 30
