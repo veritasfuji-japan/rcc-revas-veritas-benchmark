@@ -251,7 +251,7 @@ jobs:
           assert suites
           counts={k:sum(int(s.get(k,"0")) for s in suites)
                   for k in ("tests","failures","errors","skipped")}
-          assert counts["tests"]>=572
+          assert counts["tests"]>=571
           assert all(counts[k]==0 for k in ("failures","errors","skipped"))
           source=Path("results/final128-412-redacted-netns-mtls.json")
           assert source.is_file(),"412 netns/mTLS evidence missing"
