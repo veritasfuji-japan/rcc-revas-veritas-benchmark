@@ -26,7 +26,6 @@ from scripts.final128_415_native_chain_pinned_seven_mode_v1 import (
 from scripts.final128_414_current_main_native_continuity_preflight_v1 import (
     git_blob_sha,
 )
-)
 
 PROFILE_FILE = ROOT / "contracts/CURRENT_VERITAS_OS_MAIN_416_SOURCE_PROFILE_V1.json"
 FROZEN_MANIFEST = ROOT / "contracts/CURRENT_VERITAS_CRITICAL_SOURCE_HASHES_V1.json"
