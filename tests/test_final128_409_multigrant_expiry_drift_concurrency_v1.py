@@ -288,7 +288,7 @@ def test_source_enforces_kernel_peercred_and_true_backend_transaction():
         'source_grant_valid',
         'sink_expiry_and_unspent',
         'PRAGMA synchronous=FULL',
-        'stat.S_IMODE(ds.st_mode)==0o700',
+        'durable._strict_db_path(dbfile)',
     ]
     for token in required:
         assert token in source,token
