@@ -115,11 +115,13 @@ def verify_continuity(matrix: dict) -> dict:
 
 
 def verify_case(report: dict, mode: str, journal_events: set[str],
-                continuity: dict | None) -> dict:
+                continuity: dict | None, *, veritas_pin: str = VERITAS_PIN) -> dict:
     """Refuse promotion of fixture PASS without correct observed outcome."""
     require(mode in MODES and report.get("mode") == mode, "CASE_MODE_MISMATCH")
     require(report.get("status") == "PASS", "CASE_NOT_PASS")
-    require(report.get("veritas_source_commit") == VERITAS_PIN, "CASE_OS_PIN_MISMATCH")
+    require(type(veritas_pin) is str and re.fullmatch(r"[0-9a-f]{40}", veritas_pin) is not None,
+            "INVALID_EXPECTED_OS_PIN")
+    require(report.get("veritas_source_commit") == veritas_pin, "CASE_OS_PIN_MISMATCH")
     require(report.get("claim_scope") == "LOCAL_ENGINEERING_ACCEPTANCE_NOT_MODEL_PERFORMANCE",
             "CASE_CLAIM_SCOPE_DRIFT")
     require(report.get("provider_mode") == "CONTROLLED_TRANSCRIPT_AT_LLM_CLIENT_ONLY",
