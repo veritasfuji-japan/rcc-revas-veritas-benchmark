@@ -1,4 +1,4 @@
-name: "Final128 414 Current Main Continuity Preflight"
+name: "Final128 414 Pinned Source Preflight Only"
 on:
   pull_request:
     paths:
@@ -6,21 +6,34 @@ on:
       - 'tests/test_final128_414_current_main_native_continuity_preflight_v1.py'
       - 'contracts/SINGLE_CANDIDATE_UNINTERRUPTED_CANONICAL_CHAIN_V1.json'
       - 'contracts/CURRENT_VERITAS_CRITICAL_SOURCE_HASHES_V1.json'
+      - 'contracts/CURRENT_VERITAS_SOURCE_PIN_PROFILE_V1.json'
       - 'integration/current_veritas_uninterrupted/sandbox.py'
+      - 'tools/verify_current_veritas_source_pin_v1.py'
       - '.github/workflows/final128-414-current-main-native-continuity-preflight-v1.yml'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   preflight:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: 9b7376ba0077365b9d89004b06c80e76c8bfadc8
+          path: _pins/veritas
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.11'
-      - name: Verify read-only source hashes
+      - name: Fail closed against immutable frozen RCC source blob pins
         run: python scripts/final128_414_current_main_native_continuity_preflight_v1.py
-      - name: Run negative preflight tests
+      - name: Verify real pinned VERITAS source SHA256 via existing verifier
+        run: python tools/verify_current_veritas_source_pin_v1.py _pins/veritas
+      - name: Verify negative source-drift cases
         run: python -m unittest discover -s tests -p 'test_final128_414_current_main_native_continuity_preflight_v1.py' -v
