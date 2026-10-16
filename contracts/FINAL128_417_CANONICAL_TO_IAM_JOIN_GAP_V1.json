@@ -1,0 +1,58 @@
+{
+  "schema": "veritas.final128-417.reviewed-dual-artifact-lineage-gap.v1",
+  "status": "UNLINKED_GAP_AUDIT_ONLY_NOT_INTEGRATION_PROVEN",
+  "sources": {
+    "canonical": {
+      "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+      "pr": 416,
+      "run_id": 38710599209,
+      "artifact_id": 11960108900,
+      "zip_sha256": "163a4acf2ddec1d64da2922eb6d94728846c2ac55162b3dcbd2fa4c63dfea353",
+      "source_head": "e6980263c87dd529c4a54725e14d69dcb50a1b1d",
+      "reviewed_os_commit": "73b73a75c5605aaf779ea291436722fae52ed1a7",
+      "ben_upstream": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+      "valid": {
+        "original_request_digest": "125f6bf44284e271b68485d6cbc63fa5beaeb2f562e2db9eddac56f8adf3fc9a",
+        "candidate_hash": "6d5d2f437d59bf078fc3bc663a118014855cb2cd0277ee20e3e861239a7d571e",
+        "decision_id": "cda:v1:sha256:8cbbb4f47e1b76953e27fd9351702ed6c9102f6ded1f7989a2d03a5bd011175d",
+        "request_id": "f53f2f7e994d0a2460044060b6200ff6",
+        "execution_intent_id": "ei:v1:sha256:6d5ecf8ddb0184316f22c742e3a737d069e0ba2f068b5d963a9f3acd40b5057a"
+      }
+    },
+    "iam": {
+      "repository": "veritasfuji-japan/veritas_os",
+      "pr": 2382,
+      "run_id": 38908927071,
+      "artifact_id": 12049616382,
+      "zip_sha256": "651ac609add37c99dfc0599d1a079556d7b8df8012bf17cca8643f6269671168",
+      "tested_workflow_merge_sha": "7c1551a2cf6d95e103395fcd3dd1f5a66876571d",
+      "merged_main_sha": "5af56051cdc5b88c1705f0afe876aa6ba4858371",
+      "valid": {
+        "request_id": "laba-idem:v2:sha256:05a01be128cad5ec1116f18508e1cc35ef535af765fa8e5ad4a1b045928f7402",
+        "execution_intent_id": "ei:v1:sha256:6a86420d58848172a687d88fd094f87068573ef63022147ac211c053ce456c68",
+        "authorization_id": "laba:v2:sha256:e3f4ecaacc7a2ba06efe49c999e5744e08c5c7fd90f6e4831a098cbc7fc860fa",
+        "consumption_id": "labac:v1:sha256:763d419c19e22fd4ceb4662042d1d349090d55911bdc41b7f18d6902dc675a78",
+        "permit_id": "iam-permit:v1:sha256:1a4647e72bdbb3fd26390c8256f5f7ff6777994e65d4440c83025a607decab61",
+        "challenge_sha256": "3f0785ac003a7b416f2466ef691f906ad85472ce1ff7964d40f5b56181ad6c64"
+      }
+    }
+  },
+  "required_new_native_boundary": {
+    "source_bound_authorization_at_issuance": true,
+    "independently_verified_original_request_digest": true,
+    "independently_verified_canonical_candidate_hash": true,
+    "cross_system_action_scope_mapping_before_issuance": true,
+    "exact_cross_repo_execution_intent_binding": true,
+    "signed_source_origin_proof_pinned_to_trust_root": true,
+    "real_postgres_single_use_consumption_and_iam_target_receipt": true,
+    "target_signed_challenge_reconciliation": true,
+    "no_authority_from_scorer_or_receipt_only": true
+  },
+  "nonclaims": {
+    "two_separate_runs_are_one_executed_intent": false,
+    "source_bound_issuer_integrated": false,
+    "production_authority_proven": false,
+    "official_final128_utility_recovered": false,
+    "paid_provider_calls": 0
+  }
+}
