@@ -145,6 +145,37 @@ class CanonicalIamJoinAdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "417_IAM_SOURCE_BINDING_UNREVIEWED"):
             gate.check_iam(bad, self.contract)
 
+    def test_sha256sum_dot_slash_manifest_matches_safe_zip_member(self):
+        """Real #2382 manifests list ./name while ZIP stores bare name."""
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "native-iam.zip"
+            evidence = b'{"phase":"signed-target","result":"PASS"}'
+            signature = hashlib.sha256(evidence).hexdigest()
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr("receipt.json", evidence)
+                archive.writestr("manifest.sha256",
+                                 signature + "  ./receipt.json\\n")
+            self.assertEqual(gate.read_artifact(
+                path, hashlib.sha256(path.read_bytes()).hexdigest()),
+                {"receipt.json": {"phase": "signed-target", "result": "PASS"}})
+
+            # Different spellings of one member may not be counted twice.
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr("receipt.json", evidence)
+                archive.writestr("manifest.sha256",
+                                 signature + "  receipt.json\\n" +
+                                 signature + "  ./receipt.json\\n")
+            with self.assertRaisesRegex(ValueError, "417_MANIFEST_MEMBER_INVALID"):
+                gate.read_artifact(path, hashlib.sha256(path.read_bytes()).hexdigest())
+
+            # Never use the legit sha256sum prefix to tolerate traversal.
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr("receipt.json", evidence)
+                archive.writestr("manifest.sha256",
+                                 signature + "  ./../receipt.json\\n")
+            with self.assertRaisesRegex(ValueError, "417_MANIFEST_MEMBER_INVALID"):
+                gate.read_artifact(path, hashlib.sha256(path.read_bytes()).hexdigest())
+
     def test_zip_digest_is_required_before_manifest_can_be_read(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "proof.zip"
