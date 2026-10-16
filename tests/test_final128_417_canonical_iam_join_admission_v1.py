@@ -154,7 +154,7 @@ class CanonicalIamJoinAdmissionTests(unittest.TestCase):
             with zipfile.ZipFile(path, "w") as archive:
                 archive.writestr("receipt.json", evidence)
                 archive.writestr("manifest.sha256",
-                                 signature + "  ./receipt.json\\n")
+                                 signature + "  ./receipt.json\n")
             self.assertEqual(gate.read_artifact(
                 path, hashlib.sha256(path.read_bytes()).hexdigest()),
                 {"receipt.json": {"phase": "signed-target", "result": "PASS"}})
@@ -163,8 +163,8 @@ class CanonicalIamJoinAdmissionTests(unittest.TestCase):
             with zipfile.ZipFile(path, "w") as archive:
                 archive.writestr("receipt.json", evidence)
                 archive.writestr("manifest.sha256",
-                                 signature + "  receipt.json\\n" +
-                                 signature + "  ./receipt.json\\n")
+                                 signature + "  receipt.json\n" +
+                                 signature + "  ./receipt.json\n")
             with self.assertRaisesRegex(ValueError, "417_MANIFEST_MEMBER_INVALID"):
                 gate.read_artifact(path, hashlib.sha256(path.read_bytes()).hexdigest())
 
@@ -172,7 +172,7 @@ class CanonicalIamJoinAdmissionTests(unittest.TestCase):
             with zipfile.ZipFile(path, "w") as archive:
                 archive.writestr("receipt.json", evidence)
                 archive.writestr("manifest.sha256",
-                                 signature + "  ./../receipt.json\\n")
+                                 signature + "  ./../receipt.json\n")
             with self.assertRaisesRegex(ValueError, "417_MANIFEST_MEMBER_INVALID"):
                 gate.read_artifact(path, hashlib.sha256(path.read_bytes()).hexdigest())
 
