@@ -109,10 +109,17 @@ def read_artifact(path: Path, expected_sha: str) -> dict[str, dict]:
         for line in manifest:
             require(len(line) >= 67 and line[64:66] == "  ",
                     "MANIFEST_FORMAT_INVALID")
-            expected, name = line[:64], line[66:]
+            expected, listed_name = line[:64], line[66:]
+            # GitHub's native OS evidence is produced by sha256sum and
+            # legitimately names members "./filename.json"; ZIP members
+            # themselves are safe top-level bare names. Strip ONLY one "./"
+            # prefix and reject any traversal, alternate path, or alias.
+            name = listed_name[2:] if listed_name.startswith("./") else listed_name
             require(HEX64.fullmatch(expected) is not None
                     and name in names and name.endswith(".json")
-                    and name not in listed, "MANIFEST_MEMBER_INVALID")
+                    and name not in listed and
+                    (listed_name == name or listed_name == "./" + name),
+                    "MANIFEST_MEMBER_INVALID")
             raw = archive.read(name)
             require(len(raw) < 1024 * 1024 and digest(raw) == expected,
                     "MANIFEST_MEMBER_HASH_DRIFT")
