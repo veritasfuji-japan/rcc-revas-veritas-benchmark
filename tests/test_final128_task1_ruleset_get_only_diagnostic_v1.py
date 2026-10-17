@@ -56,6 +56,40 @@ class TestRulesetGetOnlyDiagnostic(unittest.TestCase):
         self.assertIn(probe.PREFIX + "EXPECTED_DETAIL_BYPASS_IS_EMPTY_LIST_NO", output)
         self.assertIn(probe.PREFIX + "ORIGINAL_PREDICATE_MATCH_COUNT_0", output)
 
+    def test_bypass_field_states_never_confuse_redaction_with_empty(self):
+        cases = [
+            ("MISSING", False, None),
+            ("NULL", True, None),
+            ("EMPTY", True, []),
+            ("NONEMPTY", True, [{"actor_id": "SECRET_MARKER_DO_NOT_LOG"}]),
+            ("OTHER_TYPE", True, "SECRET_MARKER_DO_NOT_LOG"),
+        ]
+        for expected, present, value in cases:
+            with self.subTest(expected=expected):
+                detail = valid_detail()
+                if not present:
+                    del detail["bypass_actors"]
+                else:
+                    detail["bypass_actors"] = value
+                ok, output, calls = run_case(details={probe.RULESET_ID: detail})
+                self.assertEqual(probe.bypass_field_state(detail), expected)
+                self.assertIn(
+                    probe.PREFIX + "EXPECTED_DETAIL_BYPASS_FIELD_STATE_" + expected,
+                    output,
+                )
+                self.assertEqual(ok, expected == "EMPTY")
+                self.assertNotIn("SECRET_MARKER_DO_NOT_LOG", "\\n".join(output))
+                self.assertEqual(calls[-1], "rulesets/" + str(probe.RULESET_ID))
+
+    def test_bypass_field_state_never_exposes_actor_identifiers(self):
+        detail = valid_detail()
+        detail["bypass_actors"] = [{"actor_id": 123456, "actor_type": "Team"}]
+        ok, output, _ = run_case(details={probe.RULESET_ID: detail})
+        self.assertFalse(ok)
+        self.assertIn(probe.PREFIX + "EXPECTED_DETAIL_BYPASS_FIELD_STATE_NONEMPTY", output)
+        self.assertNotIn("123456", "\\n".join(output))
+        self.assertNotIn("Team", "\\n".join(output))
+
     def test_other_ruleset_duplicate_not_accepted(self):
         detail = valid_detail()
         ok, output, _ = run_case(
