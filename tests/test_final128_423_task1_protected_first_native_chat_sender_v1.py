@@ -377,3 +377,129 @@ def test_unknown_preflight_mode_is_no_auth_even_with_environment(native_ready, t
     with pytest.raises(m.Denied, match="MODE_ONLY"):
         m.execute(mode="operator-approves-everything", out_dir=tmp_path)
     assert list(tmp_path.iterdir()) == []
+
+
+# #425: GitHub operator can read a fixed REASON CATEGORY only, NEVER a
+# secret value, length, prefix/suffix, or arbitrary exception message.
+@pytest.mark.parametrize("variable,bad,expected", [
+    ("GITHUB_EVENT_NAME", "pull_request", "GITHUB_RUNTIME_CONTEXT"),
+    ("GITHUB_RUN_ATTEMPT", "2", "GITHUB_RUNTIME_CONTEXT"),
+    ("GITHUB_REF", "refs/heads/test", "GITHUB_RUNTIME_CONTEXT"),
+    ("GITHUB_ACTOR", "some-other-actor", "GITHUB_RUNTIME_CONTEXT"),
+    ("TASK1_423_APPROVAL", "OLD_TEST_CONSENT", "APPROVAL_OR_ENVIRONMENT"),
+    ("TASK1_423_ENVIRONMENT", "wrong-environment", "APPROVAL_OR_ENVIRONMENT"),
+    ("TASK1_423_OPERATOR_BILLING_REVIEW", "no billing consent", "BILLING_REVIEW"),
+    ("TASK1_OPENAI_API_KEY", "", "API_KEY_FORMAT"),
+    ("TASK1_OPENAI_API_KEY", "too-short", "API_KEY_FORMAT"),
+    ("TASK1_OPENAI_API_KEY", "secret-do-not-log-" + "X" * 28 + "\n",
+     "API_KEY_FORMAT"),
+    ("TASK1_CAPTURE_AES256_KEY", "", "AES_KEY_BASE64_OR_LENGTH"),
+    ("TASK1_CAPTURE_AES256_KEY", "SECRET_DO_NOT_LOG@@" + "x" * 80,
+     "AES_KEY_BASE64_OR_LENGTH"),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(31)).decode(),
+     "AES_KEY_BASE64_OR_LENGTH"),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(33)).decode(),
+     "AES_KEY_BASE64_OR_LENGTH"),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(32)).decode() + "\n",
+     "AES_KEY_BASE64_OR_LENGTH"),
+])
+def test_safe_pretag_cli_redacts_values_and_distinguishes_failure_classes(
+    native_ready, tmp_path, monkeypatch, capsys, variable, bad, expected
+):
+    import sys
+    set_test_protected_env(monkeypatch)
+    monkeypatch.delenv("TASK1_423_TAG_CONSUMED", raising=False)
+    monkeypatch.delenv("TASK1_423_TAG_READBACK_SHA", raising=False)
+    monkeypatch.setenv(variable, bad)
+    monkeypatch.setattr(sys, "argv", [
+        "task1-423", "--mode", "secrets-preflight",
+        "--output-dir", str(tmp_path),
+    ])
+    with pytest.raises(SystemExit) as rejected:
+        m.main()
+    assert rejected.value.code == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == (
+        "TASK1_425_PRETAG_DENIAL_CATEGORY=" + expected + "\n"
+    )
+    assert bad not in captured.err or bad == ""
+    assert "Traceback" not in captured.err
+    assert "SECRET_DO_NOT_LOG" not in captured.err
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("invalid_exception,expected", [
+    (m.Denied("423_DEDICATED_ENVIRONMENT_API_SECRET_MISSING"), "API_KEY_FORMAT"),
+    (m.Denied("423_NO_VALID_ENVIRONMENT_ENCRYPTION_KEY"), "AES_KEY_BASE64_OR_LENGTH"),
+    (m.Denied("423_ENCRYPTION_KEY_MUST_BE_CANONICAL_BASE64_OF_32_BYTES"),
+     "AES_KEY_BASE64_OR_LENGTH"),
+    (m.Denied("423_POSTCONSUME_TAG_SHA_REQUIRED"), "OTHER_PRETAG_FAILURE"),
+    (m.Denied("SECRET_SENTINEL_INVALID_BECAUSE_SOMEONE_INJECTED_IT"),
+     "OTHER_PRETAG_FAILURE"),
+    (ValueError("SECRET_SENTINEL_ARBITRARY_EXCEPTION"), "OTHER_PRETAG_FAILURE"),
+    (RuntimeError("SECRET_SENTINEL_UNEXPECTED_RUNTIME"), "OTHER_PRETAG_FAILURE"),
+])
+def test_pretag_category_allowlist_is_closed_to_arbitrary_exception_text(
+    invalid_exception, expected
+):
+    result = m.safe_pretag_refusal_category(invalid_exception)
+    assert result == expected
+    assert "SECRET_SENTINEL" not in result
+    assert result == "OTHER_PRETAG_FAILURE" or result in set(
+        m.SAFE_PRETAG_REFUSAL_CATEGORIES.values()
+    )
+
+
+def test_unexpected_exception_in_pretag_cli_never_prints_secret_exception(
+    native_ready, tmp_path, monkeypatch, capsys
+):
+    import sys
+    set_test_protected_env(monkeypatch)
+    marker = "SECRET_SENTINEL_DO_NOT_EVER_PRINT"
+    def invalid_native_source():
+        raise RuntimeError(marker)
+    monkeypatch.setattr(m, "source_pair", invalid_native_source)
+    monkeypatch.setattr(sys, "argv", [
+        "task1-423", "--mode", "secrets-preflight",
+        "--output-dir", str(tmp_path)
+    ])
+    with pytest.raises(SystemExit) as rejected:
+        m.main()
+    assert rejected.value.code == 1
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert output.err == "TASK1_425_PRETAG_DENIAL_CATEGORY=OTHER_PRETAG_FAILURE\n"
+    assert marker not in output.err
+    assert not list(tmp_path.iterdir())
+
+
+def test_safe_pretag_cli_valid_credential_format_never_grants_send(
+    native_ready, tmp_path, monkeypatch, capsys
+):
+    import sys
+    set_test_protected_env(monkeypatch)
+    monkeypatch.delenv("TASK1_423_TAG_CONSUMED", raising=False)
+    monkeypatch.delenv("TASK1_423_TAG_READBACK_SHA", raising=False)
+    monkeypatch.setattr(sys, "argv", [
+        "task1-423", "--mode", "secrets-preflight",
+        "--output-dir", str(tmp_path)
+    ])
+    m.main()
+    c = capsys.readouterr()
+    assert "TASK1_425_PRETAG_DENIAL_CATEGORY" not in c.err
+    assert "TASK1_OPENAI_API_KEY" not in c.out
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_safe_reason_diagnostics_do_not_modify_manual_live_workflow():
+    live = Path(
+        ".github/workflows/final128-423-task1-protected-first-two-native-chat-live-v1.yml"
+    ).read_text()
+    assert live.index("--mode secrets-preflight") < live.index(
+        "- name: Atomically consume exact no-bypass production once tag")
+    assert live.count("--mode send") == 1
+    assert "\n  workflow_dispatch:" in live
+    assert "\n  pull_request:" not in live
+    assert "TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}" in live
+    assert "TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}" in live
