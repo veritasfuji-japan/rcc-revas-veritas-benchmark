@@ -91,15 +91,17 @@ jobs:
           chmod 700 results
           python scripts/final128_423_task1_protected_first_native_chat_sender_v1.py \
             --mode preflight --output-dir results
-      - name: Require protected Environment Provider and AES256 secrets
+      - name: Validate Environment API and AES256 secret formats BEFORE singleton consumption
         env:
           TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}
           TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$TASK1_OPENAI_API_KEY"
-          test -n "$TASK1_CAPTURE_AES256_KEY"
+          # Invalid or malformed secrets must STOP before any GitHub ref POST.
+          # Never print secrets or copy them to GITHUB_OUTPUT/artifacts.
+          python scripts/final128_423_task1_protected_first_native_chat_sender_v1.py \
+            --mode secrets-preflight --output-dir results
       - name: Atomically consume exact no-bypass production once tag, no retry
         id: consume
         env:

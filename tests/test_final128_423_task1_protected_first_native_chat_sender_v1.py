@@ -272,3 +272,108 @@ def test_live_workflow_uses_exact_consent_and_source_without_task4_authority():
     assert "TASK1_423_TAG_READBACK_SHA" in live
     assert live.index("TASK1_423_GLOBAL_SINGLETON_TAG_CONSUMED") < live.index(
         "Send ONE FIRST Native Chat POST each A/B")
+
+
+def test_valid_secrets_preflight_before_consumed_tag_without_provider(native_ready, tmp_path, monkeypatch):
+    set_test_protected_env(monkeypatch)
+    monkeypatch.delenv("TASK1_423_TAG_CONSUMED", raising=False)
+    monkeypatch.delenv("TASK1_423_TAG_READBACK_SHA", raising=False)
+    status = m.execute(mode="secrets-preflight", out_dir=tmp_path)
+    assert status == {
+        "status": "SECRETS_SYNTAX_CHECKED_PRETAG_NOT_APPROVED_TO_SEND",
+        "credentials_syntax_checked": True,
+        "actual_provider_key_validity_proven": False,
+        "enforced_provider_spend_stop_proven": False,
+        "production_tag_consumed": False,
+        "provider_requests_sent": 0,
+        "permission_to_send": False,
+    }
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("secret_name, invalid", [
+    ("TASK1_OPENAI_API_KEY", ""),
+    ("TASK1_OPENAI_API_KEY", "short"),
+    ("TASK1_OPENAI_API_KEY", " " + "x" * 24),
+    ("TASK1_OPENAI_API_KEY", "x" * 24 + "\n"),
+    ("TASK1_CAPTURE_AES256_KEY", ""),
+    ("TASK1_CAPTURE_AES256_KEY", "%%%invalid_base64%%"),
+    ("TASK1_CAPTURE_AES256_KEY", "not-base64!"),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(31)).decode()),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(33)).decode()),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(16)).decode()),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(32)).decode() + "\n"),
+])
+def test_invalid_secret_format_refused_before_irreversible_tag(
+    native_ready, tmp_path, monkeypatch, secret_name, invalid
+):
+    set_test_protected_env(monkeypatch)
+    monkeypatch.delenv("TASK1_423_TAG_CONSUMED", raising=False)
+    monkeypatch.delenv("TASK1_423_TAG_READBACK_SHA", raising=False)
+    monkeypatch.setenv(secret_name, invalid)
+    with pytest.raises(m.Denied):
+        m.execute(mode="secrets-preflight", out_dir=tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("variable, altered", [
+    ("TASK1_423_APPROVAL", "PREVIOUS_TASK4_APPROVAL"),
+    ("TASK1_423_ENVIRONMENT", "task4-real-provider-third-two-calls"),
+    ("TASK1_423_OPERATOR_BILLING_REVIEW", "no billing check"),
+    ("GITHUB_EVENT_NAME", "pull_request"),
+    ("GITHUB_RUN_ATTEMPT", "2"),
+    ("GITHUB_REF", "refs/heads/test"),
+])
+def test_pretag_refuses_wrong_runtime_context_or_prior_approval(
+    native_ready, tmp_path, monkeypatch, variable, altered
+):
+    set_test_protected_env(monkeypatch)
+    monkeypatch.delenv("TASK1_423_TAG_CONSUMED", raising=False)
+    monkeypatch.delenv("TASK1_423_TAG_READBACK_SHA", raising=False)
+    monkeypatch.setenv(variable, altered)
+    with pytest.raises(m.Denied):
+        m.execute(mode="secrets-preflight", out_dir=tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_real_send_still_needs_consumed_tag_after_valid_precheck(
+    native_ready, tmp_path, monkeypatch
+):
+    set_test_protected_env(monkeypatch)
+    monkeypatch.delenv("TASK1_423_TAG_CONSUMED", raising=False)
+    monkeypatch.delenv("TASK1_423_TAG_READBACK_SHA", raising=False)
+    pre = m.execute(mode="secrets-preflight", out_dir=tmp_path)
+    assert pre["permission_to_send"] is False
+    tracker = []
+    with pytest.raises(m.Denied, match="POSTCONSUME_TAG_SHA_REQUIRED"):
+        m.execute(mode="send", out_dir=tmp_path,
+                  connection_factory=lambda: FakeConnection("A", tracker))
+    assert tracker == []
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_manual_workflow_pretag_validation_order_and_no_secret_outputs():
+    live = Path(
+        ".github/workflows/final128-423-task1-protected-first-two-native-chat-live-v1.yml"
+    ).read_text(encoding="utf8")
+    validate = live.index("Validate Environment API and AES256 secret formats BEFORE singleton consumption")
+    precheck = live.index("--mode secrets-preflight")
+    consume = live.index("- name: Atomically consume exact no-bypass production once tag")
+    send = live.index("- name: Send ONE FIRST Native Chat POST each A/B")
+    assert validate < precheck < consume < send
+    assert "test -n \"$TASK1_CAPTURE_AES256_KEY\"" not in live
+    assert live.count("--mode secrets-preflight") == 1
+    assert "--mode send --output-dir results" in live
+    assert 'echo "$TASK1_CAPTURE_AES256_KEY"' not in live
+    assert 'echo "$TASK1_OPENAI_API_KEY"' not in live
+    assert "TASK1_423_GLOBAL_SINGLETON_TAG_CONSUMED_ONE_OPERATION_NO_RETRY" in live
+    assert "environment: task1-real-model-pilot" in live
+    assert "\n  workflow_dispatch:" in live
+    assert "\n  pull_request:" not in live
+
+
+def test_unknown_preflight_mode_is_no_auth_even_with_environment(native_ready, tmp_path, monkeypatch):
+    set_test_protected_env(monkeypatch)
+    with pytest.raises(m.Denied, match="MODE_ONLY"):
+        m.execute(mode="operator-approves-everything", out_dir=tmp_path)
+    assert list(tmp_path.iterdir()) == []

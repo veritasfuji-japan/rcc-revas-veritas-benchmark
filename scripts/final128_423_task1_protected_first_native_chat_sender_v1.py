@@ -105,8 +105,16 @@ def preflight_manifest(ready):
     }
 
 
-def check_live_runtime():
+def check_live_runtime(*, require_consumed_tag=True):
+    """Check protected runtime+secret formats; tag check only for real send.
+
+    The manual workflow invokes this with require_consumed_tag=False BEFORE
+    the irreversible singleton POST. Send invokes it again with True. Neither
+    mode can establish actual Provider key validity or billing hard-stop.
+    """
     e = os.environ
+    require(type(require_consumed_tag) is bool,
+            "EXACT_PRECONSUME_OR_LIVE_RUNTIME_PHASE_REQUIRED")
     require(e.get("GITHUB_ACTIONS") == "true"
             and e.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
             and e.get("GITHUB_REF") == "refs/heads/main"
@@ -119,10 +127,12 @@ def check_live_runtime():
             and SHA_RE.fullmatch(e["GITHUB_SHA"]) is not None,
             "EXACT_PROTECTED_MAIN_ONE_ATTEMPT_CONTEXT_REQUIRED")
     require(e.get("TASK1_423_APPROVAL") == APPROVAL
-            and e.get("TASK1_423_TAG_CONSUMED") == "1"
-            and e.get("TASK1_423_TAG_READBACK_SHA") == e["GITHUB_SHA"]
             and e.get("TASK1_423_ENVIRONMENT") == ENVIRONMENT,
-            "FRESH_HUMAN_APPROVAL_PROTECTED_ENV_AND_TAG_REQUIRED")
+            "FRESH_HUMAN_APPROVAL_PROTECTED_ENV_REQUIRED")
+    if require_consumed_tag:
+        require(e.get("TASK1_423_TAG_CONSUMED") == "1"
+                and e.get("TASK1_423_TAG_READBACK_SHA") == e["GITHUB_SHA"],
+                "POSTCONSUME_TAG_SHA_REQUIRED")
     # Operator-attested only; NOT independent verification of the account
     # billing system. Strong spend stop must be independently reviewed
     # before manually dispatching. The code never marks it PROVEN.
@@ -137,8 +147,9 @@ def check_live_runtime():
     try:
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
         encryption_key = base64.b64decode(capture, validate=True)
-        require(len(encryption_key) == 32,
-                "ENCRYPTION_KEY_MUST_BE_RANDOM_32_BYTE_SECRET")
+        require(len(encryption_key) == 32
+                and base64.b64encode(encryption_key).decode("ascii") == capture,
+                "ENCRYPTION_KEY_MUST_BE_CANONICAL_BASE64_OF_32_BYTES")
     except (ValueError, TypeError, base64.binascii.Error) as exc:
         raise Denied("423_NO_VALID_ENVIRONMENT_ENCRYPTION_KEY") from exc
     return key, encryption_key
@@ -223,7 +234,8 @@ def _encrypt_capture(*, raw: bytes, key: bytes, arm: str,
 
 
 def execute(*, mode, out_dir: Path, connection_factory=None):
-    require(mode in ("preflight", "send"), "MODE_ONLY_PREFLIGHT_OR_SEND")
+    require(mode in ("preflight", "secrets-preflight", "send"),
+            "MODE_ONLY_OFFLINE_PREFLIGHT_SECRETS_PREFLIGHT_OR_SEND")
     require(out_dir.is_dir() and not out_dir.is_symlink(), "EXISTING_OUTPUT_DIR")
     run, ledger, ready = source_pair()
     pre = preflight_manifest(ready)
@@ -232,6 +244,20 @@ def execute(*, mode, out_dir: Path, connection_factory=None):
         require(not p.exists(), "NO_OVERWRITE_EVIDENCE")
         p.write_bytes(canonical(pre) + b"\n")
         return pre
+    if mode == "secrets-preflight":
+        # This MUST occur before the production singleton tag creation.
+        # The process does not write any files or start any connection.
+        # In particular, this validation is not a permission to dispatch.
+        check_live_runtime(require_consumed_tag=False)
+        return {
+            "status": "SECRETS_SYNTAX_CHECKED_PRETAG_NOT_APPROVED_TO_SEND",
+            "credentials_syntax_checked": True,
+            "actual_provider_key_validity_proven": False,
+            "enforced_provider_spend_stop_proven": False,
+            "production_tag_consumed": False,
+            "provider_requests_sent": 0,
+            "permission_to_send": False,
+        }
     require(not (out_dir / "task1-423-redacted-journal.jsonl").exists(),
             "NEVER_RESTART_OR_OVERWRITE_CAPTURE")
     key, encryption_key = check_live_runtime()
@@ -303,7 +329,7 @@ def execute(*, mode, out_dir: Path, connection_factory=None):
 
 def main():
     cli = argparse.ArgumentParser()
-    cli.add_argument("--mode", choices=("preflight", "send"), required=True)
+    cli.add_argument("--mode", choices=("preflight", "secrets-preflight", "send"), required=True)
     cli.add_argument("--output-dir", type=Path, required=True)
     args = cli.parse_args()
     try:
