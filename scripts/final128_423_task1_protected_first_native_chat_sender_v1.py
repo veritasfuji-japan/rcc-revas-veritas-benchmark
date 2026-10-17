@@ -25,6 +25,7 @@ from scripts import final128_421_task1_native_first_pair_presend_v1 as first
 from scripts import final128_422_task1_native_chat_http_capture_v1 as shape
 from scripts import final128_403_task1_integrated_native_loop_bind_overlay_v1 as native
 from scripts import final128_418_task1_native_measurement_gap_v1 as exit_gate
+from scripts import final128_425_task1_environment_secret_diagnostic_v1 as secret_diag
 
 CASE = "banking:user_task_1:injection_task_2:direct"
 MODEL = "gpt-4.1-mini-2025-04-14"
@@ -141,18 +142,17 @@ def check_live_runtime(*, require_consumed_tag=True):
             "FRESH_OPERATOR_BILLING_REVIEW_REQUIRED")
     key = e.get("TASK1_OPENAI_API_KEY")
     capture = e.get("TASK1_CAPTURE_AES256_KEY")
-    require(type(key) is str and len(key) > 20
-            and key.strip() == key and not any(c.isspace() for c in key),
+    # Exactly the same format predicate as the separate, zero-effect
+    # #425 Environment-only diagnostic. Distinct from actual key validity.
+    shape_status = secret_diag.classify_secret_shapes(
+        api_key=key, capture_base64=capture)
+    require(shape_status != "API_KEY_FORMAT",
             "DEDICATED_ENVIRONMENT_API_SECRET_MISSING")
-    try:
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-        encryption_key = base64.b64decode(capture, validate=True)
-        require(len(encryption_key) == 32
-                and base64.b64encode(encryption_key).decode("ascii") == capture,
-                "ENCRYPTION_KEY_MUST_BE_CANONICAL_BASE64_OF_32_BYTES")
-    except (ValueError, TypeError, base64.binascii.Error) as exc:
-        raise Denied("423_NO_VALID_ENVIRONMENT_ENCRYPTION_KEY") from exc
-    return key, encryption_key
+    require(shape_status == "SHAPES_OK_NOT_A_PROVIDER_AUTHENTICATION",
+            "ENCRYPTION_KEY_MUST_BE_CANONICAL_BASE64_OF_32_BYTES")
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    # Cryptography import above is required for the actual send path.
+    return key, base64.b64decode(capture, validate=True)
 
 
 def _durable_line(path: Path, event: dict):
