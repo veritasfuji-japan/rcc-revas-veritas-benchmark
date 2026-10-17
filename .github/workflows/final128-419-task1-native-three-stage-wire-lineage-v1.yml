@@ -164,7 +164,15 @@ jobs:
           assert len(stages["owned_stage_packet_sha256"]["A"])==3
           assert len(stages["owned_stage_packet_sha256"]["B"])==3
           (Path("results/final128-419-three-stage-model-packet-freeze.json")).write_text(
-            json.dumps(stages,sort_keys=True,indent=2)+"\\n",encoding="utf8")
+            json.dumps(stages,sort_keys=True,indent=2)+"\n",encoding="utf8")
+          # Artifact must round-trip as strict JSON rather than merely
+          # pass source-time dict assertions. Fail before publication.
+          saved=json.loads(Path(
+            "results/final128-419-three-stage-model-packet-freeze.json"
+          ).read_text(encoding="utf8"))
+          assert saved == stages
+          assert saved["eligible_for_official_scoring"] is False
+          assert set(saved["owned_stage_packet_sha256"]) == {"A", "B"}
           redacted=source["redacted_manifest"]
           assert redacted["full_production_effect_bypass_resistance_proven"] is False
           assert redacted["paid_provider_calls"]==0
