@@ -490,3 +490,80 @@ def test_425_workflow_existing_order_and_unsupported_live_automation_unchanged()
     assert "environment: task1-real-model-pilot" in s
     assert "TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}" in s
     assert "TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}" in s
+
+
+def test_425_separate_diagnostic_is_no_paid_no_tag_and_pure_valid(monkeypatch, capsys):
+    from scripts import final128_425_task1_environment_secrets_diagnostic_only_v1 as probe
+    set_test_protected_env(monkeypatch)
+    assert probe.inspect_redacted(os.environ) == "FORMAT_OK_NO_PROVIDER_CALL_NO_TAG_NO_AUTHORITY"
+    probe.main()
+    capture = capsys.readouterr()
+    assert capture.out == "TASK1_425_SECRETS_ONLY_FORMAT_OK_NO_PROVIDER_CALL_NO_TAG_NO_AUTHORITY\n"
+    assert capture.err == ""
+
+
+@pytest.mark.parametrize("variable,invalid,category", [
+    ("TASK1_OPENAI_API_KEY", "FAKE_API_KEY_NOT_TO_BE_ECHOED \n", "API_KEY_FORMAT"),
+    ("TASK1_OPENAI_API_KEY", "", "API_KEY_FORMAT"),
+    ("TASK1_CAPTURE_AES256_KEY", "FAKE_INVALID_BASE64_KEY_MARKER!", "AES256_KEY_FORMAT"),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(31)).decode(), "AES256_KEY_FORMAT"),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(33)).decode(), "AES256_KEY_FORMAT"),
+    ("TASK1_CAPTURE_AES256_KEY", "", "AES256_KEY_FORMAT"),
+    ("GITHUB_REF", "refs/heads/test-invalid", "RUNTIME_CONTEXT"),
+    ("GITHUB_RUN_ATTEMPT", "2", "RUNTIME_CONTEXT"),
+])
+def test_425_separate_diagnostic_categorizes_credential_shapes_without_leaks(
+    monkeypatch, capsys, variable, invalid, category
+):
+    from scripts import final128_425_task1_environment_secrets_diagnostic_only_v1 as probe
+    set_test_protected_env(monkeypatch)
+    monkeypatch.setenv(variable, invalid)
+    with pytest.raises(SystemExit) as stop:
+        probe.main()
+    assert stop.value.code == 1
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert output.err.strip() == "TASK1_425_SECRETS_ONLY_" + category
+    if len(invalid) >= 8:
+        assert invalid not in output.err
+    assert "Traceback" not in output.err
+
+
+def test_425_separate_diagnostic_unexpected_errors_remain_opaque(monkeypatch, capsys):
+    from scripts import final128_425_task1_environment_secrets_diagnostic_only_v1 as probe
+    def opaque(_env):
+        raise RuntimeError("SECRET_NEVER_ALLOW_IN_PUBLIC_LOG_425")
+    monkeypatch.setattr(probe, "inspect_redacted", opaque)
+    with pytest.raises(SystemExit) as stop:
+        probe.main()
+    assert stop.value.code == 1
+    out = capsys.readouterr()
+    assert out.out == ""
+    assert out.err.strip() == "TASK1_425_SECRETS_ONLY_UNCLASSIFIED"
+    assert "SECRET_NEVER_ALLOW" not in out.err
+
+
+def test_425_separate_readonly_manual_workflow_can_never_dispatch_provider():
+    diag = Path(
+        ".github/workflows/final128-425-task1-environment-secrets-diagnostic-only-v1.yml"
+    ).read_text(encoding="utf8")
+    impl = Path(
+        "scripts/final128_425_task1_environment_secrets_diagnostic_only_v1.py"
+    ).read_text(encoding="utf8")
+    assert "\n  workflow_dispatch:" in diag
+    assert "\n  pull_request:" not in diag
+    assert "\n  push:" not in diag
+    assert "\npermissions:\n  contents: read\n" in diag
+    assert "environment: task1-real-model-pilot" in diag
+    assert "refs/heads/main" in diag
+    assert "TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}" in diag
+    assert "TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}" in diag
+    assert "github.token" not in diag
+    assert "contents: write" not in diag
+    for banned in ("api.openai.com", "curl ", "requests.post(", "GH_TOKEN",
+                   "git/refs", "refs/tags/", "workflow_run", "upload-artifact",
+                   "Send ONE FIRST Native Chat POST"):
+        assert banned not in diag
+    for banned in ("http.client", "urllib.request", "requests.", "OpenAI(",
+                   "subprocess", "urlopen(", "socket.", "json.dump("):
+        assert banned not in impl
