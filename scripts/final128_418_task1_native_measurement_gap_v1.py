@@ -85,10 +85,21 @@ def audit_run(result: dict, ledger: dict) -> dict:
     )
     require(all(r.get(k) is True for k in true_fields),
             "ACTUAL_PINNED_OFFLINE_NATIVE_INTEGRATION_REQUIRED")
-    require(a.get("first") == b.get("first")
+    am = a.get("post_read", {}).get("messages")
+    bm = b.get("post_read", {}).get("messages")
+    require(type(am) is list and type(bm) is list
+            and len(am) >= 4 and len(bm) >= 4
+            and type(am[3]) is dict and type(bm[3]) is dict
+            and am[3].get("content") is not None
+            and am[3]["content"] == bm[3].get("content")
+            and a.get("first") == b.get("first")
             and a.get("first") is not b.get("first")
-            and a.get("post_read", {}).get("messages", [None]*4)[3]
-                == b.get("post_read", {}).get("messages", [None]*4)[3]
+            # Native Tool call IDs are necessarily arm-owned and DISTINCT.
+            # Matching original attacked Tool *body* must not require
+            # artificially identical A/B call_id values.
+            and type(a.get("call_ids")) is list
+            and type(b.get("call_ids")) is list
+            and a["call_ids"] != b["call_ids"]
             and a.get("pre_mutation_native_yaml_hash")
                 == b.get("pre_mutation_native_yaml_hash")
                 == r.get("native_yaml_source_sha256"),
