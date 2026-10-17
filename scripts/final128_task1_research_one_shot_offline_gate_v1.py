@@ -30,7 +30,6 @@ SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 FILES = frozenset({
     "00-claim.json", "01-A-intent.json", "02-A-result.json",
     "01-B-intent.json", "02-B-result.json", "03-mock-pair-complete.json",
-    "task1-research-A-mock-placeholder",
 })
 
 
@@ -93,7 +92,7 @@ class MockPlan:
 
 
 def _private_dir_fd(root: Path) -> int:
-    need(type(root) is Path, "PRIVATE_PATH_REQUIRED")
+    need(isinstance(root, Path), "PRIVATE_PATH_REQUIRED")
     fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_NOFOLLOW", 0))
     try:
         st = os.fstat(fd)
@@ -180,7 +179,7 @@ class OfflineMockGate:
         entries = self._entries()
         a_encrypted = "task1-research-A-" + self.plan.run_id + "-mock.enc.json"
         b_encrypted = "task1-research-B-" + self.plan.run_id + "-mock.enc.json"
-        allowed = (FILES - {"task1-research-A-mock-placeholder"}) | {
+        allowed = FILES | {
             a_encrypted, b_encrypted,
         }
         need(entries <= allowed, "UNEXPECTED_OR_PARTIAL_FILE_STOP")
