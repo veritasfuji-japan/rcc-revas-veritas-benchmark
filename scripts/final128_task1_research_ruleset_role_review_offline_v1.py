@@ -131,6 +131,7 @@ def review_synthetic_job_separation(roles: object) -> Review:
            and sender["environment"] != PRODUCTION_ENV
            and type(sender["secrets"]) is list
            and len(sender["secrets"]) == 2
+           and all(type(s) is str for s in sender["secrets"])
            and set(sender["secrets"]) == SENDER_SECRETS,
            "SENDER_READONLY_DEDICATED_RESEARCH_ENV")
     # Mock role attributes cannot assert GitHub token audience, admin
