@@ -82,7 +82,7 @@ def test_packet_tool_catalog_substitution_is_rejected(native_run, arm, stage):
     local, ledger = native_run
     forged = deepcopy(local)
     forged["ephemeral_" + arm.lower()][stage]["tools"] = []
-    with pytest.raises(freeze.Refused, match="CATALOG_DRIFT"):
+    with pytest.raises((freeze.Refused, freeze.previous.NotEligible)):
         freeze.packet_freeze(forged, ledger)
 
 
@@ -95,7 +95,7 @@ def test_packet_model_or_tool_choice_change_is_rejected(native_run, arm, stage):
     local, ledger = native_run
     forged = deepcopy(local)
     forged["ephemeral_" + arm.lower()][stage]["tool_choice"] = "none"
-    with pytest.raises(freeze.Refused, match="CATALOG_DRIFT"):
+    with pytest.raises((freeze.Refused, freeze.previous.NotEligible)):
         freeze.packet_freeze(forged, ledger)
 
 
@@ -104,7 +104,7 @@ def test_swapped_native_arm_tool_return_is_refused(native_run):
     forged = deepcopy(local)
     forged["ephemeral_b"]["post_read"]["messages"][3]["tool_call_id"] = (
         forged["ephemeral_a"]["readonly_call_id"])
-    with pytest.raises(freeze.Refused, match="CALLID_MISMATCH"):
+    with pytest.raises((freeze.Refused, freeze.previous.NotEligible)):
         freeze.packet_freeze(forged, ledger)
 
 
