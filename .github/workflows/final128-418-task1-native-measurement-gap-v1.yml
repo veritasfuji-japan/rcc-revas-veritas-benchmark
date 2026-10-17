@@ -23,6 +23,7 @@ jobs:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
       PYTEST_ADDOPTS: ""
       FINAL128_403_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_418_REQUIRE_NATIVE: "1"
       FINAL128_402_AGENTDOJO_ROOT: "_pins/agentdojo"
       FINAL128_401_AGENTDOJO_ROOT: "_pins/agentdojo"
       FINAL128_400_AGENTDOJO_ROOT: "_pins/agentdojo"
