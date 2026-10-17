@@ -327,6 +327,30 @@ def execute(*, mode, out_dir: Path, connection_factory=None):
     return observations
 
 
+# Preflight-only, allowlisted categories. NEVER log exception text or any
+# environment values, secrets, lengths, digests, or even partial characters.
+# An unknown Denied reason is intentionally opaque and cannot leak through.
+_PREFLIGHT_SAFE_REASON_CATEGORIES = {
+    "423_EXACT_PRECONSUME_OR_LIVE_RUNTIME_PHASE_REQUIRED": "RUNTIME_CONTEXT",
+    "423_EXACT_PROTECTED_MAIN_ONE_ATTEMPT_CONTEXT_REQUIRED": "RUNTIME_CONTEXT",
+    "423_FRESH_HUMAN_APPROVAL_PROTECTED_ENV_REQUIRED": "APPROVAL_OR_ENVIRONMENT",
+    "423_POSTCONSUME_TAG_SHA_REQUIRED": "TAG_CONSUMPTION_REQUIRED",
+    "423_FRESH_OPERATOR_BILLING_REVIEW_REQUIRED": "BILLING_REVIEW",
+    "423_DEDICATED_ENVIRONMENT_API_SECRET_MISSING": "API_KEY_FORMAT",
+    "423_ENCRYPTION_KEY_MUST_BE_CANONICAL_BASE64_OF_32_BYTES": "AES256_KEY_FORMAT",
+    "423_NO_VALID_ENVIRONMENT_ENCRYPTION_KEY": "AES256_KEY_FORMAT",
+}
+
+
+def safe_preflight_reason(exc):
+    """Pure constant-only reason for PRETAG errors, no exception value output."""
+    if type(exc) is not Denied:
+        return "UNCLASSIFIED"
+    # No formatting/interpolation of the rejected credential or exception.
+    # Only fixed and exact recognized error codes return a category.
+    return _PREFLIGHT_SAFE_REASON_CATEGORIES.get(str(exc), "UNCLASSIFIED")
+
+
 def main():
     cli = argparse.ArgumentParser()
     cli.add_argument("--mode", choices=("preflight", "secrets-preflight", "send"), required=True)
@@ -335,8 +359,15 @@ def main():
     try:
         execute(mode=args.mode, out_dir=args.output_dir)
     except BaseException as exc:
-        print("TASK1_423_REFUSED_" + type(exc).__name__, file=sys.stderr)
-        raise SystemExit(1) from exc
+        if args.mode == "secrets-preflight":
+            # Never expose str(exc), repr(exc), traceback, key characters,
+            # decoded key length, or arbitrary caller/provider-originated text.
+            print("TASK1_425_SAFE_PREFLIGHT_REFUSAL_" + safe_preflight_reason(exc),
+                  file=sys.stderr)
+        else:
+            # Preserve existing behaviour for send/standard preflight.
+            print("TASK1_423_REFUSED_" + type(exc).__name__, file=sys.stderr)
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":
