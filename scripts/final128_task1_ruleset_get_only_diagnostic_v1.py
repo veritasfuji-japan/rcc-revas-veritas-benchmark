@@ -82,6 +82,22 @@ def exact_match(rule):
     )
 
 
+def bypass_field_state(detail):
+    """Classify presence/type only. Never disclose the bypass actor values.
+
+    A redacted/missing field is UNKNOWN, not proof of an empty bypass list.
+    This function only supports diagnostics; exact_match remains fail-closed.
+    """
+    if "bypass_actors" not in detail:
+        return "MISSING"
+    value = detail["bypass_actors"]
+    if value is None:
+        return "NULL"
+    if type(value) is list:
+        return "EMPTY" if len(value) == 0 else "NONEMPTY"
+    return "OTHER_TYPE"
+
+
 def inspect(fetch, emit=print):
     """Mirror #423's list/detail predicate without ever creating a ref."""
     code, _ = fetch(REF_PATH)
@@ -120,6 +136,8 @@ def inspect(fetch, emit=print):
             if code == 200 and isinstance(detail, dict):
                 emit(PREFIX + "EXPECTED_DETAIL_TAG_INCLUDED_" +
                      ("YES" if TAG in detail.get("conditions", {}).get("ref_name", {}).get("include", []) else "NO"))
+                emit(PREFIX + "EXPECTED_DETAIL_BYPASS_FIELD_STATE_" +
+                     bypass_field_state(detail))
                 emit(PREFIX + "EXPECTED_DETAIL_BYPASS_IS_EMPTY_LIST_" +
                      ("YES" if detail.get("bypass_actors") == [] else "NO"))
                 emit(PREFIX + "EXPECTED_DETAIL_EXACT_MATCH_" +
