@@ -1,0 +1,222 @@
+name: Final128 420 Task1 Native Chat Reply Admission and Strict Unscored Lineage
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/final128-420-task1-native-chat-reply-admission-v1.yml"
+      - "scripts/final128_420_task1_native_chat_reply_admission_v1.py"
+      - "tests/test_final128_420_task1_native_chat_reply_admission_v1.py"
+      - "docs/optimization/FINAL128_420_TASK1_NATIVE_CHAT_REPLY_ADMISSION_V1.md"
+      - "scripts/final128_419_task1_native_three_stage_wire_lineage_v1.py"
+      - "tests/test_final128_419_task1_native_three_stage_wire_lineage_v1.py"
+      - "docs/optimization/FINAL128_419_TASK1_NATIVE_THREE_STAGE_WIRE_LINEAGE_V1.md"
+      - "scripts/final128_418_task1_native_measurement_gap_v1.py"
+      - "tests/test_final128_418_task1_native_measurement_gap_v1.py"
+      - "docs/optimization/FINAL128_418_TASK1_NATIVE_MEASUREMENT_GAP_V1.md"
+      - "contracts/FINAL128_335_OPTIMIZATION_LEDGER_AND_TASK4_GAP_V1.json"
+      - "scripts/final128_403_task1_integrated_native_loop_bind_overlay_v1.py"
+      - "tests/test_final128_403_task1_integrated_native_loop_bind_overlay_v1.py"
+      - "docs/optimization/FINAL128_403_TASK1_INTEGRATED_NATIVE_LOOP_BIND_OVERLAY_V1.md"
+      - "contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json"
+permissions:
+  contents: read
+jobs:
+  exact-native-chat-fully-owned-untrusted-reply-no-provider:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      FINAL128_403_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_418_REQUIRE_NATIVE: "1"
+      FINAL128_419_REQUIRE_NATIVE: "1"
+      FINAL128_420_REQUIRE_NATIVE: "1"
+      FINAL128_402_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_401_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_400_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_399_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_399_VERITAS_ROOT: "_pins/veritas"
+      FINAL128_398_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_398_VERITAS_ROOT: "_pins/veritas"
+      FINAL128_397_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_396_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_395_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_394_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_381_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_378_AGENTDOJO_ROOT: "_pins/agentdojo"
+      FINAL128_377_AGENTDOJO_ROOT: "_pins/agentdojo"
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      GH_TOKEN: ""
+      GITHUB_TOKEN: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Exact PR HEAD, Native/VERITAS pins and unmodified canonical corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          git rev-parse HEAD > results/final128-420-exact-head.txt
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          test "$(git hash-object contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json)" = "054c79f2a83b48821ce57071185c8ceecda17ed3"
+          for p in src/agentdojo/data/suites/banking/environment.yaml src/agentdojo/attacks/baseline_attacks.py src/agentdojo/default_suites/v1_2/banking/injection_tasks.py; do
+            test "$(git -C _pins/agentdojo hash-object "$p")" = "$(git -C _pins/agentdojo ls-tree HEAD "$p" | awk '{print $3}')"
+          done
+          test "$(git -C _pins/veritas hash-object veritas_os/benchmarks/agentdojo_banking_adapter.py)" = "c2c66b9186cf065132bc50a4b769874d04a78dc6"
+          test "$(git -C _pins/veritas hash-object veritas_os/policy/bind_core/core.py)" = "0f64201e2599495ce4e3991348aa320995716ffc"
+          test "$(git hash-object scripts/final128_377_native_preterminal_spending_projection_v1.py)" = "28e39eb1019a2514c6dbfbdb48c7492696887472"
+          test "$(git hash-object scripts/final128_378_native_paired_model_input_seam_v1.py)" = "a5d6e993b4efb503550cbb8f0957e816d434f91c"
+          test "$(git hash-object scripts/task1_source_bound_readonly_grounding_v1.py)" = "b2f5590857d9df43baed08fbe881fa2b028911bc"
+          for k in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL VERITAS_DATABASE_URL GH_TOKEN GITHUB_TOKEN; do test -z "$(printenv "$k" || true)"; done
+          python -m py_compile scripts/final128_403_task1_integrated_native_loop_bind_overlay_v1.py tests/test_final128_403_task1_integrated_native_loop_bind_overlay_v1.py scripts/final128_418_task1_native_measurement_gap_v1.py tests/test_final128_418_task1_native_measurement_gap_v1.py scripts/final128_419_task1_native_three_stage_wire_lineage_v1.py tests/test_final128_419_task1_native_three_stage_wire_lineage_v1.py scripts/final128_420_task1_native_chat_reply_admission_v1.py tests/test_final128_420_task1_native_chat_reply_admission_v1.py
+      - name: Install exact-pinned Native and VERITAS offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          python -m pip install --disable-pip-version-check \
+            "pytest==9.1.1" "cryptography==50.0.0" \
+            "openai==1.109.1" "pydantic==2.11.10" \
+            "idna==3.15" "httpx==0.28.1" \
+            "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock --output /tmp/final128-403-agentdojo-lock.txt
+          python -m pip install --disable-pip-version-check \
+            -r /tmp/final128-403-agentdojo-lock.txt
+      - name: Verify me alias, unmodified Native tool result, injection and pair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_final128_420_task1_native_chat_reply_admission_v1.py \
+            tests/test_final128_419_task1_native_three_stage_wire_lineage_v1.py \
+            tests/test_final128_418_task1_native_measurement_gap_v1.py \
+            tests/test_final128_403_task1_integrated_native_loop_bind_overlay_v1.py \
+            tests/test_final128_402_task1_native_tools_executor_bind_guard_v1.py \
+            tests/test_final128_401_task1_native_postexecutor_prellm_overlay_v1.py \
+            tests/test_final128_400_task1_canonical_me_alias_projection_v1.py \
+            tests/test_final128_399_task1_frozen_direct_native_bind_v1.py \
+            tests/test_final128_398_task1_native_veritas_bind_predispatch_effect_v1.py \
+            tests/test_final128_397_task1_native_chat_fulltool_ab_offline_v1.py \
+            tests/test_final128_396_task1_native_canonical_fidelity_gate_v1.py \
+            tests/test_final128_395_task1_offline_native_postterminal_scorer_gate_v1.py \
+            tests/test_final128_394_task1_paired_second_turn_terminal_quarantine_v1.py \
+            tests/test_final128_381_task1_real_responses_capture_contract_v1.py \
+            tests/test_final128_378_native_paired_model_input_seam_v1.py \
+            tests/test_final128_377_native_preterminal_spending_projection_v1.py \
+            --junitxml=results/final128-420-junit.xml | tee results/final128-420-tests.log
+      - name: Enforce zero skips and publish redacted hashes only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import final128_403_task1_integrated_native_loop_bind_overlay_v1 as m
+          from scripts import final128_418_task1_native_measurement_gap_v1 as gate
+          from scripts import final128_419_task1_native_three_stage_wire_lineage_v1 as newest
+          from agentdojo.task_suite.load_suites import get_suite
+          r=ET.parse("results/final128-420-junit.xml").getroot()
+          suites=[r] if r.tag=="testsuite" else list(r.findall("testsuite"))
+          assert suites
+          counts={k:sum(int(s.get(k,"0")) for s in suites)
+                  for k in ("tests","failures","errors","skipped")}
+          assert counts["tests"]>=370
+          assert all(counts[k]==0 for k in ("failures","errors","skipped"))
+          freeze=json.loads(m.source.ROSTER_FILE.read_text(encoding="utf8"))
+          source=m.run_frozen_task1_integrated_native_ab(
+            suite=get_suite("v1.2.2","banking"), enrollment=freeze,
+            write_count=2)
+          # Readiness is evaluated on the exact SAME #403 native run, not
+          # on #395's different quarantined synthetic scorer conversation.
+          ledger=json.loads((gate.ROOT/gate.LEDGER).read_text(encoding="utf8"))
+          measured=gate.audit_run(source,ledger)
+          assert measured["eligible_for_official_scoring"] is False
+          assert measured["new_official_native_utility"] is None
+          assert measured["new_official_injection_result"] is None
+          assert measured["new_final128_utility_recoveries"]==0
+          assert measured["native_actual_pipeline_and_bind_checked"] is True
+          (Path("results/final128-420-task1-measurement-gap.json")).write_text(
+            json.dumps(measured,sort_keys=True,indent=2)+"\n",encoding="utf8")
+          stages=newest.packet_freeze(source,ledger)
+          assert stages["eligible_for_paid_dispatch"] is False
+          assert stages["eligible_for_official_scoring"] is False
+          assert stages["new_utility_recoveries"]==0
+          assert len(stages["owned_stage_packet_sha256"]["A"])==3
+          assert len(stages["owned_stage_packet_sha256"]["B"])==3
+          (Path("results/final128-420-three-stage-model-packet-freeze.json")).write_text(
+            json.dumps(stages,sort_keys=True,indent=2)+"\n",encoding="utf8")
+          # Artifact must round-trip as strict JSON rather than merely
+          # pass source-time dict assertions. Fail before publication.
+          saved=json.loads(Path(
+            "results/final128-420-three-stage-model-packet-freeze.json"
+          ).read_text(encoding="utf8"))
+          assert saved == stages
+          assert saved["eligible_for_official_scoring"] is False
+          assert set(saved["owned_stage_packet_sha256"]) == {"A", "B"}
+          redacted=source["redacted_manifest"]
+          assert redacted["full_production_effect_bypass_resistance_proven"] is False
+          assert redacted["paid_provider_calls"]==0
+          assert redacted["B_protected_native_effects"]==0
+          assert redacted["B_native_readonly_dispatches"]==3
+          assert redacted["B_real_veritas_bind_adjudications"]==2
+          assert redacted["B_real_veritas_bind_blocked"]==2
+          assert redacted["real_credential_egress_enforcement_proven"] is False
+          assert redacted["native_initial_bank_sha256"] == redacted["B_end_in_memory_bank_sha256"]
+          assert redacted["native_initial_bank_sha256"] != redacted["A_end_in_memory_bank_sha256"]
+          redacted["exact_head"]=Path("results/final128-420-exact-head.txt").read_text().strip()
+          redacted["JUnit"]=counts
+          blob=lambda x:json.dumps(x,sort_keys=True,separators=(",",":"),
+                                   ensure_ascii=False,allow_nan=False).encode("utf8")
+          redacted["evidence_sha256"]=hashlib.sha256(blob(redacted)).hexdigest()
+          Path("results/final128-420-redacted-native-ab.json").write_text(
+            json.dumps(redacted,indent=2,sort_keys=True)+"\n",encoding="utf8")
+          print("420_NATIVE_CHAT_SHAPE_BOUND_TO_SAME_RUN_INPUT_ONLY_NOT_PROVIDER_NOT_UTILITY")
+          PY
+          sha256sum \
+            scripts/final128_420_task1_native_chat_reply_admission_v1.py \
+            tests/test_final128_420_task1_native_chat_reply_admission_v1.py \
+            docs/optimization/FINAL128_420_TASK1_NATIVE_CHAT_REPLY_ADMISSION_V1.md \
+            scripts/final128_419_task1_native_three_stage_wire_lineage_v1.py \
+            tests/test_final128_419_task1_native_three_stage_wire_lineage_v1.py \
+            docs/optimization/FINAL128_419_TASK1_NATIVE_THREE_STAGE_WIRE_LINEAGE_V1.md \
+            results/final128-420-three-stage-model-packet-freeze.json \
+            scripts/final128_418_task1_native_measurement_gap_v1.py \
+            tests/test_final128_418_task1_native_measurement_gap_v1.py \
+            docs/optimization/FINAL128_418_TASK1_NATIVE_MEASUREMENT_GAP_V1.md \
+            results/final128-420-task1-measurement-gap.json \
+            scripts/final128_403_task1_integrated_native_loop_bind_overlay_v1.py \
+            tests/test_final128_403_task1_integrated_native_loop_bind_overlay_v1.py \
+            docs/optimization/FINAL128_403_TASK1_INTEGRATED_NATIVE_LOOP_BIND_OVERLAY_V1.md \
+            results/final128-420-redacted-native-ab.json \
+            results/final128-420-junit.xml > results/final128-420-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final128-420-task1-native-chat-untrusted-reply-preexecution-no-provider
+          path: results/final128-420-*
+          if-no-files-found: warn
