@@ -6,6 +6,10 @@ on:
       - ".github/workflows/final128-423-task1-protected-first-two-native-chat-live-v1.yml"
       - "scripts/final128_423_task1_protected_first_native_chat_sender_v1.py"
       - "tests/test_final128_423_task1_protected_first_native_chat_sender_v1.py"
+      - "scripts/final128_425_task1_local_secret_format_diagnostic_v1.py"
+      - "tests/test_final128_425_task1_local_secret_format_diagnostic_v1.py"
+      - ".github/workflows/final128-425-task1-safe-local-secrets-diagnostic-no-provider-v1.yml"
+      - "docs/optimization/FINAL128_425_TASK1_SAFE_PREFLIGHT_REFUSAL_DIAGNOSTICS_V1.md"
       - "docs/optimization/FINAL128_423_TASK1_PROTECTED_NATIVE_FIRST_TWO_LIVE_STAGE_V1.md"
       - "scripts/final128_422_task1_native_chat_http_capture_v1.py"
       - "tests/test_final128_422_task1_native_chat_http_capture_v1.py"
@@ -105,7 +109,7 @@ jobs:
           test "$(git hash-object scripts/final128_378_native_paired_model_input_seam_v1.py)" = "a5d6e993b4efb503550cbb8f0957e816d434f91c"
           test "$(git hash-object scripts/task1_source_bound_readonly_grounding_v1.py)" = "b2f5590857d9df43baed08fbe881fa2b028911bc"
           for k in OPENAI_API_KEY TASK4_OPENAI_API_KEY ANTHROPIC_API_KEY OPENAI_BASE_URL VERITAS_DATABASE_URL GH_TOKEN GITHUB_TOKEN; do test -z "$(printenv "$k" || true)"; done
-          python -m py_compile scripts/final128_403_task1_integrated_native_loop_bind_overlay_v1.py tests/test_final128_403_task1_integrated_native_loop_bind_overlay_v1.py scripts/final128_418_task1_native_measurement_gap_v1.py tests/test_final128_418_task1_native_measurement_gap_v1.py scripts/final128_419_task1_native_three_stage_wire_lineage_v1.py tests/test_final128_419_task1_native_three_stage_wire_lineage_v1.py scripts/final128_420_task1_native_chat_reply_admission_v1.py tests/test_final128_420_task1_native_chat_reply_admission_v1.py scripts/final128_421_task1_native_first_pair_presend_v1.py tests/test_final128_421_task1_native_first_pair_presend_v1.py scripts/final128_422_task1_native_chat_http_capture_v1.py tests/test_final128_422_task1_native_chat_http_capture_v1.py scripts/final128_423_task1_protected_first_native_chat_sender_v1.py tests/test_final128_423_task1_protected_first_native_chat_sender_v1.py
+          python -m py_compile scripts/final128_403_task1_integrated_native_loop_bind_overlay_v1.py tests/test_final128_403_task1_integrated_native_loop_bind_overlay_v1.py scripts/final128_418_task1_native_measurement_gap_v1.py tests/test_final128_418_task1_native_measurement_gap_v1.py scripts/final128_419_task1_native_three_stage_wire_lineage_v1.py tests/test_final128_419_task1_native_three_stage_wire_lineage_v1.py scripts/final128_420_task1_native_chat_reply_admission_v1.py tests/test_final128_420_task1_native_chat_reply_admission_v1.py scripts/final128_421_task1_native_first_pair_presend_v1.py tests/test_final128_421_task1_native_first_pair_presend_v1.py scripts/final128_422_task1_native_chat_http_capture_v1.py tests/test_final128_422_task1_native_chat_http_capture_v1.py scripts/final128_423_task1_protected_first_native_chat_sender_v1.py tests/test_final128_423_task1_protected_first_native_chat_sender_v1.py scripts/final128_425_task1_local_secret_format_diagnostic_v1.py tests/test_final128_425_task1_local_secret_format_diagnostic_v1.py
       - name: Install exact-pinned Native and VERITAS offline
         shell: bash
         run: |
@@ -125,6 +129,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pytest -q -o addopts= \
+            tests/test_final128_425_task1_local_secret_format_diagnostic_v1.py \
             tests/test_final128_423_task1_protected_first_native_chat_sender_v1.py \
             tests/test_final128_422_task1_native_chat_http_capture_v1.py \
             tests/test_final128_421_task1_native_first_pair_presend_v1.py \
@@ -262,6 +267,10 @@ jobs:
           print("423_PROTECTED_NATIVE_FIRST_SENDER_STAGED_MOCK_CI_NO_PAID_API_NO_TAG_CONSUMPTION")
           PY
           sha256sum \
+            scripts/final128_425_task1_local_secret_format_diagnostic_v1.py \
+            tests/test_final128_425_task1_local_secret_format_diagnostic_v1.py \
+            .github/workflows/final128-425-task1-safe-local-secrets-diagnostic-no-provider-v1.yml \
+            docs/optimization/FINAL128_425_TASK1_SAFE_PREFLIGHT_REFUSAL_DIAGNOSTICS_V1.md \
             scripts/final128_423_task1_protected_first_native_chat_sender_v1.py \
             tests/test_final128_423_task1_protected_first_native_chat_sender_v1.py \
             docs/optimization/FINAL128_423_TASK1_PROTECTED_NATIVE_FIRST_TWO_LIVE_STAGE_V1.md \

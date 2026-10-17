@@ -377,3 +377,117 @@ def test_unknown_preflight_mode_is_no_auth_even_with_environment(native_ready, t
     with pytest.raises(m.Denied, match="MODE_ONLY"):
         m.execute(mode="operator-approves-everything", out_dir=tmp_path)
     assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("field,altered,category", [
+    ("TASK1_OPENAI_API_KEY", "DO_NOT_PRINT_THIS_FAKE_API_KEY \n", "API_KEY_FORMAT"),
+    ("TASK1_CAPTURE_AES256_KEY", "DO_NOT_PRINT_THIS_FAKE_AES_SECRET%", "AES256_KEY_FORMAT"),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(31)).decode(), "AES256_KEY_FORMAT"),
+    ("TASK1_423_APPROVAL", "INVALID_PRIVATE_APPROVAL_MARKER", "APPROVAL_OR_ENVIRONMENT"),
+    ("TASK1_423_ENVIRONMENT", "INVALID_PRIVATE_ENVIRONMENT_MARKER", "APPROVAL_OR_ENVIRONMENT"),
+    ("TASK1_423_OPERATOR_BILLING_REVIEW", "INVALID_PRIVATE_BILLING_MARKER", "BILLING_REVIEW"),
+    ("GITHUB_RUN_ATTEMPT", "2", "RUNTIME_CONTEXT"),
+    ("GITHUB_EVENT_NAME", "pull_request", "RUNTIME_CONTEXT"),
+])
+def test_425_cli_redacts_pretag_refusal_to_fixed_category(
+    native_ready, tmp_path, monkeypatch, capsys, field, altered, category
+):
+    import sys
+    set_test_protected_env(monkeypatch)
+    monkeypatch.delenv("TASK1_423_TAG_CONSUMED", raising=False)
+    monkeypatch.delenv("TASK1_423_TAG_READBACK_SHA", raising=False)
+    monkeypatch.setenv(field, altered)
+    monkeypatch.setattr(sys, "argv", [
+        "task1-425-test", "--mode", "secrets-preflight",
+        "--output-dir", str(tmp_path),
+    ])
+    with pytest.raises(SystemExit) as term:
+        m.main()
+    assert term.value.code == 1
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert output.err.strip() == "TASK1_425_SAFE_PREFLIGHT_REFUSAL_" + category
+    # Single-character test values (e.g. run attempt "2") naturally
+    # overlap the stable rule ID "425", so only check nontrivial markers.
+    if len(altered) >= 8:
+        assert altered not in output.err
+    assert "sk-" not in output.err
+    assert "Traceback" not in output.err
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("exc", [
+    RuntimeError("NEVER_LOG_UNHANDLED_SECRET_A"),
+    ValueError("NEVER_LOG_UNHANDLED_SECRET_B"),
+    m.Denied("423_UNKNOWN_REASON_NEVER_LOG_SECRET_C"),
+])
+def test_425_unclassified_exception_never_echoes_values(
+    tmp_path, monkeypatch, capsys, exc
+):
+    import sys
+    def deny(*args, **kwargs):
+        raise exc
+    monkeypatch.setattr(m, "execute", deny)
+    monkeypatch.setattr(sys, "argv", [
+        "task1-425-test", "--mode", "secrets-preflight",
+        "--output-dir", str(tmp_path),
+    ])
+    with pytest.raises(SystemExit) as term:
+        m.main()
+    assert term.value.code == 1
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert output.err.strip() == "TASK1_425_SAFE_PREFLIGHT_REFUSAL_UNCLASSIFIED"
+    assert "SECRET" not in output.err
+    assert "Traceback" not in output.err
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("error,expected", [
+    ("423_EXACT_PROTECTED_MAIN_ONE_ATTEMPT_CONTEXT_REQUIRED", "RUNTIME_CONTEXT"),
+    ("423_FRESH_HUMAN_APPROVAL_PROTECTED_ENV_REQUIRED", "APPROVAL_OR_ENVIRONMENT"),
+    ("423_FRESH_OPERATOR_BILLING_REVIEW_REQUIRED", "BILLING_REVIEW"),
+    ("423_DEDICATED_ENVIRONMENT_API_SECRET_MISSING", "API_KEY_FORMAT"),
+    ("423_ENCRYPTION_KEY_MUST_BE_CANONICAL_BASE64_OF_32_BYTES", "AES256_KEY_FORMAT"),
+    ("423_NO_VALID_ENVIRONMENT_ENCRYPTION_KEY", "AES256_KEY_FORMAT"),
+    ("423_POSTCONSUME_TAG_SHA_REQUIRED", "TAG_CONSUMPTION_REQUIRED"),
+])
+def test_425_safe_categories_are_exactly_static_and_never_secret_reflective(error, expected):
+    assert m.safe_preflight_reason(m.Denied(error)) == expected
+    assert m.safe_preflight_reason(m.Denied(error + "SECRET_VALUE")) == "UNCLASSIFIED"
+    assert m.safe_preflight_reason(ValueError(error)) == "UNCLASSIFIED"
+
+
+def test_425_successful_pretag_stays_silent_and_does_not_grant_dispatch(
+    native_ready, tmp_path, monkeypatch, capsys
+):
+    import sys
+    set_test_protected_env(monkeypatch)
+    monkeypatch.delenv("TASK1_423_TAG_CONSUMED", raising=False)
+    monkeypatch.delenv("TASK1_423_TAG_READBACK_SHA", raising=False)
+    monkeypatch.setattr(sys, "argv", [
+        "task1-425-test", "--mode", "secrets-preflight",
+        "--output-dir", str(tmp_path),
+    ])
+    m.main()
+    output = capsys.readouterr()
+    assert output.out == "" and output.err == ""
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_425_workflow_existing_order_and_unsupported_live_automation_unchanged():
+    from pathlib import Path
+    s = Path(
+        ".github/workflows/final128-423-task1-protected-first-two-native-chat-live-v1.yml"
+    ).read_text(encoding="utf8")
+    assert s.index("--mode secrets-preflight") < s.index(
+        "Atomically consume exact no-bypass production once tag")
+    assert s.index("Atomically consume exact no-bypass production once tag") < s.index(
+        "--mode send")
+    assert "\n  workflow_dispatch:" in s
+    assert "\n  pull_request:" not in s
+    assert "\n  push:" not in s
+    assert "environment: task1-real-model-pilot" in s
+    assert "TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}" in s
+    assert "TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}" in s
+
