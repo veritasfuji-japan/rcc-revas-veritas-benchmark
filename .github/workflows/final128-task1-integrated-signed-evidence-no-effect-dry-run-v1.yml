@@ -1,0 +1,44 @@
+name: Task1 Integrated Signed Evidence NO-EFFECT Dry Run V1
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: task1-integrated-signed-evidence-no-effect-v1
+  cancel-in-progress: false
+
+jobs:
+  synthetic-evidence-and-deny-only-boundary:
+    if: github.actor == 'veritasfuji-japan' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Install offline signature verifier dependency only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "cryptography==50.0.0"
+      - name: Verify integrated no-effect cases offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p "test_final128_task1_integrated_signed_evidence_no_effect_dry_run_v1.py" -q
+      - name: Rehearse bound signed evidence with issuer hard NO-GO
+        shell: bash
+        run: |
+          set -euo pipefail
+          # No token/env secrets/Provider client/GitHub network/ref write.
+          # The signing fixture is public and inherently non-authoritative.
+          python scripts/final128_task1_integrated_signed_evidence_no_effect_dry_run_v1.py
