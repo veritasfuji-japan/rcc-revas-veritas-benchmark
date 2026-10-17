@@ -55,12 +55,9 @@ def test_425_no_paid_diagnostic_returns_only_coarse_reason(name, value, expected
     env = clean_environ()
     env[name] = value
     assert m.diagnose(env) == expected
-    if name in ("TASK1_OPENAI_API_KEY", "TASK1_CAPTURE_AES256_KEY"):
-        # One-character fixtures such as run_attempt='2' overlap rule ID 425.
-    # Only nontrivial markers can support a secret-leak negative assertion.
-    if len(value) >= 8:
+    # Secret sentinel values only: numeric run attempt may overlap fixed "425".
+    if name in ("TASK1_OPENAI_API_KEY", "TASK1_CAPTURE_AES256_KEY") and len(value) >= 8:
         assert value not in m.OUT_PREFIX + m.diagnose(env)
-
 
 @pytest.mark.parametrize("name,expected", [
     ("TASK1_OPENAI_API_KEY", "API_KEY_FORMAT"),
