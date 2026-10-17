@@ -236,3 +236,39 @@ def test_timeout_or_429_after_one_attempt_is_not_retried(native_ready, tmp_path,
 def test_sender_never_runs_native_protected_tools_or_official_scorer(name):
     source = Path(m.__file__).read_text(encoding="utf8")
     assert name not in source
+
+
+def test_protected_manual_live_workflow_is_never_triggered_by_pr_ci():
+    live = Path(".github/workflows/final128-423-task1-protected-first-two-native-chat-live-v1.yml").read_text()
+    ci = Path(".github/workflows/final128-423-task1-protected-first-native-chat-offline-ci-v1.yml").read_text()
+    assert "\n  workflow_dispatch:" in live
+    assert "\n  pull_request:" not in live
+    assert "\n  push:" not in live
+    assert "environment: task1-real-model-pilot" in live
+    assert "cancel-in-progress: false" in live
+    assert "APPROVE_TASK1_FIRST_NATIVE_A_B_TWO_CALLS_MAX_USD_1" in live
+    assert "refs/tags/final128-task1-first-two-real-responses-v1-consumed" in live
+    assert "423_PRODUCTION_ONCE_TAG_ALREADY_CONSUMED" in live
+    assert "423_NO_EXACT_ACTIVE_NO_BYPASS_PRODUCTION_TAG_RULESET" in live
+    assert "TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}" in live
+    assert "TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}" in live
+    assert "gh api -X DELETE" not in live
+    assert "curl --retry" not in live
+    assert "retention-days: 1" in live
+    assert "\n  pull_request:" in ci
+    assert "\n  workflow_dispatch:" not in ci
+    assert "\npermissions:\n  contents: read\n" in ci
+    assert "TASK1_OPENAI_API_KEY: ${{ secrets." not in ci
+    assert "TASK1_CAPTURE_AES256_KEY: ${{ secrets." not in ci
+
+
+def test_live_workflow_uses_exact_consent_and_source_without_task4_authority():
+    live = Path(".github/workflows/final128-423-task1-protected-first-two-native-chat-live-v1.yml").read_text()
+    assert "task4-real-provider-third-two-calls" not in live
+    assert "TASK4_OPENAI_API_KEY: ${{ secrets." not in live
+    assert "run_attempt == 1" in live
+    assert "refs/heads/main" in live
+    assert "task1-423-agentdojo-lock.txt" in live
+    assert "TASK1_423_TAG_READBACK_SHA" in live
+    assert live.index("TASK1_423_GLOBAL_SINGLETON_TAG_CONSUMED") < live.index(
+        "Send ONE FIRST Native Chat POST each A/B")
