@@ -503,3 +503,129 @@ def test_safe_reason_diagnostics_do_not_modify_manual_live_workflow():
     assert "\n  pull_request:" not in live
     assert "TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}" in live
     assert "TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}" in live
+
+
+# #425's read-only GitHub Environment diagnostic is distinct from the
+# irreversible paid workflow and has no tag/Provider/GITHUB_TOKEN rights.
+@pytest.mark.parametrize("secret_name,bad,expected", [
+    ("TASK1_OPENAI_API_KEY", "", "API_KEY_FORMAT"),
+    ("TASK1_OPENAI_API_KEY", "short", "API_KEY_FORMAT"),
+    ("TASK1_OPENAI_API_KEY", "X" * 60 + "\n", "API_KEY_FORMAT"),
+    ("TASK1_CAPTURE_AES256_KEY", "", "AES_KEY_BASE64_OR_LENGTH"),
+    ("TASK1_CAPTURE_AES256_KEY", "DO_NOT_PRINT_SECRET!BAD_BASE64",
+     "AES_KEY_BASE64_OR_LENGTH"),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(31)).decode(),
+     "AES_KEY_BASE64_OR_LENGTH"),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(33)).decode(),
+     "AES_KEY_BASE64_OR_LENGTH"),
+    ("TASK1_CAPTURE_AES256_KEY", base64.b64encode(bytes(32)).decode() + "\n",
+     "AES_KEY_BASE64_OR_LENGTH"),
+])
+def test_separate_environment_only_diagnostic_classifies_secret_format(
+    monkeypatch, capsys, secret_name, bad, expected
+):
+    from scripts import final128_425_task1_environment_secret_diagnostic_v1 as safe
+    set_test_protected_env(monkeypatch)
+    monkeypatch.setenv("TASK1_425_DIAGNOSTIC_ENVIRONMENT", safe.ENV)
+    monkeypatch.setenv(secret_name, bad)
+    with pytest.raises(SystemExit) as v:
+        safe.main()
+    assert v.value.code == 1
+    o=capsys.readouterr()
+    assert o.out == safe.PREFIX + expected + "\n"
+    assert o.err == ""
+    assert bad not in o.out or bad == ""
+    assert "DO_NOT_PRINT_SECRET" not in o.out
+
+
+def test_readonly_diagnostic_accepts_shape_without_proving_provider_auth(
+    monkeypatch, capsys
+):
+    from scripts import final128_425_task1_environment_secret_diagnostic_v1 as safe
+    set_test_protected_env(monkeypatch)
+    monkeypatch.setenv("TASK1_425_DIAGNOSTIC_ENVIRONMENT", safe.ENV)
+    with pytest.raises(SystemExit) as done:
+        safe.main()
+    assert done.value.code == 0
+    out=capsys.readouterr()
+    assert out.out == (safe.PREFIX +
+        "SHAPES_OK_NOT_A_PROVIDER_AUTHENTICATION\n")
+    assert out.err == ""
+
+
+@pytest.mark.parametrize("name,wrong,expected", [
+    ("GITHUB_EVENT_NAME", "pull_request", "GITHUB_RUNTIME_CONTEXT"),
+    ("GITHUB_RUN_ATTEMPT", "2", "GITHUB_RUNTIME_CONTEXT"),
+    ("GITHUB_REF", "refs/heads/branch", "GITHUB_RUNTIME_CONTEXT"),
+    ("GITHUB_REPOSITORY", "wrong/repo", "GITHUB_RUNTIME_CONTEXT"),
+    ("GITHUB_ACTOR", "another-user", "GITHUB_RUNTIME_CONTEXT"),
+    ("TASK1_425_DIAGNOSTIC_ENVIRONMENT", "wrong-env", "ENVIRONMENT_SCOPE"),
+])
+def test_readonly_diagnostic_denies_unexpected_context(
+    monkeypatch, capsys, name, wrong, expected
+):
+    from scripts import final128_425_task1_environment_secret_diagnostic_v1 as safe
+    set_test_protected_env(monkeypatch)
+    monkeypatch.setenv("TASK1_425_DIAGNOSTIC_ENVIRONMENT", safe.ENV)
+    monkeypatch.setenv(name, wrong)
+    with pytest.raises(SystemExit) as denied:
+        safe.main()
+    assert denied.value.code == 1
+    out=capsys.readouterr()
+    assert out.out == safe.PREFIX + expected + "\n"
+    assert out.err == ""
+
+
+def test_readonly_diagnostic_and_paid_sender_share_exact_format_predicate(
+    native_ready, monkeypatch
+):
+    from scripts import final128_425_task1_environment_secret_diagnostic_v1 as safe
+    set_test_protected_env(monkeypatch)
+    good = safe.classify_secret_shapes(
+        api_key=os.environ["TASK1_OPENAI_API_KEY"],
+        capture_base64=os.environ["TASK1_CAPTURE_AES256_KEY"])
+    assert good == "SHAPES_OK_NOT_A_PROVIDER_AUTHENTICATION"
+    key, aes = m.check_live_runtime(require_consumed_tag=True)
+    assert key == os.environ["TASK1_OPENAI_API_KEY"]
+    assert len(aes) == 32
+    monkeypatch.setenv("TASK1_CAPTURE_AES256_KEY", "!UNSAFE_KEY")
+    assert safe.classify_secret_shapes(
+        api_key=os.environ["TASK1_OPENAI_API_KEY"],
+        capture_base64=os.environ["TASK1_CAPTURE_AES256_KEY"]) == (
+            "AES_KEY_BASE64_OR_LENGTH")
+    with pytest.raises(m.Denied, match="ENCRYPTION_KEY_MUST_BE_CANONICAL"):
+        m.check_live_runtime(require_consumed_tag=True)
+
+
+def test_diagnostic_workflow_is_truly_readonly_and_never_consumes_singleton():
+    safe_workflow = Path(
+        ".github/workflows/final128-425-task1-readonly-environment-secret-shape-diagnostic-v1.yml"
+    ).read_text()
+    python = Path(
+        "scripts/final128_425_task1_environment_secret_diagnostic_v1.py"
+    ).read_text()
+    assert "\n  workflow_dispatch:" in safe_workflow
+    assert "\n  pull_request:" not in safe_workflow
+    assert "\n  push:" not in safe_workflow
+    assert "\npermissions:\n  contents: read\n" in safe_workflow
+    assert "\n  contents: write" not in safe_workflow
+    assert "environment: task1-real-model-pilot" in safe_workflow
+    assert "github.run_attempt == 1" in safe_workflow
+    assert "persist-credentials: false" in safe_workflow
+    assert "TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}" in safe_workflow
+    assert "TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}" in safe_workflow
+    forbidden = (
+        "gh api", "GH_TOKEN:", "GITHUB_TOKEN:", "create-refs",
+        "git push", "curl ", "wget ", "http.client", "requests.post",
+        "openai.chat", "chat.completions", "Run workflow", "--mode send",
+        "TASK1_423_APPROVAL", "TASK1_423_OPERATOR_BILLING_REVIEW",
+        "actions/upload-artifact", "retention-days", "/git/refs",
+        "production_once", "PRODUCTION_TAG",
+    )
+    for phrase in forbidden:
+        assert phrase not in safe_workflow
+    for phrase in ("import http.client", "import requests", "from openai",
+                   "urllib.request", "create_ref", "one_post(", "subprocess"):
+        assert phrase not in python
+    assert "print(PREFIX + result)" in python
+    assert "raise SystemExit(0 if result ==" in python
