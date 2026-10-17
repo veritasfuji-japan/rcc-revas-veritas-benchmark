@@ -1,0 +1,31 @@
+name: Task1 Ruleset GET-ONLY Diagnostic (NO PAID NO TAG WRITE)
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: task1-ruleset-get-only-diagnostic-v1
+  cancel-in-progress: false
+
+jobs:
+  list-and-detail-read-only:
+    if: github.actor == 'veritasfuji-japan' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Compare singleton absence and authenticated GitHub Ruleset GET visibility
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Only stdlib GET. No Environment secrets, Provider SDK, POST, refs
+          # mutation, artifacts, or paid workflow invocation. Explicitly NOT
+          # a substitute for the paid workflow's contents:write token scope.
+          python3 scripts/final128_task1_ruleset_get_only_diagnostic_v1.py
