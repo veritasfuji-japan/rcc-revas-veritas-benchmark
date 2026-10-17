@@ -327,6 +327,37 @@ def execute(*, mode, out_dir: Path, connection_factory=None):
     return observations
 
 
+# #425: A closed allowlist of NON-SECRET diagnostic categories.
+# Do NOT emit actual exception text or environment values to Actions logs.
+# This is classification of refusal only, never evidence of Provider identity,
+# key acceptance, a spend hard-stop, or issuance of execution authority.
+SAFE_PRETAG_REFUSAL_CATEGORIES = {
+    "423_EXACT_PRECONSUME_OR_LIVE_RUNTIME_PHASE_REQUIRED":
+        "INVALID_PREFLIGHT_PHASE",
+    "423_EXACT_PROTECTED_MAIN_ONE_ATTEMPT_CONTEXT_REQUIRED":
+        "GITHUB_RUNTIME_CONTEXT",
+    "423_FRESH_HUMAN_APPROVAL_PROTECTED_ENV_REQUIRED":
+        "APPROVAL_OR_ENVIRONMENT",
+    "423_FRESH_OPERATOR_BILLING_REVIEW_REQUIRED":
+        "BILLING_REVIEW",
+    "423_DEDICATED_ENVIRONMENT_API_SECRET_MISSING":
+        "API_KEY_FORMAT",
+    "423_ENCRYPTION_KEY_MUST_BE_CANONICAL_BASE64_OF_32_BYTES":
+        "AES_KEY_BASE64_OR_LENGTH",
+    "423_NO_VALID_ENVIRONMENT_ENCRYPTION_KEY":
+        "AES_KEY_BASE64_OR_LENGTH",
+}
+
+
+def safe_pretag_refusal_category(exc):
+    """Never return any substring supplied by caller, secrets or exception."""
+    if type(exc) is not Denied:
+        return "OTHER_PRETAG_FAILURE"
+    # Only our fixed, audited Denied reasons can select a fixed category.
+    return SAFE_PRETAG_REFUSAL_CATEGORIES.get(str(exc),
+                                            "OTHER_PRETAG_FAILURE")
+
+
 def main():
     cli = argparse.ArgumentParser()
     cli.add_argument("--mode", choices=("preflight", "secrets-preflight", "send"), required=True)
@@ -335,8 +366,14 @@ def main():
     try:
         execute(mode=args.mode, out_dir=args.output_dir)
     except BaseException as exc:
-        print("TASK1_423_REFUSED_" + type(exc).__name__, file=sys.stderr)
-        raise SystemExit(1) from exc
+        if args.mode == "secrets-preflight":
+            print("TASK1_425_PRETAG_DENIAL_CATEGORY=" +
+                  safe_pretag_refusal_category(exc), file=sys.stderr)
+        else:
+            print("TASK1_423_REFUSED_" + type(exc).__name__, file=sys.stderr)
+        # Explicitly suppress traceback and exception causes: they might
+        # contain secret-bearing third-party validation messages.
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":
