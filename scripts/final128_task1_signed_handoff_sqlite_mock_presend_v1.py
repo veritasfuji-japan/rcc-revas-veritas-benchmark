@@ -131,7 +131,7 @@ class SQLiteLocalFakePresendGate:
         db = sqlite3.connect(str(self.db_path), timeout=5)
         db.execute("PRAGMA busy_timeout=5000")
         db.execute("PRAGMA synchronous=FULL")
-        db.execute("PRAGMA journal_mode=DELETE")
+        # SQLite default rollback-journal mode; avoid resetting it during races.
         return db
 
     def _verify(self, *, arm: str, packet: bytes, signed: object,
