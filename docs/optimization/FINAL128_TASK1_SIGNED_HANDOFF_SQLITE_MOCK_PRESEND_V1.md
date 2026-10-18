@@ -23,7 +23,7 @@ Tests reside in `tests/test_final128_task1_signed_handoff_sqlite_mock_presend_v1
 
 ## Why this is useful, but NOT an execution authority proof
 
-**One local SQLite database** can serialize mock consumers and preserve a no-retry marker between objects/processes; it is *not* a remote independently controlled global Provider-send lease. A distinct SQLite file accepts the same signed A fixture in the negative control. A client who can delete or rewrite the test database can defeat its uniqueness. The in-process test signer/public key are not trusted production IAM identities; these tests do not prove a recipient/issuer is enrolled by GitHub or an organization.
+**one local SQLite database** can serialize mock consumers and preserve a no-retry marker between objects/processes; it is *not* a remote independently controlled global Provider-send lease. A distinct SQLite file accepts the same signed A fixture in the negative control. A client who can delete or rewrite the test database can defeat its uniqueness. The in-process test signer/public key are not trusted production IAM identities; these tests do not prove a recipient/issuer is enrolled by GitHub or an organization.
 
 The mock sink is **not independent** of Python code. A caller can bypass the intake and call `InMemoryFakeProviderPort.deliver` directly. The synthetic packet is **not real AgentDojo Native HTTP payload data**, the SQLite phases are **not authentic Provider transaction statuses**, and the LocalReceipt is not a Provider bill, server receipt or verifiable execution result.
 
