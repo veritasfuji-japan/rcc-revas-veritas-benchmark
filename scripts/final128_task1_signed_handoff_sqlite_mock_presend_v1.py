@@ -10,6 +10,7 @@ A shared *local* SQLite file survives new objects/processes, NOT remote runners.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from contextlib import closing
 import hashlib
 from pathlib import Path
 import sqlite3
@@ -110,7 +111,7 @@ class SQLiteLocalFakePresendGate:
         self.expected = expected
         self.public = pinned_test_public_key
         self.port = local_fake_port
-        with self._connection() as db:
+        with closing(self._connection()) as db:
             db.execute(
                 "CREATE TABLE IF NOT EXISTS pair ("
                 " scope TEXT PRIMARY KEY NOT NULL,"
@@ -170,7 +171,7 @@ class SQLiteLocalFakePresendGate:
         return fingerprint
 
     def _reserve(self, arm: str, fingerprint: str) -> None:
-        with self._connection() as db:
+        with closing(self._connection()) as db:
             try:
                 db.execute("BEGIN IMMEDIATE")
                 rows = db.execute(
@@ -207,7 +208,7 @@ class SQLiteLocalFakePresendGate:
             ("UNKNOWN_A", "A_ACK") if arm == "A"
             else ("UNKNOWN_B", "PAIR_ACK")
         )
-        with self._connection() as db:
+        with closing(self._connection()) as db:
             try:
                 db.execute("BEGIN IMMEDIATE")
                 changed = db.execute(
@@ -271,7 +272,7 @@ class SQLiteLocalFakePresendGate:
         )
 
     def status(self) -> dict:
-        with self._connection() as db:
+        with closing(self._connection()) as db:
             rows = db.execute(
                 "SELECT fingerprint,phase FROM pair WHERE scope=?",
                 (SCOPE,),
