@@ -149,6 +149,16 @@ class RejectingResearchWire:
         self.sealed = False
         self.last: dict | None = None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_unused):
+        self.close()
+
+    def close(self):
+        # No underlying socket or transport to close.
+        pass
+
     def handle_request(self, request):
         # No network constructor, .send(), proxy, request factory or fallback.
         require(not self.sealed and self.calls == 0,
