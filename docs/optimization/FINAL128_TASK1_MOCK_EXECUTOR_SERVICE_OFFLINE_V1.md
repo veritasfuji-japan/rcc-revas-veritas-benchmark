@@ -2,7 +2,7 @@
 
 **Status: LOCAL OFFLINE MOCK-ONLY / PAID Task1 NO-GO. Issue #427 stays OPEN.**
 
-This contribution moves the **#446** signed fake-provider pre-send gate behind a real, separate Python OS process. Its only transport is a Linux **AF_UNIX** socket. Two child-process mock Runners can compete to request the same signed A attempt over the socket, while the Executor owns its instance of #446's SQLite reservation gate and #442's fake port. B is admitted only after a validated local A ACK. UNKNOWN is durably persisted before the local fake attempt and is never retried. The tests reuse the test-only Ed25519 signing checks of #437 and the frozen #441 evidence readback; they do not invent a new live authority.
+Following #447's inert acceptance contract, this contribution moves the **#446** signed fake-provider pre-send gate behind a real, separate Python OS process. Its only transport is a Linux **AF_UNIX** socket. Two child-process mock Runners can compete to request the same signed A attempt over the socket, while the Executor owns its instance of #446's SQLite reservation gate and #442's fake port. B is admitted only after a validated local A ACK. UNKNOWN is durably persisted before the local fake attempt and is never retried. The tests reuse the test-only Ed25519 signing checks of #437 and the frozen #441 evidence readback; they do not invent a new live authority.
 
 ## What is genuinely exercised
 
@@ -24,7 +24,7 @@ The #423 live sender is unchanged and is **not routed** through this socket. The
 1. Exactly three new files under `scripts/`, `tests/` and `docs/optimization/`; zero edits to `.github/workflows/**`, #423, Provider secrets, Environments, tags, Rulesets, billing or real transport code.
 2. Ordinary PR CI dedicated tests show one winner for concurrent local mock Runners; no duplicate A/B after local service restart; UNKNOWN preserves rejection after restart.
 3. Forged signed payload, self-declared peer UID, malformed/multiple JSON frames, wrong signer, B-first, altered fake digest and expired/invalid frozen preflight cannot reach the local fake port.
-4. Separate ledgers allow the same A, preserving the counterexample to remote global single-use. Same UID file access is documented, not described as a real enforcement boundary.
+4. The tests show separate ledgers allow the same A, preserving the counterexample to remote global single-use. Same UID file access is documented, not described as a real enforcement boundary.
 5. Issue #427 remains OPEN; **paid Task1 NO-GO**. No `workflow_dispatch`, tag modification, external Provider POST, bank effect, official scoring or fresh approval.
 
 **Next required proof after #448:** independently controlled executor identity, shared remote atomic ledger across genuine GitHub Runners, external credential custody, real network/egress deny policy and a separately reviewed cutover of #423. Until then, this is a meaningful *local IPC integration*, not real authority isolation.
