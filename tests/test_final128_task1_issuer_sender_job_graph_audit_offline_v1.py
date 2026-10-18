@@ -2,18 +2,18 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 from pathlib import Path
 import socket
 
 import pytest
-import yaml
 
 from scripts import final128_task1_issuer_sender_job_graph_audit_offline_v1 as m
 
 ROOT = Path(__file__).resolve().parents[1]
 LIVE = ROOT / m.WORKFLOW_PATH
 BLUEPRINT = (ROOT / "docs/optimization/"
-             "TASK1_423_ISSUER_SENDER_JOB_SPLIT_INERT_BLUEPRINT_V1.yml")
+             "TASK1_423_ISSUER_SENDER_JOB_SPLIT_INERT_BLUEPRINT_V1.json")
 DOC = (ROOT / "docs/optimization/"
        "FINAL128_TASK1_ISSUER_SENDER_JOB_SPLIT_AUDIT_OFFLINE_V1.md")
 
@@ -40,7 +40,7 @@ def load():
 
 
 def blueprint_object():
-    return yaml.safe_load(BLUEPRINT.read_bytes())
+    return json.loads(BLUEPRINT.read_bytes())
 
 
 def assert_non_authorizing(report):
@@ -164,7 +164,7 @@ def test_mutated_inert_plan_never_claims_enforced_role_split(change):
     data = blueprint_object()
     change(data)
     with pytest.raises(m.Refused, match="NOT_EXACT_INERT_JOB_SPLIT_DESIGN"):
-        m.review_inert_blueprint(yaml.safe_dump(data).encode("utf8"))
+        m.review_inert_blueprint(json.dumps(data).encode("utf8"))
 
 
 @pytest.mark.parametrize("modification", [
@@ -204,10 +204,12 @@ def test_doc_has_nonclaims_and_blueprint_is_not_runnable():
     ):
         assert phrase in txt
     spec = BLUEPRINT.read_text(encoding="utf8")
-    assert "NOT .github/workflows" in spec
-    assert "workflow_dispatch:" not in spec
-    assert "\nsteps:" not in spec
-    assert "\nrun:" not in spec
+    assert BLUEPRINT.parent.name == "optimization"
+    assert '"mode": "OFFLINE_DESIGN_DATA_NO_GITHUB_WORKFLOW_NO_EXECUTION"' in spec
+    assert '"jobs":' not in spec
+    assert '"on":' not in spec
+    assert '"steps":' not in spec
+    assert '"run":' not in spec
     assert "github.token" not in spec
     source = Path(m.__file__).read_text(encoding="utf8")
     for forbidden in (
