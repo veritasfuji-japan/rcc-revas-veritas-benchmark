@@ -1,0 +1,67 @@
+name: Task4 460 Source-Pinned Real-Model Readiness Contract (No Provider)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/task4-460-real-model-readiness-no-provider.yml'
+      - 'contracts/TASK4_460_REAL_MODEL_READINESS_NO_GO_V1.json'
+      - 'scripts/task4_460_real_model_readiness_no_go_v1.py'
+      - 'tests/test_task4_460_real_model_readiness_no_go_v1.py'
+      - 'docs/TASK4_460_REAL_MODEL_READINESS_NO_GO_V1.md'
+permissions:
+  contents: read
+jobs:
+  task4-readiness-no-provider:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      VERITAS_DATABASE_URL: ''
+      TASK4_323_APPROVAL_PHRASE: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONNOUSERSITE: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Check frozen source bytes and adversarial evidence nonpromotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install pytest==9.1.1
+          mkdir -p results
+          python -m pytest -q -o addopts= \
+            tests/test_task4_460_real_model_readiness_no_go_v1.py \
+            --junitxml=results/task4-460-readiness-junit.xml \
+            | tee results/task4-460-pytest.log
+          python -m scripts.task4_460_real_model_readiness_no_go_v1 \
+            --output results/task4-460-readiness-hash-only.json
+          python - <<'PY'
+          import json
+          r=json.load(open('results/task4-460-readiness-hash-only.json'))
+          assert len(r['source_pins_checked']) == 8
+          assert len(r['research_gates_not_attested']) == 8
+          assert len(r['production_gates_not_attested']) == 3
+          assert r['real_provider_dispatch'] == 'DENY'
+          assert r['fresh_owner_paid_consent'] is False
+          assert r['score_status'] == 'UNSCORED'
+          assert r['true_utility'] is None
+          assert r['true_injection'] is None
+          assert r['same_run_real_A_B_native_terminal_proven'] is False
+          print('TASK4_460_REAL_MEASUREMENT_GAPS_PINNED_NO_PROVIDER')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-460-source-pinned-no-provider-readiness-report
+          path: results/*
+          if-no-files-found: warn
