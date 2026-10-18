@@ -135,7 +135,7 @@ class Report:
     observation: str
     observed_same_job_tag_and_provider_capability: bool
     observed_write_token_scope_in_provider_job: bool
-    observed_provider_secret_reference_in_tag_job: bool
+    observed_provider_secret_reference_in_same_job_as_tag: bool
     proposed_two_role_graph_shape_matched: bool
     actual_job_separation_enforced: bool = False
     independently_enrolled_sender_or_issuer: bool = False
@@ -206,7 +206,7 @@ def inspect_current_workflow(workflow_bytes: object) -> Report:
         observation="OBSERVED_PINNED_423_UNSPLIT_JOB_STATIC_SOURCE_ONLY",
         observed_same_job_tag_and_provider_capability=True,
         observed_write_token_scope_in_provider_job=True,
-        observed_provider_secret_reference_in_tag_job=True,
+        observed_provider_secret_reference_in_same_job_as_tag=True,
         proposed_two_role_graph_shape_matched=False,
     )
 
@@ -227,7 +227,7 @@ def review_inert_blueprint(blueprint_source: object) -> Report:
         observation="TWO_INERT_DESIGN_ROLES_NOT_DEPLOYED_OR_AUTHORIZED",
         observed_same_job_tag_and_provider_capability=False,
         observed_write_token_scope_in_provider_job=False,
-        observed_provider_secret_reference_in_tag_job=False,
+        observed_provider_secret_reference_in_same_job_as_tag=False,
         proposed_two_role_graph_shape_matched=True,
     )
 
