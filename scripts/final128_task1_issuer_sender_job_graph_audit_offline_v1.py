@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only audit: the current #423 same-job exposure vs an INERT split plan.
+"""Read-only audit: historical #423 same-job exposure vs an INERT split plan.
 
 No GitHub API, workflow creation/dispatch, Provider client, token read,
 credential lookup, network, subprocess, ref mutation, signing or permission
@@ -15,6 +15,9 @@ REPO = "veritasfuji-japan/rcc-revas-veritas-benchmark"
 WORKFLOW_PATH = (
     ".github/workflows/final128-423-task1-protected-first-two-native-chat-live-v1.yml"
 )
+# Historical #423 source is preserved byte-for-byte; no longer describe it
+# as the current executable job graph after #452.
+HISTORICAL_SNAPSHOT_PATH = "docs/optimization/FINAL128_423_HISTORICAL_PRE_452_WORKFLOW.snapshot.txt"
 WORKFLOW_BLOB = "c2182fef2574d1be3019cf6455947b64751ef474"
 FROZEN_MAIN = "e57226797908488eb0711f46384905f221ecf528"
 SCHEMA = "final128.task1.issuer_sender_job_split_inert_blueprint.v1"
@@ -156,7 +159,7 @@ def git_blob_hash(content: bytes) -> str:
 
 
 def inspect_current_workflow(workflow_bytes: object) -> Report:
-    """Pin the ACTUAL checked-in #423 workflow, not a hypothetical role object.
+    """Pin the HISTORICAL pre-452 #423 workflow, not the current live workflow.
 
     A changed live workflow requires fresh human review, rather than the
     auditor trusting an unknown newly edited source or claiming it is safe.

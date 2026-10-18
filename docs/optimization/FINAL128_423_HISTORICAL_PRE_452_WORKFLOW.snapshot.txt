@@ -1,0 +1,184 @@
+name: Task1 Native First Two Chat A/B PROTECTED MANUAL V1
+on:
+  workflow_dispatch:
+    inputs:
+      approval_phrase:
+        type: string
+        required: true
+        description: "NEW consent, exactly two native Task1 first calls, USD 1 target (NOT hard cap)"
+      billing_review:
+        type: string
+        required: true
+        description: "Operator verifies project billing externally; not a code-enforced hard stop"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: task1-native-first-two-paid-423-irreversible
+  cancel-in-progress: false
+
+jobs:
+  protected-first-pair-only:
+    if: github.actor == 'veritasfuji-japan' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    environment: task1-real-model-pilot
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      TASK1_423_APPROVAL: ${{ inputs.approval_phrase }}
+      TASK1_423_OPERATOR_BILLING_REVIEW: ${{ inputs.billing_review }}
+      TASK1_423_ENVIRONMENT: task1-real-model-pilot
+      FINAL128_403_AGENTDOJO_ROOT: _pins/agentdojo
+      FINAL128_399_VERITAS_ROOT: _pins/veritas
+      OPENAI_BASE_URL: ""
+      TASK4_OPENAI_API_KEY: ""
+    steps:
+      - name: Verify fresh TWO-call consent before any protected secrets or tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "veritasfuji-japan/rcc-revas-veritas-benchmark"
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_ACTOR" = "veritasfuji-japan"
+          test "$TASK1_423_APPROVAL" = "APPROVE_TASK1_FIRST_NATIVE_A_B_TWO_CALLS_MAX_USD_1"
+          test "$TASK1_423_OPERATOR_BILLING_REVIEW" = "I REVIEWED PROJECT BILLING AND APPROVE MAX USD 1"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify immutable source pins and install Native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          test "$(git hash-object contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json)" = "054c79f2a83b48821ce57071185c8ceecda17ed3"
+          python -m pip install --disable-pip-version-check --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          python -m pip install --disable-pip-version-check \
+            "pytest==9.1.1" "cryptography==50.0.0" \
+            "openai==1.109.1" "pydantic==2.11.10" \
+            "idna==3.15" "httpx==0.28.1" \
+            "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock --output /tmp/task1-423-agentdojo-lock.txt
+          python -m pip install --disable-pip-version-check \
+            -r /tmp/task1-423-agentdojo-lock.txt
+      - name: Freeze TWO initial Native Chat packets offline before tag or keys
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          chmod 700 results
+          python scripts/final128_423_task1_protected_first_native_chat_sender_v1.py \
+            --mode preflight --output-dir results
+      - name: Validate Environment API and AES256 secret formats BEFORE singleton consumption
+        env:
+          TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}
+          TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Invalid or malformed secrets must STOP before any GitHub ref POST.
+          # Never print secrets or copy them to GITHUB_OUTPUT/artifacts.
+          python scripts/final128_423_task1_protected_first_native_chat_sender_v1.py \
+            --mode secrets-preflight --output-dir results
+      - name: Atomically consume exact no-bypass production once tag, no retry
+        id: consume
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error
+          repo = os.environ["GITHUB_REPOSITORY"]
+          sha = os.environ["GITHUB_SHA"]
+          tag = "refs/tags/final128-task1-first-two-real-responses-v1-consumed"
+          prefix = f"repos/{repo}"
+          token = os.environ["GH_TOKEN"]
+          def request(path, method="GET", body=None, expected=(200,)):
+              url = "https://api.github.com/" + path
+              args = None if body is None else json.dumps(body).encode()
+              req = urllib.request.Request(url, data=args, method=method, headers={
+                  "Accept":"application/vnd.github+json",
+                  "Authorization":"Bearer "+token,
+                  "X-GitHub-Api-Version":"2022-11-28",
+                  "Content-Type":"application/json"
+              })
+              try:
+                  with urllib.request.urlopen(req, timeout=15) as r:
+                      status, raw = r.status, r.read(100_001)
+              except urllib.error.HTTPError as err:
+                  status, raw = err.code, err.read(100_001)
+              if status not in expected or len(raw)>100_000:
+                  raise SystemExit(f"423_GITHUB_UNKNOWN_HTTP_{status}_STOP_NO_RETRY")
+              return status, json.loads(raw) if raw else {}
+          ref_url = f"{prefix}/git/ref/tags/final128-task1-first-two-real-responses-v1-consumed"
+          status, _ = request(ref_url, expected=(200,404))
+          if status != 404:
+              raise SystemExit("423_PRODUCTION_ONCE_TAG_ALREADY_CONSUMED")
+          _, rules = request(f"{prefix}/rulesets?per_page=100")
+          if not isinstance(rules,list):
+              raise SystemExit("423_MISSING_RULESET_COLLECTION")
+          matched = []
+          for item in rules:
+              if item.get("target")!="tag" or item.get("enforcement")!="active":
+                  continue
+              _, detail=request(f"{prefix}/rulesets/{item['id']}")
+              installed = {x.get("type") for x in detail.get("rules",[])}
+              includes = detail.get("conditions",{}).get("ref_name",{}).get("include",[])
+              if (tag in includes and
+                  {"deletion","update","non_fast_forward"}<=installed and
+                  "creation" not in installed and
+                  detail.get("bypass_actors")==[]):
+                  matched.append(item["id"])
+          if len(matched)!=1:
+              raise SystemExit("423_NO_EXACT_ACTIVE_NO_BYPASS_PRODUCTION_TAG_RULESET")
+          status, made = request(f"{prefix}/git/refs",method="POST",
+              body={"ref":tag,"sha":sha},expected=(201,))
+          if made.get("ref")!=tag or made.get("object",{}).get("sha")!=sha:
+              raise SystemExit("423_UNKNOWN_ONCE_ISSUANCE_STOP")
+          _, read=request(ref_url)
+          if read.get("ref")!=tag or read.get("object",{}).get("sha")!=sha:
+              raise SystemExit("423_PRODUCTION_TAG_POST_CREATE_READBACK_UNKNOWN_STOP")
+          print("TASK1_423_GLOBAL_SINGLETON_TAG_CONSUMED_ONE_OPERATION_NO_RETRY")
+          PY
+          echo "consumed_sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+      - name: Send ONE FIRST Native Chat POST each A/B, AES256 encrypted evidence
+        env:
+          TASK1_423_TAG_CONSUMED: "1"
+          TASK1_423_TAG_READBACK_SHA: ${{ steps.consume.outputs.consumed_sha }}
+          TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}
+          TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/final128_423_task1_protected_first_native_chat_sender_v1.py \
+            --mode send --output-dir results
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task1-423-native-chat-encrypted-or-presend
+          path: results/task1-423-*
+          if-no-files-found: warn
+          retention-days: 1

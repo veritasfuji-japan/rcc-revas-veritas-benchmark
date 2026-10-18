@@ -1,4 +1,4 @@
-"""Offline-only real #423 workflow source audit + inert two-role job design."""
+"""Offline audit of frozen pre-452 #423 source + inert role design."""
 from __future__ import annotations
 
 from copy import deepcopy
@@ -11,7 +11,8 @@ import pytest
 from scripts import final128_task1_issuer_sender_job_graph_audit_offline_v1 as m
 
 ROOT = Path(__file__).resolve().parents[1]
-LIVE = ROOT / m.WORKFLOW_PATH
+LIVE = ROOT / m.HISTORICAL_SNAPSHOT_PATH
+CURRENT = ROOT / m.WORKFLOW_PATH
 BLUEPRINT = (ROOT / "docs/optimization/"
              "TASK1_423_ISSUER_SENDER_JOB_SPLIT_INERT_BLUEPRINT_V1.json")
 DOC = (ROOT / "docs/optimization/"
@@ -56,9 +57,10 @@ def assert_non_authorizing(report):
     assert report.decision == "PAID_TASK1_NO_GO"
 
 
-def test_current_real_workflow_is_pinned_and_unsplit():
+def test_historical_real_workflow_is_pinned_and_unsplit():
     live, _ = load()
     assert m.git_blob_hash(live) == m.WORKFLOW_BLOB
+    assert m.git_blob_hash(CURRENT.read_bytes()) != m.WORKFLOW_BLOB
     report = m.inspect_current_workflow(live)
     assert report.observation == "OBSERVED_PINNED_423_UNSPLIT_JOB_STATIC_SOURCE_ONLY"
     assert report.observed_same_job_tag_and_provider_capability is True
