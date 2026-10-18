@@ -13,13 +13,11 @@ import argparse
 import base64
 from decimal import Decimal
 import hashlib
-import http.client
 import json
 import os
 from pathlib import Path
 import re
 import secrets
-import ssl
 import stat
 import sys
 
@@ -187,9 +185,13 @@ def one_post(*, arm, payload, api_key, client_id, connection_factory=None):
             and payload.get("n") == 1
             and payload.get("tool_choice") == "auto",
             "EXACT_NATIVE_MODEL_CAP_AND_NO_STORE")
-    connector = connection_factory or (lambda: http.client.HTTPSConnection(
-        "api.openai.com", 443, timeout=25, context=ssl.create_default_context()))
-    conn = connector()
+    # Production direct-connect was intentionally removed in #453. This
+    # injected connection interface remains solely to regression-test the
+    # historical encrypted-capture logic with network-blocked fake sockets.
+    # A local function is NOT an externally enrolled Executor identity.
+    require(connection_factory is not None,
+            "REAL_PROVIDER_DIRECT_HTTPS_DISABLED_EXTERNAL_EXECUTOR_REQUIRED")
+    conn = connection_factory()
     headers = {
         "Authorization": "Bearer " + api_key,
         "Content-Type": "application/json",
@@ -327,6 +329,11 @@ def execute(*, mode, out_dir: Path, connection_factory=None):
     require(mode in ("preflight", "secrets-preflight", "send"),
             "MODE_ONLY_OFFLINE_PREFLIGHT_SECRETS_PREFLIGHT_OR_SEND")
     require(out_dir.is_dir() and not out_dir.is_symlink(), "EXISTING_OUTPUT_DIR")
+    if mode == "send" and connection_factory is None:
+        # Hard NO-GO in the actual CLI source, independently of #452's job-
+        # level false gates. Do not even reconstruct native payloads or read
+        # Provider secrets before an external Executor path is provisioned.
+        raise Denied("423_REAL_PROVIDER_DIRECT_HTTPS_DISABLED_EXTERNAL_EXECUTOR_REQUIRED")
     run, ledger, ready = source_pair()
     pre = preflight_manifest(ready)
     if mode == "preflight":
