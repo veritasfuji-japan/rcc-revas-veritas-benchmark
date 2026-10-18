@@ -279,7 +279,7 @@ def _write_private_capture(directory: Path, filename: str, payload: bytes):
     crash may leave ciphertext-only temporary data or UNKNOWN durability,
     and local persistence does NOT guarantee artifact upload or retention.
     """
-    require(type(directory) is Path and type(filename) is str
+    require(isinstance(directory, Path) and type(filename) is str
             and filename in ("task1-423-A-raw-chat.enc.json",
                              "task1-423-B-raw-chat.enc.json")
             and type(payload) is bytes
