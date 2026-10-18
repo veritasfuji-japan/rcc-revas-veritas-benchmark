@@ -1,0 +1,69 @@
+name: Task4 458 Offline Separate Process Broker CAS + Ciphertext Custody
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/task4-458-local-broker-cryptographic-custody-deny.yml"
+      - "scripts/task4_458_local_broker_once_ciphertext_v1.py"
+      - "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+      - "docs/TASK4_458_LOCAL_BROKER_CIPHERTEXT_CUSTODY_NO_GO_V1.md"
+
+permissions:
+  contents: read
+
+jobs:
+  no-provider-local-broker-oneuse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ""
+      TASK4_OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_BASE_URL: ""
+      VERITAS_DATABASE_URL: ""
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      PYTEST_ADDOPTS: ""
+      TASK4_458_PROCESS_PROOF: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Install only offline crypto and pytest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "pytest==9.1.1" "cryptography==50.0.0"
+      - name: Execute isolated process collision/restart/UNKNOWN tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python -m pytest -q -o addopts= \
+            tests/test_task4_458_local_broker_once_ciphertext_v1.py \
+            --junitxml=results/task4-458-offline-broker-junit.xml \
+            | tee results/task4-458-offline-broker-pytest.txt
+          python -m scripts.task4_458_local_broker_once_ciphertext_v1 \
+            --mode offline-demo \
+            --output results/task4-458-local-broker-only-summary.json
+          python - <<'PY'
+          import json
+          r=json.load(open("results/task4-458-local-broker-only-summary.json"))
+          assert r["distinct_isolated_client_processes"] == 13
+          assert r["ciphertext_slots_verified_after_restart"] == 2
+          assert r["crash_unknown_slot_denied_after_restart"] is True
+          assert r["actual_provider_calls"] == 0
+          assert r["genuine_utility_scores"] == 0
+          assert r["cross_github_runner_distributed_authority_proven"] is False
+          assert r["external_off_host_ciphertext_custody_proven"] is False
+          assert r["live_dispatch"] == "DENY"
+          assert "ciphertext" not in r["verified"][0]
+          print("TASK4_458_OFFLINE_LOCAL_BROKER_RESTART_CAS_CIPHERTEXT_NO_PROVIDER")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-458-local-broker-no-provider-summary-only
+          path: results/*
+          if-no-files-found: warn
