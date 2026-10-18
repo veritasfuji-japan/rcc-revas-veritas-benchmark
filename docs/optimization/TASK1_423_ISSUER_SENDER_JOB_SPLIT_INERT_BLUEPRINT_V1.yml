@@ -1,0 +1,75 @@
+# NOT .github/workflows — INERT DESIGN DATA ONLY; no trigger, steps, commands or jobs to execute.
+# This is a synthetic contract. It is NOT deployed GitHub IAM, OIDC, Environment
+# approval, tag issuance, Provider binding, durable once control or paid consent.
+schema: final128.task1.issuer_sender_job_split_inert_blueprint.v1
+mode: OFFLINE_DESIGN_DATA_NO_GITHUB_WORKFLOW_NO_EXECUTION
+repository: veritasfuji-japan/rcc-revas-veritas-benchmark
+observed_paid_workflow:
+  path: .github/workflows/final128-423-task1-protected-first-two-native-chat-live-v1.yml
+  git_blob_sha: c2182fef2574d1be3019cf6455947b64751ef474
+  observed_main_sha: e57226797908488eb0711f46384905f221ecf528
+  currently_same_job: true
+  operator_decision: NO_GO_ISSUE_427
+case: banking:user_task_1:injection_task_2:direct
+model: gpt-4.1-mini-2025-04-14
+research_ref_already_issued_do_not_reuse: refs/tags/final128-task1-research-first-two-once-v1
+future_production_ref_not_authorized_to_issue: refs/tags/final128-task1-first-two-real-responses-v1-consumed
+proposal:
+  issuer:
+    needs: []
+    permissions:
+      contents: write
+    environment: null
+    secret_names: []
+    intended_responsibilities:
+      - verify_issuer_run_from_independent_trust_root
+      - validate_exact_production_ref_ruleset_at_time_of_operation
+      - one_atomic_production_ref_create_only_after_separate_consent
+    may_access_provider_secret: false
+    may_write_git_ref_in_future_design: true
+    may_send_provider_in_future_design: false
+  sender:
+    needs:
+      - issuer
+    permissions:
+      contents: read
+    environment_name_in_design_not_reviewed: task1-real-model-pilot
+    secret_names_as_symbols_only:
+      - TASK1_OPENAI_API_KEY
+      - TASK1_CAPTURE_AES256_KEY
+    intended_responsibilities:
+      - independently_attest_sender_run_job_and_verified_handoff
+      - verify_exact_native_packet_model_case_and_request_digest
+      - atomically_consume_durable_provider_permission_per_arm
+      - deny_after_unknown_outcome_without_retry
+      - capture_http_bytes_encrypted_before_validation
+    may_access_provider_secret_in_future_design: true
+    may_write_git_ref_in_future_design: false
+    may_send_provider_in_future_design: true
+  handoff:
+    mechanism: UNIMPLEMENTED_EXTERNAL_ATTESTED_RUN_AND_SIGNED_RECIPIENT_HANDOFF
+    required_bound_fields:
+      - repository
+      - main_sha
+      - protected_workflow_ref
+      - run_id
+      - run_attempt
+      - independently_attested_issuer_job
+      - independently_attested_sender_job
+      - case
+      - model
+      - exact_request_sha256_A
+      - exact_request_sha256_B
+      - expiration_and_nonce
+      - operator_consent_record
+    trusted_issuer_enrolled: false
+    recipient_identity_independently_authenticated: false
+    durable_per_arm_claim_and_consume_enforced: false
+    provider_egress_isolated: false
+  enforcement:
+    actual_workflow_split_installed: false
+    credential_and_network_bypass_blocked: false
+    global_once_proven: false
+    independent_billing_hard_limit_proven: false
+    fresh_paid_consent: false
+    actual_paid_provider_dispatch_authorized: false
