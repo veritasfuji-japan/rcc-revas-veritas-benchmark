@@ -370,8 +370,12 @@ def run_demo():
                                  "KeyError", "TypeError", "ValueError",
                                  "RuntimeError", "Refused", "BrokenPipeError",
                                  "OperationalError")
-                        category = next((x for x in known if x in diagnostic),
-                                        "UNCLASSIFIED")
+                        # Only fixed uppercase failure codes authored in this
+                        # module may be shown. Never echo untrusted raw stderr.
+                        names = re.findall(r"458_[A-Z][A-Z0-9_]+", diagnostic)
+                        category = names[-1] if names else next(
+                            (x for x in known if x in diagnostic),
+                            "UNCLASSIFIED")
                         raise Refused("458_ISOLATED_CLIENT_FAILED_" + category)
                     need(not err, "458_ISOLATED_CLIENT_STDERR_NOT_EMPTY")
                     outcomes.append(out.decode().strip())
