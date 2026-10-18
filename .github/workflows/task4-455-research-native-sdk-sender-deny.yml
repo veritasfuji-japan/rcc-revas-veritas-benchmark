@@ -72,6 +72,13 @@ jobs:
             --output /tmp/task4-323-agentdojo-locked.txt
           pip install -r /tmp/task4-323-agentdojo-locked.txt
           pip install "tiktoken==0.12.0"
+          # Initialize the pinned local tokenizer resource BEFORE the
+          # no-socket Native test. It is a tokenizer asset, not Provider API.
+          python - <<'PY'
+          from scripts.task4_326_offline_bpe_wire_gate_v1 import tiktoken_encoder
+          t = tiktoken_encoder()
+          print("TASK4_455_LOCAL_BPE_READY", t.name)
+          PY
       - name: Actual pinned Native first OpenAI SDK serialized requests MUST be denied
         shell: bash
         run: |
