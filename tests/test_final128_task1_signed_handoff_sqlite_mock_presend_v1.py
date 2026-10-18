@@ -147,7 +147,9 @@ def test_b_first_denied_without_reservation_or_send(tmp_path):
 def test_unknown_after_fake_send_stops_across_gate_reopens(
     tmp_path, failure, phase, deliveries
 ):
-    gate, token, signer, port = fixture(tmp_path)
+    gate, token, signer, port = fixture(
+        tmp_path, failure=failure if failure.startswith("A") else "none"
+    )
     if failure.startswith("B"):
         a = attempt(gate, token, "A")
         assert a.local_fake_ack
