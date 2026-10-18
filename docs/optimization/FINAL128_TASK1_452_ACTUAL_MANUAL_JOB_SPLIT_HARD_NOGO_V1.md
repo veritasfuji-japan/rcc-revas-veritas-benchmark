@@ -4,7 +4,7 @@
 
 ## What changes in a real executable workflow
 
-Unlike #445's inert blueprint or #446–#450's local mock services, this change actually edits the checked-in **manual paid-capable** #423 GitHub Actions Workflow at:
+This is an **actual workflow** source change with no live permission. Unlike #445's inert blueprint or #446–#450's local mock services, this change actually edits the checked-in **manual paid-capable** #423 GitHub Actions Workflow at:
 
 `.github/workflows/final128-423-task1-protected-first-two-native-chat-live-v1.yml`
 
