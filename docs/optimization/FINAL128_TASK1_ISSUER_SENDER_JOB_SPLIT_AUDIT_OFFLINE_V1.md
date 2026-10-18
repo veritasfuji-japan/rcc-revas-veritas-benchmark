@@ -27,7 +27,7 @@ A later change to this protected live Workflow's bytes deliberately fails this f
 
 ## Future two-job graph — design only
 
-The non-executable file `docs/optimization/TASK1_423_ISSUER_SENDER_JOB_SPLIT_INERT_BLUEPRINT_V1.yml` is **not an executable workflow**. It has **no GitHub trigger, actual `jobs` root, `steps`, `run`, `uses`, ref writer, network call or deployed Environment**. No change is made under `.github/workflows`.
+The non-executable file `docs/optimization/TASK1_423_ISSUER_SENDER_JOB_SPLIT_INERT_BLUEPRINT_V1.json` is **not an executable workflow**. It has **no GitHub trigger, actual `jobs` root, `steps`, `run`, `uses`, ref writer, network call or deployed Environment**. No change is made under `.github/workflows`.
 
 | Proposed isolated role | Declared token capability | Secrets and environment | What remains unverified |
 | --- | --- | --- | --- |
@@ -40,7 +40,7 @@ The exact first **A/B initial** Native requests and their equal first-packet has
 
 ## What the new offline test proves
 
-- Source-controlled exact #423 workflow **contains tag create and Provider send in the same write-enabled job**, based on static YAML and Git blob identity.
+- Source-controlled exact #423 workflow **contains tag create and Provider send in the same write-enabled job**, based on pinned Git blob identity and fixed source-string markers.
 - A separate **inert** blueprint expresses the intended split, requires exact-role privileges, a declared directed issuer → sender dependency and false values for all real enrollment/consent/egress/once proofs.
 - Altering either role to cross the privilege boundary, inserting real secrets in issuer, broadening tokens, forging real approval/attestation/once claims, swapping tag names or adding `on`, `steps`, `run` or workflow root keys **fails closed**.
 - Test code monkeypatches outbound socket operations, removes named secret environment values and neither calls the GitHub API nor sends a Provider request.
@@ -62,7 +62,7 @@ python -m pytest -q tests/test_final128_task1_issuer_sender_job_graph_audit_offl
 
 ## Deliberate no-effect and consent boundary
 
-This PR **only adds** a design YAML under `docs/`, a stdlib/PyYAML static inspector, offline tests and documentation. It does not create, execute, alter or dispatch any Actions Workflow; does not change the #423 sender, GitHub refs, Rulesets, PAT, secrets, Environments, billing, repo settings or any tagged evidence; and performs no real Provider call, bank effect or Native scoring.
+This PR **only adds** a design YAML under `docs/`, a Python-stdlib-only pinned-source inspector, offline tests and documentation. It does not create, execute, alter or dispatch any Actions Workflow; does not change the #423 sender, GitHub refs, Rulesets, PAT, secrets, Environments, billing, repo settings or any tagged evidence; and performs no real Provider call, bank effect or Native scoring.
 
 [Issue #427](https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/issues/427) remains **OPEN / PAID TASK1 NO-GO**. The issue is an administrative decision, not an enforceable IAM lock. A merge of this PR is **not** authority to run the paid #423 workflow.
 
