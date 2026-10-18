@@ -1,0 +1,63 @@
+name: Task4 461 SDK Response Ingress Boundary (No Provider)
+on:
+  pull_request:
+    paths:
+      - 'scripts/task4_461_sdk_response_ingress_no_go_v1.py'
+      - 'tests/test_task4_461_sdk_response_ingress_no_go_v1.py'
+      - '.github/workflows/task4-461-response-ingress-raw-before-parser-no-provider.yml'
+      - 'docs/TASK4_461_SDK_RESPONSE_INGRESS_NO_GO_V1.md'
+permissions:
+  contents: read
+jobs:
+  sdk-response-ingress-no-provider:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      VERITAS_DATABASE_URL: ''
+      TASK4_461_PAID_APPROVAL: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONNOUSERSITE: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Test source-neutral opaque request/response ingress and no-promotions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install 'pytest==9.1.1' 'httpx==0.28.1'
+          mkdir -p results
+          python -m pytest -q -o addopts= \
+            tests/test_task4_461_sdk_response_ingress_no_go_v1.py \
+            --junitxml=results/task4-461-ingress-junit.xml \
+            | tee results/task4-461-ingress-pytest.txt
+          python - <<'PY'
+          import ast
+          import pathlib
+          m = pathlib.Path('scripts/task4_461_sdk_response_ingress_no_go_v1.py')
+          ast.parse(m.read_text(encoding='utf-8'))
+          s = m.read_text()
+          assert 'real_provider_dispatch": "DENY"' in s
+          assert '"score_status": "UNSCORED"' in s
+          assert '"provider_authenticated": False' in s
+          assert '"LOCAL_CONSUMED_NO_SEND"' in s
+          assert 'provider_send_permission": False' in s
+          print('TASK4_461_NO_SENDER_NO_PROVIDER_UNSCORED')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-461-ingress-refusal-no-provider
+          path: results/*
+          if-no-files-found: warn
