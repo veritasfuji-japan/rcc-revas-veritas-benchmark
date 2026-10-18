@@ -175,10 +175,16 @@ def test_real_format_mock_pair_encrypted_and_never_reported_as_real(native_ready
         result = json.loads(f.read_text())
         nonce = base64.b64decode(result["nonce_base64"])
         cipher = base64.b64decode(result["ciphertext_base64"])
-        aad = m.canonical({
-            "case": m.CASE, "run": "12345678",
-            "arm": arm, "request_sha256": results[arm]["request_sha256"],
-        })
+        aad = m._capture_aad(
+            arm=arm, run_id="12345678",
+            request_sha=results[arm]["request_sha256"],
+            response_status=200,
+            response_headers={"x-request-id": "req_LOCAL_FAKE_" + arm + "_000000"},
+            raw=make_body(arm),
+        )
+        assert result["status"] == "UNTRUSTED_HTTP_BYTES_SEALED_BEFORE_VALIDATION"
+        assert result["http_body_truncated"] is False
+        assert result["origin_independently_authenticated"] is False
         raw = AESGCM(bytes(range(32))).decrypt(nonce, cipher, aad)
         assert json.loads(raw)["object"] == "chat.completion"
         assert hashlib.sha256(raw).hexdigest() == result["raw_sha256"]
