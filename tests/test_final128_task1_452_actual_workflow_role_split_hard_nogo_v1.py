@@ -1,12 +1,11 @@
-"""Task1 #452 actual GitHub workflow role split; NO EFFECT or paid consent."""
+"""Task1 #452 no-PyYAML, no-effect source-only three-job permission gate."""
 from __future__ import annotations
 
-from copy import deepcopy
 import hashlib
 from pathlib import Path
+import re
 
 import pytest
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 LIVE = ROOT / ".github/workflows/final128-423-task1-protected-first-two-native-chat-live-v1.yml"
@@ -14,8 +13,8 @@ HIST = ROOT / "docs/optimization/FINAL128_423_HISTORICAL_PRE_452_WORKFLOW.snapsh
 DOC = ROOT / "docs/optimization/FINAL128_TASK1_452_ACTUAL_MANUAL_JOB_SPLIT_HARD_NOGO_V1.md"
 HIST_BLOB = "c2182fef2574d1be3019cf6455947b64751ef474"
 NEW_BLOB = "85c68dc7073ab9515373dfba44439e7122626fe3"
-CONDITION = ("${{ false && github.actor == 'veritasfuji-japan' && "
-             "github.ref == 'refs/heads/main' && github.run_attempt == 1 }}")
+PREFLIGHT_OFF = ("${{ false && github.actor == 'veritasfuji-japan' && "
+                 "github.ref == 'refs/heads/main' && github.run_attempt == 1 }}")
 SENDER_OFF = "${{ false }}"
 ISSUER_IF = ("github.actor == 'veritasfuji-japan' && "
              "github.ref == 'refs/heads/main' && github.run_attempt == 1")
@@ -26,153 +25,148 @@ class Refused(ValueError):
     pass
 
 
-class StrictBaseLoader(yaml.BaseLoader):
-    """Detect duplicated YAML keys including job if and permissions."""
-    def construct_mapping(self, node, deep=False):
-        result = {}
-        for key_node, value_node in node.value:
-            key = self.construct_object(key_node, deep=deep)
-            if key in result:
-                raise Refused("DUPLICATE_YAML_MAPPING_KEY")
-            result[key] = self.construct_object(value_node, deep=deep)
-        return result
-
-
-def check(ok, label):
+def need(ok, code):
     if ok is not True:
-        raise Refused(label)
+        raise Refused(code)
 
 
 def git_blob(raw):
     return hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
 
 
-def inspect(text):
-    try:
-        w = yaml.load(text, Loader=StrictBaseLoader)
-    except (yaml.YAMLError, ValueError, TypeError) as exc:
-        raise Refused("INVALID_OR_DUPLICATE_YAML") from exc
-    check(type(w) is dict and type(w.get("on")) is dict
-          and set(w["on"]) == {"workflow_dispatch"}
-          and w.get("permissions") == {"contents": "read"},
-          "EXACT_MANUAL_ONLY_READ_DEFAULT")
-    check(w["concurrency"]["cancel-in-progress"] == "false"
-          and set(w["jobs"]) == {"preflight", "issuer", "sender"},
-          "EXACT_THREE_JOB_GRAPH")
-    pre, issuer, sender = (w["jobs"][x] for x in ("preflight", "issuer", "sender"))
-    check(pre["if"] == CONDITION and sender["if"] == SENDER_OFF,
-          "HARD_DISABLE_PRESEND_AND_SEND")
-    check(issuer["if"] == ISSUER_IF and issuer["needs"] == ["preflight"]
-          and sender["needs"] == ["issuer"], "DEPENDENCY_CHAIN")
-    check(pre["permissions"] == {"contents": "read"}
-          and issuer["permissions"] == {"contents": "write"}
-          and sender["permissions"] == {"contents": "read"},
-          "LEAST_PRIVILEGE_ROLE_CAPABILITIES")
-    check(pre.get("environment") == "task1-real-model-pilot"
-          and "environment" not in issuer
-          and sender.get("environment") == "task1-real-model-pilot",
-          "ONLY_PROTECTED_SECRET_HOLDING_JOBS")
-    p, i, s = (str(w["jobs"][x]) for x in ("preflight", "issuer", "sender"))
-    check("GH_TOKEN" not in p and "/git/refs" not in p
-          and "--mode send" not in p, "PREFLIGHT_NOT_ISSUER_OR_SENDER")
-    check("GH_TOKEN" in i and "/git/refs" in i and 'method="POST"' in i
-          and TAG in i, "ISSUER_PRODUCTION_REF_BOUNDARY")
-    check("TASK1_OPENAI_API_KEY" not in i
-          and "TASK1_CAPTURE_AES256_KEY" not in i
-          and "--mode send" not in i
-          and "api.openai.com" not in i,
-          "ISSUER_MUST_NOT_HAVE_PROVIDER_CREDENTIALS")
-    check("GH_TOKEN" not in s and "/git/refs" not in s
-          and "--mode send --output-dir results" in s
-          and "TASK1_OPENAI_API_KEY" in s and "TASK1_CAPTURE_AES256_KEY" in s
-          and "needs.issuer.outputs.consumed_sha" in s,
-          "SENDER_CANNOT_CREATE_TAG_AND_USES_ONLY_HANDOFF_SHAPE")
-    steps_i, steps_s = issuer["steps"], sender["steps"]
-    check(issuer["outputs"] == {
-        "consumed_sha": "${{ steps.consume.outputs.consumed_sha }}"}
-          and sum(step.get("id") == "consume" for step in steps_i) == 1
-          and sum("--mode send --output-dir results" in step.get("run", "")
-                  for step in steps_s) == 1,
-          "ONE_TAG_WRITER_ONE_SENDER_STEP")
-    check(sum("secrets-preflight" in step.get("run", "")
-              for step in pre["steps"]) == 1
-          and all("secrets-preflight" not in step.get("run", "")
-                  for step in steps_i)
-          and sum("--mode preflight" in step.get("run", "")
-                  for step in steps_s) == 1,
-          "BOUNDARY_INITIALIZATION")
-    return {"installed_three_job_graph": True,
-            "preflight_send_and_tag_hard_disabled": True,
-            "issuer_provider_secrets_inaccessible_in_yaml": True,
-            "sender_job_github_contents_read_only": True,
-            "actual_global_remote_ledger_installed": False,
-            "independent_sender_iam_attested": False,
-            "provider_egress_bypass_denied": False,
-            "live_send_enabled": False,
+def role_segments(src):
+    # Exact top-level Job keys by leading TWO spaces. No synthetic YAML object
+    # can satisfy this by slipping a duplicate if/permissions past a loader.
+    need(type(src) is str and "\t" not in src, "NO_TABS")
+    parts = src.split("\njobs:\n")
+    need(len(parts) == 2, "EXACT_JOB_ROOT")
+    header, jobs_text = parts
+    keys = list(re.finditer(r"(?m)^  ([a-z][a-z0-9-]*):[ ]*$", jobs_text))
+    need([m.group(1) for m in keys] == ["preflight", "issuer", "sender"],
+         "EXACT_JOB_NAMES_AND_ORDER")
+    spans = {}
+    for index, match in enumerate(keys):
+        end = keys[index + 1].start() if index + 1 < len(keys) else len(jobs_text)
+        spans[match.group(1)] = jobs_text[match.start():end]
+    return header, spans
+
+
+def top(job):
+    need(job.count("    steps:\n") == 1, "EXACT_STEPS_ROOT")
+    front = job.split("    steps:\n", 1)[0]
+    for field in ("if", "needs", "permissions", "environment", "outputs"):
+        need(len(re.findall(r"(?m)^    " + field + r":[ ]*", front)) <= 1,
+             "DUPLICATE_JOB_FIELD_" + field)
+    return front
+
+
+def inspect(src):
+    header, jobs = role_segments(src)
+    need(header.startswith(
+        "name: Task1 Native First Two Chat A/B HARD NO-GO ROLE SPLIT V1\n"
+    ) and "\non:\n  workflow_dispatch:\n" in header
+        and "\n  pull_request:" not in header and "\n  push:" not in header
+        and "\npermissions:\n  contents: read\n" in header
+        and header.count("\npermissions:\n") == 1
+        and "cancel-in-progress: false" in header,
+        "MANUAL_ONLY_DEFAULT_READ_AND_NO_CANCEL")
+    pre, iss, snd = (jobs[k] for k in ("preflight", "issuer", "sender"))
+    a,b,c=top(pre),top(iss),top(snd)
+    need("    if: " + PREFLIGHT_OFF + "\n" in a
+         and "    if: " + SENDER_OFF + "\n" in c
+         and "    if: " + ISSUER_IF + "\n" in b,
+         "EXACT_JOB_LEVEL_HARD_NO_GO")
+    need("    needs:" not in a
+         and "    needs: [preflight]\n" in b
+         and "    needs: [issuer]\n" in c, "ISSUER_SENDER_NEEDS_CHAIN")
+    need("    permissions:\n      contents: read\n" in a
+         and "    permissions:\n      contents: write\n" in b
+         and "    permissions:\n      contents: read\n" in c,
+         "JOB_TOKEN_PRIVILEGE_SPLIT")
+    need("    environment: task1-real-model-pilot\n" in a
+         and "    environment:" not in b
+         and "    environment: task1-real-model-pilot\n" in c,
+         "ISSUER_NO_ENVIRONMENT")
+    need("GH_TOKEN" not in pre and "/git/refs" not in pre
+         and "--mode send" not in pre
+         and pre.count("--mode secrets-preflight --output-dir results") == 1,
+         "PREFLIGHT_CANNOT_WRITE_OR_SEND")
+    need('GH_TOKEN: ${{ github.token }}' in iss
+         and 'method="POST"' in iss
+         and TAG in iss
+         and "TASK1_OPENAI_API_KEY" not in iss
+         and "TASK1_CAPTURE_AES256_KEY" not in iss
+         and "api.openai.com" not in iss
+         and "--mode send" not in iss,
+         "ISSUER_TAG_ONLY_NO_PROVIDER_KEYS")
+    need("GH_TOKEN" not in snd and "/git/refs" not in snd
+         and "TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}" in snd
+         and "TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}" in snd
+         and "TASK1_423_TAG_READBACK_SHA: ${{ needs.issuer.outputs.consumed_sha }}" in snd
+         and snd.count("--mode send --output-dir results") == 1
+         and snd.count("--mode preflight --output-dir results") == 1,
+         "SENDER_READ_ONLY_SOURCE_AND_HANDOFF")
+    need("    outputs:\n      consumed_sha: ${{ steps.consume.outputs.consumed_sha }}" in b
+         and iss.count("id: consume") == 1
+         and iss.count("method=\"POST\"") == 1,
+         "TAG_ISSUER_SINGLE_OPERATION")
+    need(not re.search(r"(?m)^  (?!preflight:|issuer:|sender:)[A-Za-z0-9_-]+:", 
+                       "\n".join(jobs.values())),
+         "UNREGISTERED_TOP_LEVEL_JOB")
+    return {"actual_three_job_split_installed": True,
+            "preflight_and_sender_disabled": True,
+            "issuer_provider_secret_isolated_in_source": True,
+            "sender_github_token_read_only": True,
+            "independent_iam_attested": False,
+            "remote_atomic_ledger_installed": False,
+            "provider_egress_nonbypassable": False,
             "production_tag_issuance_enabled": False,
-            "new_provider_calls": 0,
-            "new_native_utility_recoveries": 0,
+            "provider_send_enabled": False,
+            "new_utility_recovery": 0,
             "paid_task1_decision": "NO_GO_ISSUE_427"}
 
 
-def test_exact_immutable_original_and_new_graph_bytes():
+def test_archived_blob_and_current_role_split():
     assert git_blob(HIST.read_bytes()) == HIST_BLOB
     assert git_blob(LIVE.read_bytes()) == NEW_BLOB
-    assert HIST.read_bytes() != LIVE.read_bytes()
-    v = inspect(LIVE.read_text())
-    assert v["installed_three_job_graph"] is True
-    assert v["preflight_send_and_tag_hard_disabled"] is True
-    assert v["sender_job_github_contents_read_only"] is True
-    assert v["paid_task1_decision"] == "NO_GO_ISSUE_427"
-    for k in ("actual_global_remote_ledger_installed",
-              "independent_sender_iam_attested",
-              "provider_egress_bypass_denied",
-              "live_send_enabled",
-              "production_tag_issuance_enabled"):
-        assert v[k] is False
+    observed = inspect(LIVE.read_text())
+    assert observed["actual_three_job_split_installed"] is True
+    assert observed["preflight_and_sender_disabled"] is True
+    for name in ("independent_iam_attested", "remote_atomic_ledger_installed",
+                 "provider_egress_nonbypassable",
+                 "production_tag_issuance_enabled", "provider_send_enabled"):
+        assert observed[name] is False
 
 
-@pytest.mark.parametrize("mutate", [
-    lambda w: w["jobs"]["preflight"].update(**{"if": "true"}),
-    lambda w: w["jobs"]["preflight"].update(**{"if": "${{ true }}"}),
-    lambda w: w["jobs"]["sender"].update(**{"if": "success()"}),
-    lambda w: w["jobs"]["issuer"].update(**{"needs": []}),
-    lambda w: w["jobs"]["sender"].update(**{"needs": ["preflight"]}),
-    lambda w: w["jobs"]["issuer"].update(**{"environment": "task1-real-model-pilot"}),
-    lambda w: w["jobs"]["issuer"].update(**{"permissions": {"contents": "read"}}),
-    lambda w: w["jobs"]["sender"].update(**{"permissions": {"contents": "write"}}),
-    lambda w: w["permissions"].update({"contents": "write"}),
-    lambda w: w["on"].update({"push": {}}),
-    lambda w: w["jobs"]["sender"].pop("environment"),
-    lambda w: w["jobs"]["issuer"]["steps"].append({
-        "name": "Steal",
-        "env": {"TASK1_OPENAI_API_KEY": "${{ secrets.TASK1_OPENAI_API_KEY }}"},
-        "run": "echo forbidden"}),
-])
-def test_role_security_changes_refused(mutate):
-    modified = deepcopy(yaml.load(LIVE.read_text(), Loader=yaml.BaseLoader))
-    mutate(modified)
-    with pytest.raises(Refused):
-        inspect(yaml.dump(modified, sort_keys=False))
-
-
-def test_duplicate_if_and_duplicate_job_names_denied():
-    src = LIVE.read_text()
-    for bad in (
-        src.replace("  preflight:\n", "  preflight:\n    if: true\n", 1),
-        src.replace("  issuer:\n", "  issuer:\n  issuer:\n", 1),
-        src.replace("    permissions:\n      contents: read\n",
-                    "    if: true\n    permissions:\n      contents: read\n", 1),
-    ):
+def test_security_drift_is_refused():
+    original = LIVE.read_text()
+    cases = [
+        ("    if: " + PREFLIGHT_OFF + "\n", "    if: true\n"),
+        ("    if: " + SENDER_OFF + "\n", "    if: true\n"),
+        ("    if: " + ISSUER_IF + "\n", "    if: success()\n"),
+        ("    needs: [preflight]\n", "    needs: []\n"),
+        ("    needs: [issuer]\n", "    needs: [preflight]\n"),
+        ("  contents: read\n\nconcurrency:", "  contents: write\n\nconcurrency:"),
+        ("  issuer:\n", "  issuer:\n    environment: task1-real-model-pilot\n"),
+        ("  issuer:\n", "  issuer:\n    env:\n      TASK1_OPENAI_API_KEY: placeholder\n"),
+        ("  sender:\n", "  sender:\n    permissions:\n      contents: write\n"),
+        ("  preflight:\n", "  preflight:\n    if: true\n"),
+        ("  issuer:\n", "  issuer:\n  issuer:\n"),
+        ("\non:\n  workflow_dispatch:\n", "\non:\n  push:\n  workflow_dispatch:\n"),
+        ("    environment: task1-real-model-pilot\n    env:\n",
+         "    environment: task1-real-model-pilot\n    env:\n      GH_TOKEN: placeholder\n"),
+    ]
+    for before, after in cases:
+        assert before in original
         with pytest.raises(Refused):
-            inspect(bad)
+            inspect(original.replace(before, after, 1))
 
 
-def test_archive_is_inert_and_scope_is_faithful():
+def test_no_executable_snapshot_or_false_model_result_claim():
     assert HIST.suffix == ".txt" and ".github/workflows" not in str(HIST)
-    doc = DOC.read_text()
+    docs = DOC.read_text(encoding="utf-8")
     for phrase in ("NO-GO", "Issue #427", "#423", "#445", "#450",
                    "#451", "preflight", "issuer", "sender",
                    "actual workflow", "not a real external Executor",
                    "no Provider"):
-        assert phrase in doc
+        assert phrase in docs
