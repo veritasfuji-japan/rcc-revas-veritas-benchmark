@@ -41,7 +41,7 @@ def need(ok: bool, reason: str) -> None:
 
 
 def _private(path: Path) -> None:
-    need(type(path) is Path and path.is_dir() and not path.is_symlink()
+    need(isinstance(path, Path) and path.is_dir() and not path.is_symlink()
          and stat.S_IMODE(path.stat().st_mode) & 0o077 == 0, "PRIVATE_0700")
 
 
@@ -90,7 +90,7 @@ class Ledger:
 
     def __init__(self, db_path: Path) -> None:
         _private(db_path.parent)
-        need(type(db_path) is Path and db_path.suffix == ".sqlite"
+        need(isinstance(db_path, Path) and db_path.suffix == ".sqlite"
              and not db_path.is_symlink(), "EXACT_SQLITE_PATH")
         if not db_path.exists():
             try:
