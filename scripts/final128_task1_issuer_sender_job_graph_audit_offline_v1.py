@@ -9,8 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
-
-import yaml
+import json
 
 REPO = "veritasfuji-japan/rcc-revas-veritas-benchmark"
 WORKFLOW_PATH = (
@@ -165,43 +164,31 @@ def inspect_current_workflow(workflow_bytes: object) -> Report:
     need(type(workflow_bytes) is bytes, "WORKFLOW_SOURCE_BYTES")
     need(git_blob_hash(workflow_bytes) == WORKFLOW_BLOB,
          "PRODUCTION_WORKFLOW_SOURCE_DRIFT_REVIEW_REQUIRED")
+    # Because this exact Git blob is pinned above, byte-level anchored
+    # source checks are sufficient for the frozen *observation*. Do not
+    # infer semantics for a changed YAML workflow without a fresh review.
     try:
-        data = yaml.safe_load(workflow_bytes)
-    except yaml.YAMLError as exc:
-        raise Refused("TASK1_ROLE_GRAPH_OFFLINE_INVALID_WORKFLOW") from exc
-    need(type(data) is dict and type(data.get("jobs")) is dict
-         and set(data["jobs"]) == {"protected-first-pair-only"},
-         "OBSERVED_ONE_JOB_REQUIRED")
-    job = data["jobs"]["protected-first-pair-only"]
-    need(type(job) is dict and type(job.get("steps")) is list
-         and type(data.get("permissions")) is dict
-         and data["permissions"] == {"contents": "write"}
-         and job.get("environment") == "task1-real-model-pilot"
-         and "permissions" not in job,
-         "OBSERVED_SAME_JOB_WRITE_SCOPE")
-    found_tag = []
-    found_send = []
-    found_secret = []
-    for i, step in enumerate(job["steps"]):
-        need(type(step) is dict, "STEP_SHAPE")
-        run = step.get("run", "")
-        need(type(run) is str, "RUN_STEP_TEXT")
-        if 'git/refs' in run and 'method="POST"' in run:
-            found_tag.append(i)
-        if "--mode send" in run and "final128_423_task1_protected_first_native_chat_sender_v1.py" in run:
-            found_send.append(i)
-        env = step.get("env", {})
-        need(type(env) is dict, "STEP_ENV_SHAPE")
-        if "TASK1_OPENAI_API_KEY" in env and (
-            "secrets.TASK1_OPENAI_API_KEY" in env["TASK1_OPENAI_API_KEY"]
-        ):
-            found_secret.append(i)
-    need(len(found_tag) == len(found_send) == 1
-         and found_tag[0] < found_send[0]
-         and found_secret == [found_send[0] - 2, found_send[0]]
-         and job["steps"][found_tag[0]].get("env", {}).get("GH_TOKEN")
-             == "${{ github.token }}",
-         "TAG_SEND_AND_SECRET_SAME_JOB_EVIDENCE")
+        source = workflow_bytes.decode("utf8")
+    except UnicodeDecodeError as exc:
+        raise Refused("TASK1_ROLE_GRAPH_OFFLINE_INVALID_WORKFLOW_BYTES") from exc
+    anchors = (
+        "permissions:\n  contents: write\n",
+        "jobs:\n  protected-first-pair-only:\n",
+        "    environment: task1-real-model-pilot\n",
+        'GH_TOKEN: ${{ github.token }}',
+        'method="POST"',
+        '/git/refs',
+        "--mode send --output-dir results",
+        "TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}",
+        "TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}",
+    )
+    need(all(value in source for value in anchors)
+         and source.count('GH_TOKEN: ${{ github.token }}') == 1
+         and source.count("--mode send --output-dir results") == 1
+         and source.count("TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}") == 2
+         and source.index('method="POST"') < source.index(
+             "--mode send --output-dir results"
+         ), "TAG_SEND_AND_SECRET_SAME_JOB_EVIDENCE")
     return Report(
         observation="OBSERVED_PINNED_423_UNSPLIT_JOB_STATIC_SOURCE_ONLY",
         observed_same_job_tag_and_provider_capability=True,
@@ -215,9 +202,9 @@ def review_inert_blueprint(blueprint_source: object) -> Report:
     """Shape-check a non-runnable design DATA document; never grant authority."""
     need(type(blueprint_source) is bytes, "BLUEPRINT_BYTES_REQUIRED")
     try:
-        proposal = yaml.safe_load(blueprint_source)
-    except yaml.YAMLError as exc:
-        raise Refused("TASK1_ROLE_GRAPH_OFFLINE_INVALID_BLUEPRINT") from exc
+        proposal = json.loads(blueprint_source)
+    except (ValueError, UnicodeDecodeError, TypeError) as exc:
+        raise Refused("TASK1_ROLE_GRAPH_OFFLINE_INVALID_BLUEPRINT_JSON") from exc
     need(exact_type_match(proposal, expected_blueprint()),
          "NOT_EXACT_INERT_JOB_SPLIT_DESIGN")
     need(type(proposal) is dict and "jobs" not in proposal
