@@ -9,8 +9,8 @@ from unittest.mock import Mock
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from task4_461_sdk_response_ingress_no_go_v1 import SDKResponseIngress, IngressRefused
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.task4_461_sdk_response_ingress_no_go_v1 import SDKResponseIngress, IngressRefused
 
 
 def req(*, step=0, append=True, model=None, cap=256):
@@ -175,7 +175,7 @@ def test_native_history_prefix_cannot_be_rewritten():
 
 
 def test_module_has_no_sender_or_approval_switch():
-    code=Path(__file__).with_name("task4_461_sdk_response_ingress_no_go_v1.py").read_text()
+    code=(Path(__file__).resolve().parents[1] / "scripts/task4_461_sdk_response_ingress_no_go_v1.py").read_text()
     for forbidden in ("import openai", "import httpx", "requests.post(", "socket.socket(",
                       "urllib.request", "OPENAI_API_KEY", "workflow_dispatch", "httpx.Client("):
         assert forbidden not in code
