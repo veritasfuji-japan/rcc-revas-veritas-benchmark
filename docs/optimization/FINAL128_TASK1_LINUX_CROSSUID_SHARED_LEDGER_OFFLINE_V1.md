@@ -12,7 +12,7 @@ This extends #448's separate-process mock Executor and #449's independent *local
 - The separately launched Ledger service accepts requests only when the kernel `SO_PEERCRED` UID is the enrolled Executor UID. A deliberately forged request with the otherwise correct *test-only* HMAC still fails from a Runner UID. This is a bounded negative control; real key compromise is not being claimed as impossible.
 - The Executor accepts only either of two specified Runner UIDs, checks the source-owned offline Ed25519 handoff and frozen research NO-GO evidence from earlier #437/#441, and contacts #449's SQLite ledger service before calling #442's fake Provider port.
 - Two independent simulated Runner Linux UIDs race to consume the same A. Only one fake A may ACK; the other is denied. The ledger records `UNKNOWN_A` before a fake call. A dropped/corrupt ACK retains UNKNOWN, and restart of the services on the *same local database* denies A replay.
-- The proof uses AF_UNIX only. The only send effect is a local `InMemoryFakeProviderPort.deliver` method call. **No Provider HTTPS**, no real banking write, no official Native scorer, no paid model call or API spending occurs.
+- The proof uses AF_UNIX only. The only send effect is a local `InMemoryFakeProviderPort.deliver` method call. **No Provider HTTPS and no Provider call**, no real banking write, no official Native scorer, no paid model call or API spending occurs.
 
 ## What this does NOT prove
 
