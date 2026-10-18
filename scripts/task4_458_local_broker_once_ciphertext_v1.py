@@ -32,6 +32,9 @@ MODEL = "gpt-4.1-mini-2025-04-14"
 SCHEMA = "task4.local.sdk.preparse.encrypted.v1"
 ARMS = ("A", "B")
 ROOT = Path(__file__).resolve().parents[1]
+# Independently launched script files do not reliably inherit repository root.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 SENSITIVE = ("OPENAI_API_KEY", "TASK4_OPENAI_API_KEY", "OPENAI_BASE_URL",
              "ANTHROPIC_API_KEY", "VERITAS_DATABASE_URL", "TASK4_458_LIVE_APPROVAL")
 HEX = re.compile(r"[0-9a-f]{64}\Z")
