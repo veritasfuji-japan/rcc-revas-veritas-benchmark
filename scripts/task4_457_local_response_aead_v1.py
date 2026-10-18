@@ -206,7 +206,9 @@ class SealedLocalVault:
         need(type(recipient_private) is X25519PrivateKey and not self.failed
              and not self.closed and len(self.receipts) == 8,
              "457_COMPLETE_LOCAL_RECOVERY_ONLY")
-        need(recipient_private.public_key() == self.public,
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+        need(recipient_private.public_key().public_bytes(
+                 Encoding.Raw, PublicFormat.Raw) == self.public_bytes,
              "457_RECIPIENT_MUST_MATCH_TEST_KEY")
         for r in self.receipts:
             path = self.directory / r["envelope_filename"]
