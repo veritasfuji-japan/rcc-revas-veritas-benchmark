@@ -1,0 +1,82 @@
+{
+  "schema": "final128_task1_research_tag_live_readback_evidence_v1",
+  "observation_date": "2026-10-18",
+  "observation_method": "Connected GitHub read-only REST GET; selected normalized fields, not archived raw HTTP transcript",
+  "evidence_status": "OBSERVED_RESEARCH_TAG_REF_AND_RULESET_ONLY_NO_LIVE_DISPATCH_AUTHORITY",
+  "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+  "frozen_main_commit_sha": "4e864ebad860be2ce71a6c233e98a581094b45aa",
+  "research_ref": {
+    "exact_ref": "refs/tags/final128-task1-research-first-two-once-v1",
+    "object_type": "commit",
+    "target_sha": "4e864ebad860be2ce71a6c233e98a581094b45aa",
+    "exact_get_readback_observed": true,
+    "url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/ref/tags/final128-task1-research-first-two-once-v1"
+  },
+  "research_ruleset": {
+    "id": 25305970,
+    "name": "Task1 Research Single-Use Protection V1",
+    "enforcement": "active",
+    "target": "tag",
+    "included_refs": [
+      "refs/tags/final128-task1-research-first-two-once-v1"
+    ],
+    "excluded_refs": [],
+    "rules": [
+      "deletion",
+      "non_fast_forward",
+      "update"
+    ],
+    "bypass_actors": [],
+    "url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/rulesets/25305970",
+    "limits": "Observed configured protection, not an independently immutable administrative or IAM control"
+  },
+  "ci_at_frozen_sha": {
+    "source_path": ".github/workflows/ci.yml",
+    "blob_sha": "35eeb3670190cc96b341ea834cd03df11f8ed46e",
+    "push_branches": [
+      "main"
+    ],
+    "pull_request_enabled": true,
+    "url": "https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/blob/4e864ebad860be2ce71a6c233e98a581094b45aa/.github/workflows/ci.yml",
+    "pr_439_merged": true
+  },
+  "scoped_actions_observation": {
+    "query_url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs?branch=final128-task1-research-first-two-once-v1&per_page=25",
+    "total_count_at_observation": 0,
+    "limitation": "Only GitHub Actions returned by this tag-branch-scoped query; not proof of zero external GitHub App, Provider, CI, or billing effects"
+  },
+  "production_tag_separation": {
+    "reserved_production_ref": "refs/tags/final128-task1-first-two-real-responses-v1-consumed",
+    "matching_refs_at_observation": 0,
+    "query_url": "https://api.github.com/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/matching-refs/tags/final128-task1-first-two-real-responses-v1-consumed",
+    "research_tag_is_not_production_consumption": true
+  },
+  "paid_execution_hold": {
+    "issue_427_state": "open",
+    "issue_url": "https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/issues/427",
+    "previously_completed_safe_diagnostic_run_id": 39015342320,
+    "safe_diagnostic_result": "success",
+    "safe_diagnostic_scope": "Local protected-secret format checks only; no Provider authentication proven",
+    "paid_task1_dispatch_authorized": false,
+    "fresh_billing_consent_for_provider_run": false
+  },
+  "provenance_limitations": {
+    "operator_reported_manual_iphone_tag_creation": true,
+    "original_create_ref_http_201_response_archived": false,
+    "original_post_attempt_count_independently_verified": false,
+    "issuer_run_or_job_binding_verified": false,
+    "independent_signer_attestation_present": false,
+    "durable_global_once_only_provider_lease_proven": false,
+    "exact_model_request_digests_bound_to_ref": false,
+    "independent_provider_billing_or_egress_attestation_present": false,
+    "external_github_apps_event_effects_fully_ruled_out": false,
+    "provider_a_b_responses_observed_in_this_experiment": false
+  },
+  "prohibited_in_this_evidence_freeze": [
+    "No new Git ref POST, PATCH, or DELETE",
+    "No workflow_dispatch or rerun",
+    "No GitHub Environment, Ruleset, secret, or permission modification",
+    "No Provider request, no paid API consent, no production tag consumption",
+    "No promotion of research-tag existence to Run authorization or Task1 Utility proof"
+  ]
+}
