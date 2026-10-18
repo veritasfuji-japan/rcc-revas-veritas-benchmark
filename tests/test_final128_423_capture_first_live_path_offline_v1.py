@@ -118,7 +118,8 @@ def filename(out_dir, arm="A"):
 def decrypt_capture(out_dir, *, arm, packet, response):
     path = filename(out_dir, arm)
     stored = path.read_bytes()
-    assert response.raw[:m.MAX_BODY_BYTES + 1] not in stored
+    if response.raw:
+        assert response.raw[:m.MAX_BODY_BYTES + 1] not in stored
     assert FAKE_KEY.encode() not in stored
     envelope = json.loads(stored)
     raw = response.raw[:m.MAX_BODY_BYTES + 1]
