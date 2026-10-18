@@ -471,8 +471,8 @@ def main():
             os.chmod(sockpath, 0o600)
             svc.serve_forever(poll_interval=.25)
     elif a.mode == "worker":
-        need(a.socket and a.arm and a.ordinal is not None
-             and a.recipient_public, "458_BOUNDED_WORKER_ONLY")
+        need(bool(a.socket) and bool(a.arm) and a.ordinal is not None
+             and bool(a.recipient_public), "458_BOUNDED_WORKER_ONLY")
         print(worker(Path(a.socket), arm=a.arm, ordinal=a.ordinal,
                      public_b64=a.recipient_public,
                      crash=a.crash_after_consume))
