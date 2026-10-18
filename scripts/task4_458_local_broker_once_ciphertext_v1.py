@@ -361,8 +361,19 @@ def run_demo():
                     stderr=subprocess.PIPE, cwd=str(ROOT)) for _ in range(6)]
                 for w in workers:
                     out, err = w.communicate(timeout=20)
-                    need(w.returncode == 0 and not err,
-                         "458_ISOLATED_CLIENT_FAILED")
+                    if w.returncode != 0:
+                        # Fixed, non-data-bearing diagnostic categories ONLY.
+                        diagnostic = err.decode("utf8", errors="replace")
+                        known = ("ModuleNotFoundError", "ImportError",
+                                 "ConnectionRefusedError", "PermissionError",
+                                 "FileNotFoundError", "AttributeError",
+                                 "KeyError", "TypeError", "ValueError",
+                                 "RuntimeError", "Refused", "BrokenPipeError",
+                                 "OperationalError")
+                        category = next((x for x in known if x in diagnostic),
+                                        "UNCLASSIFIED")
+                        raise Refused("458_ISOLATED_CLIENT_FAILED_" + category)
+                    need(not err, "458_ISOLATED_CLIENT_STDERR_NOT_EMPTY")
                     outcomes.append(out.decode().strip())
             need(outcomes.count("CONSUMED_CIPHERTEXT_ONLY") == 2
                  and outcomes.count("DENIED_NO_RETRY") == 10,
