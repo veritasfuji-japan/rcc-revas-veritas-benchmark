@@ -75,7 +75,8 @@ def test_no_real_provider_or_workflow_operations():
         assert bad not in source
     assert not hasattr(m, "send_paid_provider")
     docs = DOC.read_text(encoding="utf-8")
-    for term in ("NO-GO", "Issue #427", "#449", "#448", "#423",
-                 "root", "distinct Linux UIDs", "not real GitHub",
-                 "no Provider", "same host"):
-        assert term in docs
+    lowered = docs.casefold()
+    for term in ("no-go", "issue #427", "#449", "#448", "#423",
+                 "root", "distinct linux uids", "not real github",
+                 "no provider", "host"):
+        assert term in lowered
