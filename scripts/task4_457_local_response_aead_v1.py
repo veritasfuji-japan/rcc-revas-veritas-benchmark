@@ -92,7 +92,7 @@ class SealedLocalVault:
         mode = directory.stat().st_mode
         need(stat.S_ISDIR(mode) and stat.S_IMODE(mode) & 0o077 == 0,
              "457_PRIVATE_DIR_0700_REQUIRED")
-        need(type(recipient_public) is X25519PublicKey,
+        need(isinstance(recipient_public, X25519PublicKey),
              "457_PUBLIC_KEY_ONLY_REQUIRED")
         self.directory = directory
         self.public = recipient_public
@@ -203,7 +203,7 @@ class SealedLocalVault:
         from cryptography.hazmat.primitives.kdf.hkdf import HKDF
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-        need(type(recipient_private) is X25519PrivateKey and not self.failed
+        need(isinstance(recipient_private, X25519PrivateKey) and not self.failed
              and not self.closed and len(self.receipts) == 8,
              "457_COMPLETE_LOCAL_RECOVERY_ONLY")
         from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
