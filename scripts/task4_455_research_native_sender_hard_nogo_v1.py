@@ -223,9 +223,9 @@ def stage_native_first_request(arm: str) -> dict:
             except Exception as exc:
                 # The SDK wraps transport exceptions. Refuse all outcomes unless
                 # exactly one strict SDK request was observed and denied.
-                require(gateway.sealed and gateway.calls == 1 and
-                        gateway.last is not None,
-                        "455_UNEXPECTED_NATIVE_OR_SDK_FAILURE") from exc
+                if not (gateway.sealed and gateway.calls == 1 and
+                        gateway.last is not None):
+                    raise Refused("455_UNEXPECTED_NATIVE_OR_SDK_FAILURE") from exc
             else:
                 raise Refused("455_NATIVE_MUST_NEVER_REACH_A_MODEL_RESPONSE")
     require(sha_json(env.model_dump(mode="json")) == original and
