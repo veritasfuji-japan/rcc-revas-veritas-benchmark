@@ -1,0 +1,96 @@
+{
+  "schema": "task4.real-model-readiness-contract.v1",
+  "baseline_commit": "8e595a88338cb62f5bddf7adf7e023445b711a59",
+  "case_id": "banking:user_task_4:injection_task_0:direct",
+  "model_candidate": "gpt-4.1-mini-2025-04-14",
+  "frozen_agentdojo": "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b",
+  "frozen_rcc": "1d3782d3aae5ff9c88036709c1a5642320cc53c2",
+  "frozen_veritas": "a1d66aef02262cf8a913295270c3aafd159c6adb",
+  "frozen_prestate_sha256": "8b653f253d3b2b033ad2baebc938bb66cb09719be8b488a470e7e82d25abbe14",
+  "frozen_attack_sha256": "0d5011fb8b275e313c83da127698f19a77095d44e82a81b4d5804046c3cb61a9",
+  "source_blob_pins": {
+    "task4_323_single_arm_trajectory_v1.py": "a5e1803d6630785f065a8b466b8cf92a231505e2",
+    "task4_frozen_provider_transport_date_context_binding_v1.py": "acc656ac485b325f228671a39ce78862f81fb670",
+    "task4_323_single_arm_scorer_v1.py": "74ea71c3b76da9e1c06b7a5eaf4a0b7c85079925",
+    "scripts/task4_455_research_native_sender_hard_nogo_v1.py": "82f814da6f358dcb910b5e1b1fdc4d0b153b90ae",
+    "scripts/task4_457_local_response_aead_v1.py": "824beea3e3681c0447829fb7960a9f88a634b90f",
+    "scripts/task4_458_local_broker_once_ciphertext_v1.py": "47edf6bc081b3475f34b84102af793117def56a0",
+    "scripts/task4_459_native_broker_custody_join_v1.py": "56ea27e7cd0767b07c986a444efe34e507b8061c",
+    "scripts/final128_344_native_terminal_measurement_admission_v1.py": "ef33d3a23e4ee57d55a134d9d592502ad7f15b67"
+  },
+  "research_gates": [
+    {
+      "id": "R1",
+      "state": "NOT_ATTESTED",
+      "why": "Pre-first-model-query trusted issuer date, target, amount and scope"
+    },
+    {
+      "id": "R2",
+      "state": "NOT_ATTESTED",
+      "why": "Isolated reviewable research-only transport (the #455 rejecting transport stays DENY)"
+    },
+    {
+      "id": "R3",
+      "state": "NOT_ATTESTED",
+      "why": "Same trial and arm consume-before-send; UNKNOWN/no-retry across failures"
+    },
+    {
+      "id": "R4",
+      "state": "NOT_ATTESTED",
+      "why": "True Provider raw response authenticated and sealed before native parsing"
+    },
+    {
+      "id": "R5",
+      "state": "NOT_ATTESTED",
+      "why": "Fresh independent real A/B model histories with original Native tool results"
+    },
+    {
+      "id": "R6",
+      "state": "NOT_ATTESTED",
+      "why": "Unmodified Bind and detached official post-terminal scorer or UNSCORED"
+    },
+    {
+      "id": "R7",
+      "state": "NOT_ATTESTED",
+      "why": "Verified project/model availability, current pricing and cost/attempt controls"
+    },
+    {
+      "id": "R8",
+      "state": "NOT_ATTESTED",
+      "why": "Fresh owner-approved exact SHA, case, model, expiry, limit, cost and residual risks"
+    }
+  ],
+  "production_gates": [
+    {
+      "id": "P1",
+      "state": "NOT_ATTESTED",
+      "why": "Independent executor IAM/credential/network egress enforcement"
+    },
+    {
+      "id": "P2",
+      "state": "NOT_ATTESTED",
+      "why": "Off-runner protected single-use ledger and independent ciphertext/key custody"
+    },
+    {
+      "id": "P3",
+      "state": "NOT_ATTESTED",
+      "why": "Third-party high-privilege effect/reconciliation/bypass-resistance test"
+    }
+  ],
+  "planning_limits_not_consent": {
+    "posts_per_arm": 5,
+    "posts_total": 10,
+    "completion_tokens_per_call": 256,
+    "estimate_usd": 0.044096,
+    "estimate_not_hard_cap": true
+  },
+  "nonclaims": {
+    "real_provider_dispatch": "DENY",
+    "fresh_owner_paid_consent": false,
+    "genuine_task4_utility": "UNSCORED",
+    "genuine_injection_outcome": "UNSCORED",
+    "new_genuine_utility_recoveries": 0,
+    "cross_runner_cas_proven": false,
+    "external_validation": false
+  }
+}
