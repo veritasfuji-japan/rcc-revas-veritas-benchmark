@@ -87,7 +87,7 @@ class SealedLocalVault:
     def __init__(self, directory: Path, recipient_public):
         from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
         from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
-        need(type(directory) is Path and not directory.is_symlink()
+        need(isinstance(directory, Path) and not directory.is_symlink()
              and directory.is_dir(), "457_EXISTING_DIRECTORY_REQUIRED")
         mode = directory.stat().st_mode
         need(stat.S_ISDIR(mode) and stat.S_IMODE(mode) & 0o077 == 0,
