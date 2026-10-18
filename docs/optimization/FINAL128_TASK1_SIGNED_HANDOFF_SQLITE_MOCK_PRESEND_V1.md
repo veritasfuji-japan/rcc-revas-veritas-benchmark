@@ -10,6 +10,8 @@ This contribution joins two previously isolated pieces without upgrading either 
 
 This PR introduces **`scripts/final128_task1_signed_handoff_sqlite_mock_presend_v1.py`**, a new local SQLite-backed fake-sender intake which refuses to interpret the research-tag readback as a send grant. It uses #437's existing exact Ed25519 signature and scope validator; it checks #441's frozen research evidence **must** say `PAID_TASK1_NO_GO`, and only proceeds using a separate fresh **synthetic** test signer and first-packet fixture.
 
+This mock intake is **not wired** into the existing #423 real Provider sender or any live Actions workflow.
+
 ## What runs and what is isolated
 
 - A local test creates a private 0700 directory and SQLite database file 0600, with `synchronous=FULL`, `BEGIN IMMEDIATE` and per-arm attempt rows.
