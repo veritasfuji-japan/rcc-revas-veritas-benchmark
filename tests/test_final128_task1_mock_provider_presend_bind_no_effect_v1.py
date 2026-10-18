@@ -45,9 +45,9 @@ def fixture(failure="none"):
     return issuer, port, gate
 
 
-def call(gate, issuer, arm="A", **kw):
+def call(gate, issuer, signed_arm="A", **kw):
     args = dict(
-        arm=arm, raw=m.PACKET, permit=issuer.issue(arm),
+        arm=signed_arm, raw=m.PACKET, permit=issuer.issue(signed_arm),
         frozen_snapshot=snapshot(),
     )
     args.update(kw)
@@ -277,7 +277,7 @@ def test_docs_honestly_bound_test_scope():
     doc = DOC.read_text(encoding="utf-8")
     for needed in (
         "NO-GO", "PR #441", "mock", "Provider", "Run ID",
-        "durable", "Issue #427", "no retry", "POST /git/refs",
+        "durable", "Issue #427", "No retry", "POST /git/refs",
     ):
         assert needed in doc
     assert "not wired" in doc
