@@ -55,7 +55,7 @@ python -m pytest -q tests/test_final128_task1_issuer_sender_job_graph_audit_offl
 ## What a future *separately authorized* implementation would still need
 
 1. Review a new actual workflow with **distinct** issuer/sender jobs and least-privilege job-level GitHub token permissions; verify reusable workflows/checkout/workspaces, branch protection, Environment reviewers and role-confusion paths externally.
-2. Bind identity and source provenance to the intended issuer and sender using independently validated job/Run/ref/commit claims. Resolve the recipient-job-ID bootstrap problem; no unverified artifact or a `github.run_id` string is sufficient.
+2. Bind identity and source provenance to the intended issuer and sender using independently validated **Run ID**, job, ref and commit claims. Resolve the recipient-job-ID bootstrap problem; no unverified artifact or a `github.run_id` string is sufficient.
 3. Use an independently enforced **per-arm durable Provider-send lease**; create a persistent pre-send attempt record before egress, exclude parallel/cross-Runner access, preserve UNKNOWN/no-retry, and reconcile partial-A-only outcomes.
 4. Restrict **all** Provider-credential and network egress paths outside the agent process, not only calls through a Python helper. Third-party bypass tests are still required.
 5. Verify protected run controls and project spend risk, receive fresh explicit authorization for current main SHA, exact model, case, A/B count and financial risk **before** any Tag POST or paid dispatch.
