@@ -1,4 +1,4 @@
-name: Task1 Native First Two Chat A/B PROTECTED MANUAL V1
+name: Task1 Native First Two Chat A/B HARD NO-GO ROLE SPLIT V1
 on:
   workflow_dispatch:
     inputs:
@@ -12,15 +12,19 @@ on:
         description: "Operator verifies project billing externally; not a code-enforced hard stop"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: task1-native-first-two-paid-423-irreversible
   cancel-in-progress: false
 
+# HARD NO-GO until a separately enforced sender/issuer/ledger/egress boundary exists.
+# Even a correct manual approval phrase cannot start preflight or sender here.
 jobs:
-  protected-first-pair-only:
-    if: github.actor == 'veritasfuji-japan' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+  preflight:
+    if: ${{ false && github.actor == 'veritasfuji-japan' && github.ref == 'refs/heads/main' && github.run_attempt == 1 }}
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     environment: task1-real-model-pilot
@@ -102,6 +106,17 @@ jobs:
           # Never print secrets or copy them to GITHUB_OUTPUT/artifacts.
           python scripts/final128_423_task1_protected_first_native_chat_sender_v1.py \
             --mode secrets-preflight --output-dir results
+
+  issuer:
+    needs: [preflight]
+    if: github.actor == 'veritasfuji-japan' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      consumed_sha: ${{ steps.consume.outputs.consumed_sha }}
+    steps:
       - name: Atomically consume exact no-bypass production once tag, no retry
         id: consume
         env:
@@ -164,10 +179,75 @@ jobs:
           print("TASK1_423_GLOBAL_SINGLETON_TAG_CONSUMED_ONE_OPERATION_NO_RETRY")
           PY
           echo "consumed_sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
+  sender:
+    needs: [issuer]
+    if: ${{ false }}
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    environment: task1-real-model-pilot
+    env:
+      PYTHONPATH: "."
+      PYTHONDONTWRITEBYTECODE: "1"
+      TASK1_423_APPROVAL: ${{ inputs.approval_phrase }}
+      TASK1_423_OPERATOR_BILLING_REVIEW: ${{ inputs.billing_review }}
+      TASK1_423_ENVIRONMENT: task1-real-model-pilot
+      FINAL128_403_AGENTDOJO_ROOT: _pins/agentdojo
+      FINAL128_399_VERITAS_ROOT: _pins/veritas
+      OPENAI_BASE_URL: ""
+      TASK4_OPENAI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ethz-spylab/agentdojo
+          ref: a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          path: _pins/agentdojo
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.16"
+      - name: Verify immutable source pins and install Native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+          test "$(git -C _pins/veritas rev-parse HEAD)" = "a1d66aef02262cf8a913295270c3aafd159c6adb"
+          test "$(git hash-object contracts/AGENTDOJO_INJECTION_ENROLLMENT_FREEZE_v0.1.json)" = "054c79f2a83b48821ce57071185c8ceecda17ed3"
+          python -m pip install --disable-pip-version-check --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          python -m pip install --disable-pip-version-check \
+            "pytest==9.1.1" "cryptography==50.0.0" \
+            "openai==1.109.1" "pydantic==2.11.10" \
+            "idna==3.15" "httpx==0.28.1" \
+            "requests==2.34.2" "PyYAML==6.0.3"
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock --output /tmp/task1-423-agentdojo-lock.txt
+          python -m pip install --disable-pip-version-check \
+            -r /tmp/task1-423-agentdojo-lock.txt
+      - name: Freeze TWO initial Native Chat packets offline before tag or keys
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          chmod 700 results
+          python scripts/final128_423_task1_protected_first_native_chat_sender_v1.py \
+            --mode preflight --output-dir results
       - name: Send ONE FIRST Native Chat POST each A/B, AES256 encrypted evidence
         env:
           TASK1_423_TAG_CONSUMED: "1"
-          TASK1_423_TAG_READBACK_SHA: ${{ steps.consume.outputs.consumed_sha }}
+          TASK1_423_TAG_READBACK_SHA: ${{ needs.issuer.outputs.consumed_sha }}
           TASK1_OPENAI_API_KEY: ${{ secrets.TASK1_OPENAI_API_KEY }}
           TASK1_CAPTURE_AES256_KEY: ${{ secrets.TASK1_CAPTURE_AES256_KEY }}
         shell: bash
