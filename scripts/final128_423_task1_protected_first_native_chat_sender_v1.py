@@ -18,7 +18,9 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
 import ssl
+import stat
 import sys
 
 from scripts import final128_421_task1_native_first_pair_presend_v1 as first
@@ -197,14 +199,16 @@ def one_post(*, arm, payload, api_key, client_id, connection_factory=None):
     try:
         conn.request("POST", "/v1/chat/completions", body=raw, headers=headers)
         res = conn.getresponse()
+        # Read at most the capped body plus ONE extra byte. If the extra
+        # byte exists, the captured body is explicitly TRUNCATED; reject
+        # it only AFTER ciphertext is committed by execute().
         body = res.read(MAX_BODY_BYTES + 1)
-        require(len(body) <= MAX_BODY_BYTES, "OVERSIZE_BODY_UNKNOWN_NO_RETRY")
-        # Never silently retry 429, 5xx, timeout or any ambiguous result.
-        require(type(res.status) is int and res.status == 200,
-                "HTTP_UNKNOWN_OR_NON_200_NO_RETRY")
-        rid = res.getheader("x-request-id")
-        require(type(rid) is str and shape.SERVER_ID.fullmatch(rid) is not None,
-                "NO_PROVIDER_SERVER_REQUEST_ID")
+        # An invalid/missing request ID or non-200 status is evidence too:
+        # do not reject or parse it before encrypted evidence preservation.
+        try:
+            rid = res.getheader("x-request-id")
+        except Exception:
+            rid = None
         return {
             "client_request_id": client_id,
             "response_status": res.status,
@@ -215,23 +219,109 @@ def one_post(*, arm, payload, api_key, client_id, connection_factory=None):
         conn.close()
 
 
+def _capture_aad(*, arm: str, run_id: str, request_sha: str,
+                 response_status, response_headers, raw: bytes) -> bytes:
+    """Authenticated association, NOT provider-origin authentication.
+
+    Malformed headers/status are preserved as untrusted observations; the
+    strict #422 verifier runs only after ciphertext has been committed.
+    """
+    rid = (response_headers.get("x-request-id")
+           if type(response_headers) is dict else None)
+    rid_hash = digest(rid.encode("utf8")) if type(rid) is str else None
+    return canonical({
+        "case": CASE, "run": run_id, "arm": arm,
+        "request_sha256": request_sha,
+        "http_status_observed": (response_status
+                                 if type(response_status) is int else None),
+        "server_request_id_sha256": rid_hash,
+        "http_body_truncated": len(raw) > MAX_BODY_BYTES,
+    })
+
+
 def _encrypt_capture(*, raw: bytes, key: bytes, arm: str,
-                     run_id: str, request_sha: str):
+                     run_id: str, request_sha: str,
+                     response_status, response_headers):
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-    require(type(raw) is bytes and 0 < len(raw) <= MAX_BODY_BYTES
-            and len(key) == 32 and arm in ARMS, "ENCRYPTED_CAPTURE_ONLY")
+    require(type(raw) is bytes and len(raw) <= MAX_BODY_BYTES + 1
+            and type(key) is bytes and len(key) == 32
+            and arm in ARMS, "ENCRYPTED_CAPTURE_ONLY")
     nonce = os.urandom(12)
-    aad = canonical({"case": CASE, "run": run_id,
-                     "arm": arm, "request_sha256": request_sha})
+    aad = _capture_aad(
+        arm=arm, run_id=run_id, request_sha=request_sha,
+        response_status=response_status, response_headers=response_headers,
+        raw=raw,
+    )
     encrypted = AESGCM(key).encrypt(nonce, raw, aad)
+    rid = (response_headers.get("x-request-id")
+           if type(response_headers) is dict else None)
     return {
         "format": "AES256_GCM",
+        "status": "UNTRUSTED_HTTP_BYTES_SEALED_BEFORE_VALIDATION",
+        "origin_independently_authenticated": False,
+        "http_body_truncated": len(raw) > MAX_BODY_BYTES,
+        "http_status_observed": (response_status
+                                 if type(response_status) is int else None),
+        "server_request_id_sha256": (
+            digest(rid.encode("utf8")) if type(rid) is str else None
+        ),
         "nonce_base64": base64.b64encode(nonce).decode("ascii"),
         "ciphertext_base64": base64.b64encode(encrypted).decode("ascii"),
         "aad_sha256": digest(aad),
         "raw_sha256": digest(raw),
     }
 
+
+def _write_private_capture(directory: Path, filename: str, payload: bytes):
+    """Commit ciphertext ONLY, with no overwrite and file/dir fsync.
+
+    The create-only link means an existing filename is never replaced. A
+    crash may leave ciphertext-only temporary data or UNKNOWN durability,
+    and local persistence does NOT guarantee artifact upload or retention.
+    """
+    require(isinstance(directory, Path) and type(filename) is str
+            and filename in ("task1-423-A-raw-chat.enc.json",
+                             "task1-423-B-raw-chat.enc.json")
+            and type(payload) is bytes
+            and len(payload) <= 4 * (MAX_BODY_BYTES + 1) + 8192,
+            "EXACT_CIPHERTEXT_OUTPUT_ONLY")
+    dir_fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY |
+                     getattr(os, "O_NOFOLLOW", 0))
+    try:
+        info = os.fstat(dir_fd)
+        require(stat.S_ISDIR(info.st_mode)
+                and stat.S_IMODE(info.st_mode) & 0o077 == 0,
+                "PRIVATE_OUTPUT_DIRECTORY_REQUIRED")
+        tmp_name = "." + filename + "." + secrets.token_hex(12) + ".tmp"
+        fd = os.open(
+            tmp_name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+            getattr(os, "O_NOFOLLOW", 0),
+            0o600, dir_fd=dir_fd,
+        )
+        try:
+            try:
+                with os.fdopen(fd, "wb", closefd=True) as output:
+                    output.write(payload)
+                    output.flush()
+                    os.fsync(output.fileno())
+            except BaseException:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+                raise
+            os.link(tmp_name, filename, src_dir_fd=dir_fd,
+                    dst_dir_fd=dir_fd, follow_symlinks=False)
+            os.fsync(dir_fd)
+        finally:
+            try:
+                os.unlink(tmp_name, dir_fd=dir_fd)
+                os.fsync(dir_fd)
+            except FileNotFoundError:
+                pass
+    finally:
+        os.close(dir_fd)
 
 def execute(*, mode, out_dir: Path, connection_factory=None):
     require(mode in ("preflight", "secrets-preflight", "send"),
@@ -281,18 +371,38 @@ def execute(*, mode, out_dir: Path, connection_factory=None):
             "client_id_sha256": first.digest(client_id),
             "may_have_billed_after_this_event": True})
         try:
+            filename = "task1-423-" + arm + "-raw-chat.enc.json"
+            require(not (out_dir / filename).exists(),
+                    "ENCRYPTED_FILE_REPLAY_FORBIDDEN")
             wire = one_post(arm=arm, payload=payload,
                             api_key=key, client_id=client_id,
                             connection_factory=connection_factory)
-            checked = shape.capture_one(
-                native_run=run, ledger=ledger, prepared=ready, arm=arm, **wire)
+            # Request digest comes from the source-owned packet, NOT the
+            # returned response. The first irreversible action on received
+            # HTTP bytes is AES encryption + exclusive durable disk commit.
+            owned_sha = first.digest(payload)
             enc = _encrypt_capture(
                 raw=wire["raw_response"], key=encryption_key,
-                arm=arm, run_id=run_id, request_sha=checked["request_sha256"])
-            encrypted_path = out_dir / ("task1-423-" + arm + "-raw-chat.enc.json")
-            require(not encrypted_path.exists(), "ENCRYPTED_FILE_REPLAY_FORBIDDEN")
-            encrypted_path.write_bytes(canonical(enc) + b"\n")
-            os.chmod(encrypted_path, 0o600)
+                arm=arm, run_id=run_id, request_sha=owned_sha,
+                response_status=wire["response_status"],
+                response_headers=wire["response_headers"])
+            _write_private_capture(out_dir, filename,
+                                   canonical(enc) + b"\n")
+            _durable_line(path, {
+                "event": "HTTP_BYTES_ENCRYPTED_DURABLE_BEFORE_VALIDATION",
+                "arm": arm, "request_sha256": owned_sha,
+                "raw_response_sha256": enc["raw_sha256"],
+                "http_body_truncated": enc["http_body_truncated"],
+                "provider_origin_independently_attested": False})
+            # The captured body may only be MAX_BODY_BYTES+1 long. Its
+            # over-limit flag is evidence of a PARTIAL response, never a
+            # complete raw response or a usable Native trace.
+            require(not enc["http_body_truncated"],
+                    "OVERSIZE_BODY_UNKNOWN_NO_RETRY")
+            checked = shape.capture_one(
+                native_run=run, ledger=ledger, prepared=ready, arm=arm, **wire)
+            require(checked["request_sha256"] == owned_sha,
+                    "OWNED_REQUEST_DIGEST_DRIFT")
             observations[arm] = checked
             _durable_line(path, {
                 "event": "ONE_PROVIDER_RESPONSE_CAPTURED_ENCRYPTED",
