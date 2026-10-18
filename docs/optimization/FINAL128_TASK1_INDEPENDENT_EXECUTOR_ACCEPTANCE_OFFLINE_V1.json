@@ -1,0 +1,67 @@
+{
+  "schema": "veritas.final128.task1.independent-executor-acceptance.offline.v1",
+  "purpose": "INERT_EXTERNAL_EXECUTOR_ACCEPTANCE_DESIGN_ONLY",
+  "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+  "case": "banking:user_task_1:injection_task_2:direct",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "source_prs": [405, 410, 411, 412, 423, 437, 442, 445, 446],
+  "trust_domains": {
+    "issuer": {
+      "principal": "INDEPENDENT_ENROLLED_ISSUER_REQUIRED",
+      "provider_credentials": "DENIED",
+      "remote_ledger_mutation": "DENIED"
+    },
+    "github_runner": {
+      "principal": "UNTRUSTED_ORCHESTRATION_ONLY",
+      "provider_credentials": "DENIED",
+      "issuer_signing_credentials": "DENIED",
+      "provider_network_egress": "DENIED"
+    },
+    "executor": {
+      "principal": "INDEPENDENT_SENDER_REQUIRED",
+      "provider_credentials": "EXECUTOR_ONLY",
+      "issuer_signing_credentials": "DENIED",
+      "permit_verification": "ENROLLED_IDENTITY_AND_AUDIENCE_REQUIRED",
+      "bind_at_last_boundary": "REAL_VERITAS_BIND_REQUIRED",
+      "provider_network_egress": "EXECUTOR_ONLY"
+    },
+    "ledger": {
+      "principal": "EXECUTOR_CONTROLLED_SHARED_REMOTE_STORE_REQUIRED",
+      "owner": "NOT_THE_CALLER_OR_EPHEMERAL_RUNNER",
+      "atomic_reserve": "COMMIT_BEFORE_POSSIBLE_PROVIDER_POST",
+      "cross_runner_scope": "GLOBALLY_SHARED_ACROSS_ALL_TASK1_ATTEMPTS",
+      "delete_reset_replay": "DENIED"
+    }
+  },
+  "lease": {
+    "binding": ["repository", "commit_sha", "case", "model", "run_id", "run_attempt", "recipient_principal", "arm", "request_sha256", "approval_digest"],
+    "global_unique_key": ["repository", "case", "arm", "approval_digest"],
+    "required_sequence": [
+      "AUTHENTICATE_INDEPENDENT_ISSUER_AND_RUNNER_CONTEXT",
+      "VERIFY_SIGNED_PERMIT_EXACT_SCOPE_AND_RECIPIENT",
+      "CHECK_FRESH_CONSENT_AND_REAL_VERITAS_BIND",
+      "ATOMICALLY_PERSIST_UNKNOWN_ATTEMPT_IN_REMOTE_LEDGER",
+      "EXECUTOR_ONLY_SINGLE_PROVIDER_POST_NO_RETRY",
+      "PERSIST_SEALED_RESPONSE_OR_KEEP_UNKNOWN"
+    ],
+    "arm_order": "B_ONLY_AFTER_VERIFIED_A_ACK",
+    "unknown_result": "STOP_NO_RETRY_NO_AUTOMATIC_CLEAR",
+    "ledger_outage": "STOP_NO_SEND",
+    "invalid_attestation": "STOP_NO_SEND",
+    "binding_mismatch": "STOP_NO_SEND",
+    "direct_sender_bypass": "DENY_WITH_CREDENTIAL_AND_EGRESS_POLICY"
+  },
+  "current_evidence": {
+    "real_enrolled_issuer_and_sender": false,
+    "provider_secret_exclusivity_verified": false,
+    "remote_atomic_ledger_multi_runner_verified": false,
+    "no_bypass_egress_verified": false,
+    "423_sender_integrated_into_executor": false,
+    "real_bind_last_boundary_verified": false,
+    "paid_consent_granted": false,
+    "provider_budget_hard_cap_verified": false,
+    "live_provider_requests": 0,
+    "global_consumption_claim": "NOT_PROVEN"
+  },
+  "status": "PAID_TASK1_NO_GO_DESIGN_NOT_DEPLOYED"
+}
