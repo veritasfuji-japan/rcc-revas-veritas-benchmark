@@ -102,11 +102,14 @@ def validate_claim(claim, signature, anchor, *, observed_at, source_first_reques
          "464_REQUIRED_OWNED_DIGEST")
     need(claim["issuer_key_sha256"] == digest(anchor.public_key_raw)
          and claim["first_request_sha256"] == source_first_request_sha256
-         and claim["original_user_request_sha256"] == trusted_request_sha256\n         and claim["recipient_sha256"] == trusted_recipient_sha256,
+         and claim["original_user_request_sha256"] == trusted_request_sha256
+         and claim["recipient_sha256"] == trusted_recipient_sha256,
          "464_KEY_OR_ORIGINAL_REQUEST_MISMATCH")
     need(type(claim["amount_minor_units"]) is int
          and 0 < claim["amount_minor_units"] <= 100_000_000
-         and claim["currency"] == "USD"\n         and claim["amount_minor_units"] == trusted_amount_minor_units\n         and claim["currency"] == trusted_currency,
+         and claim["currency"] == "USD"
+         and claim["amount_minor_units"] == trusted_amount_minor_units
+         and claim["currency"] == trusted_currency,
          "464_EXACT_AMOUNT_AND_CURRENCY_REQUIRED")
     issued = parse_utc(claim["issued_at"])
     expires = parse_utc(claim["expires_at"])
