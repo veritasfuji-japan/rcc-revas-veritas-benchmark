@@ -1,0 +1,101 @@
+name: Task4 474 Synthetic Signed Authority Separate Verifier Local Native NO-GO
+on:
+  pull_request:
+    paths:
+      - 'scripts/task4_474_independent_signed_authority_offline_no_go_v1.py'
+      - 'tests/test_task4_474_independent_signed_authority_offline_no_go_v1.py'
+      - 'docs/TASK4_474_INDEPENDENT_SIGNED_AUTHORITY_OFFLINE_NO_GO_V1.md'
+      - '.github/workflows/task4-474-independent-authority-native-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  separate-process-no-send-original-native-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      VERITAS_DATABASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      TASK4_474_APPROVAL: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONNOUSERSITE: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      TASK4_474_NATIVE_PROOF: '1'
+      TASK4_NATIVE_DATE_PROOF: '1'
+      TASK4_TRANSPORT_PROOF: '1'
+      TASK4_TRAJECTORY_PROOF: '1'
+      TASK4_SCORER_OBSERVATION_PROOF: '1'
+      TASK4_RCC_ROOT: '_pins/rcc'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Get frozen public AgentDojo RCC VERITAS sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins results
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = 'a75aba7631d3ca5fb7ab938965c97ead2f9ff84b'
+          test "$(git -C _pins/rcc rev-parse HEAD)" = '1d3782d3aae5ff9c88036709c1a5642320cc53c2'
+          test "$(git -C _pins/veritas rev-parse HEAD)" = 'a1d66aef02262cf8a913295270c3aafd159c6adb'
+      - name: Install only pinned offline SDK Native and cryptographic dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install 'pytest==9.1.1' 'cryptography==50.0.0' 'openai==1.109.1' 'pydantic==2.11.10' 'idna==3.15' 'httpx==0.28.1' 'requests==2.34.2' 'PyYAML==6.0.3'
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output /tmp/task4-474-agentdojo-locked.txt
+          pip install -r /tmp/task4-474-agentdojo-locked.txt
+      - name: Assert isolated Unix-only worker, SQLite UNKNOWN and Native AEAD NO-GO
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_task4_474_independent_signed_authority_offline_no_go_v1.py \
+            --junitxml=results/task4-474-budget-native-junit.xml \
+            | tee results/task4-474-tests.log
+          python -m scripts.task4_474_independent_signed_authority_offline_no_go_v1 \
+            --output results/task4-474-hash-only-no-provider.json
+          python - <<'PY'
+          import json
+          r=json.load(open('results/task4-474-hash-only-no-provider.json'))
+          assert r['same_run_native_sdk_authority_verifications'] == 8
+          assert r['same_run_native_aead_scripted_responses'] == 8
+          assert r['same_run_isolated_worker_claims'] == 8
+          assert r['same_run_worker_restart_replays_denied'] == 8
+          assert r['negative_cases_denied'] == 11
+          assert len(r['hash_only_authority_receipts']) == 8
+          assert r['real_iam_or_network_isolation_proven'] is False
+          assert r['live_sender_implemented'] is False
+          assert r['paid_owner_consent'] is False
+          assert r['provider_posts'] == 0
+          assert r['bank_effects'] == 0
+          assert r['genuine_native_utility'] is None
+          assert r['score_status'] == 'UNSCORED'
+          assert r['no_go'] is True
+          print('TASK4_474_SIGNED_SYNTHETIC_NATIVE_NO_PROVIDER')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-474-original-sdk-budget-native-deny-only-junit-hashes
+          path: results/*
+          if-no-files-found: warn
