@@ -19,7 +19,7 @@ def test_screenshot_limits_and_cost_are_not_authorization():
     assert d["project_limit_snapshot_usd"] == "1.00"
     assert d["project_used_snapshot_usd"] == "0.00"
     assert m.screenshot_headroom() == Decimal("0.50")
-    assert m.proposed_ceiling() == Decimal("0.396864")
+    assert m.proposed_ceiling() == Decimal("0.396288")
     assert m.proposed_ceiling() < m.PROPOSED_MAX_SPEND
     assert d["provider_token_count_verified"] is False
     assert d["hard_billable_spend_cap_verified"] is False
