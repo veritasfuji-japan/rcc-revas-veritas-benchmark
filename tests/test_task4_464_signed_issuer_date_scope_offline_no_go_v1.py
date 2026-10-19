@@ -32,12 +32,12 @@ def fixture():
     }
     return signer, anchor, claim, now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-def verify(signer, anchor, claim, now, *, sig=None, request=None, trusted=None):
+def verify(signer, anchor, claim, now, *, sig=None, request=None, trusted=None, recipient=None, amount=None, currency=None):
     return m.validate_claim(claim,
         signer.sign(m.canonical(claim)) if sig is None else sig,
         anchor, observed_at=now,
         source_first_request_sha256=request or "3"*64,
-        trusted_request_sha256=trusted or "1"*64)
+        trusted_request_sha256=trusted or "1"*64,\n        trusted_recipient_sha256=recipient or "2"*64,\n        trusted_amount_minor_units=100 if amount is None else amount,\n        trusted_currency="USD" if currency is None else currency)
 
 def test_valid_signed_fixture_still_hard_denied():
     report = verify(*fixture())
@@ -88,7 +88,7 @@ def test_unenrolled_or_real_authority_claim_rejected():
 
 def test_request_binding_rejected():
     signer,anchor,claim,now=fixture()
-    for kw in ({"request":"0"*64},{"trusted":"0"*64}):
+    for kw in ({"request":"0"*64},{"trusted":"0"*64},{"recipient":"0"*64}):
         with pytest.raises(m.Refused,match="ORIGINAL_REQUEST_MISMATCH"):
             verify(signer,anchor,claim,now,**kw)
 
@@ -126,3 +126,9 @@ def test_no_network_or_provider_sdk_source():
     for forbidden in ("import openai","import requests","import httpx",
                       "workflow_dispatch", "requests.post", "httpx.Client"):
         assert forbidden not in code
+
+def test_independent_owned_amount_and_currency_mismatch():
+    signer,anchor,claim,now=fixture()
+    for kw in ({"amount":200}, {"currency":"EUR"}):
+        with pytest.raises(m.Refused):
+            verify(signer,anchor,claim,now,**kw)
