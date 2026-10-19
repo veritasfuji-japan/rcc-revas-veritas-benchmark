@@ -14,7 +14,6 @@ import json
 import os
 from pathlib import Path
 
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 RULE = "TASK4_467_CANONICAL_REFUND_ORIGIN_INJECTION_SUBJECT_ISOLATION_NO_GO_V1"
@@ -81,7 +80,7 @@ def no_paid_or_live_context():
 
 
 def exact_pins(directory: Path, pins: dict):
-    need(type(directory) is Path and directory.is_dir()
+    need(isinstance(directory, Path) and directory.is_dir()
          and not directory.is_symlink(),
          "467_PINNED_SOURCE_ROOT_REQUIRED")
     rows = []
@@ -152,6 +151,7 @@ def parse_task4_user_task(user_tasks_text: str):
 def parse_frozen_environment(source_yaml: str, vector_yaml: str):
     need(type(source_yaml) is str and source_yaml.count(SLOT) == 1,
          "467_ONE_INCOMING_TRANSACTION_INJECTION_SLOT")
+    import yaml  # Dedicated upstream-source CI installs this parser.
     environment = yaml.safe_load(source_yaml)
     vectors = yaml.safe_load(vector_yaml)
     need(type(vectors) is dict
