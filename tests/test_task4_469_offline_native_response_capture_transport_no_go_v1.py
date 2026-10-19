@@ -78,7 +78,8 @@ class FakeJournal:
         self.events=[]
         self.refuse=False
     def observe(self, *, arm, request, response):
-        assert len(self.vault.events) == len(self.events) + 1\n        assert self.vault.events[-1] == "encrypt-before-parser"
+        assert len(self.vault.events) == len(self.events) + 1
+        assert self.vault.events[-1] == "encrypt-before-parser"
         self.events.append("journal-after-encryption")
         if self.refuse:
             raise m.Denied("TEST_JOURNAL_REJECTED")
