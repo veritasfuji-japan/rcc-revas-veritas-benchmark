@@ -1,0 +1,11 @@
+# Task4 #474 — Independent public-key synthetic authority, **NO-GO**
+
+This adds a **synthetic offline authority verifier** in front of the #473 budget-envelope check and #472 separate-process local once-only claim. A fresh in-memory Ed25519 private key signs a local **NO-SEND** fixture; the verifier is given only its public key. The claim binds the exact original SDK wire SHA-256, frozen model, case, A/B arm, turn ordinal, policy SHA-256, audience, nonce and explicit `provider_post_allowed: false`. Successful signature verification is *not* execution permission.
+
+The same-run Native A/B path validates eight original SDK request wires, eight synthetic signatures, eight local worker claims, eight local scripted pre-parser AEAD responses, and eight denied worker restart replays. A deterministic eleven-case negative matrix refuses: missing signature, wrong signer, changed request, changed policy, wrong arm, changed ordinal, wrong audience, wrong model, forged send grant, revoked claim and consumed/replayed claim.
+
+**Boundary limitations:** Signing and verification run in one test harness process; the worker remains a separate **local** process with no independent credential/egress/IAM trust root. The signer key is ephemeral and is **not** a real authorized owner's key. The policy hash is synthetic. Revocation is a verifier parameter, not durable independent revocation. The replay set is local test state, not cross-runner CAS. Therefore this proves *synthetic cryptographic refusal semantics* and an offline Native integration only. It does **not** prove actual independent issuer authority, external effect blocking, production signer custody, runtime authorization, provider provenance or true input-token/billing caps.
+
+**Hard boundaries:** No Provider POST, no OpenAI credentials, no real model calls, no external banking effect, no paid approval, no changes to GitHub Secrets/Environments/Rulesets/tags. Native Utility remains **UNSCORED**. Task4 #321 and Task1 #427 remain OPEN/NO-GO. Previous $1 project setting and generic approval to make a research PR do not authorize any paid execution.
+
+**Source base:** merged #473 SHA `9d58af37a352344f509e089b98261e6032e1d06b`. Additive-only source, test, documentation and PR-only read-only CI. Draft until full CI and owner manual review.
