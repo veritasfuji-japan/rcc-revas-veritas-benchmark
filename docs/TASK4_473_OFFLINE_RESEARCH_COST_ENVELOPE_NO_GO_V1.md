@@ -22,7 +22,7 @@
 | Estimated overhead beyond body bytes | 2,048 token proxy per request |
 | Input-token *proxy* | 98,048 per request, **NOT provider token count** |
 | Output cap | 256 tokens per request on original SDK JSON |
-| Ten-call upper-bound *proxy* cost | **$0.396864** |
+| Ten-call upper-bound *proxy* cost | **$0.396288** |
 | Proposed future research ceiling | **$0.45**, NOT approved |
 | Current org remaining UI snapshot | **$0.50**, NOT reserved |
 | Provider sends / genuine scores | **0 / UNSCORED** |
