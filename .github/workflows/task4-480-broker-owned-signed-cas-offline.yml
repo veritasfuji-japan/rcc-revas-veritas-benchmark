@@ -1,0 +1,109 @@
+name: Task4 480 Broker Owned Signed CAS Offline NO-GO
+on:
+  pull_request:
+    paths:
+      - 'scripts/task4_480_broker_owned_signed_cas_no_go_v1.py'
+      - 'tests/test_task4_480_broker_owned_signed_cas_no_go_v1.py'
+      - 'docs/TASK4_480_BROKER_OWNED_SIGNED_CAS_OFFLINE_NO_GO_V1.md'
+      - '.github/workflows/task4-480-broker-owned-signed-cas-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  separate-process-no-send-original-native-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      VERITAS_DATABASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      TASK4_480_APPROVAL: ''
+      TASK4_480_LIVE: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONNOUSERSITE: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      TASK4_480_NATIVE_PROOF: '1'
+      TASK4_NATIVE_DATE_PROOF: '1'
+      TASK4_TRANSPORT_PROOF: '1'
+      TASK4_TRAJECTORY_PROOF: '1'
+      TASK4_SCORER_OBSERVATION_PROOF: '1'
+      TASK4_RCC_ROOT: '_pins/rcc'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Get frozen public AgentDojo RCC VERITAS sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins results
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = 'a75aba7631d3ca5fb7ab938965c97ead2f9ff84b'
+          test "$(git -C _pins/rcc rev-parse HEAD)" = '1d3782d3aae5ff9c88036709c1a5642320cc53c2'
+          test "$(git -C _pins/veritas rev-parse HEAD)" = 'a1d66aef02262cf8a913295270c3aafd159c6adb'
+      - name: Install only pinned offline SDK Native and cryptographic dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install 'pytest==9.1.1' 'cryptography==50.0.0' 'openai==1.109.1' 'pydantic==2.11.10' 'idna==3.15' 'httpx==0.28.1' 'requests==2.34.2' 'PyYAML==6.0.3'
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output /tmp/task4-480-agentdojo-locked.txt
+          pip install -r /tmp/task4-480-agentdojo-locked.txt
+      - name: Assert protected broker-side signed claim and CAS, original Native control
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_task4_480_broker_owned_signed_cas_no_go_v1.py \
+            --junitxml=results/task4-480-budget-native-junit.xml \
+            | tee results/task4-480-tests.log
+          python -m scripts.task4_480_broker_owned_signed_cas_no_go_v1 \
+            --output results/task4-480-hash-only-no-provider.json --with-native
+          python - <<'PY'
+          import json
+          r=json.load(open('results/task4-480-hash-only-no-provider.json'))
+          assert r['broker_side_signature_verified'] is True
+          assert r['broker_side_atomic_local_cas_consumptions'] == 8
+          assert r['direct_unsigned_legacy_consume_refused'] is True
+          assert r['direct_send_live_opcode_refused'] is True
+          assert r['forged_signature_refused'] is True
+          assert r['signed_replay_refused'] is True
+          assert r['changed_sdk_digest_refused'] is True
+          assert r['native_original_sdk_inline_broker_gated'] == 8
+          assert r['native_deny_only_worker_claims'] == 8
+          assert r['native_preparse_aead_scripted_responses'] == 8
+          assert len(r['hash_only_broker_owned_cas_receipts']) == 8
+          assert r['protected_endpoint_only_exposes_signed_handler'] is True
+          assert r['legacy_raw_broker_endpoint_still_unprotected'] is True
+          assert r['broker_sqlite_independently_protected'] is False
+          assert r['cross_runner_single_use_proven'] is False
+          assert r['production_non_bypassable_sender_proven'] is False
+          assert r['real_provider_posts'] == 0
+          assert r['external_bank_effects'] == 0
+          assert r['genuine_native_utility'] is None
+          assert r['score_status'] == 'UNSCORED'
+          assert r['no_go'] is True
+          print('TASK4_480_BROKER_OWNED_SIGNED_LOCAL_CAS_NO_PROVIDER')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-480-original-sdk-budget-native-deny-only-junit-hashes
+          path: results/*
+          if-no-files-found: warn
