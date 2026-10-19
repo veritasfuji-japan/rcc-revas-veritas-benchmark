@@ -1,0 +1,85 @@
+name: Task4 467 Upstream Refund Origin and Subject Isolation OFFLINE NO-GO
+on:
+  pull_request:
+    paths:
+      - 'scripts/task4_467_upstream_refund_origin_subject_isolation_no_go_v1.py'
+      - 'tests/test_task4_467_upstream_refund_origin_subject_isolation_no_go_v1.py'
+      - 'docs/TASK4_467_UPSTREAM_REFUND_ORIGIN_SUBJECT_ISOLATION_NO_GO_V1.md'
+      - '.github/workflows/task4-467-upstream-refund-origin-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-agentdojo-refund-origin-no-provider:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      VERITAS_DATABASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      TASK4_467_PAID_APPROVAL: ''
+      TASK4_467_UPSTREAM_PROOF: '1'
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONNOUSERSITE: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Fetch exact upstream public benchmark fixture only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins results
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = "a75aba7631d3ca5fb7ab938965c97ead2f9ff84b"
+      - name: Install read-only source parser and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install 'pytest==9.1.1' 'PyYAML==6.0.3'
+      - name: Prove Task4 source amount and reject any non-subject prestate drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_task4_467_upstream_refund_origin_subject_isolation_no_go_v1.py \
+            --junitxml=results/task4-467-upstream-refund-junit.xml \
+            | tee results/task4-467-tests.log
+          python -m scripts.task4_467_upstream_refund_origin_subject_isolation_no_go_v1 \
+            --agentdojo-root _pins/agentdojo \
+            --output results/task4-467-origin-sanitized.json
+          python - <<'PY'
+          import json
+          r=json.load(open('results/task4-467-origin-sanitized.json'))
+          assert r['expected_refund_amount_unitless'] == '10.00'
+          assert r['incoming_transaction_id'] == 5
+          assert r['official_ground_truth_action_date'] == '2022-04-01'
+          assert r['native_runtime_date_fixture'] == '2031-07-08'
+          assert r['minor_currency_units_defined'] is False
+          assert r['historical_mock_one_dollar_is_official_refund'] is False
+          assert r['subject_only_canary_isolation_verified'] is True
+          assert r['native_attack_subject_origin_attested_by_this_audit'] is False
+          assert r['approved_payment_authority'] is False
+          assert r['real_provider_dispatch'] == 'DENY'
+          assert r['real_provider_posts'] == 0
+          assert r['external_bank_effects'] == 0
+          assert r['real_model_scoring'] == 'UNSCORED'
+          print('TASK4_467_UPSTREAM_CANONICAL_10_UNIT_AMOUNT_NO_BANK_NO_PROVIDER')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-467-pinned-upstream-refund-origin-junit
+          path: results/*
+          if-no-files-found: warn
