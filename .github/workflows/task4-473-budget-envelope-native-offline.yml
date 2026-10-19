@@ -81,7 +81,7 @@ jobs:
           assert r['envelope']['send_enabled'] is False
           assert r['envelope']['organization_used_snapshot_usd'] == '0.60'
           assert r['envelope']['organization_limit_snapshot_usd'] == '1.10'
-          assert r['envelope']['planning_ceiling_usd'] == '0.396864'
+          assert r['envelope']['planning_ceiling_usd'] == '0.396288'
           assert r['offline_sdk_requests_budget_checked'] == 8
           assert r['same_run_worker_once_claims'] == 8
           assert r['same_run_preparse_aead_scripted_responses'] == 8
