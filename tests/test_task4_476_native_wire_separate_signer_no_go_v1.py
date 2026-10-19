@@ -1,9 +1,12 @@
 """Task4 #476: separate signer process joined to original Native SDK wire."""
+import os
 import pytest
 from pathlib import Path
 from scripts import task4_476_native_wire_separate_signer_no_go_v1 as m
 
 
+@pytest.mark.skipif(os.environ.get("TASK4_476_NATIVE_PROOF") != "1",
+                    reason="frozen Native AgentDojo SDK dependencies required")
 def test_native_eight_original_wires_signed_in_separate_process():
     r=m.run()
     assert r["signer_separate_os_process"] is True
