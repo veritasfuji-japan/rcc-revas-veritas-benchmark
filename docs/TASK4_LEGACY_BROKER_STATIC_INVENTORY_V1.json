@@ -1,0 +1,564 @@
+{
+  "audited_commit": "f20fdd26234116a4981a27b8ef5f00881e236bf0",
+  "direct_syntactic_call_sites": [
+    {
+      "expression": "action",
+      "line": 223,
+      "member": "action",
+      "path": "scripts/task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "spawn_server",
+      "line": 352,
+      "member": "spawn_server",
+      "path": "scripts/task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "spawn_server",
+      "line": 396,
+      "member": "spawn_server",
+      "path": "scripts/task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "Broker",
+      "line": 470,
+      "member": "Broker",
+      "path": "scripts/task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "run_demo",
+      "line": 484,
+      "member": "run_demo",
+      "path": "scripts/task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "main",
+      "line": 491,
+      "member": "main",
+      "path": "scripts/task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 94,
+      "member": "spawn_server",
+      "path": "scripts/task4_459_native_broker_custody_join_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 149,
+      "member": "spawn_server",
+      "path": "scripts/task4_459_native_broker_custody_join_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 143,
+      "member": "spawn_server",
+      "path": "scripts/task4_462_ingress_broker_native_offline_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 250,
+      "member": "spawn_server",
+      "path": "scripts/task4_462_ingress_broker_native_offline_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 120,
+      "member": "spawn_server",
+      "path": "scripts/task4_463_research_sender_broker_hard_nogo_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 156,
+      "member": "spawn_server",
+      "path": "scripts/task4_463_research_sender_broker_hard_nogo_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 210,
+      "member": "spawn_server",
+      "path": "scripts/task4_469_offline_native_response_capture_transport_no_go_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 252,
+      "member": "spawn_server",
+      "path": "scripts/task4_469_offline_native_response_capture_transport_no_go_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 245,
+      "member": "spawn_server",
+      "path": "scripts/task4_470_capped_native_local_sender_preflight_no_go_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 299,
+      "member": "spawn_server",
+      "path": "scripts/task4_470_capped_native_local_sender_preflight_no_go_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 235,
+      "member": "spawn_server",
+      "path": "scripts/task4_471_same_run_capped_sdk_aead_native_no_go_v1.py"
+    },
+    {
+      "expression": "broker.spawn_server",
+      "line": 324,
+      "member": "spawn_server",
+      "path": "scripts/task4_471_same_run_capped_sdk_aead_native_no_go_v1.py"
+    },
+    {
+      "expression": "broker.action",
+      "line": 66,
+      "member": "action",
+      "path": "scripts/task4_479_adversarial_local_bypass_matrix_no_go_v1.py"
+    },
+    {
+      "expression": "broker.action",
+      "line": 79,
+      "member": "action",
+      "path": "scripts/task4_479_adversarial_local_bypass_matrix_no_go_v1.py"
+    },
+    {
+      "expression": "legacy.action",
+      "line": 121,
+      "member": "action",
+      "path": "scripts/task4_480_broker_owned_signed_cas_no_go_v1.py"
+    },
+    {
+      "expression": "m.action",
+      "line": 34,
+      "member": "action",
+      "path": "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "m.action",
+      "line": 50,
+      "member": "action",
+      "path": "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "m.action",
+      "line": 60,
+      "member": "action",
+      "path": "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "m.action",
+      "line": 63,
+      "member": "action",
+      "path": "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "m.action",
+      "line": 79,
+      "member": "action",
+      "path": "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "m.action",
+      "line": 84,
+      "member": "action",
+      "path": "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "m.action",
+      "line": 85,
+      "member": "action",
+      "path": "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "m.action",
+      "line": 96,
+      "member": "action",
+      "path": "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "expression": "m.run_demo",
+      "line": 130,
+      "member": "run_demo",
+      "path": "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+    }
+  ],
+  "global_no_legacy_listener_proven": false,
+  "limitations": [
+    "Import closure overapproximates execution, including function-local imports.",
+    "Alias matching is syntactic and not scope-sensitive; manual review required.",
+    "Dynamic imports, reflection, forwarded aliases and injected callbacks are not resolved.",
+    "Workflow references include path filters; generic pytest collection needs manual review.",
+    "CLI/function existence is not proof of a running listener or successful exploit.",
+    "No runtime Provider, SDK, network, credential or security boundary test is performed."
+  ],
+  "literal_references_including_pins_and_docs": [
+    {
+      "lines": [
+        5,
+        6,
+        7,
+        8,
+        25,
+        44,
+        45,
+        46,
+        47,
+        49,
+        52,
+        62,
+        67
+      ],
+      "path": ".github/workflows/task4-458-local-broker-cryptographic-custody-deny.yml"
+    },
+    {
+      "lines": [
+        17
+      ],
+      "path": "contracts/TASK4_460_REAL_MODEL_READINESS_NO_GO_V1.json"
+    },
+    {
+      "lines": [
+        11,
+        12,
+        13
+      ],
+      "path": "docs/TASK4_458_LOCAL_BROKER_CIPHERTEXT_CUSTODY_NO_GO_V1.md"
+    },
+    {
+      "lines": [
+        29,
+        39,
+        251,
+        275,
+        349,
+        487
+      ],
+      "path": "scripts/task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "lines": [
+        81
+      ],
+      "path": "scripts/task4_459_native_broker_custody_join_v1.py"
+    },
+    {
+      "lines": [
+        29
+      ],
+      "path": "scripts/task4_460_real_model_readiness_no_go_v1.py"
+    },
+    {
+      "lines": [
+        125
+      ],
+      "path": "scripts/task4_462_ingress_broker_native_offline_v1.py"
+    },
+    {
+      "lines": [
+        30,
+        111
+      ],
+      "path": "scripts/task4_463_research_sender_broker_hard_nogo_v1.py"
+    },
+    {
+      "lines": [
+        26,
+        95
+      ],
+      "path": "scripts/task4_466_real_issuer_evidence_gap_audit_no_go_v1.py"
+    },
+    {
+      "lines": [
+        30
+      ],
+      "path": "scripts/task4_468_native_full_turn_origin_join_nogo_v1.py"
+    },
+    {
+      "lines": [
+        39,
+        195
+      ],
+      "path": "scripts/task4_469_offline_native_response_capture_transport_no_go_v1.py"
+    },
+    {
+      "lines": [
+        43,
+        237
+      ],
+      "path": "scripts/task4_470_capped_native_local_sender_preflight_no_go_v1.py"
+    },
+    {
+      "lines": [
+        38,
+        220
+      ],
+      "path": "scripts/task4_471_same_run_capped_sdk_aead_native_no_go_v1.py"
+    },
+    {
+      "lines": [
+        50
+      ],
+      "path": "scripts/task4_472_isolated_sender_deny_only_local_process_v1.py"
+    },
+    {
+      "lines": [
+        18
+      ],
+      "path": "scripts/task4_479_adversarial_local_bypass_matrix_no_go_v1.py"
+    },
+    {
+      "lines": [
+        24
+      ],
+      "path": "scripts/task4_480_broker_owned_signed_cas_no_go_v1.py"
+    },
+    {
+      "lines": [
+        12,
+        115,
+        127
+      ],
+      "path": "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+    },
+    {
+      "lines": [
+        209
+      ],
+      "path": "tests/test_task4_465_native_signed_scope_prebroker_no_go_v1.py"
+    }
+  ],
+  "production_bypass_resistance_proven": false,
+  "provider_authorized": false,
+  "python_files_parsed": 762,
+  "relevant_file_sha256": {
+    ".github/workflows/task4-458-local-broker-cryptographic-custody-deny.yml": "6e5f7bec2d19c252e9984fc6c4b6acc561f9162cb8f0f681cf2e417c242d7d1b",
+    ".github/workflows/task4-459-native-broker-integrated-offline.yml": "8daa6dcbed1ac63e89b2d7fa11c124cdd36990af782c6791df95845d7ffe6be9",
+    ".github/workflows/task4-462-native-ingress-broker-offline.yml": "82f72a34146397bc357ee396f23b89f6de8e48f5dadaa2dd21c9002182e13196",
+    ".github/workflows/task4-463-research-sender-broker-hard-nogo.yml": "61daae9768f1b1ade4331ff8d18373d0054f174d3813a911c60c445c7ae98574",
+    ".github/workflows/task4-465-native-signed-prebroker-nogo.yml": "180e5290217b46ec751b53f46ad492e0687da742beeeec518c301ad9cb755832",
+    ".github/workflows/task4-469-native-response-capture-offline.yml": "4f9fce6c0a83c7c37f2f226a55476c4986af95422307aa6a57ce3c9942d0deb9",
+    ".github/workflows/task4-470-capped-native-local-attempt-nogo.yml": "f182bfd64e2d127579cc4a46d8f1e16c458ced2055c29993a363e1e66cba5a5d",
+    ".github/workflows/task4-471-capped-sdk-native-aead-offline.yml": "03e8035c01d2c2a6dd52049ddc1b9e5285137b80fc0cc09cd0c245b9d64b1dd0",
+    ".github/workflows/task4-472-independent-deny-only-sender-offline.yml": "37a2c60960606f7c2387f7feb45e1e881be710ae1db303ecb9f7398ea6c54162",
+    ".github/workflows/task4-473-budget-envelope-native-offline.yml": "2aeb01e189b81cdf9c05680f96bee2f9a6638f4a85284a90efeaf7d676714b60",
+    ".github/workflows/task4-474-independent-authority-native-offline.yml": "d7d3c06e5fb17dd18771d98d4b486d6058b0443e2d8585a86a14d34068213b1e",
+    ".github/workflows/task4-475-separate-signer-native-offline.yml": "d6471acf30281869a02716eabf61e140af536756e8c1b25af9b19b72c693a632",
+    ".github/workflows/task4-476-separate-signer-native-offline.yml": "49419ed5c5c8d2e747975d0af79ad12be28c10b6cad05bf8b8afd861910f841c",
+    ".github/workflows/task4-477-local-cas-native-offline.yml": "326c4fe618d0a71889213da78568716c70a32299f23faa3b50ad08cb7ca4b3cd",
+    ".github/workflows/task4-478-inline-local-cas-native-offline.yml": "a8045a3b72d8939e4ef1304dd3a5c3d502a3d61d9ff45e69bd7863a816f9cc39",
+    ".github/workflows/task4-479-adversarial-local-bypass-offline.yml": "5766b63707efa9dbaf85ca00e64eb0e32e64e526db660ceb178a41e48d08776e",
+    ".github/workflows/task4-480-broker-owned-signed-cas-offline.yml": "14070404354ed4f45265a4742b15037270fde5ef4ca326c8197acb0c78e0d3a5",
+    ".github/workflows/task4-481-protected-only-broker-offline.yml": "cb8243425417dbb57884b5585bd61d6893398eefa975f39cfee57fefe0ff7efe",
+    "contracts/TASK4_460_REAL_MODEL_READINESS_NO_GO_V1.json": "a453c00f36781a7f27bfe42e0ef6c73b99d5951f068d5fb2987036b9a06c2f6b",
+    "docs/TASK4_458_LOCAL_BROKER_CIPHERTEXT_CUSTODY_NO_GO_V1.md": "32f8bc7178c52452ed34979af9d1778b72556abd186d466fcb4a92c0aa5c62c3",
+    "scripts/task4_458_local_broker_once_ciphertext_v1.py": "c1c68a427ba6f7325397a34954586195d461cc99a26d9bdde97a4d2ee3ba3d60",
+    "scripts/task4_459_native_broker_custody_join_v1.py": "cc18508d8bfd00f97792d9c14e2ff294e3fcb0d149683ecdf7ba376893fc9f0e",
+    "scripts/task4_460_real_model_readiness_no_go_v1.py": "136a72dfba54830af420326cd3808e58ddba3bdbf969feff2d153d110c04c641",
+    "scripts/task4_462_ingress_broker_native_offline_v1.py": "9d967400216010f2e3ea4f9de54f9ae2a95387b838e1f076073d365b66f35634",
+    "scripts/task4_463_research_sender_broker_hard_nogo_v1.py": "d9c4a1415c000e4244f3aa80db59aec77da8553c6adca0ad7f60405a7a37ef74",
+    "scripts/task4_465_native_signed_scope_prebroker_no_go_v1.py": "c985afc518274d597916c6d22cc81d221fb6ef234704e1e7ece44f30017f6c19",
+    "scripts/task4_466_real_issuer_evidence_gap_audit_no_go_v1.py": "9842673fa688d7edb847132d9df5c27e5461bdd8226a0a559b8329e216a26ab2",
+    "scripts/task4_468_native_full_turn_origin_join_nogo_v1.py": "cc98a54c6ec6fe4905d23b2ec487c152be4ab9ceb2f19b7acc30b22e8cf61140",
+    "scripts/task4_469_offline_native_response_capture_transport_no_go_v1.py": "87f9c6c153a9d0754e60e9d46b14bb5514de0429e91d32a64a5d52b580d4e940",
+    "scripts/task4_470_capped_native_local_sender_preflight_no_go_v1.py": "d363cea3aa1ae1504d374b6751c36233da9349501b4ea39cc53f1770af7ade0c",
+    "scripts/task4_471_same_run_capped_sdk_aead_native_no_go_v1.py": "eb90a4e077109091540b27dc2a4e4c8a50a34a8768226f846aa6b92c1d99e75b",
+    "scripts/task4_472_isolated_sender_deny_only_local_process_v1.py": "62d33234282a4147559cbbab45b6b5b9c497e80a96c79a6d642d1a3a882cab6d",
+    "scripts/task4_473_offline_sender_budget_envelope_no_go_v1.py": "982bb4c94a64e868eff50fa91c7794767f26a40fa5d65a8475800d66fc8be265",
+    "scripts/task4_474_independent_signed_authority_offline_no_go_v1.py": "9accbc740c966bb4f6244ddbe0a8b66d22be1a21fae38cd0ce91adf66a24ab93",
+    "scripts/task4_475_separate_process_synthetic_signer_no_go_v1.py": "778280e360f43de28d22cc6fbe8f580e7e60e9cfecaaaf25dd79a8df7e1c25ad",
+    "scripts/task4_476_native_wire_separate_signer_no_go_v1.py": "8217a2d05605fe49cc35ef5cc8d3b17ba1354e55823355b6209fedd4224e73a3",
+    "scripts/task4_477_simulated_shared_store_single_use_no_go_v1.py": "cb01cbf972993286760740dc64687cd8317290539d3fd88d845690e77ff928e7",
+    "scripts/task4_478_inline_native_sdk_local_cas_no_go_v1.py": "a50bce7400a056087ca428e5d2122a602df14971c34e32e4ab1eb86625e2dd2d",
+    "scripts/task4_479_adversarial_local_bypass_matrix_no_go_v1.py": "6bffe6f6ba9092dc126f89b48f6b6caa0a57b41b73aeb196c1b9795be81deeab",
+    "scripts/task4_480_broker_owned_signed_cas_no_go_v1.py": "ba435c0b5c960b7ff3d7603a52b8ebef88303b0f8f8da2a81a53b8bdbf037206",
+    "scripts/task4_481_protected_only_broker_process_no_go_v1.py": "1717510b573c2afaa19e68ec15956f60ac01a033be426e16f09d9082c9401b36",
+    "tests/test_task4_458_local_broker_once_ciphertext_v1.py": "0aec074fda56196c21314f72b6945cf3beee05282218abdfe902fd067847e7a3",
+    "tests/test_task4_459_native_broker_custody_join_v1.py": "d422de54d9955b6b3e599c64260ea4392f5f5fa87eae0a3642f71e1d7f479caf",
+    "tests/test_task4_462_ingress_broker_native_offline_v1.py": "3b7b794cea81de142fed00955021dad519a48a065de2c178abf27976840ff6db",
+    "tests/test_task4_463_research_sender_broker_hard_nogo_v1.py": "bf0e2ca36f7e0fa52c6a1e4a6064507833612c681074a2e8bc1fc74f66fbf88a",
+    "tests/test_task4_465_native_signed_scope_prebroker_no_go_v1.py": "e670c69ed127239c990a79fb0b790c4de8fe897634184eeed7c9bce9d54fb326",
+    "tests/test_task4_469_offline_native_response_capture_transport_no_go_v1.py": "ac2b902f2917077fcf0a0e13aff19fe771c1c034d6fb7a123b4f8aa0bd393624",
+    "tests/test_task4_470_capped_native_local_sender_preflight_no_go_v1.py": "39ca2744b15c0a5a381f71bbf6eb5cb1214cad96dbde749b4d70a6dfee6c2e92",
+    "tests/test_task4_471_same_run_capped_sdk_aead_native_no_go_v1.py": "d66235a667bf4007ff69766e78e1b6702fec7f2bcd5af45594d65c1b353a38ed",
+    "tests/test_task4_472_isolated_sender_deny_only_local_process_v1.py": "4997b40d926c002aa1509f54e8eb4397ef11a9b97e996d1424423f3558417b8f",
+    "tests/test_task4_473_offline_sender_budget_envelope_no_go_v1.py": "60e5a0488d40cb8c9c54f4426cd0c3c630c62c1f2d8da3f94e2d35a2e438a990",
+    "tests/test_task4_474_independent_signed_authority_offline_no_go_v1.py": "8ac3cd9b42b1295ff453326b2418609bded4a05638f59c817ed15782b9b6ec00",
+    "tests/test_task4_475_separate_process_synthetic_signer_no_go_v1.py": "9d6c90d9a7fa14a17bd749df0ae21b15812a3dfff2e5579617e6bcc18c46cf24",
+    "tests/test_task4_476_native_wire_separate_signer_no_go_v1.py": "8615b4cbf0baab818185fbb2c7e6e6f472b781122b9c77745b4b3f177c74bf97",
+    "tests/test_task4_477_simulated_shared_store_single_use_no_go_v1.py": "29492a6f06875a3dbf610847d85e4b8e3ebf8fa525731fd8ac2b8e8bac27797e",
+    "tests/test_task4_478_inline_native_sdk_local_cas_no_go_v1.py": "91508748617b635f629f4e0c9204bf7d5d00dfc682c9b732d64c638767a26433",
+    "tests/test_task4_479_adversarial_local_bypass_matrix_no_go_v1.py": "c4f3f6cac4350b24a81c3188b74deac5a523746d962f7b733c3c04522d48e1aa",
+    "tests/test_task4_480_broker_owned_signed_cas_no_go_v1.py": "a11c3c9d968b663b8fd70ef931dd5a1b6a9f0cbaaa479eb33557cac43bb5ef96",
+    "tests/test_task4_481_protected_only_broker_process_no_go_v1.py": "6375f39d010e65ab13ba82452c712b1cab6ea159c5e9aa304baaae7031e92964"
+  },
+  "runtime_reachability_proven": false,
+  "schema": "task4.legacy-broker.static-inventory.v1",
+  "scope": "all tracked regular Python files; workflow/text reference inventory",
+  "target_code_imported_or_executed": false,
+  "transitive_import_candidates_not_runtime_proof": [
+    "scripts/task4_458_local_broker_once_ciphertext_v1.py",
+    "scripts/task4_459_native_broker_custody_join_v1.py",
+    "scripts/task4_462_ingress_broker_native_offline_v1.py",
+    "scripts/task4_463_research_sender_broker_hard_nogo_v1.py",
+    "scripts/task4_465_native_signed_scope_prebroker_no_go_v1.py",
+    "scripts/task4_469_offline_native_response_capture_transport_no_go_v1.py",
+    "scripts/task4_470_capped_native_local_sender_preflight_no_go_v1.py",
+    "scripts/task4_471_same_run_capped_sdk_aead_native_no_go_v1.py",
+    "scripts/task4_472_isolated_sender_deny_only_local_process_v1.py",
+    "scripts/task4_473_offline_sender_budget_envelope_no_go_v1.py",
+    "scripts/task4_474_independent_signed_authority_offline_no_go_v1.py",
+    "scripts/task4_475_separate_process_synthetic_signer_no_go_v1.py",
+    "scripts/task4_476_native_wire_separate_signer_no_go_v1.py",
+    "scripts/task4_477_simulated_shared_store_single_use_no_go_v1.py",
+    "scripts/task4_478_inline_native_sdk_local_cas_no_go_v1.py",
+    "scripts/task4_479_adversarial_local_bypass_matrix_no_go_v1.py",
+    "scripts/task4_480_broker_owned_signed_cas_no_go_v1.py",
+    "scripts/task4_481_protected_only_broker_process_no_go_v1.py",
+    "tests/test_task4_458_local_broker_once_ciphertext_v1.py",
+    "tests/test_task4_459_native_broker_custody_join_v1.py",
+    "tests/test_task4_462_ingress_broker_native_offline_v1.py",
+    "tests/test_task4_463_research_sender_broker_hard_nogo_v1.py",
+    "tests/test_task4_465_native_signed_scope_prebroker_no_go_v1.py",
+    "tests/test_task4_469_offline_native_response_capture_transport_no_go_v1.py",
+    "tests/test_task4_470_capped_native_local_sender_preflight_no_go_v1.py",
+    "tests/test_task4_471_same_run_capped_sdk_aead_native_no_go_v1.py",
+    "tests/test_task4_472_isolated_sender_deny_only_local_process_v1.py",
+    "tests/test_task4_473_offline_sender_budget_envelope_no_go_v1.py",
+    "tests/test_task4_474_independent_signed_authority_offline_no_go_v1.py",
+    "tests/test_task4_475_separate_process_synthetic_signer_no_go_v1.py",
+    "tests/test_task4_476_native_wire_separate_signer_no_go_v1.py",
+    "tests/test_task4_477_simulated_shared_store_single_use_no_go_v1.py",
+    "tests/test_task4_478_inline_native_sdk_local_cas_no_go_v1.py",
+    "tests/test_task4_479_adversarial_local_bypass_matrix_no_go_v1.py",
+    "tests/test_task4_480_broker_owned_signed_cas_no_go_v1.py",
+    "tests/test_task4_481_protected_only_broker_process_no_go_v1.py"
+  ],
+  "workflow_text_candidates_not_dispatch_proof": [
+    {
+      "path": ".github/workflows/task4-458-local-broker-cryptographic-custody-deny.yml",
+      "textual_module_references": [
+        "scripts/task4_458_local_broker_once_ciphertext_v1.py",
+        "tests/test_task4_458_local_broker_once_ciphertext_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-459-native-broker-integrated-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_459_native_broker_custody_join_v1.py",
+        "tests/test_task4_459_native_broker_custody_join_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-462-native-ingress-broker-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_462_ingress_broker_native_offline_v1.py",
+        "tests/test_task4_462_ingress_broker_native_offline_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-463-research-sender-broker-hard-nogo.yml",
+      "textual_module_references": [
+        "scripts/task4_463_research_sender_broker_hard_nogo_v1.py",
+        "tests/test_task4_463_research_sender_broker_hard_nogo_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-465-native-signed-prebroker-nogo.yml",
+      "textual_module_references": [
+        "scripts/task4_465_native_signed_scope_prebroker_no_go_v1.py",
+        "tests/test_task4_465_native_signed_scope_prebroker_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-469-native-response-capture-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_469_offline_native_response_capture_transport_no_go_v1.py",
+        "tests/test_task4_469_offline_native_response_capture_transport_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-470-capped-native-local-attempt-nogo.yml",
+      "textual_module_references": [
+        "scripts/task4_470_capped_native_local_sender_preflight_no_go_v1.py",
+        "tests/test_task4_470_capped_native_local_sender_preflight_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-471-capped-sdk-native-aead-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_471_same_run_capped_sdk_aead_native_no_go_v1.py",
+        "tests/test_task4_471_same_run_capped_sdk_aead_native_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-472-independent-deny-only-sender-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_472_isolated_sender_deny_only_local_process_v1.py",
+        "tests/test_task4_472_isolated_sender_deny_only_local_process_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-473-budget-envelope-native-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_473_offline_sender_budget_envelope_no_go_v1.py",
+        "tests/test_task4_473_offline_sender_budget_envelope_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-474-independent-authority-native-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_474_independent_signed_authority_offline_no_go_v1.py",
+        "tests/test_task4_474_independent_signed_authority_offline_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-475-separate-signer-native-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_475_separate_process_synthetic_signer_no_go_v1.py",
+        "tests/test_task4_475_separate_process_synthetic_signer_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-476-separate-signer-native-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_476_native_wire_separate_signer_no_go_v1.py",
+        "tests/test_task4_476_native_wire_separate_signer_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-477-local-cas-native-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_477_simulated_shared_store_single_use_no_go_v1.py",
+        "tests/test_task4_477_simulated_shared_store_single_use_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-478-inline-local-cas-native-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_478_inline_native_sdk_local_cas_no_go_v1.py",
+        "tests/test_task4_478_inline_native_sdk_local_cas_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-479-adversarial-local-bypass-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_479_adversarial_local_bypass_matrix_no_go_v1.py",
+        "tests/test_task4_479_adversarial_local_bypass_matrix_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-480-broker-owned-signed-cas-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_480_broker_owned_signed_cas_no_go_v1.py",
+        "tests/test_task4_480_broker_owned_signed_cas_no_go_v1.py"
+      ]
+    },
+    {
+      "path": ".github/workflows/task4-481-protected-only-broker-offline.yml",
+      "textual_module_references": [
+        "scripts/task4_481_protected_only_broker_process_no_go_v1.py",
+        "tests/test_task4_481_protected_only_broker_process_no_go_v1.py"
+      ]
+    }
+  ]
+}
