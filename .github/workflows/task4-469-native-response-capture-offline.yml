@@ -1,0 +1,101 @@
+name: Task4 469 SDK Response Transport Native AEAD OFFLINE NO-GO
+on:
+  pull_request:
+    paths:
+      - 'scripts/task4_469_offline_native_response_capture_transport_no_go_v1.py'
+      - 'tests/test_task4_469_offline_native_response_capture_transport_no_go_v1.py'
+      - 'docs/TASK4_469_NATIVE_OFFLINE_PREPARSE_CAPTURE_TRANSPORT_NO_GO_V1.md'
+      - '.github/workflows/task4-469-native-response-capture-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  captured-local-response-to-real-native-sdk-and-scorer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      VERITAS_DATABASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      TASK4_469_PAID_APPROVAL: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONNOUSERSITE: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      TASK4_469_NATIVE_PROOF: '1'
+      TASK4_NATIVE_DATE_PROOF: '1'
+      TASK4_TRANSPORT_PROOF: '1'
+      TASK4_TRAJECTORY_PROOF: '1'
+      TASK4_SCORER_OBSERVATION_PROOF: '1'
+      TASK4_RCC_ROOT: '_pins/rcc'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Obtain exact read-only frozen Native sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins results
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = 'a75aba7631d3ca5fb7ab938965c97ead2f9ff84b'
+          test "$(git -C _pins/rcc rev-parse HEAD)" = '1d3782d3aae5ff9c88036709c1a5642320cc53c2'
+          test "$(git -C _pins/veritas rev-parse HEAD)" = 'a1d66aef02262cf8a913295270c3aafd159c6adb'
+      - name: Install frozen offline SDK and Native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install 'pytest==9.1.1' 'cryptography==50.0.0' 'openai==1.109.1' 'pydantic==2.11.10' 'idna==3.15' 'httpx==0.28.1' 'requests==2.34.2' 'PyYAML==6.0.3'
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output /tmp/task4-469-agentdojo-locked.txt
+          pip install -r /tmp/task4-469-agentdojo-locked.txt
+      - name: Assert transport capture and full Native local replay NO-GO
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_task4_469_offline_native_response_capture_transport_no_go_v1.py \
+            --junitxml=results/task4-469-native-transport-junit.xml \
+            | tee results/task4-469-native-transport-pytest.log
+          python -m scripts.task4_469_offline_native_response_capture_transport_no_go_v1 \
+            --output results/task4-469-native-transport-hash-only.json
+          python - <<'PY'
+          import json
+          r=json.load(open('results/task4-469-native-transport-hash-only.json'))
+          assert r['adapter_path']=='SDK_HTTPX_BASETRANSPORT_LOCAL_MOCK_ONLY'
+          assert r['legacy_mock_call_monkeypatched'] is False
+          assert r['sdk_actual_native_response_turns']==8
+          assert r['native_completed_scripted_terminals']==2
+          assert r['native_detached_scripted_scorer_calls']==2
+          assert r['all_responses_encrypted_before_sdk_parser'] is True
+          assert r['broker_local_attempts_nonreplayable_after_restart']==8
+          assert len(r['response_receipts_hash_only'])==8
+          assert r['real_provider_posts']==r['external_bank_effects']==0
+          assert r['independent_provider_response_origin_attested'] is False
+          assert r['cross_runner_protected_custody'] is False
+          assert r['genuine_native_utility'] is None
+          assert r['score_status']=='UNSCORED'
+          assert r['real_provider_dispatch']=='DENY'
+          print('TASK4_469_OFFLINE_NATIVE_SDK_TRANSPORT_EIGHT_PREPARSE_AEAD_NO_PROVIDER')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-469-native-sdk-preparse-aead-hashes-junit
+          path: results/*
+          if-no-files-found: warn
