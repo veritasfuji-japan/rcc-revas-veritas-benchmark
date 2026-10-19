@@ -242,10 +242,15 @@ def run():
     custody.offline()
     from scripts import task4_458_local_broker_once_ciphertext_v1 as legacy
     attempts = []
+    subprocess_attempts = []
 
     def forbidden(*args, **kwargs):
         attempts.append("legacy-entrypoint")
         raise custody.Denied("NATIVE_CUSTODY_LEGACY_ENTRYPOINT_FORBIDDEN")
+
+    def forbidden_subprocess(*args, **kwargs):
+        subprocess_attempts.append("subprocess")
+        raise custody.Denied("NATIVE_CUSTODY_SUBPROCESS_FORBIDDEN")
 
     watch = ParentWatch()
     sys.addaudithook(watch.audit)
@@ -254,14 +259,20 @@ def run():
             for name in ("action", "Broker", "spawn_server", "main", "run_demo"):
                 stack.enter_context(patch.object(legacy, name, forbidden))
             # multiprocessing spawn uses its interpreter startup, not Popen.
-            stack.enter_context(patch("subprocess.Popen", forbidden))
+            stack.enter_context(patch("subprocess.Popen", forbidden_subprocess))
+            # Offline SDK metadata only: avoid platform.platform() launching
+            # uname -p. No process is allowlisted and no request is dispatched.
+            stack.enter_context(patch("openai._base_client.get_platform", return_value="Unknown"))
             report = native_join(watch)
     finally:
         watch.active = False
     need(not attempts, "NATIVE_CUSTODY_LEGACY_ATTEMPT_OBSERVED")
+    need(not subprocess_attempts, "NATIVE_CUSTODY_SUBPROCESS_ATTEMPT_OBSERVED")
     need(watch.connections == 32 and watch.denied == 0,
          "NATIVE_CUSTODY_PARENT_SOCKET_EVIDENCE_MISMATCH")
     report.update(legacy_entrypoint_attempts_in_parent=0,
+                  subprocess_attempts_in_parent=0,
+                  sdk_os_header_is_fixed_offline_metadata=True,
                   observed_parent_protected_socket_connections=watch.connections,
                   unexpected_parent_operations=watch.denied,
                   python_tripwires_only_not_os_enforcement=True,

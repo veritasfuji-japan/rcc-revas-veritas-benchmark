@@ -154,3 +154,38 @@ def test_original_native_eight_requests_use_new_custody():
     assert report["genuine_native_utility"] is None
     assert report["score_status"] == "UNSCORED"
     assert report["production_bypass_resistance_proven"] is False
+
+
+def test_swallowed_subprocess_attempt_still_fails_runner(monkeypatch):
+    import subprocess
+
+    def swallowed(watch):
+        try:
+            subprocess.Popen(["must-not-execute"])
+        except m.custody.Denied:
+            pass
+        return {}
+
+    monkeypatch.setattr(m, "native_join", swallowed)
+    with pytest.raises(m.old.Refused, match="SUBPROCESS_ATTEMPT_OBSERVED"):
+        m.run()
+
+
+def test_offline_sdk_metadata_does_not_probe_platform(monkeypatch):
+    import httpx
+    import openai
+
+    def sdk_request(watch):
+        def response(request):
+            assert request.headers["X-Stainless-OS"] == "Unknown"
+            return httpx.Response(200, json={"id": "fixture", "choices": []})
+        with httpx.Client(transport=httpx.MockTransport(response)) as http:
+            with openai.OpenAI(api_key="offline-fixture", http_client=http) as client:
+                client.chat.completions.create(model="offline-fixture", messages=[])
+        # This unit test does not claim native socket evidence.
+        raise RuntimeError("offline SDK request completed")
+
+    monkeypatch.setattr(m, "native_join", sdk_request)
+    monkeypatch.setattr("platform.platform", lambda: pytest.fail("OS subprocess probe reached"))
+    with pytest.raises(RuntimeError, match="offline SDK request completed"):
+        m.run()

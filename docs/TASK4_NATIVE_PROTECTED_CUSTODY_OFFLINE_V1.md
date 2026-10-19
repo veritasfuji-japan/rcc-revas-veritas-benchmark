@@ -46,7 +46,10 @@ hashes and counters; no plaintext, keys, sockets or databases are uploaded.
 ## What the listener evidence does and does not mean
 
 Parent tripwires cover #458 `action`, `Broker`, `spawn_server`, `main`, `run_demo`
-and ordinary `subprocess.Popen`. A Python audit hook rejects parent listeners,
+and ordinary `subprocess.Popen`, counted separately. The offline SDK OS header is
+fixed to `Unknown`: its default metadata probe calls `uname -p`. No subprocess
+is allowlisted; even a swallowed launch refusal fails the final check. This
+metadata substitution does not change the frozen Native sources or transport. A Python audit hook rejects parent listeners,
 DNS and unapproved socket connections; only the registered protected socket is
 allowed. Each **fresh** custody child installs its own audit hook before serving:
 one exact AF_UNIX listener is allowed, and ordinary subprocess launches, DNS and
