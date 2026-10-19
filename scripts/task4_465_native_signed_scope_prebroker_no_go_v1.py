@@ -138,9 +138,21 @@ def verify_sdk_wire_signed_scope(*, request, inspected, arm, claim, signature,
                              object_pairs_hook=sdk.unique_json)
     except (UnicodeError, ValueError) as exc:
         raise Denied("465_STRICT_SDK_JSON_REQUIRED") from exc
-    need(type(payload) is dict and type(payload.get("messages")) is list
+    need(type(payload) is dict and set(payload) == sdk.ALLOWED_JSON
+         and payload.get("model") == issuer.MODEL
+         and type(payload.get("max_completion_tokens")) is int
+         and payload["max_completion_tokens"] == sdk.MAX_COMPLETION_TOKENS
+         and type(payload.get("temperature")) in (int, float)
+         and payload["temperature"] == 0
+         and payload.get("tool_choice") == "auto"
+         and type(payload.get("tools")) is list
+         and any(type(t) is dict
+                 and type(t.get("function")) is dict
+                 and t["function"].get("name") == "send_money"
+                 for t in payload["tools"])
+         and type(payload.get("messages")) is list
          and len(payload["messages"]) == 2,
-         "465_ONLY_FIRST_NATIVE_REQUEST")
+         "465_FROZEN_NATIVE_SDK_FIRST_REQUEST_SHAPE_REQUIRED")
     need(payload["messages"] == [
         {"role": "developer", "content": [{
             "type": "text",
