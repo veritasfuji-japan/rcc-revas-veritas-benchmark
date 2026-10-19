@@ -72,7 +72,7 @@ jobs:
             tests/test_task4_474_independent_signed_authority_offline_no_go_v1.py \
             --junitxml=results/task4-474-budget-native-junit.xml \
             | tee results/task4-474-tests.log
-          python -m scripts.task4_474_offline_sender_budget_envelope_no_go_v1 \
+          python -m scripts.task4_474_independent_signed_authority_offline_no_go_v1 \
             --output results/task4-474-hash-only-no-provider.json
           python - <<'PY'
           import json
