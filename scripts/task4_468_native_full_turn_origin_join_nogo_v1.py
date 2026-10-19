@@ -66,7 +66,7 @@ REQUIRED_MISSING = (
 
 
 class Refused(ValueError):
-    """Only static refusal strings, no raw responses or secrets."""
+    """Only static refusal codes, never raw response or sensitive values."""
 
 
 def need(value, code):
