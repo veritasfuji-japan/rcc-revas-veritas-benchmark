@@ -16,3 +16,6 @@ An isolated Ed25519 verification boundary for an **externally supplied, signed**
 
 ## Review gate
 Only 4 new files. Check latest PR HEAD, dedicated pytest JUnit, all inherited CI, no `secrets.*`, no Environment and no paid dispatch. Do not merge automatically. Any future real issuer enrollment, bank recipient authorization or Provider use needs a separate design, review and explicit owner approval.
+
+## CI regression correction
+The first PR HEAD exposed a real gap: a correctly re-signed but substituted recipient digest passed because it was not compared to an independently supplied trusted recipient. The validator now compares the signed recipient digest, amount, and currency against independently supplied owned-scope inputs; mismatch fails closed. These inputs are still test-only caller claims, NOT independently authenticated bank/issuer facts. Real authority enrollment remains NO-GO.
