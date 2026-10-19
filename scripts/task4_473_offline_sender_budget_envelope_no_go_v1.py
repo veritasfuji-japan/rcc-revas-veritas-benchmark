@@ -143,16 +143,18 @@ def run_offline_native_budget_join():
     """
     check_envelope()
     verified = []
-    original = prior.validate_scope
+    original = prior.claim_packet
 
     def guarded(arm, ordinal, raw):
-        scope = original(arm, ordinal, raw)
-        # Use the original validated SDK request, not a regenerated example.
-        record = check_sdk_wire(arm, ordinal, raw)
-        verified.append(record)
-        return scope
+        # Called in the Native parent before each local Unix socket claim.
+        # The isolated worker independently checks the same SDK bytes.
+        # Restart replays also call this helper, but are not new claims.
+        if len(verified) < 8:
+            record = check_sdk_wire(arm, ordinal, raw)
+            verified.append(record)
+        return original(arm, ordinal, raw)
 
-    with patch.object(prior, "validate_scope", guarded):
+    with patch.object(prior, "claim_packet", guarded):
         result = prior.run_native_with_isolated_deny_worker()
     require(len(verified) == 8
             and [(x["arm"], x["ordinal"]) for x in verified] ==
