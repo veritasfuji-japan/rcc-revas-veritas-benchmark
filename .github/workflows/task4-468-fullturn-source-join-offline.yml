@@ -1,0 +1,68 @@
+name: Task4 468 Full Turn Real-Origin Seam OFFLINE NO-GO
+on:
+  pull_request:
+    paths:
+      - 'scripts/task4_468_native_full_turn_origin_join_nogo_v1.py'
+      - 'tests/test_task4_468_native_full_turn_origin_join_nogo_v1.py'
+      - 'docs/TASK4_468_FULL_TURN_REAL_MODEL_ORIGIN_SEAM_NO_GO_V1.md'
+      - '.github/workflows/task4-468-fullturn-source-join-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  cross-source-no-real-provider-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      VERITAS_DATABASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      TASK4_468_PAID_APPROVAL: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONNOUSERSITE: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Install offline unit-test runner only
+        run: python -m pip install 'pytest==9.1.1'
+      - name: Fail closed on mixed first-wire and scripted full-turn provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python -m pytest -q -o addopts= \
+            tests/test_task4_468_native_full_turn_origin_join_nogo_v1.py \
+            --junitxml=results/task4-468-cross-source-no-go-junit.xml \
+            | tee results/task4-468-pytest.log
+          python -m scripts.task4_468_native_full_turn_origin_join_nogo_v1 \
+            --output results/task4-468-source-seams-sanitized.json
+          python - <<'PY'
+          import json
+          r = json.load(open('results/task4-468-source-seams-sanitized.json'))
+          assert len(r['frozen_source_git_blobs']) == 10
+          assert len(r['research_missing_evidence']) == 7
+          assert all(row['status'] == 'NOT_ATTESTED' for row in r['research_missing_evidence'])
+          assert r['same_origin_full_turn_real_provider_integration'] == 'NOT_IMPLEMENTED'
+          assert r['real_model_calls'] == 0
+          assert r['genuine_real_model_utility'] is None
+          assert r['score_status'] == 'UNSCORED'
+          assert r['real_provider_dispatch'] == 'DENY'
+          print('TASK4_468_TWO_DISJOINT_OFFLINE_SOURCES_NOT_REAL_NATIVE_AB')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-468-cross-source-origin-no-go-junit-hashes
+          path: results/*
+          if-no-files-found: warn
