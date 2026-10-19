@@ -37,7 +37,10 @@ def verify(signer, anchor, claim, now, *, sig=None, request=None, trusted=None, 
         signer.sign(m.canonical(claim)) if sig is None else sig,
         anchor, observed_at=now,
         source_first_request_sha256=request or "3"*64,
-        trusted_request_sha256=trusted or "1"*64,\n        trusted_recipient_sha256=recipient or "2"*64,\n        trusted_amount_minor_units=100 if amount is None else amount,\n        trusted_currency="USD" if currency is None else currency)
+        trusted_request_sha256=trusted or "1"*64,
+        trusted_recipient_sha256=recipient or "2"*64,
+        trusted_amount_minor_units=100 if amount is None else amount,
+        trusted_currency="USD" if currency is None else currency)
 
 def test_valid_signed_fixture_still_hard_denied():
     report = verify(*fixture())
