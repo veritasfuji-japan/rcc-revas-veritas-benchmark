@@ -49,7 +49,11 @@ Parent tripwires cover #458 `action`, `Broker`, `spawn_server`, `main`, `run_dem
 and ordinary `subprocess.Popen`, counted separately. The offline SDK OS header is
 fixed to `Unknown`: its default metadata probe calls `uname -p`. No subprocess
 is allowlisted; even a swallowed launch refusal fails the final check. This
-metadata substitution does not change the frozen Native sources or transport. A Python audit hook rejects parent listeners,
+metadata substitution does not change the frozen Native sources or transport.
+Within this IP-free fixture, `socket.has_ipv6` is temporarily false so urllib3
+does not probe IPv6 support by binding `::1` during import. Parent bind denial
+remains unconditional. A fresh-interpreter regression test prevents cached
+imports from concealing that probe. A Python audit hook rejects parent listeners,
 DNS and unapproved socket connections; only the registered protected socket is
 allowed. Each **fresh** custody child installs its own audit hook before serving:
 one exact AF_UNIX listener is allowed, and ordinary subprocess launches, DNS and

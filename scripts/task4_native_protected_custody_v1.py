@@ -262,6 +262,10 @@ def run():
                 stack.enter_context(patch.object(legacy, name, forbidden))
             # multiprocessing spawn uses its interpreter startup, not Popen.
             stack.enter_context(patch("subprocess.Popen", forbidden_subprocess))
+            # urllib3 otherwise probes IPv6 by binding ::1 during import.
+            # This offline fixture has no IP transport; suppress the probe,
+            # while the audit hook continues to reject every parent bind.
+            stack.enter_context(patch.object(socket, "has_ipv6", False))
             report = native_join(watch)
     finally:
         watch.active = False

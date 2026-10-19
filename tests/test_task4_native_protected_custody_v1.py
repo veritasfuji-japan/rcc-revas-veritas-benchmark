@@ -193,3 +193,35 @@ def test_offline_sdk_metadata_does_not_probe_platform(monkeypatch):
     monkeypatch.setattr("platform.platform", lambda: pytest.fail("OS subprocess probe reached"))
     with pytest.raises(RuntimeError, match="offline SDK request completed"):
         m.run()
+
+
+@pytest.mark.skipif(os.environ.get("TASK4_NATIVE_CUSTODY_PROOF") != "1",
+                    reason="dedicated requests dependency")
+def test_fresh_requests_import_does_not_bind_ipv6():
+    import subprocess
+    import sys
+    # Fresh interpreter: do not let a cached urllib3 import hide its bind probe.
+    code = """
+from scripts import task4_native_protected_custody_v1 as m
+
+def probe(watch):
+    import requests
+    from urllib3.util.connection import HAS_IPV6
+    assert HAS_IPV6 is False
+    assert watch.denied == 0
+    assert watch.connections == 0
+    raise RuntimeError('IMPORT_PROBE_COMPLETE')
+
+m.native_join = probe
+try:
+    m.run()
+except RuntimeError as exc:
+    assert str(exc) == 'IMPORT_PROBE_COMPLETE'
+else:
+    raise AssertionError('probe did not complete')
+print('NO_IMPORT_BIND')
+"""
+    result = subprocess.run([sys.executable, "-c", code], cwd=m.ROOT,
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "NO_IMPORT_BIND"
