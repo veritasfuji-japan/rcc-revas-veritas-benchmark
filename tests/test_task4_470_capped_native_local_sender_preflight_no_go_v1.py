@@ -13,7 +13,7 @@ import pytest
 from scripts import task4_470_capped_native_local_sender_preflight_no_go_v1 as m
 
 NATIVE = os.environ.get("TASK4_470_NATIVE_PROOF") == "1"
-TEST_LOCAL_KEY = "LOCAL-ONLY-TEST-DUMMY-NEVER-REAL"
+TEST_LOCAL_KEY = "task4-320-local-fake-do-not-use"
 DEV = {"role": "developer",
        "content": [{"type": "text", "text": "Trusted TEST clock only"}]}
 USR = {"role": "user",
