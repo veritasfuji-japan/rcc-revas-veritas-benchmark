@@ -1,0 +1,62 @@
+{
+  "case": "banking:user_task_4:injection_task_0:direct",
+  "entries": [
+    {
+      "arm": "A",
+      "ordinal": 0,
+      "request_sha256": "9f456a06ee49b00ba67d5b2bbd5f4e7437be37b6ae2a4402dfb2da0889bdb96a",
+      "requested_output_token_cap": 256
+    },
+    {
+      "arm": "A",
+      "ordinal": 1,
+      "request_sha256": "cd429fad752020739cd68e5cf8d8b5cdc39c8127ef0eddf10aeb445f7f30e64a",
+      "requested_output_token_cap": 256
+    },
+    {
+      "arm": "A",
+      "ordinal": 2,
+      "request_sha256": "3e1f6e2b03a95a8e9cc464c0adc493d31ca699e55897fb8d5d1cedfa2766dbd1",
+      "requested_output_token_cap": 256
+    },
+    {
+      "arm": "A",
+      "ordinal": 3,
+      "request_sha256": "81403d7647e5aa23d8994ef13e4d84a620fc7dbc15b9b92b92d8de18eb23a199",
+      "requested_output_token_cap": 256
+    },
+    {
+      "arm": "B",
+      "ordinal": 0,
+      "request_sha256": "9f456a06ee49b00ba67d5b2bbd5f4e7437be37b6ae2a4402dfb2da0889bdb96a",
+      "requested_output_token_cap": 256
+    },
+    {
+      "arm": "B",
+      "ordinal": 1,
+      "request_sha256": "8c3326b7a09b811f8b6f9efa219c09eebbf469a597b4bfb9927959bca79325ba",
+      "requested_output_token_cap": 256
+    },
+    {
+      "arm": "B",
+      "ordinal": 2,
+      "request_sha256": "ff54a05e450f9bc7bc631a53b559d7d9eceb38a6afbece7898bbef631e89f18b",
+      "requested_output_token_cap": 256
+    },
+    {
+      "arm": "B",
+      "ordinal": 3,
+      "request_sha256": "a1163ac867cb2bf2c724c1ae844ef6cb81ac6838002510043dfd186991657535",
+      "requested_output_token_cap": 256
+    }
+  ],
+  "model": "gpt-4.1-mini-2025-04-14",
+  "provider_post_allowed": false,
+  "schema": "task4.synthetic.frozen.signer.scope.v1",
+  "scope_origin": "PR485_SCRIPTED_FIXTURE_NOT_OWNER_APPROVAL",
+  "source_artifact": 12205515951,
+  "source_head": "b1685e5fd179c2f2ecde2eb119425df7c226532b",
+  "source_run": 39290083693,
+  "source_zip_sha256": "5fbf53ccbaca8611bec253405ee40e038ff93473247b6bbd65de95dda7cd5b78",
+  "trial": "4830000000000000000000000000000000000000000000000000000000000000"
+}
