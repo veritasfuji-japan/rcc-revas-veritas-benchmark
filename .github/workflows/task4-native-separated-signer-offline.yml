@@ -1,0 +1,120 @@
+name: Task4 Native Separated Signer Offline NO-GO
+on:
+  pull_request:
+    paths:
+      - 'scripts/task4_native_separated_signer_v1.py'
+      - 'tests/test_task4_native_separated_signer_v1.py'
+      - 'docs/TASK4_NATIVE_SEPARATED_SIGNER_OFFLINE_V1.md'
+      - '.github/workflows/task4-native-separated-signer-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  same-run-local-capped-sdk-aead-native-terminal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      VERITAS_DATABASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      TASK4_471_PAID_APPROVAL: ''
+      TASK4_CUSTODY_LIVE: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONNOUSERSITE: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      TASK4_NATIVE_CUSTODY_PROOF: '1'
+      TASK4_SEPARATED_SIGNER_PROOF: '1'
+      TASK4_NATIVE_DATE_PROOF: '1'
+      TASK4_TRANSPORT_PROOF: '1'
+      TASK4_TRAJECTORY_PROOF: '1'
+      TASK4_SCORER_OBSERVATION_PROOF: '1'
+      TASK4_RCC_ROOT: '_pins/rcc'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Obtain exact frozen public AgentDojo RCC VERITAS sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _pins results
+          git clone https://github.com/ethz-spylab/agentdojo.git _pins/agentdojo
+          git -C _pins/agentdojo checkout a75aba7631d3ca5fb7ab938965c97ead2f9ff84b
+          git clone https://github.com/effacermonexistence/rcc-revas-veritas-benchmark.git _pins/rcc
+          git -C _pins/rcc checkout 1d3782d3aae5ff9c88036709c1a5642320cc53c2
+          git clone https://github.com/veritasfuji-japan/veritas_os.git _pins/veritas
+          git -C _pins/veritas checkout a1d66aef02262cf8a913295270c3aafd159c6adb
+          test "$(git -C _pins/agentdojo rev-parse HEAD)" = 'a75aba7631d3ca5fb7ab938965c97ead2f9ff84b'
+          test "$(git -C _pins/rcc rev-parse HEAD)" = '1d3782d3aae5ff9c88036709c1a5642320cc53c2'
+          test "$(git -C _pins/veritas rev-parse HEAD)" = 'a1d66aef02262cf8a913295270c3aafd159c6adb'
+      - name: Install pinned offline Native SDK and cryptographic dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install --no-deps -e ./_pins/agentdojo -e ./_pins/veritas
+          pip install 'pytest==9.1.1' 'cryptography==50.0.0' 'openai==1.109.1' 'pydantic==2.11.10' 'idna==3.15' 'httpx==0.28.1' 'requests==2.34.2' 'PyYAML==6.0.3'
+          python scripts/final_128_v12_locked_agentdojo_requirements_v1.py \
+            --lock _pins/agentdojo/uv.lock \
+            --output /tmp/task4-native-separated-signer-agentdojo-locked.txt
+          pip install -r /tmp/task4-native-separated-signer-agentdojo-locked.txt
+      - name: Verify original SDK capped wires and same-run AEAD before parser
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= \
+            tests/test_task4_native_separated_signer_v1.py \
+            --junitxml=results/task4-native-separated-signer-same-run-native-junit.xml \
+            | tee results/task4-native-separated-signer-tests.log
+          python -m scripts.task4_native_separated_signer_v1 \
+            --output results/task4-native-separated-signer-same-run-sanitized.json
+          python - <<'PY'
+          import json
+          r=json.load(open('results/task4-native-separated-signer-same-run-sanitized.json'))
+          assert r['parent_holds_synthetic_signing_key'] is False
+          assert r['signer_distinct_os_process'] is True
+          assert r['signer_clean_shutdown'] is True
+          assert r['signer_operation_counts'] == {'consume': 8, 'attach': 8, 'read': 8}
+          assert r['synthetic_signatures_verified_in_parent'] == 24
+          assert r['cached_original_consume_replays'] == 8
+          assert r['independent_issuer_approval_proven'] is False
+          assert r['independent_iam_proven'] is False
+          assert len(r['frozen_source_git_blobs']) == 9
+          assert r['protected_operation_counts'] == {'consume': 8, 'attach': 8, 'read': 8, 'replay_denied': 8}
+          assert len(r['protected_broker_startups']) == 2
+          assert all(p['observed_protected_binds'] == 1 for p in r['protected_broker_startups'])
+          assert r['legacy_entrypoint_attempts_in_parent'] == 0
+          assert r['new_native_path_uses_protected_custody'] is True
+          assert r['production_bypass_resistance_proven'] is False
+          assert r['same_run_local_capped_sdk_and_preparse_aead_join'] is True
+          assert r['capped_sdk_requests'] == 8
+          assert r['sdk_output_cap_each'] == 256
+          assert r['encrypted_original_scripted_response_count'] == 8
+          assert r['local_broker_consume_once_count'] == 8
+          assert r['local_broker_restart_replay_denials'] == 8
+          assert r['same_run_scripted_native_terminal_arms'] == 2
+          assert r['same_run_scripted_native_scorer_invocations'] == 2
+          assert len(r['hash_only_same_run_receipts']) == 8
+          assert r['independent_real_provider_response_origin_attested'] is False
+          assert r['cross_runner_durable_attempt_cas_attested'] is False
+          assert r['provider_billed_input_token_cap_attested'] is False
+          assert r['genuine_native_utility'] is None
+          assert r['real_provider_posts'] == r['external_bank_effects'] == 0
+          assert r['score_status'] == 'UNSCORED'
+          assert r['real_provider_dispatch'] == 'DENY'
+          print('TASK4_SELECTED_NATIVE_PROTECTED_CUSTODY_NO_PROVIDER')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-native-separated-signer-same-local-native-capped-sdk-aead-junit-hashes
+          path: results/*
+          if-no-files-found: warn
