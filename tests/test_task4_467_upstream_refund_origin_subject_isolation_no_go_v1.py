@@ -9,6 +9,13 @@ import shutil
 import pytest
 from scripts import task4_467_upstream_refund_origin_subject_isolation_no_go_v1 as m
 
+# Common CI has neither the external frozen benchmark checkout nor PyYAML.
+# The dedicated #467 workflow sets this gate to 1 and runs EVERY test.
+pytestmark = pytest.mark.skipif(
+    os.environ.get("TASK4_467_UPSTREAM_PROOF") != "1",
+    reason="Requires exact AgentDojo source checkout and PyYAML in dedicated offline CI",
+)
+
 PINNED = m.ROOT / "_pins" / "agentdojo"
 
 
