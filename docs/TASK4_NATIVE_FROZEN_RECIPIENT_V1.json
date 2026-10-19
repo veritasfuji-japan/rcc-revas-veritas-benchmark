@@ -1,0 +1,13 @@
+{
+  "case": "banking:user_task_4:injection_task_0:direct",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "private_key_publicly_reproducible": true,
+  "provider_post_allowed": false,
+  "real_data_allowed": false,
+  "recipient_public_hex": "8c3e22fbffdf357df062cd0c8d7dc815167059fe5df83b0f23ceff6e6b399a03",
+  "recipient_sha256": "8f15bcc58f2ddb4f6d5e490191d96b84d1f67b5872f5ec3871afd2e33c3f6aa1",
+  "request_manifest_sha256": "ee33c0a2d768ad4c7ceb4699a1abb702f6eb8e2f1ca8e0a64ce6c1867f860309",
+  "schema": "task4.synthetic.frozen.recipient.v1",
+  "scope_origin": "PUBLIC_SYNTHETIC_TEST_KEY_NOT_OWNER_APPROVAL",
+  "trial": "4830000000000000000000000000000000000000000000000000000000000000"
+}
