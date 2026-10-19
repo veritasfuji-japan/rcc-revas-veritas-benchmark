@@ -1,0 +1,61 @@
+name: Task4 475 Separate Process Synthetic Signer Offline NO-GO
+on:
+  pull_request:
+    paths:
+      - 'scripts/task4_475_separate_process_synthetic_signer_no_go_v1.py'
+      - 'tests/test_task4_475_separate_process_synthetic_signer_no_go_v1.py'
+      - 'docs/TASK4_475_SEPARATE_SIGNER_PROCESS_OFFLINE_NO_GO_V1.md'
+      - '.github/workflows/task4-475-separate-signer-native-offline.yml'
+permissions:
+  contents: read
+jobs:
+  offline-separate-signer-deny-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      TASK4_475_APPROVAL: ''
+      TASK4_475_LIVE: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONNOUSERSITE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Install offline cryptography test dependencies
+        run: python -m pip install 'pytest==9.1.1' 'cryptography==50.0.0'
+      - name: Prove synthetic signing child process and deny-only verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python -m pytest -q -o addopts= tests/test_task4_475_separate_process_synthetic_signer_no_go_v1.py --junitxml=results/task4-475-junit.xml | tee results/task4-475-tests.log
+          python -m scripts.task4_475_separate_process_synthetic_signer_no_go_v1 --output results/task4-475-hash-only-no-provider.json
+          python - <<'PY'
+          import json
+          r=json.load(open('results/task4-475-hash-only-no-provider.json'))
+          assert r['signer_distinct_os_pid'] is True
+          assert r['negative_cases_denied'] == 9
+          assert r['live_send_opcode'] == 'DENY_NOT_SYNTHETIC_NO_SEND'
+          assert r['real_independent_iam_proven'] is False
+          assert r['separate_machine_or_runner_proven'] is False
+          assert r['real_provider_posts'] == 0
+          assert r['score_status'] == 'UNSCORED'
+          assert r['no_go'] is True
+          print('TASK4_475_LOCAL_PROCESS_SEPARATION_NO_PROVIDER')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: task4-475-separate-process-deny-only-hash-evidence
+          path: results/*
+          if-no-files-found: warn
