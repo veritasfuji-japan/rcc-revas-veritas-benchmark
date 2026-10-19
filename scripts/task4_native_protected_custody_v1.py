@@ -37,6 +37,7 @@ class ParentWatch:
         self.allowed = set()
         self.connections = 0
         self.denied = 0
+        self.denied_events = []
 
     def audit(self, event, args):
         if not self.active:
@@ -49,6 +50,7 @@ class ParentWatch:
                            "os.system", "os.posix_spawn"):
             return
         self.denied += 1
+        self.denied_events.append(event)
         raise custody.Denied("NATIVE_CUSTODY_UNEXPECTED_PARENT_OPERATION")
 
 
@@ -260,16 +262,13 @@ def run():
                 stack.enter_context(patch.object(legacy, name, forbidden))
             # multiprocessing spawn uses its interpreter startup, not Popen.
             stack.enter_context(patch("subprocess.Popen", forbidden_subprocess))
-            # Offline SDK metadata only: avoid platform.platform() launching
-            # uname -p. No process is allowlisted and no request is dispatched.
-            stack.enter_context(patch("openai._base_client.get_platform", return_value="Unknown"))
             report = native_join(watch)
     finally:
         watch.active = False
     need(not attempts, "NATIVE_CUSTODY_LEGACY_ATTEMPT_OBSERVED")
     need(not subprocess_attempts, "NATIVE_CUSTODY_SUBPROCESS_ATTEMPT_OBSERVED")
     need(watch.connections == 32 and watch.denied == 0,
-         "NATIVE_CUSTODY_PARENT_SOCKET_EVIDENCE_MISMATCH")
+         f"NATIVE_CUSTODY_PARENT_SOCKET_EVIDENCE_MISMATCH: connects={watch.connections}, denied={watch.denied_events}")
     report.update(legacy_entrypoint_attempts_in_parent=0,
                   subprocess_attempts_in_parent=0,
                   sdk_os_header_is_fixed_offline_metadata=True,
@@ -283,7 +282,17 @@ def run():
 
 ADDITIONAL_PINS = {'scripts/task4_471_same_run_capped_sdk_aead_native_no_go_v1.py': 'eb90a4e077109091540b27dc2a4e4c8a50a34a8768226f846aa6b92c1d99e75b', 'scripts/task4_protected_ciphertext_custody_v1.py': '8684951ed1abaafce4079f52a62abaaa421150d9793ec5d974b44ab732c7250b'}
 
+def offline_sdk_metadata():
+    # Metadata only; keep subprocess prohibition active throughout execution.
+    return patch("openai._base_client.get_platform", return_value="Unknown")
+
+
 def native_join(watch=None):
+    with offline_sdk_metadata():
+        return _native_join(watch)
+
+
+def _native_join(watch=None):
     """Execute original capped real SDK Native all-turn through one transport.
 
     SAME local-run attribution is proven ONLY for scripted/offline replies.

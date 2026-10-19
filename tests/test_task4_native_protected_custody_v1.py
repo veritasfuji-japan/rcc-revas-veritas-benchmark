@@ -171,6 +171,8 @@ def test_swallowed_subprocess_attempt_still_fails_runner(monkeypatch):
         m.run()
 
 
+@pytest.mark.skipif(os.environ.get("TASK4_NATIVE_CUSTODY_PROOF") != "1",
+                    reason="dedicated SDK dependencies")
 def test_offline_sdk_metadata_does_not_probe_platform(monkeypatch):
     import httpx
     import openai
@@ -180,7 +182,9 @@ def test_offline_sdk_metadata_does_not_probe_platform(monkeypatch):
             assert request.headers["X-Stainless-OS"] == "Unknown"
             return httpx.Response(200, json={"id": "fixture", "choices": []})
         with httpx.Client(transport=httpx.MockTransport(response)) as http:
-            with openai.OpenAI(api_key="offline-fixture", http_client=http) as client:
+            with m.offline_sdk_metadata(), openai.OpenAI(
+                    api_key="offline-fixture", base_url="https://offline.invalid/v1",
+                    max_retries=0, http_client=http) as client:
                 client.chat.completions.create(model="offline-fixture", messages=[])
         # This unit test does not claim native socket evidence.
         raise RuntimeError("offline SDK request completed")
