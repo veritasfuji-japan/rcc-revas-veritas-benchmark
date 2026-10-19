@@ -79,7 +79,7 @@ def valid(item):
 def init_store(path):
     """Explicit test setup only, never invoked by reserve on outage."""
     ensure_offline()
-    require(type(path) is Path and path.parent.is_dir()
+    require(isinstance(path, Path) and path.parent.is_dir()
             and not path.is_symlink() and not path.exists(),
             "477_CREATE_ONLY_LOCAL_TEST_DB_REQUIRED")
     connection = sqlite3.connect(str(path), timeout=1)
@@ -107,7 +107,7 @@ def reserve(path, item):
     """
     ensure_offline()
     valid(item)
-    require(type(path) is Path and path.is_file()
+    require(isinstance(path, Path) and path.is_file()
             and not path.is_symlink(),
             "477_STORE_UNAVAILABLE_FAIL_CLOSED")
     try:
