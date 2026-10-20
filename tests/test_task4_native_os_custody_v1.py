@@ -72,3 +72,60 @@ def test_caller_cannot_select_additional_endpoint():
               'destination': 'https://example.invalid/'}
     with pytest.raises(ValueError, match='EXACT_NATIVE_PACKET'):
         proof.verify(packet, key.public_key().public_bytes_raw())
+
+
+@pytest.mark.parametrize('observed', [False, True])
+def test_reconciliation_preserves_consumption_without_post_or_response(tmp_path, monkeypatch, observed):
+    import sqlite3
+    folder = tmp_path / 'custody'
+    folder.mkdir()
+    (folder / 'credential').write_bytes(b'test-only')
+    request_sha, response_sha = 'a' * 64, 'b' * 64
+    receipt = proof.digest({'operation_id': 'A0', 'request_sha256': request_sha, 'response_sha256': response_sha})
+    with sqlite3.connect(folder / 'ledger.sqlite3') as db:
+        db.execute('CREATE TABLE consumed (op,state,request_sha,response_sha,backend_receipt)')
+        db.execute('INSERT INTO consumed VALUES (?,?,?,?,?)', ('A0', 'CONSUMED_UNKNOWN', request_sha, None, None))
+    monkeypatch.setattr(proof.kernel, 'role_identity', lambda _: None)
+    def get_only(method, path, body, key):
+        assert (method, path, body, key) == ('GET', '/receipt/A0', None, b'test-only')
+        return 200, {'operation_id': 'A0', 'record': [request_sha, response_sha, receipt] if observed else None}
+    monkeypatch.setattr(proof, 'http_call', get_only)
+    result = proof.reconcile_fault(tmp_path)
+    assert result == proof.reconcile_fault(tmp_path)
+    assert result['post_calls'] == 0 and result['raw_response_recovered'] is False
+    assert result['state'] == ('MOCK_EFFECT_CONFIRMED_NO_RESPONSE' if observed else 'CONSUMED_UNKNOWN')
+    with sqlite3.connect(folder / 'ledger.sqlite3') as db:
+        assert db.execute('SELECT count(*) FROM consumed').fetchone()[0] == 1
+
+
+@pytest.mark.parametrize('fault', ['status', 'operation', 'request', 'receipt'])
+def test_reconciliation_rejects_unmatched_evidence_without_ledger_update(tmp_path, monkeypatch, fault):
+    import sqlite3
+    folder = tmp_path / 'custody'
+    folder.mkdir()
+    (folder / 'credential').write_bytes(b'test-only')
+    request_sha, response_sha = 'a' * 64, 'b' * 64
+    receipt = proof.digest({'operation_id': 'A0', 'request_sha256': request_sha, 'response_sha256': response_sha})
+    with sqlite3.connect(folder / 'ledger.sqlite3') as db:
+        db.execute('CREATE TABLE consumed (op,state,request_sha,response_sha,backend_receipt)')
+        db.execute('INSERT INTO consumed VALUES (?,?,?,?,?)', ('A0', 'CONSUMED_UNKNOWN', request_sha, None, None))
+    evidence = {'operation_id': 'A0', 'record': [request_sha, response_sha, receipt]}
+    status = 403 if fault == 'status' else 200
+    if fault == 'operation':
+        evidence['operation_id'] = 'B0'
+    if fault in {'request', 'receipt'}:
+        evidence['record'][0 if fault == 'request' else 2] = '0' * 64
+    monkeypatch.setattr(proof.kernel, 'role_identity', lambda _: None)
+    monkeypatch.setattr(proof, 'http_call', lambda *_: (status, evidence))
+    with pytest.raises(ValueError):
+        proof.reconcile_fault(tmp_path)
+    with sqlite3.connect(folder / 'ledger.sqlite3') as db:
+        assert db.execute('SELECT * FROM consumed').fetchall() == [('A0', 'CONSUMED_UNKNOWN', request_sha, None, None)]
+
+
+def test_fault_configuration_is_explicit_and_bounded(tmp_path):
+    assert proof.fault_mode(tmp_path) == ''
+    (tmp_path / 'public').mkdir()
+    (tmp_path / 'public/fault').write_text('caller-selected-endpoint')
+    with pytest.raises(ValueError, match='EXACT_ROOT_ENROLLED_FAULT'):
+        proof.fault_mode(tmp_path)
