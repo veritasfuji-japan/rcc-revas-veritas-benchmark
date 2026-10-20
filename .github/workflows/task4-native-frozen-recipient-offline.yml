@@ -135,9 +135,60 @@ jobs:
           assert r['real_provider_dispatch'] == 'DENY'
           print('TASK4_SELECTED_NATIVE_PROTECTED_CUSTODY_NO_PROVIDER')
           PY
+      - name: Join actual Native SDK bytes to separate-UID Bind Custody and local HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_os_custody_v1.py \
+            --junitxml=results/task4-native-os-custody-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_os_custody_v1 \
+            --run --output results/task4-native-os-custody
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.task4_native_os_custody_v1 import digest,scope
+          folder=Path('results/task4-native-os-custody')
+          r=json.loads((folder/'report.json').read_text())
+          bindings=json.loads((folder/'bind-records.json').read_text())
+          assert r['audited_commit'] == subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert r['source_sha256'] == hashlib.sha256(Path('scripts/task4_native_os_custody_v1.py').read_bytes()).hexdigest()
+          assert len(r['checks']) == 22 and all(v is True for v in r['checks'].values())
+          assert r['bind_records_sha256'] == digest(bindings) and len(bindings) == 8
+          assert r['mock_http_effects'] == r['custody_consumptions'] == 8
+          assert r['native']['scorer_calls'] == r['native']['scripted_native_arms'] == 2
+          assert r['native']['replay_denials'] == r['restart']['restart_replay_denials'] == 8
+          assert r['native']['signature_wire_target_denials'] == 3
+          assert len(r['native']['frozen_source_git_blobs']) == 9
+          assert digest(r['native']['lineage']) == r['native']['lineage_sha256']
+          assert r['native']['lineage']['detached_native_scorer_calls_locally'] == 2
+          assert r['native']['lineage']['complete_native_terminals_locally'] == 2
+          assert {(x['arm'],x['ordinal']):x['request_sha256'] for x in r['native']['records']} == scope()
+          assert len(set(r['uids'].values())) == 4
+          assert r['native_has_transport_credential'] is r['native_has_issuer_private_key'] is False
+          assert r['real_provider_posts'] == r['external_bank_effects'] == 0
+          assert r['utility'] == 'UNSCORED' and r['provider_dispatch'] == 'DENY'
+          assert r['production_bypass_resistance_proven'] is r['independent_administration_proven'] is False
+          assert r['recipient_private_key_publicly_reproducible'] is True
+          assert r['real_data_confidentiality_proven'] is False
+          for binding,record in zip(bindings,r['native']['records']):
+              assert binding['operation_id'] == record['arm']+str(record['ordinal'])
+              assert digest({k:v for k,v in binding.items() if k!='operation_id'}) == record['bind_sha256']
+              assert [(x['outcome'],x['apply_calls']) for x in binding['records']] == [('BLOCKED',0),('COMMITTED',1)]
+              assert all(digest(x['receipt']) == x['receipt_sha256'] for x in binding['records'])
+              assert binding['bind_core_git_blob'] == '0f64201e2599495ce4e3991348aa320995716ffc'
+          for lineage,record in zip(r['native']['lineage']['response_receipts'],r['native']['records']):
+              assert lineage['original_request_raw_sha256'] == record['request_sha256']
+              assert lineage['original_response_raw_sha256'] == record['response_sha256']
+          for file,count in [('results/task4-native-os-custody-unit-junit.xml',19),(folder/'junit.xml',22)]:
+              t=ET.parse(file).getroot()
+              assert len(list(t.iter('testcase'))) == count
+              assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
+          print('ACTUAL_NATIVE_SDK_TO_OS_CUSTODY_REAL_BIND_LOCAL_HTTP_SEALED_RESPONSE_JOINED')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: task4-native-frozen-recipient-same-local-native-capped-sdk-aead-junit-hashes
-          path: results/*
+          path: results/
           if-no-files-found: error
