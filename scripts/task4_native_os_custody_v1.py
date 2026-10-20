@@ -207,7 +207,8 @@ def open_backend_db(base, restart=False):
     file = base / 'backend/effects.sqlite3'
     need(file.is_file() if restart else not file.exists(), 'EXACT_BACKEND_DATABASE_LIFECYCLE')
     if restart:
-        need(fault_mode(base) in FAULTS, 'FAULT_RECEIPT_ONLY_BACKEND_RESTART')
+        need(fault_mode(base) in FAULTS or concurrent_response_loss_mode(base),
+             'FAULT_RECEIPT_ONLY_BACKEND_RESTART')
         db = sqlite3.connect(file.resolve().as_uri() + '?mode=ro', uri=True, isolation_level=None)
         try:
             need(db.execute('PRAGMA quick_check').fetchall() == [('ok',)], 'RETAINED_BACKEND_INTEGRITY')
@@ -970,7 +971,8 @@ def concurrent_crash_replay(base):
 
 
 def finish_concurrent_crash(base, output, worker, spawn, processes, native_ns, head, pins,
-                            checks, native_report, entered, released, outcomes):
+                            checks, native_report, entered, released, outcomes,
+                            sink=None, sink_ns=None, restart_both=False):
     response_loss = concurrent_response_loss_mode(base)
     race = native_report['race']
     winner_role = race['winner_role']
@@ -987,6 +989,15 @@ def finish_concurrent_crash(base, output, worker, spawn, processes, native_ns, h
     public_marker.write_bytes(canonical({'role': winner_role}))
     os.chmod(public_marker, 0o444)
     before = read_fault_rows(base)
+    restart_evidence = None
+    if restart_both:
+        need(response_loss and sink is not None and sink_ns is not None,
+             'CONCURRENT_BACKEND_RESTART_REQUIRES_RESPONSE_LOSS')
+        old_backend_pid = sink.pid
+        backend_sha = sha((base / 'backend/effects.sqlite3').read_bytes())
+        sink.kill()
+        need(sink.wait(timeout=5) == -9, 'ACTUAL_CONCURRENT_BACKEND_SIGKILL')
+        (base / 'backend/ready').unlink()
     surviving_replay = worker(NATIVE, 'concurrent-crash-replay', native_ns)
     need(loser.poll() is None and read_fault_rows(base) == before, 'SURVIVOR_NO_TAKEOVER_EFFECT')
     ready = base / ('custody/secondary-ready' if winner_role == 'secondary' else 'custody/ready')
@@ -994,6 +1005,22 @@ def finish_concurrent_crash(base, output, worker, spawn, processes, native_ns, h
     extra = ('--restart', '--secondary') if winner_role == 'secondary' else ('--restart',)
     restarted = spawn(CUSTODY, 'custody', None, ready, 'restarted', extra)
     need(restarted.pid not in old_pids.values() and loser.poll() is None, 'WINNER_RESTART_WITH_SURVIVOR_ALIVE')
+    if restart_both:
+        offline_replay = worker(NATIVE, 'concurrent-replay', native_ns)
+        unavailable = worker(CUSTODY, 'offline-reconcile')
+        need(read_fault_rows(base) == before, 'OFFLINE_CONCURRENT_LEDGER_UNCHANGED')
+        sink = spawn(BACKEND, 'backend', sink_ns, base / 'backend/ready', 'restarted', ('--restart',))
+        need(sink.pid != old_backend_pid and loser.poll() is None and restarted.poll() is None,
+             'BACKEND_RESTART_WITH_BOTH_CUSTODIES_ALIVE')
+        need(read_fault_rows(base) == before, 'CONCURRENT_RESTART_RETAINS_EXACT_ROWS')
+        replay_file = base / 'public/replay-packet.json'
+        replay_file.write_bytes((base / 'native/packet-A0.json').read_bytes())
+        os.chmod(replay_file, 0o444)
+        denied = worker(CUSTODY, 'backend-replay')
+        restart_evidence = {'old_backend_pid': old_backend_pid, 'new_backend_pid': sink.pid,
+            'retained_rows': before, 'backend_database_sha256': backend_sha,
+            'unavailable': unavailable, 'offline_replay': offline_replay, 'backend_replay': denied,
+            'backend_restart_receipt_only': True}
     replay = worker(NATIVE, 'concurrent-replay', native_ns)
     reconciliation = worker(CUSTODY, 'reconcile-fault')
     need(worker(CUSTODY, 'reconcile-fault') == reconciliation, 'IDEMPOTENT_CONCURRENT_RECONCILIATION')
@@ -1039,8 +1066,18 @@ def finish_concurrent_crash(base, output, worker, spawn, processes, native_ns, h
         checks.update({'backend_response_loss_after_commit_observed': True,
             'backend_receipt_joins_reconciled_ledger': True,
             'post_reconciliation_replays_denied': confirmed_replay['replay_denials'] == 4})
+    if restart_both:
+        need(sha((base / 'backend/effects.sqlite3').read_bytes()) == backend_sha,
+             'CONCURRENT_BACKEND_DATABASE_UNCHANGED_BYTES')
+        checks.update({'backend_sigkill_observed': True, 'backend_restarted_with_survivor_alive': loser.poll() is None,
+            'stopped_backend_both_sockets_replays_denied': offline_replay['replay_denials'] == 4,
+            'unavailable_reconciliation_preserves_ledger': unavailable['ledger_unchanged'],
+            'backend_retained_database_bytes': True, 'backend_authentic_replay_denied': denied['authentic_replay_denied'],
+            'both_restart_restores_exact_rows': True, 'backend_restart_receipt_only': True})
     need(all(v is True for v in checks.values()), 'ALL_NATIVE_CONCURRENT_CRASH_CHECKS_REQUIRED')
-    report = {'schema': 'task4.native.os-custody.concurrent-response-loss.v1' if response_loss else 'task4.native.os-custody.concurrent-crash.v1', 'audited_commit': head,
+    report = {'schema': 'task4.native.os-custody.concurrent-backend-restart.v1' if restart_both else
+                       'task4.native.os-custody.concurrent-response-loss.v1' if response_loss else
+                       'task4.native.os-custody.concurrent-crash.v1', 'audited_commit': head,
         'source_sha256': sha(Path(__file__).read_bytes()), 'external_pins': pins, 'checks': checks,
         'native': native_report, 'entered': entered, 'released': released, 'outcomes': outcomes,
         'old_pids': old_pids, 'winner_exit_code': exit_code, 'winner_crash': marker,
@@ -1048,9 +1085,12 @@ def finish_concurrent_crash(base, output, worker, spawn, processes, native_ns, h
         'survivor_replay': surviving_replay, 'restarted_replay': replay,
         'post_reconciliation_replay': confirmed_replay, 'backend_response_loss': backend_marker,
         'before_restart': before, 'after_restart': after, 'reconciliation': reconciliation,
-        'bind_record': None, 'replay_denials': 10 if response_loss else 6, 'mock_http_effects': int(response_loss), 'custody_consumptions': 1,
+        'bind_record': None, 'replay_denials': 14 if restart_both else 10 if response_loss else 6,
+        'mock_http_effects': int(response_loss), 'custody_consumptions': 1,
         'ciphertext_count': 0, 'cross_process_concurrent_native_consumption_tested': True,
         'concurrent_winner_crash_tested': True, 'concurrent_winner_response_loss_tested': response_loss,
+        'backend_restart_tested': restart_both, 'restart_evidence': restart_evidence,
+        'scripted_backend_continuation_after_restart_proven': False,
         'raw_response_recovery_proven': False,
         'distributed_cas_proven': False, 'real_provider_posts': 0, 'external_bank_effects': 0,
         'utility': 'UNSCORED', 'provider_dispatch': 'DENY', 'production_bypass_resistance_proven': False,
@@ -1063,7 +1103,8 @@ def finish_concurrent_crash(base, output, worker, spawn, processes, native_ns, h
     ET.ElementTree(suite).write(output / 'junit.xml', encoding='utf-8', xml_declaration=True)
 
 
-def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, head, pins):
+def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, head, pins,
+                      sink=None, restart_both=False):
     secondary = spawn(CUSTODY, 'custody', None, base / 'custody/secondary-ready', 'ready', ('--secondary',))
     old_pids = {'primary': service.pid, 'secondary': secondary.pid}
     checks = worker(NATIVE, 'probe', native_ns)
@@ -1085,7 +1126,8 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
          and outcomes[race['winner_role']]['decision'] == 'CONSUMED', 'PROCESS_NATIVE_WINNER_JOIN')
     if concurrent_crash_mode(base) or concurrent_response_loss_mode(base):
         finish_concurrent_crash(base, output, worker, spawn, {'primary': service, 'secondary': secondary},
-            native_ns, head, pins, checks, native_report, entered, released, outcomes)
+            native_ns, head, pins, checks, native_report, entered, released, outcomes,
+            sink, sink_ns, restart_both)
         return
     before = read_fault_rows(base)
     replay = worker(NATIVE, 'concurrent-replay', native_ns)
@@ -1136,8 +1178,9 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
 
 def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False):
     need(fault in ('', *FAULTS), 'EXACT_FAULT_MODE')
-    need(type(restart_both) is bool and (not restart_both or fault in FAULTS), 'BOTH_RESTART_REQUIRES_FAULT')
-    need(type(concurrent) is bool and (not concurrent or (not fault and not restart_both)), 'CONCURRENT_FIXTURE_SEPARATE_FROM_FAULTS')
+    need(type(restart_both) is bool and (not restart_both or fault in FAULTS or concurrent_response_loss),
+         'BOTH_RESTART_REQUIRES_FAULT_OR_CONCURRENT_RESPONSE_LOSS')
+    need(type(concurrent) is bool and (not concurrent or not fault), 'CONCURRENT_FIXTURE_SEPARATE_FROM_FAULTS')
     need(type(concurrent_crash) is bool and (not concurrent_crash or concurrent), 'CRASH_REQUIRES_TWO_CUSTODIES')
     need(type(concurrent_response_loss) is bool and (not concurrent_response_loss or (concurrent and not concurrent_crash)),
          'RESPONSE_LOSS_REQUIRES_DISTINCT_CONCURRENT_FIXTURE')
@@ -1284,8 +1327,9 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             sink = spawn(BACKEND, 'backend', sink_ns, base / 'backend/ready')
             service = spawn(CUSTODY, 'custody', None, base / 'custody/ready')
             if concurrent:
-                finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, head, pins)
-                print('TASK4_NATIVE_CONCURRENT_RESPONSE_LOSS_ONE_EFFECT_NO_RETRY_NO_PROVIDER' if concurrent_response_loss
+                finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, head, pins, sink, restart_both)
+                print('TASK4_NATIVE_CONCURRENT_BACKEND_RESTART_ONE_RETAINED_EFFECT_NO_PROVIDER' if restart_both
+                      else 'TASK4_NATIVE_CONCURRENT_RESPONSE_LOSS_ONE_EFFECT_NO_RETRY_NO_PROVIDER' if concurrent_response_loss
                       else 'TASK4_NATIVE_CONCURRENT_CONSUMED_WINNER_CRASH_ZERO_EFFECT_NO_PROVIDER' if concurrent_crash
                       else 'TASK4_NATIVE_CONCURRENT_CUSTODY_ONE_EFFECT_NO_PROVIDER')
                 return
