@@ -356,7 +356,7 @@ def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, 
     need(with_bind, 'CUSTODY_REQUIRES_REAL_BIND')
     need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
     need(not replica or concurrent, 'REPLICA_REQUIRES_CONCURRENCY_PROOF')
-    need(not concurrent or (not restart and fault is None), 'EXACT_CONCURRENCY_MODE')
+    need(not concurrent or (not restart and fault in {None, 'before-post'}), 'EXACT_CONCURRENCY_MODE')
     os.umask(0o077)
     credential = (base / 'custody/credential').read_bytes()
     verifier = (base / 'trust/issuer-public-key').read_bytes()
@@ -405,6 +405,8 @@ def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, 
                 else:
                     db.commit()
                     db.execute('PRAGMA busy_timeout=5000')
+                    if concurrent:
+                        (base / ('custody/race-consumed-' + str(os.getpid()))).touch(exist_ok=False)
                     if fault == 'before-post':
                         os._exit(FAULTS[fault])  # Durable consumption, no network dispatch.
                     body = {'operation_id': OP, 'request': packet['request']}
@@ -459,14 +461,20 @@ def denied_connect(host=HOST, port=PORT, family=None):
 def worker(base, mode):
     role_identity(STRANGER if mode == 'stranger' else EXECUTOR
                   if mode in {'executor-key', 'executor-direct', 'executor-http', 'executor-private',
-                              'fake-bind', 'race-primary', 'race-replica'} else CUSTODY
+                              'fake-bind', 'race-primary', 'race-replica',
+                              'race-primary-crash', 'race-replica-crash'} else CUSTODY
                   if mode in {'no-credential', 'custody-forge', 'reconcile', 'backend-replay'} else AGENT)
     if mode == 'reconcile':
         return reconciliation_query((base / 'custody/credential').read_bytes())
-    if mode in {'race-primary', 'race-replica'}:
+    if mode in {'race-primary', 'race-replica', 'race-primary-crash', 'race-replica-crash'}:
         packet = json.loads((base / 'public/packet.json').read_bytes())
-        result = unix_query(base, packet, 'bind-ipc/replica.sock' if mode == 'race-replica'
-                            else 'bind-ipc/custody.sock')
+        try:
+            result = unix_query(base, packet, 'bind-ipc/replica.sock' if mode.startswith('race-replica')
+                                else 'bind-ipc/custody.sock')
+        except (OSError, ValueError):
+            if not mode.endswith('-crash'):
+                raise
+            result = {'decision': 'DENIED_OR_UNKNOWN_NO_RETRY'}
         need(set(result) <= {'decision', 'receipt'}, 'EXACT_RACE_RESULT')
         return {'decision': result['decision'], 'receipt': result.get('receipt'),
                 'request_sha256': digest(packet['request']), 'client_pid': os.getpid()}
@@ -620,7 +628,7 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
     need(with_bind, 'REAL_BIND_CUSTODY_MODE_REQUIRED')
     need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
     need(not restart_backend or fault in FAULTS, 'BACKEND_RESTART_REQUIRES_FAULT_CASE')
-    need(not concurrent or (fault is None and not restart_backend), 'EXACT_CONCURRENCY_MODE')
+    need(not concurrent or (fault in {None, 'before-post'} and not restart_backend), 'EXACT_CONCURRENCY_MODE')
     need(os.geteuid() == 0 and sys.platform == 'linux', 'TRUSTED_DISPOSABLE_LINUX_CI_ROOT_REQUIRED')
     need(output.resolve().is_relative_to(Path.cwd().resolve()) and not output.exists(),
          'NEW_OUTPUT_DIRECTORY_UNDER_CHECKOUT_REQUIRED')
@@ -792,10 +800,13 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
             concurrent_evidence = None
             if concurrent:
                 replica_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args
-                    + ['--concurrent-proof', '--replica'], None, base / 'custody/replica-ready', 'ready')
+                    + fault_args + ['--concurrent-proof', '--replica'],
+                    None, base / 'custody/replica-ready', 'ready')
                 clients = []
                 try:
                     for mode in ('race-primary', 'race-replica'):
+                        if fault:
+                            mode += '-crash'
                         client = subprocess.Popen(role_command(program, EXECUTOR,
                             ['--worker', str(base), mode]), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             env={'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LANG': 'C.UTF-8'})
@@ -815,11 +826,13 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                         stdout, stderr = client.communicate(timeout=8)
                         need(client.returncode == 0, 'RACE_CLIENT_FAILED:' + stderr.decode()[-600:])
                         results.append(json.loads(stdout))
-                    need(sorted(x['decision'] for x in results) == ['MOCK_EFFECT_ONCE', 'REPLAY_DENIED'],
+                    wanted = 'DENIED_OR_UNKNOWN_NO_RETRY' if fault else 'MOCK_EFFECT_ONCE'
+                    need(sorted(x['decision'] for x in results) == [wanted, 'REPLAY_DENIED'],
                          'ONE_CONSUMPTION_WINNER_ONE_REPLAY_REQUIRED')
                     receipt = digest({'operation_id': OP, 'request': REQUEST})
                     need(all(x['request_sha256'] == digest(REQUEST) for x in results)
-                         and [x['receipt'] for x in results if x['decision'] == 'MOCK_EFFECT_ONCE'] == [receipt]
+                         and ([x['receipt'] for x in results if x['decision'] == 'MOCK_EFFECT_ONCE']
+                              == ([] if fault else [receipt]))
                          and all(x['receipt'] is None for x in results if x['decision'] == 'REPLAY_DENIED'),
                          'SAME_REQUEST_BOUND_RACE_RESULT')
                     busy = {int(p.name.rsplit('-', 1)[1]) for p in (base / 'custody').glob('race-busy-*')}
@@ -834,6 +847,29 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                     need({x['pid'] for x in arrivals} == expected_pids and all(
                         {'device': x['device'], 'inode': x['inode']} == ledger_identity for x in arrivals),
                         'SAME_KERNEL_LEDGER_FILE_REQUIRED')
+                    consumed_pids = {int(p.name.rsplit('-', 1)[1]) for p in
+                                     (base / 'custody').glob('race-consumed-*')}
+                    need(len(consumed_pids) == 1 and consumed_pids < expected_pids
+                         and consumed_pids.isdisjoint(busy), 'ONE_ACTUAL_CONSUMPTION_WINNER')
+                    winner_pid = next(iter(consumed_pids))
+                    winner_index = 0 if winner_pid == custody_proc.pid else 1
+                    need(results[winner_index]['decision'] == wanted, 'WINNER_CALLER_RESULT_MUST_MATCH')
+                    survivor_pid = None
+                    survivor_result = None
+                    winner_exit_code = None
+                    if fault:
+                        winner_proc = custody_proc if winner_index == 0 else replica_proc
+                        survivor_proc = replica_proc if winner_index == 0 else custody_proc
+                        winner_exit_code = winner_proc.wait(timeout=5)
+                        need(winner_exit_code == FAULTS['before-post'] and survivor_proc.poll() is None,
+                             'ONLY_CONSUMPTION_WINNER_MUST_CRASH_BEFORE_POST')
+                        survivor_pid = survivor_proc.pid
+                        survivor_result = probe('race-replica' if winner_index == 0 else 'race-primary',
+                                                uid=EXECUTOR, namespace=None)
+                        need(survivor_result['decision'] == 'REPLAY_DENIED'
+                             and survivor_result['receipt'] is None, 'SURVIVOR_MUST_NOT_TAKE_OVER_CONSUMPTION')
+                        checks['concurrent_winner_crashed_after_durable_consumption'] = True
+                        checks['surviving_custody_replay_denied_without_send'] = True
                     checks['two_custody_processes_share_same_ledger'] = True
                     checks['actual_sqlite_busy_observed_before_winner_commit'] = True
                     checks['one_concurrent_winner_one_replay_denial'] = True
@@ -841,6 +877,9 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                     concurrent_evidence = {'custody_pids': sorted(expected_pids), 'sqlite_busy_pids': sorted(busy),
                         'write_lock_acquired_pids': sorted(acquired), 'results': results,
                         'ledger_identity': ledger_identity, 'arrival_observations': arrivals,
+                        'consumption_winner_pid': winner_pid, 'winner_exit_code': winner_exit_code,
+                        'fault': fault, 'surviving_custody_pid': survivor_pid,
+                        'survivor_replay_result': survivor_result,
                         'shared_ledger_path': 'custody/ledger.sqlite3',
                         'scope': 'TWO_LOCAL_PROCESSES_SHARED_SQLITE_NOT_DISTRIBUTED_CAS'}
                     (output / 'concurrent-evidence.json').write_bytes(canonical(concurrent_evidence))
@@ -853,8 +892,14 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                     replica_proc.wait(timeout=5)
             original_pids = {'backend': sink_proc.pid, 'custody': custody_proc.pid}
             if fault:
-                checks['caller_gets_unknown_no_retry'] = probe('fault-attempt')['fault-attempt_expected_decision']
-                need(custody_proc.wait(timeout=5) == FAULTS[fault], 'EXACT_CUSTODY_FAULT_EXIT')
+                if concurrent:
+                    checks['caller_gets_unknown_no_retry'] = True  # Exact crashed-winner result checked above.
+                    if custody_proc.poll() is None:
+                        custody_proc.terminate()
+                        custody_proc.wait(timeout=5)
+                else:
+                    checks['caller_gets_unknown_no_retry'] = probe('fault-attempt')['fault-attempt_expected_decision']
+                    need(custody_proc.wait(timeout=5) == FAULTS[fault], 'EXACT_CUSTODY_FAULT_EXIT')
                 checks['exact_fault_exit_observed'] = True
                 checks['stopped_custody_replay_unknown_no_retry'] = probe(
                     'stopped-replay')['stopped-replay_expected_decision']
@@ -907,7 +952,7 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                  'BACKEND_COUNTS_AND_DENIED_PROBE_RECONCILIATION')
             backend_receipt = spent[0][1] if spent else None
             if concurrent:
-                need(reconciliation == {'operation_id': OP, 'effect_count': 1,
+                need(reconciliation == {'operation_id': OP, 'effect_count': expected_effect,
                      'receipt': backend_receipt}, 'CONCURRENT_AUTHENTICATED_RECEIPT_JOIN')
                 checks['concurrent_authenticated_receipt_join'] = True
             if fault:

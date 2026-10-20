@@ -148,7 +148,7 @@ def test_both_restart_requires_explicit_fault_case(tmp_path):
     assert not (tmp_path / 'proof').exists()
 
 
-@pytest.mark.parametrize('fault,restart_backend', [('before-post', False), ('before-post', True)])
+@pytest.mark.parametrize('fault,restart_backend', [('backend-response-lost', False), ('before-post', True)])
 def test_concurrency_proof_refuses_combined_fault_modes(tmp_path, fault, restart_backend):
     with pytest.raises(ValueError, match='EXACT_CONCURRENCY_MODE'):
         boundary.run(tmp_path / 'proof', with_bind=True, fault=fault,
@@ -166,3 +166,10 @@ def test_restart_cannot_arm_concurrency_gate(tmp_path, monkeypatch):
     monkeypatch.setattr(boundary, 'role_identity', lambda uid: None)
     with pytest.raises(ValueError, match='EXACT_CONCURRENCY_MODE'):
         boundary.custody(tmp_path, with_bind=True, restart=True, concurrent=True)
+
+
+@pytest.mark.parametrize('fault', ['backend-response-lost', 'before-client-reply'])
+def test_custody_concurrency_refuses_unproved_fault_windows(tmp_path, monkeypatch, fault):
+    monkeypatch.setattr(boundary, 'role_identity', lambda uid: None)
+    with pytest.raises(ValueError, match='EXACT_CONCURRENCY_MODE'):
+        boundary.custody(tmp_path, with_bind=True, concurrent=True, fault=fault)

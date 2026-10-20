@@ -91,7 +91,7 @@ jobs:
               ('authority-denied','BLOCKED',0),('wrong-target','BLOCKED',0),
               ('wrong-prestate','BLOCKED',0),('allow','COMMITTED',1)]
           assert all(digest(x['bind_receipt']) == x['receipt_sha256'] for x in b['records'])
-          for file,count in [('results/mock-executor-unit-junit.xml',30),('results/mock-authority/junit.xml',42)]:
+          for file,count in [('results/mock-executor-unit-junit.xml',32),('results/mock-authority/junit.xml',42)]:
               root=ET.parse(file).getroot()
               assert len(list(root.iter('testcase'))) == count
               assert not list(root.iter('skipped')) and not list(root.iter('failure')) and not list(root.iter('error'))
@@ -249,6 +249,58 @@ jobs:
           assert len(list(root.iter('testcase'))) == 47
           assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
           print('REAL_SQLITE_CONTENTION_ONE_WINNER_ONE_EFFECT_NO_PROVIDER')
+          PY
+      - name: Crash only the consumed winner while the competing Custody remains alive
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo -n "$(command -v python)" -m scripts.ci_mock_executor_authority_boundary_v1 \
+            --run --with-veritas-bind --veritas-root _pins/veritas --concurrent-proof \
+            --fault before-post --output results/concurrent-consumed-crash
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.ci_mock_executor_authority_boundary_v1 import digest, OP, REQUEST
+          folder=Path('results/concurrent-consumed-crash')
+          r=json.loads((folder/'report.json').read_text())
+          e=json.loads((folder/'concurrent-evidence.json').read_text())
+          assert r['audited_commit'] == '${{ github.event.pull_request.head.sha }}'
+          assert r['source_sha256'] == hashlib.sha256(Path('scripts/ci_mock_executor_authority_boundary_v1.py').read_bytes()).hexdigest()
+          assert r['concurrent_consumption_tested'] is True and r['fault'] == 'before-post'
+          assert len(r['checks']) == 47 and all(v is True for v in r['checks'].values())
+          assert r['checks']['concurrent_winner_crashed_after_durable_consumption'] is True
+          assert r['checks']['surviving_custody_replay_denied_without_send'] is True
+          assert r['checks']['restart_replay_denied'] is True
+          assert r['concurrent_evidence_sha256'] == digest(e)
+          assert len(e['custody_pids']) == len(set(e['custody_pids'])) == 2
+          assert len(e['sqlite_busy_pids']) == 1 and set(e['sqlite_busy_pids']) < set(e['custody_pids'])
+          assert e['write_lock_acquired_pids'] == e['custody_pids']
+          assert {x['pid'] for x in e['arrival_observations']} == set(e['custody_pids'])
+          assert all({'device':x['device'],'inode':x['inode']} == e['ledger_identity'] for x in e['arrival_observations'])
+          assert e['consumption_winner_pid'] in e['custody_pids']
+          assert e['consumption_winner_pid'] not in e['sqlite_busy_pids']
+          assert e['winner_exit_code'] == 73 and e['fault'] == 'before-post'
+          assert e['surviving_custody_pid'] in e['custody_pids']
+          assert e['surviving_custody_pid'] != e['consumption_winner_pid']
+          assert e['survivor_replay_result']['decision'] == 'REPLAY_DENIED'
+          assert len({x['client_pid'] for x in e['results']}) == 2
+          assert sorted(x['decision'] for x in e['results']) == ['DENIED_OR_UNKNOWN_NO_RETRY','REPLAY_DENIED']
+          assert all(x['request_sha256'] == digest(REQUEST) and x['receipt'] is None for x in e['results'])
+          assert r['mock_effect_count'] == 0 and r['backend_denial_count'] == 3
+          assert r['custody_ledger_state'] == 'CONSUMED_UNKNOWN'
+          assert r['custody_ledger_receipt_sha256'] is r['receipt_sha256'] is None
+          assert r['authenticated_reconciliation'] == {'operation_id':OP,'effect_count':0,'receipt':None}
+          assert r['bind_terminal_receipt_observed'] is False and r['bind_evidence_sha256'] is None
+          assert not (folder/'bind-evidence.json').exists()
+          assert r['automatic_retry_performed'] is False
+          assert r['real_provider_calls'] == r['real_bank_effects'] == 0
+          assert r['production_bypass_resistance_proven'] is False
+          assert r['provider_dispatch'] == 'DENY' and r['utility'] == 'UNSCORED'
+          root=ET.parse(folder/'junit.xml').getroot()
+          assert len(list(root.iter('testcase'))) == 47
+          assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
+          print('CONCURRENT_CONSUMED_WINNER_CRASH_SURVIVOR_DENIES_NO_EFFECT_NO_PROVIDER')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
