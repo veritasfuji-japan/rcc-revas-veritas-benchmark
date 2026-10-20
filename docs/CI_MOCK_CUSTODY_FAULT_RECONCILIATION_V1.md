@@ -1,5 +1,10 @@
 # Custody process crashes and lost-response reconciliation
 
+Current extension: [both-service restart proof](CI_MOCK_CUSTODY_BACKEND_RESTART_V1.md)
+adds three runs that also restart the backend while retaining its database.
+The original Custody-only runs below remain required. The current unit suite has
+26 cases; the 17-case count below records the #495 baseline.
+
 Extends #494 in the same disposable trusted Linux CI environment. The normal
 42-observation run remains mandatory. Three additional independent runs each
 use a fresh issuer key, credential, backend DB and Custody DB. They repeat all

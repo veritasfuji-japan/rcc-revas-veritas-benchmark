@@ -186,16 +186,48 @@ def role_identity(uid):
             raise ValueError('DOCKER_CONTROL_SOCKET_ACCESSIBLE')
 
 
-def sink(base, fault=None):
+def backend_store(file, restart=False):
+    need(file.is_file() if restart else not file.exists(), 'EXACT_BACKEND_DB_LIFECYCLE')
+    db = sqlite3.connect(file, isolation_level=None)
+    try:
+        db.execute('PRAGMA synchronous=FULL')
+        if not restart:
+            db.execute('CREATE TABLE state (id INTEGER PRIMARY KEY,counter INTEGER,denials INTEGER)')
+            db.execute('INSERT INTO state VALUES (1,0,0)')
+            db.execute('CREATE TABLE spent (operation_id TEXT PRIMARY KEY,receipt TEXT)')
+        else:
+            need(db.execute('PRAGMA integrity_check').fetchall() == [('ok',)], 'BACKEND_INTEGRITY')
+            states = db.execute('SELECT id,counter,denials FROM state').fetchall()
+            need(len(states) == 1 and states[0][0] == 1
+                 and type(states[0][1]) is int and states[0][1] in {0, 1}
+                 and type(states[0][2]) is int and states[0][2] >= 0, 'EXACT_BACKEND_STATE')
+            spent = db.execute('SELECT operation_id,receipt FROM spent').fetchall()
+            expected = [(OP, digest({'operation_id': OP, 'request': REQUEST}))] if states[0][1] else []
+            need(spent == expected, 'BACKEND_EFFECT_RECEIPT_CONSISTENCY')
+        return db
+    except Exception:
+        db.close()
+        raise
+
+
+def durable_snapshot(base):
+    result = {}
+    for role, file, queries in [
+        ('backend', 'state.sqlite3', {'state': 'SELECT id,counter,denials FROM state ORDER BY id',
+         'spent': 'SELECT operation_id,receipt FROM spent ORDER BY operation_id'}),
+        ('custody', 'ledger.sqlite3', {'consumed':
+         'SELECT operation_id,state,receipt FROM consumed ORDER BY operation_id'})]:
+        with sqlite3.connect('file:' + str(base / role / file) + '?mode=ro', uri=True) as db:
+            result[role] = {key: db.execute(query).fetchall() for key, query in queries.items()}
+    return result
+
+
+def sink(base, fault=None, restart=False):
     role_identity(BACKEND)
     os.umask(0o077)
     key = (base / 'backend/credential').read_bytes()
     public_key = (base / 'trust/issuer-public-key').read_bytes()
-    db = sqlite3.connect(base / 'backend/state.sqlite3', isolation_level=None)
-    db.execute('PRAGMA synchronous=FULL')
-    db.execute('CREATE TABLE state (id INTEGER PRIMARY KEY,counter INTEGER,denials INTEGER)')
-    db.execute('INSERT INTO state VALUES (1,0,0)')
-    db.execute('CREATE TABLE spent (operation_id TEXT PRIMARY KEY,receipt TEXT)')
+    db = backend_store(base / 'backend/state.sqlite3', restart)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
@@ -259,7 +291,7 @@ def sink(base, fault=None):
             self.wfile.write(raw)
 
     server = HTTPServer((HOST, PORT), Handler)
-    (base / 'backend/ready').write_text('ready')
+    (base / 'backend/ready').write_text('restarted' if restart else 'ready')
     server.serve_forever()
 
 
@@ -388,9 +420,20 @@ def worker(base, mode):
     role_identity(STRANGER if mode == 'stranger' else EXECUTOR
                   if mode in {'executor-key', 'executor-direct', 'executor-http', 'executor-private',
                               'fake-bind'} else CUSTODY
-                  if mode in {'no-credential', 'custody-forge', 'reconcile'} else AGENT)
+                  if mode in {'no-credential', 'custody-forge', 'reconcile', 'backend-replay'} else AGENT)
     if mode == 'reconcile':
         return reconciliation_query((base / 'custody/credential').read_bytes())
+    if mode == 'backend-replay':
+        packet = json.loads((base / 'public/packet.json').read_bytes())
+        body = dict(operation_id=OP, **packet)
+        key = (base / 'custody/credential').read_bytes()
+        before = reconciliation_query(key)
+        need(before == {'operation_id': OP, 'effect_count': 1,
+             'receipt': digest({'operation_id': OP, 'request': REQUEST})}, 'SPENT_BACKEND_REQUIRED')
+        code, result = http_query(body, tag(key, b'CI_SINK_V1\0', body))
+        need(code == 403 and result == {'decision': 'DENIED'}, 'RESTARTED_BACKEND_ALLOWED_DUPLICATE')
+        need(reconciliation_query(key) == before, 'BACKEND_REPLAY_CHANGED_EFFECT')
+        return {'restarted_backend_authentic_authorized_duplicate_denied': True}
     if mode == 'executor-private':
         result = {}
         for rel in ('custody/credential', 'custody/ledger.sqlite3', 'custody/bind-evidence.json'):
@@ -526,9 +569,10 @@ def role_command(program, uid, args, namespace=None):
         sys.executable, '-I', str(program)] + args
 
 
-def run(output, with_bind=False, veritas_root=None, fault=None):
+def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=False):
     need(with_bind, 'REAL_BIND_CUSTODY_MODE_REQUIRED')
     need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
+    need(not restart_backend or fault in FAULTS, 'BACKEND_RESTART_REQUIRES_FAULT_CASE')
     need(os.geteuid() == 0 and sys.platform == 'linux', 'TRUSTED_DISPOSABLE_LINUX_CI_ROOT_REQUIRED')
     need(output.resolve().is_relative_to(Path.cwd().resolve()) and not output.exists(),
          'NEW_OUTPUT_DIRECTORY_UNDER_CHECKOUT_REQUIRED')
@@ -696,6 +740,7 @@ def run(output, with_bind=False, veritas_root=None, fault=None):
             for mode in ('tamper', 'unsigned', 'forward'):
                 checks[mode + '_denied'] = probe(mode)[mode + '_expected_decision']
             checks['wrong_peer_uid_denied'] = probe('stranger', uid=STRANGER)['stranger_expected_decision']
+            original_pids = {'backend': sink_proc.pid, 'custody': custody_proc.pid}
             if fault:
                 checks['caller_gets_unknown_no_retry'] = probe('fault-attempt')['fault-attempt_expected_decision']
                 need(custody_proc.wait(timeout=5) == FAULTS[fault], 'EXACT_CUSTODY_FAULT_EXIT')
@@ -707,11 +752,35 @@ def run(output, with_bind=False, veritas_root=None, fault=None):
                 checks['same_run_replay_denied'] = probe('replay')['replay_expected_decision']
                 custody_proc.terminate()
                 custody_proc.wait(timeout=5)
+            restart_evidence = None
+            if restart_backend:
+                before_reconciliation = probe('reconcile', uid=CUSTODY, namespace=None)
+                sink_proc.terminate()
+                sink_proc.wait(timeout=5)
+                before_snapshot = durable_snapshot(base)
+                (base / 'backend/ready').unlink()
+                sink_proc = spawn(BACKEND, ['--sink', str(base), '--restart'],
+                                  sink_ns, base / 'backend/ready', 'restarted')
             (base / 'custody/ready').unlink()
             custody_proc = spawn(CUSTODY, ['--custody', str(base), '--restart'] + bind_args, None,
                                   base / 'custody/ready', 'restarted')
             checks['restart_replay_denied'] = probe('replay')['replay_expected_decision']
             reconciliation = probe('reconcile', uid=CUSTODY, namespace=None) if fault else None
+            if restart_backend:
+                after_snapshot = durable_snapshot(base)
+                need(before_snapshot == after_snapshot, 'BOTH_RESTART_MUST_PRESERVE_DURABLE_ROWS')
+                need(before_reconciliation == reconciliation, 'BOTH_RESTART_RECONCILIATION_MISMATCH')
+                new_pids = {'backend': sink_proc.pid, 'custody': custody_proc.pid}
+                need(all(new_pids[k] != original_pids[k] for k in original_pids), 'ACTUAL_NEW_SERVICE_PROCESSES')
+                checks['both_services_restarted_in_new_processes'] = True
+                checks['both_databases_preserved_across_restart'] = True
+                checks['authenticated_reconciliation_unchanged_across_restart'] = True
+                restart_evidence = {'before': before_snapshot, 'after': after_snapshot,
+                    'before_reconciliation': before_reconciliation, 'after_reconciliation': reconciliation,
+                    'original_pids': original_pids, 'restarted_pids': new_pids}
+                (output / 'restart-evidence.json').write_bytes(canonical(restart_evidence))
+                if fault != 'before-post':
+                    checks.update(probe('backend-replay', uid=CUSTODY, namespace=None))
             for proc in (executor_proc, custody_proc, sink_proc):
                 proc.terminate()
                 proc.wait(timeout=5)
@@ -721,7 +790,8 @@ def run(output, with_bind=False, veritas_root=None, fault=None):
             with sqlite3.connect(base / 'custody/ledger.sqlite3') as db:
                 rows = db.execute('SELECT operation_id,state,receipt FROM consumed').fetchall()
             expected_effect = 0 if fault == 'before-post' else 1
-            need(counter == expected_effect and denials == 3
+            expected_denials = 4 if restart_backend and expected_effect else 3
+            need(counter == expected_effect and denials == expected_denials
                  and len(spent) == expected_effect and len(rows) == 1,
                  'BACKEND_COUNTS_AND_DENIED_PROBE_RECONCILIATION')
             backend_receipt = spent[0][1] if spent else None
@@ -767,6 +837,8 @@ def run(output, with_bind=False, veritas_root=None, fault=None):
                       'mock_effect_count': counter, 'backend_denial_count': denials,
                       'receipt_sha256': backend_receipt, 'real_provider_calls': 0, 'real_bank_effects': 0,
                       'fault': fault, 'custody_ledger_state': rows[0][1],
+                      'backend_restarted': restart_backend,
+                      'restart_evidence_sha256': digest(restart_evidence) if restart_evidence else None,
                       'custody_ledger_receipt_sha256': rows[0][2],
                       'authenticated_reconciliation': reconciliation,
                       'reconciliation_scope': 'LOCAL_MOCK_CURRENT_BACKEND_STATE_NOT_EXTERNAL_PROVIDER',
@@ -818,12 +890,13 @@ def main():
     parser.add_argument('--with-veritas-bind', action='store_true')
     parser.add_argument('--veritas-root', type=Path)
     parser.add_argument('--fault', choices=sorted(FAULTS))
+    parser.add_argument('--restart-backend', action='store_true')
     args = parser.parse_args()
     if args.run:
         need(args.output is not None, 'OUTPUT_REQUIRED')
-        run(args.output, args.with_veritas_bind, args.veritas_root, args.fault)
+        run(args.output, args.with_veritas_bind, args.veritas_root, args.fault, args.restart_backend)
     elif args.sink:
-        sink(args.sink, args.fault)
+        sink(args.sink, args.fault, args.restart)
     elif args.issue:
         print(json.dumps(issue(args.issue), sort_keys=True))
     elif args.executor:
