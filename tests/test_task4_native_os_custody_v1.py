@@ -129,3 +129,76 @@ def test_fault_configuration_is_explicit_and_bounded(tmp_path):
     (tmp_path / 'public/fault').write_text('caller-selected-endpoint')
     with pytest.raises(ValueError, match='EXACT_ROOT_ENROLLED_FAULT'):
         proof.fault_mode(tmp_path)
+
+
+def retained_backend(tmp_path, fault='after-sealed'):
+    (tmp_path / 'backend').mkdir()
+    (tmp_path / 'public').mkdir()
+    (tmp_path / 'public/fault').write_text(fault)
+    with proof.open_backend_db(tmp_path) as db:
+        if fault != 'after-consume':
+            request_sha, response_sha = proof.scope()[('A', 0)], 'b' * 64
+            receipt = proof.digest(dict(operation_id='A0', request_sha256=request_sha, response_sha256=response_sha))
+            db.execute('INSERT INTO effects VALUES (?,?,?,?)', ('A0', request_sha, response_sha, receipt))
+
+
+@pytest.mark.parametrize('fault', ['after-consume', 'after-sealed'])
+def test_restarted_backend_retains_rows_and_is_sqlite_read_only(tmp_path, fault):
+    import sqlite3
+    retained_backend(tmp_path, fault)
+    file = tmp_path / 'backend/effects.sqlite3'
+    before = file.read_bytes()
+    db = proof.open_backend_db(tmp_path, True)
+    try:
+        assert db.execute('SELECT count(*) FROM effects').fetchone()[0] == int(fault != 'after-consume')
+        with pytest.raises(sqlite3.OperationalError, match='readonly'):
+            db.execute("INSERT INTO effects VALUES ('B0','x','y','z')")
+    finally:
+        db.close()
+    assert file.read_bytes() == before
+
+
+def test_backend_restart_never_creates_missing_database(tmp_path):
+    (tmp_path / 'backend').mkdir()
+    with pytest.raises(ValueError, match='EXACT_BACKEND_DATABASE_LIFECYCLE'):
+        proof.open_backend_db(tmp_path, True)
+    assert not (tmp_path / 'backend/effects.sqlite3').exists()
+
+
+@pytest.mark.parametrize('field', ['op', 'request_sha', 'response_sha', 'receipt'])
+def test_backend_restart_rejects_altered_retained_receipt(tmp_path, field):
+    import sqlite3
+    retained_backend(tmp_path)
+    with sqlite3.connect(tmp_path / 'backend/effects.sqlite3') as db:
+        db.execute('UPDATE effects SET ' + field + '=?', ('invalid',))
+    with pytest.raises(ValueError):
+        proof.open_backend_db(tmp_path, True)
+
+
+def test_backend_restart_rejects_missing_expected_effect(tmp_path):
+    retained_backend(tmp_path, 'after-consume')
+    (tmp_path / 'public/fault').write_text('after-sealed')
+    with pytest.raises(ValueError, match='RETAINED_BACKEND_EFFECT_COUNT'):
+        proof.open_backend_db(tmp_path, True)
+
+
+def test_fresh_backend_never_overwrites_existing_database(tmp_path):
+    retained_backend(tmp_path)
+    with pytest.raises(ValueError, match='EXACT_BACKEND_DATABASE_LIFECYCLE'):
+        proof.open_backend_db(tmp_path)
+
+
+def test_unavailable_reconciliation_preserves_consumption(tmp_path, monkeypatch):
+    import sqlite3
+    folder = tmp_path / 'custody'
+    folder.mkdir()
+    (folder / 'credential').write_bytes(b'test-only')
+    with sqlite3.connect(folder / 'ledger.sqlite3') as db:
+        db.execute('CREATE TABLE consumed (op,state,request_sha,response_sha,backend_receipt)')
+        db.execute('INSERT INTO consumed VALUES (?,?,?,?,?)', ('A0', 'CONSUMED_UNKNOWN', 'a'*64, None, None))
+    monkeypatch.setattr(proof.kernel, 'role_identity', lambda _: None)
+    def unavailable(method, path, body, key):
+        assert method == 'GET' and path == '/receipt/A0' and body is None
+        raise ConnectionRefusedError('offline fixture')
+    monkeypatch.setattr(proof, 'http_call', unavailable)
+    assert proof.offline_reconcile(tmp_path) == {'backend_unavailable': True, 'ledger_unchanged': True, 'permission_restored': False}
