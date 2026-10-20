@@ -67,6 +67,15 @@ def concurrent_crash_mode(base):
     return True
 
 
+def concurrent_response_loss_mode(base):
+    file = base / 'public/concurrent-response-loss'
+    if not file.exists():
+        return False
+    need(concurrent_mode(base) and not concurrent_crash_mode(base)
+         and file.read_text() == 'backend-commit-drop-v1', 'EXACT_CONCURRENT_RESPONSE_LOSS_FIXTURE')
+    return True
+
+
 def durable_marker(file, value):
     with file.open('xb') as stream:
         stream.write(canonical(value))
@@ -281,7 +290,7 @@ def backend(base, restart=False):
                 record = {'operation_id': op, 'request_sha256': sha(raw), 'response_sha256': sha(fake.content)}
                 receipt = digest(record)
                 db.execute('INSERT INTO effects VALUES (?,?,?,?)', (op, sha(raw), sha(fake.content), receipt))
-                if fault_mode(base) == 'backend-response-lost' and op == 'A0':
+                if (fault_mode(base) == 'backend-response-lost' or concurrent_response_loss_mode(base)) and op == 'A0':
                     durable_marker(base / 'backend/fault-observed.json', dict(record, receipt_sha256=receipt))
                     self.close_connection = True
                     self.connection.shutdown(socket.SHUT_RDWR)
@@ -459,7 +468,15 @@ def custody(base, restart=False, secondary=False):
                     if not restart and fault_mode(base) == 'after-consume':
                         durable_marker(base / 'custody/fault-observed.json', {'stage': 'after-consume', 'op': op})
                         os._exit(86)
-                    response, binding = bind_post(packet, raw, key)
+                    try:
+                        response, binding = bind_post(packet, raw, key)
+                    except (ValueError, OSError, KeyError, TypeError):
+                        if racing and concurrent_response_loss_mode(base):
+                            durable_marker(base / 'custody/race-winner-crash.json',
+                                {'stage': 'AFTER_BACKEND_RESPONSE_LOSS_BEFORE_NATIVE_REPLY', 'role': role,
+                                 'pid': os.getpid(), 'operation_id': op, 'request_sha256': sha(raw)})
+                            os._exit(89)
+                        raise
                     plaintext = decode(response['response_b64'])
                     request = httpx.Request('POST', 'https://api.openai.com/v1/chat/completions', content=raw)
                     reply = httpx.Response(200, content=plaintext, request=request)
@@ -687,8 +704,8 @@ def reconcile_fault(base):
             need(record[2] == digest({'operation_id': 'A0', 'request_sha256': record[0],
                                      'response_sha256': record[1]}), 'EXACT_RECEIPT_HASH')
             state = 'MOCK_OBSERVED' if row[0] == 'MOCK_OBSERVED' else 'MOCK_EFFECT_CONFIRMED_NO_RESPONSE'
-            if state == 'MOCK_OBSERVED':
-                need(tuple(record[1:]) == row[2:], 'SEALED_LEDGER_RECEIPT_MATCH')
+            if row[0] in {'MOCK_OBSERVED', 'MOCK_EFFECT_CONFIRMED_NO_RESPONSE'}:
+                need(tuple(record[1:]) == row[2:], 'STORED_LEDGER_RECEIPT_MATCH')
             db.execute('UPDATE consumed SET state=?,response_sha=?,backend_receipt=? WHERE op=?',
                        (state, record[1], record[2], 'A0'))
     return {'state': state, 'backend_evidence': evidence, 'post_calls': 0, 'raw_response_recovered': False}
@@ -866,7 +883,7 @@ def concurrent_native(base):
     frozen_sources = verify_pins()
     grants = parse((base / 'public/grants.json').read_bytes())
     observations = []
-    crashed = concurrent_crash_mode(base)
+    crashed = concurrent_crash_mode(base) or concurrent_response_loss_mode(base)
 
     class StopBeforeSecondDispatch(BaseException):
         pass
@@ -954,14 +971,17 @@ def concurrent_crash_replay(base):
 
 def finish_concurrent_crash(base, output, worker, spawn, processes, native_ns, head, pins,
                             checks, native_report, entered, released, outcomes):
+    response_loss = concurrent_response_loss_mode(base)
     race = native_report['race']
     winner_role = race['winner_role']
     loser_role = 'primary' if winner_role == 'secondary' else 'secondary'
     winner, loser = processes[winner_role], processes[loser_role]
     old_pids = {role: process.pid for role, process in processes.items()}
-    need(winner.wait(timeout=5) == 88 and loser.poll() is None, 'ONLY_CONSUMED_WINNER_CRASHES')
+    exit_code = 89 if response_loss else 88
+    stage = 'AFTER_BACKEND_RESPONSE_LOSS_BEFORE_NATIVE_REPLY' if response_loss else 'AFTER_DURABLE_CONSUME_BEFORE_BIND'
+    need(winner.wait(timeout=5) == exit_code and loser.poll() is None, 'ONLY_CONSUMED_WINNER_CRASHES')
     marker = parse((base / 'custody/race-winner-crash.json').read_bytes())
-    need(marker == dict(stage='AFTER_DURABLE_CONSUME_BEFORE_BIND', role=winner_role, pid=winner.pid,
+    need(marker == dict(stage=stage, role=winner_role, pid=winner.pid,
                         operation_id='A0', request_sha256=scope()[('A', 0)]), 'ACTUAL_CONSUMED_CRASH_MARKER')
     public_marker = base / 'public/crashed-winner.json'
     public_marker.write_bytes(canonical({'role': winner_role}))
@@ -976,12 +996,30 @@ def finish_concurrent_crash(base, output, worker, spawn, processes, native_ns, h
     need(restarted.pid not in old_pids.values() and loser.poll() is None, 'WINNER_RESTART_WITH_SURVIVOR_ALIVE')
     replay = worker(NATIVE, 'concurrent-replay', native_ns)
     reconciliation = worker(CUSTODY, 'reconcile-fault')
-    need(worker(CUSTODY, 'reconcile-fault') == reconciliation, 'IDEMPOTENT_CRASH_ABSENCE_RECONCILIATION')
+    need(worker(CUSTODY, 'reconcile-fault') == reconciliation, 'IDEMPOTENT_CONCURRENT_RECONCILIATION')
+    confirmed_replay = worker(NATIVE, 'concurrent-replay', native_ns) if response_loss else None
     after = read_fault_rows(base)
-    need(before == after == {'effects': [], 'consumed': [['A0', 'CONSUMED_UNKNOWN',
-        scope()[('A', 0)], None, None, None, None]]}, 'ONE_UNKNOWN_CONSUMPTION_ZERO_EFFECTS')
-    need(reconciliation == {'state': 'CONSUMED_UNKNOWN', 'backend_evidence': {'operation_id': 'A0', 'record': None},
-                            'post_calls': 0, 'raw_response_recovered': False}, 'ABSENCE_MUST_NOT_RESTORE_PERMISSION')
+    backend_marker = None
+    if response_loss:
+        need(len(before['effects']) == 1, 'ONE_BACKEND_EFFECT_BEFORE_RECOVERY')
+        effect = before['effects'][0]
+        need(effect[:2] == ['A0', scope()[('A', 0)]] and effect[3] == digest(dict(
+            operation_id='A0', request_sha256=effect[1], response_sha256=effect[2])), 'MATCHED_EFFECT_RECEIPT')
+        backend_marker = parse((base / 'backend/fault-observed.json').read_bytes())
+        need(backend_marker == dict(operation_id='A0', request_sha256=effect[1], response_sha256=effect[2],
+                                    receipt_sha256=effect[3]), 'BACKEND_COMMITTED_THEN_DROPPED_RESPONSE')
+        need(before['consumed'] == [['A0', 'CONSUMED_UNKNOWN', effect[1], None, None, None, None]],
+             'NO_INVENTED_RESPONSE_BEFORE_RECONCILIATION')
+        need(after == {'effects': [effect], 'consumed': [['A0', 'MOCK_EFFECT_CONFIRMED_NO_RESPONSE',
+            effect[1], effect[2], effect[3], None, None]]}, 'EXACT_LOST_RESPONSE_EFFECT_RECONCILIATION')
+        need(reconciliation == {'state': 'MOCK_EFFECT_CONFIRMED_NO_RESPONSE',
+            'backend_evidence': {'operation_id': 'A0', 'record': effect[1:]},
+            'post_calls': 0, 'raw_response_recovered': False}, 'CONFIRMATION_MUST_NOT_RESTORE_PERMISSION')
+    else:
+        need(before == after == {'effects': [], 'consumed': [['A0', 'CONSUMED_UNKNOWN',
+            scope()[('A', 0)], None, None, None, None]]}, 'ONE_UNKNOWN_CONSUMPTION_ZERO_EFFECTS')
+        need(reconciliation == {'state': 'CONSUMED_UNKNOWN', 'backend_evidence': {'operation_id': 'A0', 'record': None},
+                                'post_calls': 0, 'raw_response_recovered': False}, 'ABSENCE_MUST_NOT_RESTORE_PERMISSION')
     need(not list((base / 'custody').glob('*.enc.json')) and not (base / 'custody/A0-bind.json').exists(),
          'NO_INVENTED_RESPONSE_OR_BIND_RECEIPT')
     checks.update({'two_processes_at_barrier': True, 'both_verified_same_frozen_request': True,
@@ -993,17 +1031,27 @@ def finish_concurrent_crash(base, output, worker, spawn, processes, native_ns, h
         'consumption_stays_unknown': True, 'no_ciphertext_or_bind_receipt': True,
         'no_sdk_response_native_completion': native_report['sdk_responses_returned'] == native_report['native_terminal_arms'] == native_report['scorer_calls'] == 0,
         'authenticated_absence_does_not_restore': True, 'same_run_crash_evidence_join': True})
+    if response_loss:
+        for old, new in [('consumed_winner_exit_before_bind', 'consumed_winner_exit_after_response_loss'),
+                         ('consumption_stays_unknown', 'unknown_to_mock_effect_confirmed_no_response'),
+                         ('authenticated_absence_does_not_restore', 'authenticated_effect_does_not_restore')]:
+            checks[new] = checks.pop(old)
+        checks.update({'backend_response_loss_after_commit_observed': True,
+            'backend_receipt_joins_reconciled_ledger': True,
+            'post_reconciliation_replays_denied': confirmed_replay['replay_denials'] == 4})
     need(all(v is True for v in checks.values()), 'ALL_NATIVE_CONCURRENT_CRASH_CHECKS_REQUIRED')
-    report = {'schema': 'task4.native.os-custody.concurrent-crash.v1', 'audited_commit': head,
+    report = {'schema': 'task4.native.os-custody.concurrent-response-loss.v1' if response_loss else 'task4.native.os-custody.concurrent-crash.v1', 'audited_commit': head,
         'source_sha256': sha(Path(__file__).read_bytes()), 'external_pins': pins, 'checks': checks,
         'native': native_report, 'entered': entered, 'released': released, 'outcomes': outcomes,
-        'old_pids': old_pids, 'winner_exit_code': 88, 'winner_crash': marker,
+        'old_pids': old_pids, 'winner_exit_code': exit_code, 'winner_crash': marker,
         'restarted_winner_pid': restarted.pid, 'survivor_pid': loser.pid,
         'survivor_replay': surviving_replay, 'restarted_replay': replay,
+        'post_reconciliation_replay': confirmed_replay, 'backend_response_loss': backend_marker,
         'before_restart': before, 'after_restart': after, 'reconciliation': reconciliation,
-        'bind_record': None, 'replay_denials': 6, 'mock_http_effects': 0, 'custody_consumptions': 1,
+        'bind_record': None, 'replay_denials': 10 if response_loss else 6, 'mock_http_effects': int(response_loss), 'custody_consumptions': 1,
         'ciphertext_count': 0, 'cross_process_concurrent_native_consumption_tested': True,
-        'concurrent_winner_crash_tested': True, 'concurrent_winner_response_loss_tested': False,
+        'concurrent_winner_crash_tested': True, 'concurrent_winner_response_loss_tested': response_loss,
+        'raw_response_recovery_proven': False,
         'distributed_cas_proven': False, 'real_provider_posts': 0, 'external_bank_effects': 0,
         'utility': 'UNSCORED', 'provider_dispatch': 'DENY', 'production_bypass_resistance_proven': False,
         'independent_administration_proven': False}
@@ -1035,7 +1083,7 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
          <= min(x['released_ns'] for x in released.values()), 'BOTH_ARRIVED_BEFORE_RACE_RELEASE')
     need(sorted(x['decision'] for x in outcomes.values()) == ['CONSUMED', 'REPLAY_DENIED']
          and outcomes[race['winner_role']]['decision'] == 'CONSUMED', 'PROCESS_NATIVE_WINNER_JOIN')
-    if concurrent_crash_mode(base):
+    if concurrent_crash_mode(base) or concurrent_response_loss_mode(base):
         finish_concurrent_crash(base, output, worker, spawn, {'primary': service, 'secondary': secondary},
             native_ns, head, pins, checks, native_report, entered, released, outcomes)
         return
@@ -1086,11 +1134,13 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
     ET.ElementTree(suite).write(output / 'junit.xml', encoding='utf-8', xml_declaration=True)
 
 
-def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False):
+def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False):
     need(fault in ('', *FAULTS), 'EXACT_FAULT_MODE')
     need(type(restart_both) is bool and (not restart_both or fault in FAULTS), 'BOTH_RESTART_REQUIRES_FAULT')
     need(type(concurrent) is bool and (not concurrent or (not fault and not restart_both)), 'CONCURRENT_FIXTURE_SEPARATE_FROM_FAULTS')
     need(type(concurrent_crash) is bool and (not concurrent_crash or concurrent), 'CRASH_REQUIRES_TWO_CUSTODIES')
+    need(type(concurrent_response_loss) is bool and (not concurrent_response_loss or (concurrent and not concurrent_crash)),
+         'RESPONSE_LOSS_REQUIRES_DISTINCT_CONCURRENT_FIXTURE')
     need(os.geteuid() == 0 and sys.platform == 'linux', 'TRUSTED_DISPOSABLE_LINUX_CI_ROOT_REQUIRED')
     need(not output.exists() and output.resolve().is_relative_to(ROOT), 'NEW_OUTPUT_UNDER_CHECKOUT')
     for uid in (NATIVE, BACKEND, ISSUER, CUSTODY, kernel.STRANGER):
@@ -1163,6 +1213,9 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
         if concurrent_crash:
             (base / 'public/concurrent-crash').write_text('consumed-before-bind-v1')
             os.chmod(base / 'public/concurrent-crash', 0o444)
+        if concurrent_response_loss:
+            (base / 'public/concurrent-response-loss').write_text('backend-commit-drop-v1')
+            os.chmod(base / 'public/concurrent-response-loss', 0o444)
         credential = secrets.token_bytes(32)
         for role, uid in [('custody', CUSTODY), ('backend', BACKEND)]:
             file = base / role / 'credential'
@@ -1232,7 +1285,8 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             service = spawn(CUSTODY, 'custody', None, base / 'custody/ready')
             if concurrent:
                 finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, head, pins)
-                print('TASK4_NATIVE_CONCURRENT_CONSUMED_WINNER_CRASH_ZERO_EFFECT_NO_PROVIDER' if concurrent_crash
+                print('TASK4_NATIVE_CONCURRENT_RESPONSE_LOSS_ONE_EFFECT_NO_RETRY_NO_PROVIDER' if concurrent_response_loss
+                      else 'TASK4_NATIVE_CONCURRENT_CONSUMED_WINNER_CRASH_ZERO_EFFECT_NO_PROVIDER' if concurrent_crash
                       else 'TASK4_NATIVE_CONCURRENT_CUSTODY_ONE_EFFECT_NO_PROVIDER')
                 return
             if fault:
@@ -1332,6 +1386,7 @@ def main():
     parser.add_argument('--restart-both', action='store_true')
     parser.add_argument('--concurrent', action='store_true')
     parser.add_argument('--concurrent-crash', action='store_true')
+    parser.add_argument('--concurrent-response-loss', action='store_true')
     parser.add_argument('--secondary', action='store_true')
     parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay'))
     parser.add_argument('--base', type=Path)
@@ -1339,10 +1394,11 @@ def main():
     args = parser.parse_args()
     if args.run:
         need(args.output is not None and args.role is None and not args.secondary, 'RUN_OUTPUT_REQUIRED')
-        run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash)
+        run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash, args.concurrent_response_loss)
     else:
         need(args.role is not None and args.base is not None and not args.fault and not args.restart_both
-             and not args.concurrent and not args.concurrent_crash and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
+             and not args.concurrent and not args.concurrent_crash and not args.concurrent_response_loss
+             and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
         roles = {'issue': issue, 'backend': lambda b: backend(b, args.restart), 'probe': probe,
                  'reachable': lambda b: probe(b, True), 'native': native, 'restart-probe': restart_probe,
                  'wrong-peer': wrong_peer,
