@@ -1,5 +1,10 @@
 # Bind Custody outside the untrusted Executor
 
+Current extension: [process-crash and response-loss reconciliation](CI_MOCK_CUSTODY_FAULT_RECONCILIATION_V1.md)
+keeps this normal 42-observation run and adds three mandatory independent
+fault runs. The current unit suite has 17 cases; the 15-case count below records
+the #494 baseline.
+
 This supersedes #493's trust in the Executor invoking Bind. Within the existing
 disposable GitHub Actions VM, UID 61102 now only forwards exact signed requests
 from Agent UID 61101. UID 61106 (Bind Custody) owns the transport credential,

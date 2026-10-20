@@ -34,6 +34,7 @@ TARGET = 'mock://ci-authority/counter'
 OP = 'CI_ONLY_SINGLE_ATTEMPT'
 LIMIT = 8192
 REQUEST = {'target': TARGET, 'units': 1, 'revision': 0}
+FAULTS = {'before-post': 73, 'backend-response-lost': 74, 'before-client-reply': 75}
 
 
 def need(ok, code):
@@ -157,6 +158,18 @@ def status_query(credential):
         conn.close()
 
 
+def reconciliation_query(credential):
+    conn = http.client.HTTPConnection(HOST, PORT, timeout=2)
+    try:
+        conn.request('GET', '/reconcile', headers={'X-Mock-Auth':
+            tag(credential, b'CI_RECONCILE_V1\0', {'operation_id': OP})})
+        response = conn.getresponse()
+        need(response.status == 200, 'AUTHENTICATED_RECONCILIATION_REQUIRED')
+        return parse(response.read(LIMIT + 1))
+    finally:
+        conn.close()
+
+
 def role_identity(uid):
     need(os.geteuid() == uid and os.getegid() == uid, 'EXACT_UNPRIVILEGED_UID')
     need(os.getgroups() == [], 'NO_SUPPLEMENTARY_GROUPS')
@@ -173,7 +186,7 @@ def role_identity(uid):
             raise ValueError('DOCKER_CONTROL_SOCKET_ACCESSIBLE')
 
 
-def sink(base):
+def sink(base, fault=None):
     role_identity(BACKEND)
     os.umask(0o077)
     key = (base / 'backend/credential').read_bytes()
@@ -189,12 +202,18 @@ def sink(base):
             pass
 
         def do_GET(self):
-            valid = self.path == '/status' and hmac.compare_digest(
-                tag(key, b'CI_STATUS_V1\0', {'op': 'status'}), self.headers.get('X-Mock-Auth', ''))
+            expected = (tag(key, b'CI_STATUS_V1\0', {'op': 'status'}) if self.path == '/status'
+                        else tag(key, b'CI_RECONCILE_V1\0', {'operation_id': OP}))
+            valid = self.path in {'/status', '/reconcile'} and hmac.compare_digest(
+                expected, self.headers.get('X-Mock-Auth', ''))
             if valid:
                 counter = db.execute('SELECT counter FROM state').fetchone()[0]
                 result = {'counter': counter, 'revision': counter,
                           'effect_count': db.execute('SELECT count(*) FROM spent').fetchone()[0]}
+                if self.path == '/reconcile':
+                    row = db.execute('SELECT receipt FROM spent WHERE operation_id=?', (OP,)).fetchone()
+                    result = {'operation_id': OP, 'effect_count': result['effect_count'],
+                              'receipt': row[0] if row else None}
             else:
                 result = {'decision': 'DENIED'}
             raw = canonical(result)
@@ -229,6 +248,11 @@ def sink(base):
                 db.execute('UPDATE state SET denials=denials+1 WHERE id=1')
                 code, result = 403, {'decision': 'DENIED'}
             raw = canonical(result)
+            if code == 200 and fault == 'backend-response-lost':
+                # Actual committed effect, then TCP closes before any HTTP reply.
+                self.close_connection = True
+                self.connection.shutdown(socket.SHUT_RDWR)
+                return
             self.send_response(code)
             self.send_header('Content-Length', str(len(raw)))
             self.end_headers()
@@ -266,10 +290,11 @@ def executor(base):
                 pass
 
 
-def custody(base, restart=False, with_bind=False):
+def custody(base, restart=False, with_bind=False, fault=None):
     """Trusted Bind/effect authority; caller cannot select a no-Bind mode."""
     role_identity(CUSTODY)
     need(with_bind, 'CUSTODY_REQUIRES_REAL_BIND')
+    need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
     os.umask(0o077)
     credential = (base / 'custody/credential').read_bytes()
     verifier = (base / 'trust/issuer-public-key').read_bytes()
@@ -308,13 +333,22 @@ def custody(base, restart=False, with_bind=False):
                     result = {'decision': 'REPLAY_DENIED'}
                 else:
                     db.commit()
+                    if fault == 'before-post':
+                        os._exit(FAULTS[fault])  # Durable consumption, no network dispatch.
                     body = {'operation_id': OP, 'request': packet['request']}
                     envelope = dict(body, grant=packet['grant'])
+                    def post():
+                        try:
+                            return http_query(envelope, tag(credential, b'CI_SINK_V1\0', envelope))
+                        except OSError:
+                            if fault == 'backend-response-lost':
+                                os._exit(FAULTS[fault])
+                            raise
                     if with_bind:
                         sys.path.insert(0, str(base))  # Trusted root-owned read-only source copy.
                         from ci_mock_executor_veritas_bind_v1 import integrate
                         response, evidence = integrate(body=body,
-                            post=lambda: http_query(envelope, tag(credential, b'CI_SINK_V1\0', envelope)),
+                            post=post,
                             status=lambda: status_query(credential))
                         (base / 'custody/bind-evidence.json').write_bytes(canonical(evidence))
                         code = 200
@@ -322,6 +356,8 @@ def custody(base, restart=False, with_bind=False):
                         'decision': 'MOCK_EFFECT_ONCE', 'receipt': digest(body)}, 'BOUND_SINK_RECEIPT')
                     db.execute('UPDATE consumed SET state=?,receipt=? WHERE operation_id=?',
                                ('MOCK_OBSERVED', response['receipt'], OP))
+                    if fault == 'before-client-reply':
+                        os._exit(FAULTS[fault])  # Local result durable; caller receives no success.
                     result = {'decision': 'MOCK_EFFECT_ONCE', 'receipt': response['receipt']}
             except (ValueError, OSError, KeyError, TypeError):
                 if db.in_transaction:
@@ -352,7 +388,9 @@ def worker(base, mode):
     role_identity(STRANGER if mode == 'stranger' else EXECUTOR
                   if mode in {'executor-key', 'executor-direct', 'executor-http', 'executor-private',
                               'fake-bind'} else CUSTODY
-                  if mode in {'no-credential', 'custody-forge'} else AGENT)
+                  if mode in {'no-credential', 'custody-forge', 'reconcile'} else AGENT)
+    if mode == 'reconcile':
+        return reconciliation_query((base / 'custody/credential').read_bytes())
     if mode == 'executor-private':
         result = {}
         for rel in ('custody/credential', 'custody/ledger.sqlite3', 'custody/bind-evidence.json'):
@@ -467,7 +505,7 @@ def worker(base, mode):
     elif mode == 'forward':
         packet['destination'] = 'http://192.0.2.1/'
     result = unix_query(base, packet)
-    wanted = ('DENIED_OR_UNKNOWN_NO_RETRY' if mode in {'tamper', 'unsigned', 'forward', 'stranger'}
+    wanted = ('DENIED_OR_UNKNOWN_NO_RETRY' if mode in {'tamper', 'unsigned', 'forward', 'stranger', 'fault-attempt', 'stopped-replay'}
               else 'REPLAY_DENIED' if mode == 'replay' else 'MOCK_EFFECT_ONCE')
     need(result.get('decision') == wanted, 'EXPECTED_GATEWAY_DECISION_' + mode)
     return {mode + '_expected_decision': True, 'decision': result['decision']}
@@ -488,8 +526,9 @@ def role_command(program, uid, args, namespace=None):
         sys.executable, '-I', str(program)] + args
 
 
-def run(output, with_bind=False, veritas_root=None):
+def run(output, with_bind=False, veritas_root=None, fault=None):
     need(with_bind, 'REAL_BIND_CUSTODY_MODE_REQUIRED')
+    need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
     need(os.geteuid() == 0 and sys.platform == 'linux', 'TRUSTED_DISPOSABLE_LINUX_CI_ROOT_REQUIRED')
     need(output.resolve().is_relative_to(Path.cwd().resolve()) and not output.exists(),
          'NEW_OUTPUT_DIRECTORY_UNDER_CHECKOUT_REQUIRED')
@@ -635,9 +674,11 @@ def run(output, with_bind=False, veritas_root=None):
                 os.chmod(path, 0o444)
             checks['issuer_credential_reads_denied_and_loopback_only'] = issued[
                 'issuer_credential_reads_denied_and_loopback_only']
-            sink_proc = spawn(BACKEND, ['--sink', str(base)], sink_ns, base / 'backend/ready', 'ready')
+            fault_args = ['--fault', fault] if fault else []
+            sink_proc = spawn(BACKEND, ['--sink', str(base)] + fault_args,
+                              sink_ns, base / 'backend/ready', 'ready')
             bind_args = ['--with-veritas-bind'] if with_bind else []
-            custody_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args,
+            custody_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args + fault_args,
                                  None, base / 'custody/ready', 'ready')
             executor_proc = spawn(EXECUTOR, ['--executor', str(base)],
                                   None, base / 'executor/ready', 'ready')
@@ -655,14 +696,22 @@ def run(output, with_bind=False, veritas_root=None):
             for mode in ('tamper', 'unsigned', 'forward'):
                 checks[mode + '_denied'] = probe(mode)[mode + '_expected_decision']
             checks['wrong_peer_uid_denied'] = probe('stranger', uid=STRANGER)['stranger_expected_decision']
-            checks['authorized_mock_effect_once'] = probe('valid')['valid_expected_decision']
-            checks['same_run_replay_denied'] = probe('replay')['replay_expected_decision']
-            custody_proc.terminate()
-            custody_proc.wait(timeout=5)
+            if fault:
+                checks['caller_gets_unknown_no_retry'] = probe('fault-attempt')['fault-attempt_expected_decision']
+                need(custody_proc.wait(timeout=5) == FAULTS[fault], 'EXACT_CUSTODY_FAULT_EXIT')
+                checks['exact_fault_exit_observed'] = True
+                checks['stopped_custody_replay_unknown_no_retry'] = probe(
+                    'stopped-replay')['stopped-replay_expected_decision']
+            else:
+                checks['authorized_mock_effect_once'] = probe('valid')['valid_expected_decision']
+                checks['same_run_replay_denied'] = probe('replay')['replay_expected_decision']
+                custody_proc.terminate()
+                custody_proc.wait(timeout=5)
             (base / 'custody/ready').unlink()
             custody_proc = spawn(CUSTODY, ['--custody', str(base), '--restart'] + bind_args, None,
                                   base / 'custody/ready', 'restarted')
             checks['restart_replay_denied'] = probe('replay')['replay_expected_decision']
+            reconciliation = probe('reconcile', uid=CUSTODY, namespace=None) if fault else None
             for proc in (executor_proc, custody_proc, sink_proc):
                 proc.terminate()
                 proc.wait(timeout=5)
@@ -671,12 +720,27 @@ def run(output, with_bind=False, veritas_root=None):
                 spent = db.execute('SELECT operation_id,receipt FROM spent').fetchall()
             with sqlite3.connect(base / 'custody/ledger.sqlite3') as db:
                 rows = db.execute('SELECT operation_id,state,receipt FROM consumed').fetchall()
-            need(counter == 1 and denials == 3 and len(spent) == len(rows) == 1,
+            expected_effect = 0 if fault == 'before-post' else 1
+            need(counter == expected_effect and denials == 3
+                 and len(spent) == expected_effect and len(rows) == 1,
                  'BACKEND_COUNTS_AND_DENIED_PROBE_RECONCILIATION')
-            need(rows[0] == (OP, 'MOCK_OBSERVED', spent[0][1]), 'LEDGER_BACKEND_RECEIPT_JOIN')
+            backend_receipt = spent[0][1] if spent else None
+            if fault:
+                local_state = 'MOCK_OBSERVED' if fault == 'before-client-reply' else 'CONSUMED_UNKNOWN'
+                local_receipt = backend_receipt if local_state == 'MOCK_OBSERVED' else None
+                need(rows[0] == (OP, local_state, local_receipt), 'EXACT_DURABLE_CRASH_STATE')
+                need(reconciliation == {'operation_id': OP, 'effect_count': expected_effect,
+                      'receipt': backend_receipt}, 'AUTHENTICATED_RECONCILIATION_BACKEND_DB_JOIN')
+                if backend_receipt is not None:
+                    need(backend_receipt == digest({'operation_id': OP, 'request': REQUEST}),
+                         'RECONCILIATION_RECEIPT_REQUEST_JOIN')
+                checks['authenticated_reconciliation_matches_backend_db'] = True
+                checks['crash_did_not_release_consumption'] = True
+            else:
+                need(rows[0] == (OP, 'MOCK_OBSERVED', backend_receipt), 'LEDGER_BACKEND_RECEIPT_JOIN')
             checks['backend_effect_and_ledger_receipt_reconciled'] = True
             bind_evidence = None
-            if with_bind:
+            if with_bind and fault in {None, 'before-client-reply'}:
                 bind_evidence = json.loads((base / 'custody/bind-evidence.json').read_bytes())
                 records = bind_evidence['records']
                 need(len(records) == 4 and bind_evidence['backend_receipt_sha256'] == spent[0][1]
@@ -701,9 +765,15 @@ def run(output, with_bind=False, veritas_root=None):
                       'backend_verifies_issuer_signature': True, 'executor_has_issuer_private_key': False,
                       'namespace_ids': namespace_ids, 'installed_and_checked_firewall_rule': rule,
                       'mock_effect_count': counter, 'backend_denial_count': denials,
-                      'receipt_sha256': spent[0][1], 'real_provider_calls': 0, 'real_bank_effects': 0,
+                      'receipt_sha256': backend_receipt, 'real_provider_calls': 0, 'real_bank_effects': 0,
+                      'fault': fault, 'custody_ledger_state': rows[0][1],
+                      'custody_ledger_receipt_sha256': rows[0][2],
+                      'authenticated_reconciliation': reconciliation,
+                      'reconciliation_scope': 'LOCAL_MOCK_CURRENT_BACKEND_STATE_NOT_EXTERNAL_PROVIDER',
+                      'automatic_retry_performed': False,
+                      'bind_terminal_receipt_observed': bind_evidence is not None,
                       'independent_administration_proven': False, 'real_veritas_bind_integrated': with_bind,
-                      'bind_evidence_sha256': digest(bind_evidence) if with_bind else None,
+                      'bind_evidence_sha256': digest(bind_evidence) if bind_evidence else None,
                       'bind_adapter_source_sha256': hashlib.sha256(bind_source.read_bytes()).hexdigest() if with_bind else None,
                       'exact_historical_helper_invocations_tested': False,
                       'production_bypass_resistance_proven': False, 'utility': 'UNSCORED',
@@ -747,18 +817,19 @@ def main():
     parser.add_argument('--output', type=Path)
     parser.add_argument('--with-veritas-bind', action='store_true')
     parser.add_argument('--veritas-root', type=Path)
+    parser.add_argument('--fault', choices=sorted(FAULTS))
     args = parser.parse_args()
     if args.run:
         need(args.output is not None, 'OUTPUT_REQUIRED')
-        run(args.output, args.with_veritas_bind, args.veritas_root)
+        run(args.output, args.with_veritas_bind, args.veritas_root, args.fault)
     elif args.sink:
-        sink(args.sink)
+        sink(args.sink, args.fault)
     elif args.issue:
         print(json.dumps(issue(args.issue), sort_keys=True))
     elif args.executor:
         executor(args.executor)
     elif args.custody:
-        custody(args.custody, args.restart, args.with_veritas_bind)
+        custody(args.custody, args.restart, args.with_veritas_bind, args.fault)
     else:
         print(json.dumps(worker(Path(args.worker[0]), args.worker[1]), sort_keys=True))
 

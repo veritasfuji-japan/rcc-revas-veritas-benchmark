@@ -91,11 +91,63 @@ jobs:
               ('authority-denied','BLOCKED',0),('wrong-target','BLOCKED',0),
               ('wrong-prestate','BLOCKED',0),('allow','COMMITTED',1)]
           assert all(digest(x['bind_receipt']) == x['receipt_sha256'] for x in b['records'])
-          for file,count in [('results/mock-executor-unit-junit.xml',15),('results/mock-authority/junit.xml',42)]:
+          for file,count in [('results/mock-executor-unit-junit.xml',17),('results/mock-authority/junit.xml',42)]:
               root=ET.parse(file).getroot()
               assert len(list(root.iter('testcase'))) == count
               assert not list(root.iter('skipped')) and not list(root.iter('failure')) and not list(root.iter('error'))
           print('CI_MOCK_EXECUTOR_KERNEL_AND_REAL_BIND_SAME_RUN_NO_PROVIDER')
+          PY
+      - name: Crash at consumed boundary and lose real mock HTTP response without retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          for fault in before-post backend-response-lost before-client-reply; do
+            sudo -n "$(command -v python)" -m scripts.ci_mock_executor_authority_boundary_v1 \
+              --run --with-veritas-bind --veritas-root _pins/veritas \
+              --fault "$fault" --output "results/fault-$fault"
+          done
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.ci_mock_executor_authority_boundary_v1 import digest, OP, REQUEST
+          for fault,effects,state,terminal,count in [
+              ('before-post',0,'CONSUMED_UNKNOWN',False,40),
+              ('backend-response-lost',1,'CONSUMED_UNKNOWN',False,40),
+              ('before-client-reply',1,'MOCK_OBSERVED',True,45)]:
+              folder=Path('results/fault-'+fault)
+              r=json.loads((folder/'report.json').read_text())
+              assert r['audited_commit'] == '${{ github.event.pull_request.head.sha }}'
+              assert r['source_sha256'] == hashlib.sha256(Path('scripts/ci_mock_executor_authority_boundary_v1.py').read_bytes()).hexdigest()
+              assert r['fault'] == fault and r['mock_effect_count'] == effects
+              assert r['backend_denial_count'] == 3 and r['custody_ledger_state'] == state
+              assert len(r['checks']) == count and all(x is True for x in r['checks'].values())
+              assert r['checks']['caller_gets_unknown_no_retry'] is True
+              assert r['checks']['stopped_custody_replay_unknown_no_retry'] is True
+              assert r['checks']['restart_replay_denied'] is True
+              assert r['checks']['authenticated_reconciliation_matches_backend_db'] is True
+              receipt=digest({'operation_id':OP,'request':REQUEST}) if effects else None
+              assert r['receipt_sha256'] == receipt
+              assert r['custody_ledger_receipt_sha256'] == (receipt if terminal else None)
+              assert r['authenticated_reconciliation'] == {'operation_id':OP,'effect_count':effects,'receipt':receipt}
+              assert r['automatic_retry_performed'] is False
+              assert r['bind_terminal_receipt_observed'] is terminal
+              assert r['real_provider_calls'] == r['real_bank_effects'] == 0
+              assert r['provider_dispatch'] == 'DENY' and r['utility'] == 'UNSCORED'
+              assert r['production_bypass_resistance_proven'] is False
+              root=ET.parse(folder/'junit.xml').getroot()
+              assert len(list(root.iter('testcase'))) == count
+              assert not any(list(root.iter(x)) for x in ('failure','error','skipped'))
+              if terminal:
+                  b=json.loads((folder/'bind-evidence.json').read_text())
+                  assert r['bind_evidence_sha256'] == digest(b)
+                  assert b['backend_receipt_sha256'] == receipt
+                  assert [(x['outcome'],x['apply_calls']) for x in b['records']] == [('BLOCKED',0)]*3+[('COMMITTED',1)]
+                  assert all(digest(x['bind_receipt']) == x['receipt_sha256'] for x in b['records'])
+              else:
+                  assert r['bind_evidence_sha256'] is None
+                  assert not (folder/'bind-evidence.json').exists()
+          print('THREE_CRASH_WINDOWS_RECONCILED_NO_RETRY_NO_PROVIDER')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
