@@ -593,6 +593,56 @@ jobs:
               assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
           print('DEFAULT_HTTPS_FACTORIES_LOCAL_TLS_OS_AUTH_DENIAL_AND_ONE_ACTUAL_BIND_MOCK_EFFECT_VERIFIED')
           PY
+      - name: Join eight actual Native requests to the same closed TLS sink that denies bypasses
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_local_https_v1.py \
+            --junitxml=results/task4-native-local-https-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_os_custody_v1 \
+            --run --local-https --output results/task4-native-local-https
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.task4_native_local_https_v1 import validate,digest,IP
+          folder=Path('results/task4-native-local-https')
+          r=json.loads((folder/'native-https.json').read_text())
+          n=json.loads((folder/'report.json').read_text())
+          b=json.loads((folder/'bind-records.json').read_text())
+          assert r['schema'] == 'task4.native.local-https.v1'
+          assert r['audited_commit'] == n['audited_commit'] == subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert r['source_sha256'] == hashlib.sha256(Path('scripts/task4_native_local_https_v1.py').read_bytes()).hexdigest()
+          assert r['normal_source_sha256'] == n['source_sha256'] == hashlib.sha256(Path('scripts/task4_native_os_custody_v1.py').read_bytes()).hexdigest()
+          assert r['normal_report_sha256'] == digest(n)
+          assert r['evidence_sha256'] == digest(r['evidence']) and validate(r['evidence'],n,b)
+          assert len(r['checks']) == 16 and all(v is True for v in r['checks'].values())
+          assert n['firewall_rule'] == ['OUTPUT','-d',IP,'-p','tcp','--dport','443',
+              '-m','owner','!','--uid-owner','61106','-j','REJECT']
+          assert len(n['native']['frozen_source_git_blobs']) == 9
+          assert n['external_pins'] == dict(agentdojo='a75aba7631d3ca5fb7ab938965c97ead2f9ff84b',
+              rcc='1d3782d3aae5ff9c88036709c1a5642320cc53c2',veritas='a1d66aef02262cf8a913295270c3aafd159c6adb')
+          assert n['native']['lineage']['detached_native_scorer_calls_locally'] == 2
+          assert n['native']['lineage']['complete_native_terminals_locally'] == 2
+          assert n['native']['signature_wire_target_denials'] == 3
+          assert n['native_has_transport_credential'] is n['native_has_issuer_private_key'] is False
+          assert n['recipient_private_key_publicly_reproducible'] is True
+          assert n['real_data_confidentiality_proven'] is False
+          assert r['native_task4_tls_pipeline_integrated'] is r['local_test_ca_not_public_provider_identity'] is True
+          assert r['trusted_root_kernel_custody_backend'] is True
+          for report in (r,n):
+              assert report['real_provider_posts'] == report['external_bank_effects'] == 0
+              assert report['provider_dispatch'] == 'DENY' and report['utility'] == 'UNSCORED'
+              assert report['independent_administration_proven'] is report['production_bypass_resistance_proven'] is False
+          for file,count,checks in [('results/task4-native-local-https-unit-junit.xml',29,None),
+                                    (folder/'junit.xml',22,n['checks']),(folder/'native-https-junit.xml',16,r['checks'])]:
+              t=ET.parse(file).getroot()
+              assert len(list(t.iter('testcase'))) == count
+              assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
+              if checks is not None:
+                  assert {x.attrib['name'] for x in t.iter('testcase')} == set(checks)
+          print('SAME_LIVE_CLOSED_TLS_SINK_DEFAULT_HELPER_DENIALS_EIGHT_NATIVE_BIND_SEALED_RESPONSE_SCORER_JOINS_VERIFIED')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

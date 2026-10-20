@@ -31,6 +31,7 @@ from scripts import ci_mock_executor_authority_boundary_v1 as kernel
 ROOT = Path(__file__).resolve().parents[1]
 NATIVE, BACKEND, ISSUER, CUSTODY = kernel.AGENT, kernel.BACKEND, kernel.ISSUER, kernel.CUSTODY
 HOST, PORT = kernel.HOST, 18492
+TLS_BASE = None  # Selected only by a root-owned, exact local fixture marker.
 LIMIT = 256000
 SCOPE_SHA = 'ee33c0a2d768ad4c7ceb4699a1abb702f6eb8e2f1ca8e0a64ce6c1867f860309'
 RECIPIENT_SHA = '8f15bcc58f2ddb4f6d5e490191d96b84d1f67b5872f5ec3871afd2e33c3f6aa1'
@@ -192,6 +193,9 @@ def issue(base):
 
 
 def http_call(method, path, body, key):
+    if TLS_BASE is not None:
+        from scripts.task4_native_local_https_v1 import call
+        return call(TLS_BASE, method, path, body, key)
     conn = http.client.HTTPConnection(HOST, PORT, timeout=5)
     try:
         conn.request(method, path, body=canonical(body) if body is not None else None,
@@ -234,6 +238,8 @@ def backend(base, restart=False):
     import httpx
     from scripts import task4_325_exact_sdk_wire_offline_v1 as cap
     from scripts.task4_retained_sender_denial_v1 import observe
+    from scripts import task4_native_local_https_v1 as tls
+    local_https = tls.enabled(base)
     kernel.role_identity(BACKEND)
     os.umask(0o077)
     key = (base / 'backend/credential').read_bytes()
@@ -274,8 +280,9 @@ def backend(base, restart=False):
             body = b''
             try:
                 size = int(self.headers.get('Content-Length', '0'))
-                need(self.path == '/effect' and 0 < size <= LIMIT, 'EXACT_LOCAL_ENDPOINT')
+                need(0 < size <= LIMIT and (local_https or self.path == '/effect'), 'EXACT_LOCAL_ENDPOINT')
                 body = self.rfile.read(size)
+                need(self.path == '/effect', 'EXACT_LOCAL_EFFECT_PATH')
                 packet = parse(body)
                 need(hmac.compare_digest(tag(key, b'TASK4_NATIVE_HTTP_V1\0',
                      {'method': 'POST', 'path': '/effect', 'body': packet}),
@@ -295,6 +302,8 @@ def backend(base, restart=False):
                 receipt = digest(record)
                 db.execute('INSERT INTO effects VALUES (?,?,?,?)', (op, sha(raw), sha(fake.content), receipt))
                 observe(base, body, 'EFFECT_COMMITTED')
+                tls.observe(base, self, body, 'EFFECT_COMMITTED', record,
+                            dict(record, receipt_sha256=receipt, response_b64=encode(fake.content)))
                 if (fault_mode(base) == 'backend-response-lost' or concurrent_response_loss_mode(base)) and op == 'A0':
                     durable_marker(base / 'backend/fault-observed.json', dict(record, receipt_sha256=receipt))
                     self.close_connection = True
@@ -304,9 +313,11 @@ def backend(base, restart=False):
                 self.respond(200, dict(record, receipt_sha256=receipt, response_b64=encode(fake.content)))
             except (ValueError, KeyError, TypeError, sqlite3.IntegrityError):
                 observe(base, body, 'DENIED')
+                tls.observe(base, self, body, 'DENIED')
                 self.respond(403, {'decision': 'DENIED'})
 
-    server = HTTPServer((HOST, PORT), Handler)
+    server = (tls.server_class(base)((tls.IP, tls.PORT), Handler) if local_https
+              else HTTPServer((HOST, PORT), Handler))
     (base / 'backend/ready').write_text('restarted' if restart else 'ready')
     server.serve_forever()
 
@@ -533,7 +544,9 @@ def probe(base, reachable=False):
         checks['tracked_service_code_overwrite_denied'] = True
     else:
         raise ValueError('TRACKED_SERVICE_CODE_OVERWRITE')
-    checks['raw_ipv4_denied'] = kernel.denied_connect(HOST, PORT)
+    from scripts import task4_native_local_https_v1 as tls
+    host, port = (tls.IP, tls.PORT) if tls.enabled(base) else (HOST, PORT)
+    checks['raw_ipv4_denied'] = kernel.denied_connect(host, port)
     checks['raw_ipv6_denied'] = kernel.denied_connect('2001:db8::1', 443, socket.AF_INET6)
     try:
         http_call('POST', '/effect', {}, None)
@@ -542,7 +555,7 @@ def probe(base, reachable=False):
     else:
         raise ValueError('NATIVE_HTTP_DIRECT_ALLOWED')
     child = subprocess.run([sys.executable, '-I', '-c',
-        'import socket,sys\ntry: socket.create_connection((' + repr(HOST) + ',' + str(PORT) + '),1)\n'
+        'import socket,sys\ntry: socket.create_connection((' + repr(host) + ',' + str(port) + '),1)\n'
         'except OSError: sys.exit(0)\nelse: sys.exit(9)'], capture_output=True, timeout=4)
     need(child.returncode == 0, 'SUBPROCESS_NETWORK_BYPASS')
     checks['subprocess_network_denied'] = True
@@ -1182,7 +1195,10 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
 
 
 def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False,
-        retained_senders=False):
+        retained_senders=False, local_https=False):
+    from scripts import task4_native_local_https_v1 as tls
+    need(type(local_https) is bool and (not local_https or
+         (not fault and not restart_both and not concurrent and not retained_senders)), 'LOCAL_HTTPS_NORMAL_FIXTURE_ONLY')
     need(fault in ('', *FAULTS), 'EXACT_FAULT_MODE')
     need(type(restart_both) is bool and (not restart_both or fault in FAULTS or concurrent_response_loss),
          'BOTH_RESTART_REQUIRES_FAULT_OR_CONCURRENT_RESPONSE_LOSS')
@@ -1215,10 +1231,12 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
     output.mkdir(parents=True)
     token = secrets.token_hex(4)
     native_ns, sink_ns = 'nat' + token, 'snk' + token
+    client_ns = 'tls' + token if local_https else None
     host_if, sink_if = 'h' + token, 's' + token
-    rule = ['OUTPUT', '-d', HOST, '-p', 'tcp', '--dport', str(PORT),
+    host, port = (tls.IP, tls.PORT) if local_https else (HOST, PORT)
+    rule = ['OUTPUT', '-d', host, '-p', 'tcp', '--dport', str(port),
             '-m', 'owner', '!', '--uid-owner', str(CUSTODY), '-j', 'REJECT']
-    processes, namespaces = [], []
+    processes, namespaces, directories = [], [], []
     installed = link_created = False
     with tempfile.TemporaryDirectory(prefix='task4-native-os-') as tmp:
         base = Path(tmp)
@@ -1255,6 +1273,8 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             folder.mkdir(mode=0o755 if role == 'ipc' else 0o700)
             os.chown(folder, uid, uid)
         (base / 'public').mkdir(mode=0o755)
+        if local_https:
+            certificates = tls.enroll(base)
         if retained_senders:
             (base / 'public/retained-senders').write_text('retained-senders-local-v1')
             os.chmod(base / 'public/retained-senders', 0o444)
@@ -1278,6 +1298,8 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             os.chown(file, uid, uid)
         env = {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LANG': 'C.UTF-8',
                'PYTHONDONTWRITEBYTECODE': '1', 'TASK4_RCC_ROOT': str(source / '_pins/rcc')}
+        if local_https:
+            env['SSL_CERT_FILE'] = str(base / 'public/ca.pem')
         # -I ignores PYTHONPATH; insert only the root-owned tracked source copy.
         import_roots = [source, source / 'scripts', source / '_pins/agentdojo/src',
                         source / '_pins/veritas', source / '_pins/rcc/external-eval/v0.3.9/src']
@@ -1311,20 +1333,23 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             raise ValueError('SERVICE_READY_TIMEOUT')
 
         try:
-            for ns in (native_ns, sink_ns):
-                kernel.command(['ip', 'netns', 'add', ns])
-                namespaces.append(ns)
-                kernel.command(['ip', '-n', ns, 'link', 'set', 'lo', 'up'])
-            kernel.command(['ip', 'link', 'add', host_if, 'type', 'veth', 'peer', 'name', sink_if])
-            link_created = True
-            kernel.command(['ip', 'link', 'set', sink_if, 'netns', sink_ns])
-            kernel.command(['ip', 'addr', 'add', '10.249.91.1/30', 'dev', host_if])
-            kernel.command(['ip', 'link', 'set', host_if, 'up'])
-            kernel.command(['ip', '-n', sink_ns, 'addr', 'add', HOST + '/30', 'dev', sink_if])
-            kernel.command(['ip', '-n', sink_ns, 'link', 'set', sink_if, 'up'])
-            kernel.command(['iptables', '-I'] + rule[:1] + ['1'] + rule[1:])
-            installed = True
-            kernel.command(['iptables', '-C'] + rule)
+            if local_https:
+                network = tls.topology(client_ns, sink_ns, native_ns, host_if, sink_if, namespaces, directories, rule)
+            else:
+                for ns in (native_ns, sink_ns):
+                    kernel.command(['ip', 'netns', 'add', ns])
+                    namespaces.append(ns)
+                    kernel.command(['ip', '-n', ns, 'link', 'set', 'lo', 'up'])
+                kernel.command(['ip', 'link', 'add', host_if, 'type', 'veth', 'peer', 'name', sink_if])
+                link_created = True
+                kernel.command(['ip', 'link', 'set', sink_if, 'netns', sink_ns])
+                kernel.command(['ip', 'addr', 'add', '10.249.91.1/30', 'dev', host_if])
+                kernel.command(['ip', 'link', 'set', host_if, 'up'])
+                kernel.command(['ip', '-n', sink_ns, 'addr', 'add', HOST + '/30', 'dev', sink_if])
+                kernel.command(['ip', '-n', sink_ns, 'link', 'set', sink_if, 'up'])
+                kernel.command(['iptables', '-I'] + rule[:1] + ['1'] + rule[1:])
+                installed = True
+                kernel.command(['iptables', '-C'] + rule)
             links = json.loads(kernel.command(['ip', '-n', native_ns, '-j', 'link', 'show']).stdout)
             need([x['ifname'] for x in links] == ['lo'], 'NATIVE_LOOPBACK_ONLY')
             issued = worker(ISSUER, 'issue', native_ns)
@@ -1336,7 +1361,9 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 file.write_bytes(data)
                 os.chmod(file, 0o444)
             sink = spawn(BACKEND, 'backend', sink_ns, base / 'backend/ready')
-            service = spawn(CUSTODY, 'custody', None, base / 'custody/ready')
+            service = spawn(CUSTODY, 'custody', client_ns, base / 'custody/ready')
+            if local_https:
+                tls_phases = tls.negatives(base, worker, client_ns, sink_ns, native_ns)
             if retained_senders:
                 from scripts.task4_retained_sender_denial_v1 import validate_observations
                 sender_phases = {'native_netns': worker(NATIVE, 'retained-probe', native_ns)}
@@ -1372,7 +1399,7 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             service.terminate()
             service.wait(timeout=5)
             (base / 'custody/ready').unlink()
-            service = spawn(CUSTODY, 'custody', None, base / 'custody/ready', 'restarted', ('--restart',))
+            service = spawn(CUSTODY, 'custody', client_ns, base / 'custody/ready', 'restarted', ('--restart',))
             restart_report = worker(NATIVE, 'restart-probe', native_ns)
             for p in (service, sink):
                 p.terminate()
@@ -1422,6 +1449,8 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 'trusted_root_kernel_custody_backend': True}
             (output / 'report.json').write_bytes(canonical(report))
             (output / 'bind-records.json').write_bytes(canonical(bindings))
+            if local_https:
+                tls.finish(base, output, report, bindings, tls_phases, certificates, network)
             if retained_senders:
                 observations = [parse(x.encode()) for x in observation_file.read_text().splitlines()]
                 validate_observations(sender_phases, observations, 8)
@@ -1476,12 +1505,14 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 kernel.command(['iptables', '-D'] + rule, check=False)
             for ns in reversed(namespaces):
                 kernel.command(['ip', 'netns', 'del', ns], check=False)
+            tls.cleanup(directories)
             if link_created:
                 kernel.command(['ip', 'link', 'del', host_if], check=False)
     print('TASK4_NATIVE_OS_CUSTODY_BIND_LOCAL_HTTP_NO_PROVIDER')
 
 
 def main():
+    global TLS_BASE
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run', action='store_true')
     parser.add_argument('--output', type=Path)
@@ -1491,21 +1522,27 @@ def main():
     parser.add_argument('--concurrent-crash', action='store_true')
     parser.add_argument('--concurrent-response-loss', action='store_true')
     parser.add_argument('--retained-senders', action='store_true')
+    parser.add_argument('--local-https', action='store_true')
     parser.add_argument('--secondary', action='store_true')
-    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable'))
+    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca'))
     parser.add_argument('--base', type=Path)
     parser.add_argument('--restart', action='store_true')
     args = parser.parse_args()
     if args.run:
         need(args.output is not None and args.role is None and not args.secondary, 'RUN_OUTPUT_REQUIRED')
         run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash,
-            args.concurrent_response_loss, args.retained_senders)
+            args.concurrent_response_loss, args.retained_senders, args.local_https)
     else:
         need(args.role is not None and args.base is not None and not args.fault and not args.restart_both
              and not args.concurrent and not args.concurrent_crash and not args.concurrent_response_loss
-             and not args.retained_senders
+             and not args.retained_senders and not args.local_https
              and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
         from scripts.task4_retained_sender_denial_v1 import probe as retained_probe
+        from scripts import task4_native_local_https_v1 as tls
+        TLS_BASE = args.base if tls.enabled(args.base) else None
+        if args.role.startswith('tls-'):
+            print(canonical(tls.probe(args.base, args.role.removeprefix('tls-'))).decode())
+            return
         roles = {'issue': issue, 'backend': lambda b: backend(b, args.restart), 'probe': probe,
                  'reachable': lambda b: probe(b, True), 'native': native, 'restart-probe': restart_probe,
                  'wrong-peer': wrong_peer,
