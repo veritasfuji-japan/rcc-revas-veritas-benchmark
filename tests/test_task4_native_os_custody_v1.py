@@ -257,3 +257,59 @@ def test_crash_mode_requires_exact_root_enrollment_and_two_process_fixture(tmp_p
         proof.concurrent_crash_mode(tmp_path)
     (tmp_path / 'public/concurrent').write_text('two-custody-v1')
     assert proof.concurrent_crash_mode(tmp_path) is True
+
+
+def test_response_loss_configuration_is_exact_and_excludes_pre_send_crash(tmp_path):
+    assert proof.concurrent_response_loss_mode(tmp_path) is False
+    (tmp_path / 'public').mkdir()
+    (tmp_path / 'public/concurrent-response-loss').write_text('backend-commit-drop-v1')
+    with pytest.raises(ValueError):
+        proof.concurrent_response_loss_mode(tmp_path)
+    (tmp_path / 'public/concurrent').write_text('two-custody-v1')
+    assert proof.concurrent_response_loss_mode(tmp_path) is True
+    (tmp_path / 'public/concurrent-response-loss').write_text('caller-specified-stage')
+    with pytest.raises(ValueError):
+        proof.concurrent_response_loss_mode(tmp_path)
+    (tmp_path / 'public/concurrent-response-loss').write_text('backend-commit-drop-v1')
+    (tmp_path / 'public/concurrent-crash').write_text('consumed-before-bind-v1')
+    with pytest.raises(ValueError):
+        proof.concurrent_response_loss_mode(tmp_path)
+
+
+def confirmed_ledger(tmp_path, state):
+    import sqlite3
+    folder = tmp_path / 'custody'
+    folder.mkdir()
+    (folder / 'credential').write_bytes(b'test-only')
+    request_sha, response_sha = 'a'*64, 'b'*64
+    receipt = proof.digest(dict(operation_id='A0',request_sha256=request_sha,response_sha256=response_sha))
+    row = ('A0', state, request_sha, response_sha, receipt)
+    with sqlite3.connect(folder / 'ledger.sqlite3') as db:
+        db.execute('CREATE TABLE consumed (op,state,request_sha,response_sha,backend_receipt)')
+        db.execute('INSERT INTO consumed VALUES (?,?,?,?,?)', row)
+    return folder / 'ledger.sqlite3', row
+
+
+@pytest.mark.parametrize('state', ['MOCK_OBSERVED', 'MOCK_EFFECT_CONFIRMED_NO_RESPONSE'])
+def test_confirmed_response_receipt_cannot_be_overwritten_by_different_valid_hash(tmp_path, monkeypatch, state):
+    import sqlite3
+    file, row = confirmed_ledger(tmp_path, state)
+    other_response = 'c'*64
+    other_receipt = proof.digest(dict(operation_id='A0',request_sha256=row[2],response_sha256=other_response))
+    monkeypatch.setattr(proof.kernel, 'role_identity', lambda _: None)
+    monkeypatch.setattr(proof, 'http_call', lambda *_: (200,dict(operation_id='A0',record=[row[2],other_response,other_receipt])))
+    with pytest.raises(ValueError, match='STORED_LEDGER_RECEIPT_MATCH'):
+        proof.reconcile_fault(tmp_path)
+    with sqlite3.connect(file) as db:
+        assert db.execute('SELECT * FROM consumed').fetchall() == [row]
+
+
+def test_missing_receipt_cannot_erase_prior_effect_confirmation(tmp_path, monkeypatch):
+    import sqlite3
+    file, row = confirmed_ledger(tmp_path, 'MOCK_EFFECT_CONFIRMED_NO_RESPONSE')
+    monkeypatch.setattr(proof.kernel, 'role_identity', lambda _: None)
+    monkeypatch.setattr(proof, 'http_call', lambda *_: (200,dict(operation_id='A0',record=None)))
+    with pytest.raises(ValueError, match='ABSENCE_MUST_NOT_RESET_AUTHORITY'):
+        proof.reconcile_fault(tmp_path)
+    with sqlite3.connect(file) as db:
+        assert db.execute('SELECT * FROM consumed').fetchall() == [row]
