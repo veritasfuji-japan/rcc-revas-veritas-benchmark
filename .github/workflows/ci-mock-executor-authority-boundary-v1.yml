@@ -91,7 +91,7 @@ jobs:
               ('authority-denied','BLOCKED',0),('wrong-target','BLOCKED',0),
               ('wrong-prestate','BLOCKED',0),('allow','COMMITTED',1)]
           assert all(digest(x['bind_receipt']) == x['receipt_sha256'] for x in b['records'])
-          for file,count in [('results/mock-executor-unit-junit.xml',17),('results/mock-authority/junit.xml',42)]:
+          for file,count in [('results/mock-executor-unit-junit.xml',26),('results/mock-authority/junit.xml',42)]:
               root=ET.parse(file).getroot()
               assert len(list(root.iter('testcase'))) == count
               assert not list(root.iter('skipped')) and not list(root.iter('failure')) and not list(root.iter('error'))
@@ -148,6 +148,58 @@ jobs:
                   assert r['bind_evidence_sha256'] is None
                   assert not (folder/'bind-evidence.json').exists()
           print('THREE_CRASH_WINDOWS_RECONCILED_NO_RETRY_NO_PROVIDER')
+          PY
+      - name: Restart both Custody and backend against their retained databases
+        shell: bash
+        run: |
+          set -euo pipefail
+          for fault in before-post backend-response-lost before-client-reply; do
+            sudo -n "$(command -v python)" -m scripts.ci_mock_executor_authority_boundary_v1 \
+              --run --with-veritas-bind --veritas-root _pins/veritas --restart-backend \
+              --fault "$fault" --output "results/both-restart-$fault"
+          done
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.ci_mock_executor_authority_boundary_v1 import digest, OP, REQUEST
+          for fault,effects,state,terminal,count in [
+              ('before-post',0,'CONSUMED_UNKNOWN',False,43),
+              ('backend-response-lost',1,'CONSUMED_UNKNOWN',False,44),
+              ('before-client-reply',1,'MOCK_OBSERVED',True,49)]:
+              folder=Path('results/both-restart-'+fault)
+              r=json.loads((folder/'report.json').read_text())
+              e=json.loads((folder/'restart-evidence.json').read_text())
+              assert r['audited_commit'] == '${{ github.event.pull_request.head.sha }}'
+              assert r['source_sha256'] == hashlib.sha256(Path('scripts/ci_mock_executor_authority_boundary_v1.py').read_bytes()).hexdigest()
+              assert r['bind_adapter_source_sha256'] == hashlib.sha256(Path('scripts/ci_mock_executor_veritas_bind_v1.py').read_bytes()).hexdigest()
+              assert r['backend_restarted'] is True and r['fault'] == fault
+              assert r['mock_effect_count'] == effects and r['backend_denial_count'] == (4 if effects else 3)
+              assert r['custody_ledger_state'] == state
+              assert len(r['checks']) == count and all(x is True for x in r['checks'].values())
+              assert r['checks']['both_services_restarted_in_new_processes'] is True
+              assert r['checks']['both_databases_preserved_across_restart'] is True
+              assert r['checks']['restart_replay_denied'] is True
+              if effects:
+                  assert r['checks']['restarted_backend_authentic_authorized_duplicate_denied'] is True
+              assert r['restart_evidence_sha256'] == digest(e)
+              assert e['before'] == e['after']
+              assert all(e['original_pids'][k] != e['restarted_pids'][k] for k in ('backend','custody'))
+              receipt=digest({'operation_id':OP,'request':REQUEST}) if effects else None
+              assert r['receipt_sha256'] == receipt
+              assert e['before_reconciliation'] == e['after_reconciliation'] == r['authenticated_reconciliation'] == {'operation_id':OP,'effect_count':effects,'receipt':receipt}
+              assert e['before']['backend']['state'] == [[1,effects,3]]
+              assert e['before']['backend']['spent'] == ([[OP,receipt]] if effects else [])
+              assert e['before']['custody']['consumed'] == [[OP,state,receipt if terminal else None]]
+              assert r['bind_terminal_receipt_observed'] is terminal
+              assert r['automatic_retry_performed'] is False
+              assert r['real_provider_calls'] == r['real_bank_effects'] == 0
+              assert r['provider_dispatch'] == 'DENY' and r['utility'] == 'UNSCORED'
+              assert r['production_bypass_resistance_proven'] is False
+              root=ET.parse(folder/'junit.xml').getroot()
+              assert len(list(root.iter('testcase'))) == count
+              assert not any(list(root.iter(x)) for x in ('failure','error','skipped'))
+          print('BOTH_SERVICES_RESTARTED_NO_DUPLICATE_EFFECT_NO_PROVIDER')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

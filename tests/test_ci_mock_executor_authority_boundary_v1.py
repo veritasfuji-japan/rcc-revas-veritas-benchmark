@@ -95,3 +95,54 @@ def test_custody_refuses_unknown_fault_before_opening_credential(tmp_path, monke
     monkeypatch.setattr(boundary, 'role_identity', lambda uid: None)
     with pytest.raises(ValueError, match='EXACT_TEST_FAULT'):
         boundary.custody(tmp_path, with_bind=True, fault='retry-anyway')
+
+
+@pytest.mark.parametrize('effects', [0, 1])
+def test_backend_restart_preserves_effect_and_denials(tmp_path, effects):
+    file = tmp_path / 'backend.sqlite3'
+    db = boundary.backend_store(file)
+    db.execute('UPDATE state SET counter=?,denials=3', (effects,))
+    if effects:
+        db.execute('INSERT INTO spent VALUES (?,?)', (boundary.OP,
+            boundary.digest({'operation_id': boundary.OP, 'request': boundary.REQUEST})))
+    before = db.execute('SELECT * FROM state').fetchall(), db.execute('SELECT * FROM spent').fetchall()
+    db.close()
+    db = boundary.backend_store(file, restart=True)
+    after = db.execute('SELECT * FROM state').fetchall(), db.execute('SELECT * FROM spent').fetchall()
+    db.close()
+    assert before == after
+
+
+def test_missing_backend_restart_refused_without_creating_empty_db(tmp_path):
+    file = tmp_path / 'missing.sqlite3'
+    with pytest.raises(ValueError, match='EXACT_BACKEND_DB_LIFECYCLE'):
+        boundary.backend_store(file, restart=True)
+    assert not file.exists()
+
+
+def test_fresh_backend_start_refuses_existing_db(tmp_path):
+    file = tmp_path / 'existing.sqlite3'
+    boundary.backend_store(file).close()
+    with pytest.raises(ValueError, match='EXACT_BACKEND_DB_LIFECYCLE'):
+        boundary.backend_store(file)
+
+
+@pytest.mark.parametrize('fault', ['missing_receipt', 'wrong_receipt', 'orphan_receipt', 'negative_denials'])
+def test_backend_restart_refuses_inconsistent_durable_state(tmp_path, fault):
+    file = tmp_path / 'inconsistent.sqlite3'
+    db = boundary.backend_store(file)
+    if fault in {'missing_receipt', 'wrong_receipt'}:
+        db.execute('UPDATE state SET counter=1')
+    if fault in {'wrong_receipt', 'orphan_receipt'}:
+        db.execute('INSERT INTO spent VALUES (?,?)', (boundary.OP, '0' * 64))
+    if fault == 'negative_denials':
+        db.execute('UPDATE state SET denials=-1')
+    db.close()
+    with pytest.raises(ValueError):
+        boundary.backend_store(file, restart=True)
+
+
+def test_both_restart_requires_explicit_fault_case(tmp_path):
+    with pytest.raises(ValueError, match='BACKEND_RESTART_REQUIRES_FAULT_CASE'):
+        boundary.run(tmp_path / 'proof', with_bind=True, restart_backend=True)
+    assert not (tmp_path / 'proof').exists()
