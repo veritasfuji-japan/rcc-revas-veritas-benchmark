@@ -643,6 +643,53 @@ jobs:
                   assert {x.attrib['name'] for x in t.iter('testcase')} == set(checks)
           print('SAME_LIVE_CLOSED_TLS_SINK_DEFAULT_HELPER_DENIALS_EIGHT_NATIVE_BIND_SEALED_RESPONSE_SCORER_JOINS_VERIFIED')
           PY
+      - name: Restart durable issuer without reissuing permission or repeating Native TLS effects
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_durable_issuer_restart_v1.py \
+            --junitxml=results/task4-durable-issuer-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_os_custody_v1 \
+            --run --local-https --durable-issuer --output results/task4-durable-issuer-restart
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.task4_durable_issuer_restart_v1 import validate,digest
+          from scripts.task4_native_local_https_v1 import validate as validate_tls
+          folder=Path('results/task4-durable-issuer-restart')
+          r=json.loads((folder/'durable-issuer.json').read_text())
+          n=json.loads((folder/'report.json').read_text())
+          t=json.loads((folder/'native-https.json').read_text())
+          b=json.loads((folder/'bind-records.json').read_text())
+          assert r['schema']=='task4.durable-issuer-restart.v1'
+          assert r['audited_commit']==n['audited_commit']==t['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert r['source_sha256']==hashlib.sha256(Path('scripts/task4_durable_issuer_restart_v1.py').read_bytes()).hexdigest()
+          assert r['normal_source_sha256']==n['source_sha256']==hashlib.sha256(Path('scripts/task4_native_os_custody_v1.py').read_bytes()).hexdigest()
+          assert t['source_sha256']==hashlib.sha256(Path('scripts/task4_native_local_https_v1.py').read_bytes()).hexdigest()
+          assert r['normal_report_sha256']==digest(n) and r['tls_report_sha256']==digest(t)
+          assert r['evidence_sha256']==digest(r['evidence']) and validate(r['evidence'],n,t)
+          assert validate_tls(t['evidence'],n,b)
+          assert len(r['checks'])==16 and all(v is True for v in r['checks'].values())
+          assert len(n['checks'])==22 and all(v is True for v in n['checks'].values())
+          assert len(n['native']['frozen_source_git_blobs'])==9
+          assert n['native']['lineage']['detached_native_scorer_calls_locally']==2
+          assert n['native']['lineage']['complete_native_terminals_locally']==2
+          for report in (r,n,t):
+              assert report['real_provider_posts']==report['external_bank_effects']==0
+              assert report['utility']=='UNSCORED' and report['provider_dispatch']=='DENY'
+              assert report['production_bypass_resistance_proven'] is report['independent_administration_proven'] is False
+          assert r['storage_rollback_resistance_proven'] is r['distributed_issuer_cas_proven'] is False
+          assert r['trusted_root_kernel_custody_backend'] is True
+          for file,count,checks in [('results/task4-durable-issuer-unit-junit.xml',38,None),
+                                    (folder/'durable-issuer-junit.xml',16,r['checks']),
+                                    (folder/'native-https-junit.xml',16,t['checks']),(folder/'junit.xml',22,n['checks'])]:
+              j=ET.parse(file).getroot()
+              assert len(list(j.iter('testcase')))==count
+              assert not any(list(j.iter(x)) for x in ('skipped','failure','error'))
+              if checks is not None: assert {x.attrib['name'] for x in j.iter('testcase')}==set(checks)
+          print('DURABLE_ISSUER_SIGKILL_RESTART_SAME_EIGHT_GRANTS_NO_EXTRA_TLS_EFFECT_INVALID_STATE_NO_REGENERATION')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

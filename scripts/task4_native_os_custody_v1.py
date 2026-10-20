@@ -1195,8 +1195,10 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
 
 
 def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False,
-        retained_senders=False, local_https=False):
+        retained_senders=False, local_https=False, durable_issuer=False):
     from scripts import task4_native_local_https_v1 as tls
+    from scripts import task4_durable_issuer_restart_v1 as durable
+    need(type(durable_issuer) is bool and (not durable_issuer or local_https), 'DURABLE_ISSUER_REQUIRES_LOCAL_TLS')
     need(type(local_https) is bool and (not local_https or
          (not fault and not restart_both and not concurrent and not retained_senders)), 'LOCAL_HTTPS_NORMAL_FIXTURE_ONLY')
     need(fault in ('', *FAULTS), 'EXACT_FAULT_MODE')
@@ -1273,6 +1275,9 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             folder.mkdir(mode=0o755 if role == 'ipc' else 0o700)
             os.chown(folder, uid, uid)
         (base / 'public').mkdir(mode=0o755)
+        if durable_issuer:
+            (base / 'public/durable-issuer').write_text(durable.MARKER)
+            os.chmod(base / 'public/durable-issuer', 0o444)
         if local_https:
             certificates = tls.enroll(base)
         if retained_senders:
@@ -1352,7 +1357,12 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 kernel.command(['iptables', '-C'] + rule)
             links = json.loads(kernel.command(['ip', '-n', native_ns, '-j', 'link', 'show']).stdout)
             need([x['ifname'] for x in links] == ['lo'], 'NATIVE_LOOPBACK_ONLY')
-            issued = worker(ISSUER, 'issue', native_ns)
+            if durable_issuer:
+                issuer_service = spawn(ISSUER, 'durable-issuer', native_ns, base / 'issuer/ready')
+                issued = durable.rpc(base, 'export-existing')
+                need(issued['pid'] == issuer_service.pid and issued['uid'] == ISSUER, 'ACTUAL_DURABLE_ISSUER_PROCESS')
+            else:
+                issued = worker(ISSUER, 'issue', native_ns)
             public = bytes.fromhex(issued['public'])
             for op, grant in issued['grants'].items():
                 verify_grant(grant, op[0], int(op[1]), scope()[(op[0], int(op[1]))], public)
@@ -1360,6 +1370,12 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 file = base / 'public' / name
                 file.write_bytes(data)
                 os.chmod(file, 0o444)
+            if durable_issuer:
+                state, state_raw = durable.load(base, False)
+                anchor_file = base / durable.ANCHOR
+                durable_marker(anchor_file, durable.anchor(state, state_raw))
+                os.chmod(anchor_file, 0o444)
+                need(durable.rpc(base, 'export-existing') == issued, 'ISSUER_ENROLLED_BEFORE_FIRST_CONSUME')
             sink = spawn(BACKEND, 'backend', sink_ns, base / 'backend/ready')
             service = spawn(CUSTODY, 'custody', client_ns, base / 'custody/ready')
             if local_https:
@@ -1392,6 +1408,9 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 r['http_status'] == 403 for r in sender_phases['reachable_sink_netns']['records'])}
                 if retained_senders else worker(NATIVE, 'reachable', sink_ns))
             native_report = worker(NATIVE, 'native', native_ns)
+            if durable_issuer:
+                issuer_service, issuer_evidence = durable.restart_after_native(
+                    base, worker, spawn, issuer_service, native_ns, issued)
             peer_packet = base / 'public/peer-packet.json'
             peer_packet.write_bytes((base / 'native/packet-A0.json').read_bytes())
             os.chmod(peer_packet, 0o444)
@@ -1401,6 +1420,9 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             (base / 'custody/ready').unlink()
             service = spawn(CUSTODY, 'custody', client_ns, base / 'custody/ready', 'restarted', ('--restart',))
             restart_report = worker(NATIVE, 'restart-probe', native_ns)
+            if durable_issuer:
+                issuer_service = durable.faults_after_restart(
+                    base, worker, spawn, issuer_service, native_ns, issuer_evidence)
             for p in (service, sink):
                 p.terminate()
                 p.wait(timeout=5)
@@ -1451,6 +1473,8 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             (output / 'bind-records.json').write_bytes(canonical(bindings))
             if local_https:
                 tls.finish(base, output, report, bindings, tls_phases, certificates, network)
+            if durable_issuer:
+                durable.finish(base, output, issuer_evidence, report)
             if retained_senders:
                 observations = [parse(x.encode()) for x in observation_file.read_text().splitlines()]
                 validate_observations(sender_phases, observations, 8)
@@ -1523,27 +1547,31 @@ def main():
     parser.add_argument('--concurrent-response-loss', action='store_true')
     parser.add_argument('--retained-senders', action='store_true')
     parser.add_argument('--local-https', action='store_true')
+    parser.add_argument('--durable-issuer', action='store_true')
     parser.add_argument('--secondary', action='store_true')
-    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca'))
+    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart'))
     parser.add_argument('--base', type=Path)
     parser.add_argument('--restart', action='store_true')
     args = parser.parse_args()
     if args.run:
         need(args.output is not None and args.role is None and not args.secondary, 'RUN_OUTPUT_REQUIRED')
         run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash,
-            args.concurrent_response_loss, args.retained_senders, args.local_https)
+            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer)
     else:
         need(args.role is not None and args.base is not None and not args.fault and not args.restart_both
              and not args.concurrent and not args.concurrent_crash and not args.concurrent_response_loss
-             and not args.retained_senders and not args.local_https
+             and not args.retained_senders and not args.local_https and not args.durable_issuer
              and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
         from scripts.task4_retained_sender_denial_v1 import probe as retained_probe
         from scripts import task4_native_local_https_v1 as tls
+        from scripts import task4_durable_issuer_restart_v1 as durable
         TLS_BASE = args.base if tls.enabled(args.base) else None
         if args.role.startswith('tls-'):
             print(canonical(tls.probe(args.base, args.role.removeprefix('tls-'))).decode())
             return
         roles = {'issue': issue, 'backend': lambda b: backend(b, args.restart), 'probe': probe,
+                 'durable-issuer': lambda b: durable.serve(b, args.restart),
+                 'issuer-replay': durable.replay, 'issuer-invalid-restart': durable.invalid_restart,
                  'reachable': lambda b: probe(b, True), 'native': native, 'restart-probe': restart_probe,
                  'wrong-peer': wrong_peer,
                  'fault-native': fault_native, 'fault-replay': fault_replay, 'reconcile-fault': reconcile_fault,
