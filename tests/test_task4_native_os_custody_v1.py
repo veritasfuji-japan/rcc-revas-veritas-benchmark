@@ -202,3 +202,30 @@ def test_unavailable_reconciliation_preserves_consumption(tmp_path, monkeypatch)
         raise ConnectionRefusedError('offline fixture')
     monkeypatch.setattr(proof, 'http_call', unavailable)
     assert proof.offline_reconcile(tmp_path) == {'backend_unavailable': True, 'ledger_unchanged': True, 'permission_restored': False}
+
+
+def test_exactly_one_concurrent_response_selected():
+    winner = {'decision': 'SEALED_NATIVE_RESPONSE', 'envelope_b64': 'test-only'}
+    assert proof.select_race_winner([{'decision': 'REPLAY_DENIED'}, winner]) == (1, winner)
+
+
+@pytest.mark.parametrize('decisions', [[], ['SEALED_NATIVE_RESPONSE']*2, ['REPLAY_DENIED']*2,
+                                     ['DENIED_OR_UNKNOWN_NO_RETRY','SEALED_NATIVE_RESPONSE'],
+                                     ['REPLAY_DENIED','REPLAY_DENIED','SEALED_NATIVE_RESPONSE']])
+def test_concurrent_missing_duplicate_or_unknown_outcome_refused(decisions):
+    with pytest.raises(ValueError):
+        proof.select_race_winner([{'decision': x} for x in decisions])
+
+
+def test_concurrent_loser_cannot_supply_response_bytes():
+    with pytest.raises(ValueError, match='LOSER_MUST_NOT_RETURN_RESPONSE'):
+        proof.select_race_winner([{'decision': 'REPLAY_DENIED', 'envelope_b64': 'unexpected'},
+                                  {'decision': 'SEALED_NATIVE_RESPONSE'}])
+
+
+def test_concurrent_configuration_is_root_enrolled_and_exact(tmp_path):
+    assert proof.concurrent_mode(tmp_path) is False
+    (tmp_path / 'public').mkdir()
+    (tmp_path / 'public/concurrent').write_text('caller-defined-socket')
+    with pytest.raises(ValueError, match='EXACT_CONCURRENT_FIXTURE'):
+        proof.concurrent_mode(tmp_path)
