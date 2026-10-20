@@ -42,7 +42,9 @@ replaced. The old #483 consume/attach/read service remains in its own regression
 The Native/issuer network namespace has only loopback; backend has a private
 veth and no external route; host OUTPUT permits the mock TCP destination only
 for Custody UID. Roles drop supplementary groups and capabilities and require
-NoNewPrivs. Services import a root-owned read-only git-archive source tree.
+NoNewPrivs. Services import root-owned read-only git-archive source trees for
+this repository and all three verified external package pins, using explicit
+paths rather than relying on editable-install hooks for an isolated UID.
 Native actually fails to read Custody/backend credentials and databases or the
 issuer private key, overwrite the trust key or tracked service source, connect by IPv4/IPv6 or HTTP, and
 connect from a child process. A separate root-placed Native-UID probe in the

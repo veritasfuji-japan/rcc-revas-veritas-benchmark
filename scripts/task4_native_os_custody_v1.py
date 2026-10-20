@@ -525,16 +525,28 @@ def run(output):
         os.chmod(base, 0o755)
         source = base / 'source'
         source.mkdir(mode=0o755)
-        archive = subprocess.run(git + ['archive', 'HEAD'], check=True, capture_output=True, timeout=30).stdout
-        with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
-            for member in tar.getmembers():
-                dest = source / member.name
-                need(dest.resolve().is_relative_to(source) and (member.isdir() or member.isfile()), 'REGULAR_TRACKED_SOURCE_ONLY')
-                if member.isdir():
-                    dest.mkdir(parents=True, exist_ok=True)
-                else:
-                    dest.parent.mkdir(parents=True, exist_ok=True)
-                    dest.write_bytes(tar.extractfile(member).read())
+        def export(command, directory):
+            directory.mkdir(parents=True, exist_ok=True)
+            archive = subprocess.run(command, check=True, capture_output=True, timeout=30).stdout
+            with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+                for member in tar.getmembers():
+                    dest = directory / member.name
+                    need(dest.resolve().is_relative_to(directory) and (member.isdir() or member.isfile()),
+                         'REGULAR_TRACKED_SOURCE_ONLY')
+                    if member.isdir():
+                        dest.mkdir(parents=True, exist_ok=True)
+                    else:
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        dest.write_bytes(tar.extractfile(member).read())
+
+        export(git + ['archive', 'HEAD'], source)
+        # Editable-install import hooks are not a source-enrollment mechanism for
+        # isolated UIDs. Export the verified package trees and add explicit paths.
+        for name, subtree in [('agentdojo', 'src/agentdojo'),
+                              ('rcc', 'external-eval/v0.3.9/src'), ('veritas', 'veritas_os')]:
+            pin_root = ROOT / '_pins' / name
+            export(['git', '-c', 'safe.directory=' + str(pin_root), '-C', str(pin_root),
+                    'archive', pins[name], subtree], source / '_pins' / name)
         for file in source.rglob('*'):
             os.chmod(file, 0o555 if file.is_dir() else 0o444)
         os.chmod(source, 0o555)
@@ -550,9 +562,11 @@ def run(output):
             os.chmod(file, 0o600)
             os.chown(file, uid, uid)
         env = {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LANG': 'C.UTF-8',
-               'PYTHONDONTWRITEBYTECODE': '1', 'TASK4_RCC_ROOT': str(ROOT / '_pins/rcc')}
+               'PYTHONDONTWRITEBYTECODE': '1', 'TASK4_RCC_ROOT': str(source / '_pins/rcc')}
         # -I ignores PYTHONPATH; insert only the root-owned tracked source copy.
-        code = 'import sys;sys.path[:0]=[' + repr(str(source)) + ',' + repr(str(source / 'scripts')) + '];from scripts.task4_native_os_custody_v1 import main;main()'
+        import_roots = [source, source / 'scripts', source / '_pins/agentdojo/src',
+                        source / '_pins/veritas', source / '_pins/rcc/external-eval/v0.3.9/src']
+        code = 'import sys;sys.path[:0]=' + repr([str(p) for p in import_roots]) + ';from scripts.task4_native_os_custody_v1 import main;main()'
 
         def cmd(uid, args, ns=None):
             return (['ip', 'netns', 'exec', ns] if ns else []) + ['setpriv', '--reuid=' + str(uid),
