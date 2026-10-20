@@ -508,6 +508,54 @@ jobs:
           assert not any(list(junit.iter(x)) for x in ('skipped','failure','error'))
           print('ACTUAL_NATIVE_CONCURRENT_BACKEND_RESTART_ONE_RETAINED_EFFECT_NO_RETRY_NO_RESPONSE_RECOVERY')
           PY
+      - name: Deny actual retained senders and alternate clients at the local OS boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_retained_sender_denial_v1.py \
+            --junitxml=results/task4-retained-sender-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_os_custody_v1 \
+            --run --retained-senders --output results/task4-retained-sender-denial
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.task4_retained_sender_denial_v1 import FIXTURE,FIXTURE_SHA,SOURCES,validate_observations
+          from scripts.task4_native_os_custody_v1 import digest,scope
+          folder=Path('results/task4-retained-sender-denial')
+          r=json.loads((folder/'retained-senders.json').read_text())
+          normal=json.loads((folder/'report.json').read_text())
+          assert r['schema'] == 'task4.retained-sender-denial.v1'
+          assert r['audited_commit'] == normal['audited_commit'] == subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert r['source_sha256'] == normal['source_sha256'] == hashlib.sha256(Path('scripts/task4_native_os_custody_v1.py').read_bytes()).hexdigest()
+          assert r['probe_source_sha256'] == hashlib.sha256(Path('scripts/task4_retained_sender_denial_v1.py').read_bytes()).hexdigest()
+          assert hashlib.sha256(Path(FIXTURE).read_bytes()).hexdigest() == FIXTURE_SHA
+          assert len(r['checks']) == 12 and all(v is True for v in r['checks'].values())
+          assert len(normal['checks']) == 22 and all(v is True for v in normal['checks'].values())
+          assert r['negative_network_denials'] == 12 and r['negative_http_403'] == 6
+          assert r['negative_effects'] == r['negative_consumptions'] == 0
+          assert r['positive_mock_effects'] == r['positive_custody_consumptions'] == normal['mock_http_effects'] == normal['custody_consumptions'] == 8
+          assert r['normal_report_sha256'] == digest(normal)
+          assert validate_observations(r['phases'],r['backend_observations'],8)
+          assert normal['native']['scripted_native_arms'] == normal['native']['scorer_calls'] == 2
+          assert normal['native']['replay_denials'] == normal['restart']['restart_replay_denials'] == 8
+          assert {(x['arm'],x['ordinal']):x['request_sha256'] for x in normal['native']['records']} == scope()
+          bindings=json.loads((folder/'bind-records.json').read_text())
+          assert digest(bindings) == normal['bind_records_sha256'] and len(bindings) == 8
+          for binding,record in zip(bindings,normal['native']['records']):
+              assert digest({k:v for k,v in binding.items() if k!='operation_id'}) == record['bind_sha256']
+              assert [(x['outcome'],x['apply_calls']) for x in binding['records']] == [('BLOCKED',0),('COMMITTED',1)]
+              assert all(digest(x['receipt']) == x['receipt_sha256'] for x in binding['records'])
+          assert r['injected_local_transport_not_default_provider_tls'] is r['trusted_root_kernel_custody_backend'] is True
+          assert r['independent_administration_proven'] is r['production_bypass_resistance_proven'] is False
+          assert r['real_provider_posts'] == r['external_bank_effects'] == 0 and r['utility'] == 'UNSCORED'
+          for file,count in [('results/task4-retained-sender-unit-junit.xml',13),
+                             (folder/'retained-senders-junit.xml',12),(folder/'junit.xml',22)]:
+              t=ET.parse(file).getroot()
+              assert len(list(t.iter('testcase'))) == count
+              assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
+          print('ACTUAL_RETAINED_HELPERS_ALTERNATE_CLIENTS_CHILD_KERNEL_AND_BACKEND_DENIAL_JOINED')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
