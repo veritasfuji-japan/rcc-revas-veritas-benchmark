@@ -25,6 +25,12 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.11.16'
@@ -34,15 +40,15 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = '${{ github.event.pull_request.head.sha }}'
           mkdir -p results
-          python -m pip install 'pytest==9.1.1'
+          python -m pip install 'pytest==9.1.1' 'PyYAML==6.0.3'
           python -m pytest -q -o addopts= tests/test_ci_mock_executor_authority_boundary_v1.py \
             --junitxml=results/mock-executor-unit-junit.xml
       - name: Enforce disposable kernel boundaries and reconcile one mock effect
         shell: bash
         run: |
           set -euo pipefail
-          sudo -n /usr/bin/python3 scripts/ci_mock_executor_authority_boundary_v1.py \
-            --run --output results/mock-authority
+          sudo -n "$(command -v python)" -m scripts.ci_mock_executor_authority_boundary_v1 \
+            --run --with-veritas-bind --veritas-root _pins/veritas --output results/mock-authority
           python - <<'PY'
           import hashlib, json
           from pathlib import Path
@@ -50,20 +56,34 @@ jobs:
           r=json.loads(Path('results/mock-authority/report.json').read_text())
           assert r['audited_commit'] == '${{ github.event.pull_request.head.sha }}'
           assert r['source_sha256'] == hashlib.sha256(Path('scripts/ci_mock_executor_authority_boundary_v1.py').read_bytes()).hexdigest()
-          assert len(r['checks']) == 23 and all(v is True for v in r['checks'].values())
+          assert len(r['checks']) == 28 and all(v is True for v in r['checks'].values())
           assert r['mock_effect_count'] == 1 and r['backend_denial_count'] == 1
           assert len(set(r['uids'].values())) == len(set(r['namespace_ids'].values())) == 3
           assert r['real_provider_calls'] == r['real_bank_effects'] == 0
           assert r['independent_administration_proven'] is False
           assert r['production_bypass_resistance_proven'] is False
-          assert r['real_veritas_bind_integrated'] is False
+          assert r['real_veritas_bind_integrated'] is True
           assert r['exact_historical_helper_invocations_tested'] is False
           assert r['provider_dispatch'] == 'DENY' and r['utility'] == 'UNSCORED'
-          for file,count in [('results/mock-executor-unit-junit.xml',11),('results/mock-authority/junit.xml',23)]:
+          b=json.loads(Path('results/mock-authority/bind-evidence.json').read_text())
+          from scripts.ci_mock_executor_veritas_bind_v1 import digest
+          assert r['bind_evidence_sha256'] == digest(b)
+          assert r['bind_adapter_source_sha256'] == hashlib.sha256(Path('scripts/ci_mock_executor_veritas_bind_v1.py').read_bytes()).hexdigest()
+          assert b['veritas_pin'] == 'a1d66aef02262cf8a913295270c3aafd159c6adb'
+          assert b['bind_core_git_blob'] == '0f64201e2599495ce4e3991348aa320995716ffc'
+          assert b['same_executor_run_real_bind_and_network_effect'] is True
+          assert b['native_task4_pipeline_integrated'] is b['production_policy_proven'] is False
+          assert b['authenticated_effect_posts'] == 1
+          assert b['backend_receipt_sha256'] == r['receipt_sha256'] == b['request_sha256']
+          assert [(x['scenario'],x['outcome'],x['apply_calls']) for x in b['records']] == [
+              ('authority-denied','BLOCKED',0),('wrong-target','BLOCKED',0),
+              ('wrong-prestate','BLOCKED',0),('allow','COMMITTED',1)]
+          assert all(digest(x['bind_receipt']) == x['receipt_sha256'] for x in b['records'])
+          for file,count in [('results/mock-executor-unit-junit.xml',11),('results/mock-authority/junit.xml',28)]:
               root=ET.parse(file).getroot()
               assert len(list(root.iter('testcase'))) == count
               assert not list(root.iter('skipped')) and not list(root.iter('failure')) and not list(root.iter('error'))
-          print('CI_MOCK_EXECUTOR_KERNEL_BOUNDARY_VERIFIED_NO_PROVIDER')
+          print('CI_MOCK_EXECUTOR_KERNEL_AND_REAL_BIND_SAME_RUN_NO_PROVIDER')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

@@ -1,5 +1,10 @@
 # One-VM CI mock Executor: kernel credential and egress boundary
 
+The description below records #491's original 23-observation mode. The current
+every-PR workflow additionally requires `--with-veritas-bind`, fixed VERITAS
+sources and PyYAML 6.0.3, and checks 28 observations. See
+[the same-run Bind integration](CI_MOCK_EXECUTOR_VERITAS_BIND_V1.md).
+
 Baseline: merged #490, `06345cad5e60e480cc1dc2127f9a9ba44fac0caf`.
 Environment chosen by the owner: existing GitHub Actions. No external server,
 new account, paid Provider or independently administered infrastructure is used.
@@ -84,8 +89,9 @@ named namespaces/veth and generated temporary directory, including on failures.
 
 - No real Provider, real bank, genuine Native model response, Utility scoring,
   external host, cloud IAM or independent administrator/issuer is integrated.
-- Actual VERITAS Bind is not in this new mock service. #487 Native and #412 Bind
-  evidence remain separate and must not be combined into an integrated claim.
+- The original no-Bind mode does not integrate actual VERITAS Bind. The new
+  flagged mode integrates it for this mock operation; #487 Native and #412
+  evidence remain separate and must not be combined into a Native Task4 claim.
 - The three historical real HTTPS helpers are not invoked here. Arbitrary raw,
   alternate-library and child-process connection probes test the boundary; a
   future exact-helper test needs frozen payloads and an exclusively mock target.
@@ -110,4 +116,5 @@ sudo /usr/bin/python3 scripts/ci_mock_executor_authority_boundary_v1.py --run --
 
 The integration command requires root, iproute2, iptables and setpriv. It fails
 if prerequisites or required observations are missing; no optional skip is
-treated as a passing integration result. Runtime code is Python stdlib only.
+treated as a passing integration result. Original no-Bind mode is stdlib only;
+the flagged mode requires the fixed VERITAS package and PyYAML.
