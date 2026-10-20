@@ -146,3 +146,23 @@ def test_both_restart_requires_explicit_fault_case(tmp_path):
     with pytest.raises(ValueError, match='BACKEND_RESTART_REQUIRES_FAULT_CASE'):
         boundary.run(tmp_path / 'proof', with_bind=True, restart_backend=True)
     assert not (tmp_path / 'proof').exists()
+
+
+@pytest.mark.parametrize('fault,restart_backend', [('before-post', False), ('before-post', True)])
+def test_concurrency_proof_refuses_combined_fault_modes(tmp_path, fault, restart_backend):
+    with pytest.raises(ValueError, match='EXACT_CONCURRENCY_MODE'):
+        boundary.run(tmp_path / 'proof', with_bind=True, fault=fault,
+                     restart_backend=restart_backend, concurrent=True)
+    assert not (tmp_path / 'proof').exists()
+
+
+def test_replica_requires_explicit_concurrency_proof(tmp_path, monkeypatch):
+    monkeypatch.setattr(boundary, 'role_identity', lambda uid: None)
+    with pytest.raises(ValueError, match='REPLICA_REQUIRES_CONCURRENCY_PROOF'):
+        boundary.custody(tmp_path, with_bind=True, replica=True)
+
+
+def test_restart_cannot_arm_concurrency_gate(tmp_path, monkeypatch):
+    monkeypatch.setattr(boundary, 'role_identity', lambda uid: None)
+    with pytest.raises(ValueError, match='EXACT_CONCURRENCY_MODE'):
+        boundary.custody(tmp_path, with_bind=True, restart=True, concurrent=True)
