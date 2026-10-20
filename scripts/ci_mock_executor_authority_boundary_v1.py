@@ -451,7 +451,16 @@ def run(output, with_bind=False, veritas_root=None):
             raise ValueError('SERVICE_READY_TIMEOUT')
 
         def probe(mode, uid=AGENT, namespace=agent_ns):
-            result = command(role_command(program, uid, ['--worker', str(base), mode], namespace))
+            result = command(role_command(program, uid, ['--worker', str(base), mode], namespace), check=False)
+            if result.returncode:
+                # Our services log only constant codes / Python import tracebacks,
+                # never credentials or request/response bodies.
+                for index, proc in enumerate(processes):
+                    if proc.poll() is not None and proc.returncode and proc.stderr:
+                        failure = proc.stderr.read().decode()[-3000:]
+                        (output / ('service-failure-' + str(index) + '.log')).write_text(failure)
+                        print(failure, file=sys.stderr)
+                raise ValueError('WORKER_FAILED:' + mode + ':' + result.stderr[-600:])
             record = json.loads(result.stdout)
             (output / (mode + '.json')).write_text(json.dumps(record, sort_keys=True, indent=2) + '\n')
             return record

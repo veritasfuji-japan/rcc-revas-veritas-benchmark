@@ -23,7 +23,9 @@ and Bind core git blob `0f64201e2599495ce4e3991348aa320995716ffc`. It copies the
 VERITAS package and new adapter into root-owned read-only temporary storage.
 The Executor inserts only that trusted temporary root into its import path.
 The same setup-python 3.11.16 interpreter runs supervisor and unprivileged roles;
-PyYAML is pinned to 6.0.3 for VERITAS imports. No runtime dependency download
+Package initialization dependencies are pinned to PyYAML 6.0.3, cryptography
+50.0.0, pydantic 2.11.10 and numpy 1.26.4; these imports are checked before the
+kernel test. No runtime dependency download
 occurs inside the agent, Executor or backend namespaces/processes.
 
 The backend adds an authenticated read-only `/status` endpoint with a distinct

@@ -40,7 +40,9 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = '${{ github.event.pull_request.head.sha }}'
           mkdir -p results
-          python -m pip install 'pytest==9.1.1' 'PyYAML==6.0.3'
+          python -m pip install 'pytest==9.1.1' 'PyYAML==6.0.3' \
+            'cryptography==50.0.0' 'pydantic==2.11.10' 'numpy==1.26.4'
+          PYTHONPATH=_pins/veritas python -c 'from veritas_os.policy.bind_core import execute_bind_adjudication; print("EXACT_BIND_IMPORT_CLOSURE_READY")'
           python -m pytest -q -o addopts= tests/test_ci_mock_executor_authority_boundary_v1.py \
             --junitxml=results/mock-executor-unit-junit.xml
       - name: Enforce disposable kernel boundaries and reconcile one mock effect
