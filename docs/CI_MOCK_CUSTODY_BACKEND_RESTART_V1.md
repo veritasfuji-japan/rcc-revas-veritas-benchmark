@@ -1,5 +1,9 @@
 # Retained databases across Custody and backend process restarts
 
+Current extension: [two-process consumption contention](CI_MOCK_CONCURRENT_CONSUMPTION_V1.md)
+adds an independent 47-observation run with actual SQLite lock contention. All
+restart suites below remain required; the current unit suite has 30 cases.
+
 Extends #495's normal run and three Custody-only crash runs without removing
 them. Three additional independent runs inject the same faults, then restart
 both Custody and the mock backend against their original SQLite databases.
