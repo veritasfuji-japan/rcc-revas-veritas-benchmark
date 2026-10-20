@@ -180,7 +180,7 @@ jobs:
           for lineage,record in zip(r['native']['lineage']['response_receipts'],r['native']['records']):
               assert lineage['original_request_raw_sha256'] == record['request_sha256']
               assert lineage['original_response_raw_sha256'] == record['response_sha256']
-          for file,count in [('results/task4-native-os-custody-unit-junit.xml',56),(folder/'junit.xml',22)]:
+          for file,count in [('results/task4-native-os-custody-unit-junit.xml',65),(folder/'junit.xml',22)]:
               t=ET.parse(file).getroot()
               assert len(list(t.iter('testcase'))) == count
               assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
