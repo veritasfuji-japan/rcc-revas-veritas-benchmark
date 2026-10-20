@@ -233,6 +233,7 @@ def open_backend_db(base, restart=False):
 def backend(base, restart=False):
     import httpx
     from scripts import task4_325_exact_sdk_wire_offline_v1 as cap
+    from scripts.task4_retained_sender_denial_v1 import observe
     kernel.role_identity(BACKEND)
     os.umask(0o077)
     key = (base / 'backend/credential').read_bytes()
@@ -270,10 +271,12 @@ def backend(base, restart=False):
                               'operation_receipt': row[0] if row else None})
 
         def do_POST(self):
+            body = b''
             try:
                 size = int(self.headers.get('Content-Length', '0'))
                 need(self.path == '/effect' and 0 < size <= LIMIT, 'EXACT_LOCAL_ENDPOINT')
-                packet = parse(self.rfile.read(size))
+                body = self.rfile.read(size)
+                packet = parse(body)
                 need(hmac.compare_digest(tag(key, b'TASK4_NATIVE_HTTP_V1\0',
                      {'method': 'POST', 'path': '/effect', 'body': packet}),
                      self.headers.get('X-Mock-Auth', '')), 'CUSTODY_TRANSPORT_AUTH')
@@ -291,6 +294,7 @@ def backend(base, restart=False):
                 record = {'operation_id': op, 'request_sha256': sha(raw), 'response_sha256': sha(fake.content)}
                 receipt = digest(record)
                 db.execute('INSERT INTO effects VALUES (?,?,?,?)', (op, sha(raw), sha(fake.content), receipt))
+                observe(base, body, 'EFFECT_COMMITTED')
                 if (fault_mode(base) == 'backend-response-lost' or concurrent_response_loss_mode(base)) and op == 'A0':
                     durable_marker(base / 'backend/fault-observed.json', dict(record, receipt_sha256=receipt))
                     self.close_connection = True
@@ -299,6 +303,7 @@ def backend(base, restart=False):
                     return
                 self.respond(200, dict(record, receipt_sha256=receipt, response_b64=encode(fake.content)))
             except (ValueError, KeyError, TypeError, sqlite3.IntegrityError):
+                observe(base, body, 'DENIED')
                 self.respond(403, {'decision': 'DENIED'})
 
     server = HTTPServer((HOST, PORT), Handler)
@@ -1176,7 +1181,8 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
     ET.ElementTree(suite).write(output / 'junit.xml', encoding='utf-8', xml_declaration=True)
 
 
-def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False):
+def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False,
+        retained_senders=False):
     need(fault in ('', *FAULTS), 'EXACT_FAULT_MODE')
     need(type(restart_both) is bool and (not restart_both or fault in FAULTS or concurrent_response_loss),
          'BOTH_RESTART_REQUIRES_FAULT_OR_CONCURRENT_RESPONSE_LOSS')
@@ -1184,6 +1190,8 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
     need(type(concurrent_crash) is bool and (not concurrent_crash or concurrent), 'CRASH_REQUIRES_TWO_CUSTODIES')
     need(type(concurrent_response_loss) is bool and (not concurrent_response_loss or (concurrent and not concurrent_crash)),
          'RESPONSE_LOSS_REQUIRES_DISTINCT_CONCURRENT_FIXTURE')
+    need(type(retained_senders) is bool and (not retained_senders or
+         (not fault and not restart_both and not concurrent)), 'RETAINED_SENDERS_NORMAL_FIXTURE_ONLY')
     need(os.geteuid() == 0 and sys.platform == 'linux', 'TRUSTED_DISPOSABLE_LINUX_CI_ROOT_REQUIRED')
     need(not output.exists() and output.resolve().is_relative_to(ROOT), 'NEW_OUTPUT_UNDER_CHECKOUT')
     for uid in (NATIVE, BACKEND, ISSUER, CUSTODY, kernel.STRANGER):
@@ -1247,6 +1255,9 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             folder.mkdir(mode=0o755 if role == 'ipc' else 0o700)
             os.chown(folder, uid, uid)
         (base / 'public').mkdir(mode=0o755)
+        if retained_senders:
+            (base / 'public/retained-senders').write_text('retained-senders-local-v1')
+            os.chmod(base / 'public/retained-senders', 0o444)
         if fault:
             (base / 'public/fault').write_text(fault)
             os.chmod(base / 'public/fault', 0o444)
@@ -1326,6 +1337,17 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 os.chmod(file, 0o444)
             sink = spawn(BACKEND, 'backend', sink_ns, base / 'backend/ready')
             service = spawn(CUSTODY, 'custody', None, base / 'custody/ready')
+            if retained_senders:
+                from scripts.task4_retained_sender_denial_v1 import validate_observations
+                sender_phases = {'native_netns': worker(NATIVE, 'retained-probe', native_ns)}
+                observation_file = base / 'backend/sender-observations.jsonl'
+                need(not observation_file.exists(), 'ISOLATED_HELPERS_NEVER_REACH_BACKEND')
+                sender_phases['native_host'] = worker(NATIVE, 'retained-probe')
+                need(not observation_file.exists(), 'UID_FIREWALL_HELPERS_NEVER_REACH_BACKEND')
+                sender_phases['reachable_sink_netns'] = worker(NATIVE, 'retained-reachable', sink_ns)
+                negative_observations = [parse(x.encode()) for x in observation_file.read_text().splitlines()]
+                validate_observations(sender_phases, negative_observations)
+                need(read_fault_rows(base) == {'effects': [], 'consumed': []}, 'ALL_NEGATIVES_ZERO_EFFECTS_CONSUMPTIONS')
             if concurrent:
                 finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, head, pins, sink, restart_both)
                 print('TASK4_NATIVE_CONCURRENT_BACKEND_RESTART_ONE_RETAINED_EFFECT_NO_PROVIDER' if restart_both
@@ -1339,7 +1361,9 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 print('TASK4_NATIVE_OS_FAULT_NO_DUPLICATE_NO_PROVIDER:' + fault)
                 return
             checks = worker(NATIVE, 'probe', native_ns)
-            checks.update(worker(NATIVE, 'reachable', sink_ns))
+            checks.update({'reachable_native_uid_without_credential_http_403': all(
+                r['http_status'] == 403 for r in sender_phases['reachable_sink_netns']['records'])}
+                if retained_senders else worker(NATIVE, 'reachable', sink_ns))
             native_report = worker(NATIVE, 'native', native_ns)
             peer_packet = base / 'public/peer-packet.json'
             peer_packet.write_bytes((base / 'native/packet-A0.json').read_bytes())
@@ -1398,6 +1422,41 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 'trusted_root_kernel_custody_backend': True}
             (output / 'report.json').write_bytes(canonical(report))
             (output / 'bind-records.json').write_bytes(canonical(bindings))
+            if retained_senders:
+                observations = [parse(x.encode()) for x in observation_file.read_text().splitlines()]
+                validate_observations(sender_phases, observations, 8)
+                need([x['body_sha256'] for x in observations[6:]] == [sha((base / 'native' /
+                    ('packet-' + r['arm'] + str(r['ordinal']) + '.json')).read_bytes()) for r in records]
+                    and len({x['body_sha256'] for x in observations[6:]}) == 8,
+                     'EIGHT_EXACT_ADMITTED_BACKEND_PACKETS')
+                sender_checks = {'three_original_helper_blobs_unchanged': True,
+                    'three_original_request_hashes_unchanged': True,
+                    'all_six_routes_in_three_phases': True,
+                    'same_uid_child_probe': True, 'native_netns_denies_before_backend': True,
+                    'native_host_uid_firewall_denies_before_backend': True,
+                    'reachable_native_without_credential_http_403': True,
+                    'backend_owned_negative_body_hash_join': True,
+                    'negative_effects_and_consumptions_zero': True,
+                    'normal_eight_native_bind_effects_after_negatives': True,
+                    'normal_native_lineage_and_scorer_join': True,
+                    'normal_and_restart_replays_denied': True}
+                sender_report = {'schema': 'task4.retained-sender-denial.v1', 'audited_commit': head,
+                    'source_sha256': sha(Path(__file__).read_bytes()),
+                    'probe_source_sha256': sha((ROOT / 'scripts/task4_retained_sender_denial_v1.py').read_bytes()),
+                    'checks': sender_checks, 'phases': sender_phases, 'backend_observations': observations,
+                    'negative_network_denials': 12, 'negative_http_403': 6,
+                    'negative_effects': 0, 'negative_consumptions': 0,
+                    'positive_mock_effects': len(effects), 'positive_custody_consumptions': len(consumed),
+                    'normal_report_sha256': digest(report), 'trusted_root_kernel_custody_backend': True,
+                    'injected_local_transport_not_default_provider_tls': True,
+                    'independent_administration_proven': False, 'production_bypass_resistance_proven': False,
+                    'real_provider_posts': 0, 'external_bank_effects': 0, 'utility': 'UNSCORED'}
+                (output / 'retained-senders.json').write_bytes(canonical(sender_report))
+                sender_suite = ET.Element('testsuite', name='Retained sender denial', tests=str(len(sender_checks)),
+                    failures='0', errors='0', skipped='0')
+                for name in sorted(sender_checks):
+                    ET.SubElement(sender_suite, 'testcase', classname='retained_sender_denial', name=name)
+                ET.ElementTree(sender_suite).write(output / 'retained-senders-junit.xml', encoding='utf-8', xml_declaration=True)
             suite = ET.Element('testsuite', name='Native OS Custody', tests=str(len(checks)), failures='0', errors='0', skipped='0')
             for name in sorted(checks):
                 ET.SubElement(suite, 'testcase', classname='native_os_custody', name=name)
@@ -1431,18 +1490,22 @@ def main():
     parser.add_argument('--concurrent', action='store_true')
     parser.add_argument('--concurrent-crash', action='store_true')
     parser.add_argument('--concurrent-response-loss', action='store_true')
+    parser.add_argument('--retained-senders', action='store_true')
     parser.add_argument('--secondary', action='store_true')
-    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay'))
+    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable'))
     parser.add_argument('--base', type=Path)
     parser.add_argument('--restart', action='store_true')
     args = parser.parse_args()
     if args.run:
         need(args.output is not None and args.role is None and not args.secondary, 'RUN_OUTPUT_REQUIRED')
-        run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash, args.concurrent_response_loss)
+        run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash,
+            args.concurrent_response_loss, args.retained_senders)
     else:
         need(args.role is not None and args.base is not None and not args.fault and not args.restart_both
              and not args.concurrent and not args.concurrent_crash and not args.concurrent_response_loss
+             and not args.retained_senders
              and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
+        from scripts.task4_retained_sender_denial_v1 import probe as retained_probe
         roles = {'issue': issue, 'backend': lambda b: backend(b, args.restart), 'probe': probe,
                  'reachable': lambda b: probe(b, True), 'native': native, 'restart-probe': restart_probe,
                  'wrong-peer': wrong_peer,
@@ -1450,6 +1513,8 @@ def main():
                  'offline-reconcile': offline_reconcile, 'backend-replay': backend_replay,
                  'concurrent-native': concurrent_native, 'concurrent-replay': concurrent_replay,
                  'concurrent-crash-replay': concurrent_crash_replay,
+                 'retained-probe': retained_probe,
+                 'retained-reachable': lambda b: retained_probe(b, True),
                  'custody': lambda b: custody(b, args.restart, args.secondary)}
         value = roles[args.role](args.base)
         if value is not None:
