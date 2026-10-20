@@ -134,7 +134,11 @@ def test_fault_configuration_is_explicit_and_bounded(tmp_path):
 def retained_backend(tmp_path, fault='after-sealed'):
     (tmp_path / 'backend').mkdir()
     (tmp_path / 'public').mkdir()
-    (tmp_path / 'public/fault').write_text(fault)
+    if fault == 'concurrent-response-loss':
+        (tmp_path / 'public/concurrent').write_text('two-custody-v1')
+        (tmp_path / 'public/concurrent-response-loss').write_text('backend-commit-drop-v1')
+    else:
+        (tmp_path / 'public/fault').write_text(fault)
     with proof.open_backend_db(tmp_path) as db:
         if fault != 'after-consume':
             request_sha, response_sha = proof.scope()[('A', 0)], 'b' * 64
@@ -142,7 +146,7 @@ def retained_backend(tmp_path, fault='after-sealed'):
             db.execute('INSERT INTO effects VALUES (?,?,?,?)', ('A0', request_sha, response_sha, receipt))
 
 
-@pytest.mark.parametrize('fault', ['after-consume', 'after-sealed'])
+@pytest.mark.parametrize('fault', ['after-consume', 'after-sealed', 'concurrent-response-loss'])
 def test_restarted_backend_retains_rows_and_is_sqlite_read_only(tmp_path, fault):
     import sqlite3
     retained_backend(tmp_path, fault)
@@ -166,9 +170,10 @@ def test_backend_restart_never_creates_missing_database(tmp_path):
 
 
 @pytest.mark.parametrize('field', ['op', 'request_sha', 'response_sha', 'receipt'])
-def test_backend_restart_rejects_altered_retained_receipt(tmp_path, field):
+@pytest.mark.parametrize('fault', ['after-sealed', 'concurrent-response-loss'])
+def test_backend_restart_rejects_altered_retained_receipt(tmp_path, field, fault):
     import sqlite3
-    retained_backend(tmp_path)
+    retained_backend(tmp_path, fault)
     with sqlite3.connect(tmp_path / 'backend/effects.sqlite3') as db:
         db.execute('UPDATE effects SET ' + field + '=?', ('invalid',))
     with pytest.raises(ValueError):
@@ -313,3 +318,24 @@ def test_missing_receipt_cannot_erase_prior_effect_confirmation(tmp_path, monkey
         proof.reconcile_fault(tmp_path)
     with sqlite3.connect(file) as db:
         assert db.execute('SELECT * FROM consumed').fetchall() == [row]
+
+
+@pytest.mark.parametrize('mutation', ['missing-effect', 'extra-effect', 'no-enrollment', 'pre-send-crash'])
+def test_concurrent_backend_restart_refuses_incomplete_or_inconsistent_retained_state(tmp_path, mutation):
+    import sqlite3
+    retained_backend(tmp_path, 'concurrent-response-loss')
+    file = tmp_path / 'backend/effects.sqlite3'
+    if mutation == 'missing-effect':
+        with sqlite3.connect(file) as db:
+            db.execute('DELETE FROM effects')
+    elif mutation == 'extra-effect':
+        with sqlite3.connect(file) as db:
+            db.execute("INSERT INTO effects VALUES ('B0','x','y','z')")
+    elif mutation == 'no-enrollment':
+        (tmp_path / 'public/concurrent').unlink()
+    else:
+        (tmp_path / 'public/concurrent-crash').write_text('consumed-before-bind-v1')
+    before = file.read_bytes()
+    with pytest.raises(ValueError):
+        proof.open_backend_db(tmp_path, True)
+    assert file.read_bytes() == before
