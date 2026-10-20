@@ -1,10 +1,5 @@
 # Joint Benchmark Runner / Evaluation Harness v0.1
 
-Task4 readers: the [Native proof checkpoint through #505](docs/TASK4_NATIVE_PROOF_CHECKPOINT_V1.md)
-records the selected offline OS/Bind integration, evidence and remaining gates.
-Real Provider dispatch remains NO-GO and genuine Task4 utility remains UNSCORED.
-The v0.1 harness and its historical claim boundary are described below.
-
 **Status:** executable native-handoff treatment harness. The native VERITAS dry-run Bind Authorization gate is **not yet integrated**.
 
 This package runs the preregistered synthetic governance dataset through the actual `CanonicalDecisionHandoff v1` validator from the pinned VERITAS OS repository and compares it with a transparent RCC/REVAS upstream-adoption baseline proxy.
