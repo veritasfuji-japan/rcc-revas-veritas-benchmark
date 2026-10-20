@@ -4,6 +4,7 @@ CI-only synthetic approval/recipient. No Provider capability or live mode.
 """
 import argparse
 import base64
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import hmac
 import http.client
@@ -50,6 +51,14 @@ def fault_mode(base):
     return value
 
 
+def concurrent_mode(base):
+    file = base / 'public/concurrent'
+    if not file.exists():
+        return False
+    need(file.read_text() == 'two-custody-v1', 'EXACT_CONCURRENT_FIXTURE')
+    return True
+
+
 def durable_marker(file, value):
     with file.open('xb') as stream:
         stream.write(canonical(value))
@@ -85,10 +94,10 @@ def frame(conn):
     return parse(raw[:-1])
 
 
-def query(base, packet):
+def query(base, packet, secondary=False):
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as conn:
         conn.settimeout(15)
-        conn.connect(str(base / 'ipc/native.sock'))
+        conn.connect(str(base / ('ipc/native-secondary.sock' if secondary else 'ipc/native.sock')))
         conn.sendall(canonical(packet) + b'\n')
         return frame(conn)
 
@@ -352,7 +361,29 @@ def bind_post(packet, raw, key):
     return responses[0], {'records': records, 'loaded_core_sha256': sha(loaded), 'bind_core_git_blob': CORE_BLOB}
 
 
-def custody(base, restart=False):
+def race_barrier(base, role, db, raw):
+    need(db.execute('SELECT count(*) FROM consumed').fetchone()[0] == 0, 'BOTH_ARRIVE_BEFORE_CONSUMPTION')
+    record = {'pid': os.getpid(), 'uid': os.geteuid(), 'request_sha256': sha(raw),
+              'consumptions_before': 0, 'entered_ns': time.monotonic_ns()}
+    marker = base / 'custody' / ('race-entered-' + role + '.json')
+    staged = marker.with_suffix('.writing')
+    durable_marker(staged, record)
+    os.link(staged, marker)  # Publish complete bytes atomically, without overwrite.
+    staged.unlink()
+    other = base / 'custody' / ('race-entered-' + ('primary' if role == 'secondary' else 'secondary') + '.json')
+    deadline = time.monotonic() + 8
+    while not other.exists():
+        need(time.monotonic() < deadline, 'TWO_CUSTODY_BARRIER_TIMEOUT')
+        time.sleep(0.01)
+    other_record = parse(other.read_bytes())
+    need(other_record['pid'] != record['pid'] and other_record['request_sha256'] == sha(raw)
+         and other_record['uid'] == CUSTODY and other_record['consumptions_before'] == 0,
+         'DISTINCT_VERIFIED_REQUEST_CONTENDERS')
+    durable_marker(base / 'custody' / ('race-released-' + role + '.json'),
+                   {'pid': os.getpid(), 'released_ns': time.monotonic_ns()})
+
+
+def custody(base, restart=False, secondary=False):
     import httpx
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
     from scripts.task4_457_local_response_aead_v1 import SealedLocalVault
@@ -361,23 +392,27 @@ def custody(base, restart=False):
     key = (base / 'custody/credential').read_bytes()
     public = (base / 'public/issuer-key').read_bytes()
     file = base / 'custody/ledger.sqlite3'
-    need(file.exists() if restart else not file.exists(), 'EXACT_NATIVE_LEDGER_LIFECYCLE')
+    need(not secondary or concurrent_mode(base), 'SECOND_CUSTODY_REQUIRES_CONCURRENT_FIXTURE')
+    need(file.exists() if restart or secondary else not file.exists(), 'EXACT_NATIVE_LEDGER_LIFECYCLE')
     db = sqlite3.connect(file, isolation_level=None)
     db.execute('PRAGMA synchronous=FULL')
-    if not restart:
+    if not restart and not secondary:
         db.execute('CREATE TABLE consumed (op TEXT PRIMARY KEY,state TEXT,request_sha TEXT,response_sha TEXT,backend_receipt TEXT,envelope_sha TEXT,bind_sha TEXT)')
     else:
-        need(db.execute('SELECT count(*) FROM consumed').fetchone()[0] == (1 if fault_mode(base) else 8),
+        expected = (1 if restart else 0) if concurrent_mode(base) else (1 if fault_mode(base) else 8)
+        need(db.execute('SELECT count(*) FROM consumed').fetchone()[0] == expected,
              'EXACT_DURABLE_CONSUMPTIONS')
     vault = SealedLocalVault(base / 'custody', X25519PublicKey.from_public_bytes(recipient()))
-    address = base / 'ipc/native.sock'
+    address = base / ('ipc/native-secondary.sock' if secondary else 'ipc/native.sock')
     if restart:
         address.unlink()
     server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     server.bind(str(address))
     os.chmod(address, 0o666)
     server.listen(8)
-    (base / 'custody/ready').write_text('restarted' if restart else 'ready')
+    (base / ('custody/secondary-ready' if secondary else 'custody/ready')).write_text('restarted' if restart else 'ready')
+    race_pending = concurrent_mode(base) and not restart
+    role = 'secondary' if secondary else 'primary'
     while True:
         conn, _ = server.accept()
         with conn:
@@ -388,6 +423,11 @@ def custody(base, restart=False):
                 need(peer == NATIVE, 'KERNEL_NATIVE_PEER_REQUIRED')
                 raw = verify(packet, public)
                 op = packet['arm'] + str(packet['ordinal'])
+                racing = race_pending
+                if racing:
+                    need(op == 'A0', 'EXACT_NATIVE_RACE_SLOT')
+                    race_barrier(base, role, db, raw)
+                    race_pending = False
                 db.execute('BEGIN IMMEDIATE')
                 try:
                     db.execute('INSERT INTO consumed VALUES (?, ?, ?, NULL,NULL,NULL,NULL)',
@@ -395,8 +435,14 @@ def custody(base, restart=False):
                 except sqlite3.IntegrityError:
                     db.rollback()
                     result = {'decision': 'REPLAY_DENIED'}
+                    if racing:
+                        durable_marker(base / 'custody' / ('race-outcome-' + role + '.json'),
+                                       {'pid': os.getpid(), 'decision': 'REPLAY_DENIED'})
                 else:
                     db.commit()
+                    if racing:
+                        durable_marker(base / 'custody' / ('race-outcome-' + role + '.json'),
+                                       {'pid': os.getpid(), 'decision': 'CONSUMED'})
                     if not restart and fault_mode(base) == 'after-consume':
                         durable_marker(base / 'custody/fault-observed.json', {'stage': 'after-consume', 'op': op})
                         os._exit(86)
@@ -778,9 +824,154 @@ def read_fault_rows(base):
     return {'effects': [list(x) for x in effects], 'consumed': [list(x) for x in consumed]}
 
 
-def run(output, fault='', restart_both=False):
+def select_race_winner(results):
+    need(type(results) is list and len(results) == 2 and all(type(x) is dict for x in results),
+         'TWO_NATIVE_RACE_RESULTS')
+    need(sorted(x.get('decision', '') for x in results) == ['REPLAY_DENIED', 'SEALED_NATIVE_RESPONSE'],
+         'ONE_NATIVE_RACE_WINNER_REQUIRED')
+    winner = next(i for i, value in enumerate(results) if value['decision'] == 'SEALED_NATIVE_RESPONSE')
+    need(results[1 - winner] == {'decision': 'REPLAY_DENIED'}, 'LOSER_MUST_NOT_RETURN_RESPONSE')
+    return winner, results[winner]
+
+
+def concurrent_native(base):
+    import httpx
+    from scripts import task4_325_exact_sdk_wire_offline_v1 as cap
+    from scripts.task4_471_same_run_capped_sdk_aead_native_no_go_v1 import verify_pins
+    from scripts.task4_native_frozen_recipient_v1 import public_test_recipient
+    from scripts.task4_native_protected_custody_v1 import ProtectedAdapter
+    kernel.role_identity(NATIVE)
+    cap.base.verify_pins()
+    frozen_sources = verify_pins()
+    grants = parse((base / 'public/grants.json').read_bytes())
+    observations = []
+
+    class StopBeforeSecondDispatch(BaseException):
+        pass
+
+    class Transport(httpx.BaseTransport):
+        def __init__(self, source):
+            need(type(source) is cap.GuardedMock, 'PINNED_REFERENCE_SOURCE')
+            self.source = source
+
+        def handle_request(self, request):
+            if observations:
+                need(len(observations) == 1 and sha(request.content) == scope()[('A', 1)],
+                     'NEXT_ACTUAL_SDK_WIRE_AFTER_FIRST_RESPONSE')
+                observations.append({'next_request_sha256': sha(request.content)})
+                raise StopBeforeSecondDispatch()
+            need(self.source.origin_arm == 'A', 'FIRST_NATIVE_RACE_ARM')
+            expected = self.source(request)
+            packet = {'arm': 'A', 'ordinal': 0, 'wire_b64': encode(request.content), 'grant': grants['A0']}
+            verify(packet, (base / 'public/issuer-key').read_bytes())
+            durable_marker(base / 'native/packet-A0.json', packet)
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                futures = [pool.submit(query, base, packet, secondary) for secondary in (False, True)]
+                results = [future.result(timeout=20) for future in futures]
+            index, result = select_race_winner(results)
+            blob = decode(result['envelope_b64'])
+            need(sha(blob) == result['envelope_sha256'] and result['request_sha256'] == sha(request.content),
+                 'RACE_CIPHERTEXT_REQUEST_JOIN')
+            plaintext = ProtectedAdapter.recover_test_ciphertext(blob, public_test_recipient())
+            need(plaintext == expected.content and sha(plaintext) == result['response_sha256'], 'RACE_ORIGINAL_RESPONSE_BYTES')
+            observations.append({'winner_role': 'secondary' if index else 'primary',
+                'decisions': [x['decision'] for x in results], **{k: result[k] for k in
+                ('request_sha256', 'response_sha256', 'backend_receipt_sha256', 'envelope_sha256', 'bind_sha256')}})
+            return httpx.Response(200, content=plaintext, request=request)
+
+    try:
+        with patch.object(httpx, 'MockTransport', Transport), \
+             patch('openai._base_client.get_platform', return_value='Unknown'):
+            cap.run_both_sources()
+    except StopBeforeSecondDispatch:
+        pass
+    need(len(observations) == 2, 'FIRST_RESPONSE_PARSED_AND_NEXT_WIRE_HELD')
+    return {'race': observations[0], 'next_request_sha256': observations[1]['next_request_sha256'],
+        'frozen_source_git_blobs': frozen_sources, 'sdk_transport_invocations': 2,
+        'distinct_native_requests_forwarded': 1, 'custody_attempts': 2, 'sdk_responses_returned': 1,
+        'native_terminal_arms': 0, 'scorer_calls': 0}
+
+
+def concurrent_replay(base):
+    kernel.role_identity(NATIVE)
+    packet = parse((base / 'native/packet-A0.json').read_bytes())
+    for secondary in (False, True):
+        for _ in range(2):
+            need(query(base, packet, secondary) == {'decision': 'REPLAY_DENIED'}, 'BOTH_CUSTODIES_REPLAY_DENIED')
+    return {'replay_denials': 4}
+
+
+def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, head, pins):
+    secondary = spawn(CUSTODY, 'custody', None, base / 'custody/secondary-ready', 'ready', ('--secondary',))
+    old_pids = {'primary': service.pid, 'secondary': secondary.pid}
+    checks = worker(NATIVE, 'probe', native_ns)
+    checks.update(worker(NATIVE, 'reachable', sink_ns))
+    native_report = worker(NATIVE, 'concurrent-native', native_ns)
+    race = native_report['race']
+    entered, released, outcomes = {}, {}, {}
+    for role in old_pids:
+        entered[role] = parse((base / 'custody' / ('race-entered-' + role + '.json')).read_bytes())
+        released[role] = parse((base / 'custody' / ('race-released-' + role + '.json')).read_bytes())
+        outcomes[role] = parse((base / 'custody' / ('race-outcome-' + role + '.json')).read_bytes())
+        need(entered[role]['pid'] == released[role]['pid'] == outcomes[role]['pid'] == old_pids[role],
+             'ACTUAL_TWO_PROCESS_IDS')
+        need(entered[role]['uid'] == CUSTODY and entered[role]['request_sha256'] == scope()[('A', 0)]
+             and entered[role]['consumptions_before'] == 0, 'BOTH_AUTHENTIC_SAME_REQUEST_ARRIVED')
+    need(len(set(old_pids.values())) == 2 and max(x['entered_ns'] for x in entered.values())
+         <= min(x['released_ns'] for x in released.values()), 'BOTH_ARRIVED_BEFORE_RACE_RELEASE')
+    need(sorted(x['decision'] for x in outcomes.values()) == ['CONSUMED', 'REPLAY_DENIED']
+         and outcomes[race['winner_role']]['decision'] == 'CONSUMED', 'PROCESS_NATIVE_WINNER_JOIN')
+    before = read_fault_rows(base)
+    replay = worker(NATIVE, 'concurrent-replay', native_ns)
+    for p in (service, secondary):
+        p.terminate()
+        need(p.wait(timeout=5) == -15, 'BOTH_CUSTODY_PROCESSES_STOPPED')
+    for name in ('ready', 'secondary-ready'):
+        (base / 'custody' / name).unlink()
+    service = spawn(CUSTODY, 'custody', None, base / 'custody/ready', 'restarted', ('--restart',))
+    secondary = spawn(CUSTODY, 'custody', None, base / 'custody/secondary-ready', 'restarted', ('--restart', '--secondary'))
+    new_pids = {'primary': service.pid, 'secondary': secondary.pid}
+    need(len(set(new_pids.values())) == 2 and all(new_pids[x] != old_pids[x] for x in old_pids), 'BOTH_CUSTODIES_RESTARTED')
+    restarted_replay = worker(NATIVE, 'concurrent-replay', native_ns)
+    after = read_fault_rows(base)
+    need(before == after and len(after['effects']) == len(after['consumed']) == 1, 'ONE_EFFECT_AND_DURABLE_CONSUMPTION')
+    effect, consumed = after['effects'][0], after['consumed'][0]
+    need(effect == ['A0', race['request_sha256'], race['response_sha256'], race['backend_receipt_sha256']]
+         and consumed == ['A0', 'MOCK_OBSERVED', race['request_sha256'], race['response_sha256'],
+             race['backend_receipt_sha256'], race['envelope_sha256'], race['bind_sha256']], 'RACE_NATIVE_BACKEND_LEDGER_JOIN')
+    need(effect[3] == digest(dict(operation_id='A0', request_sha256=effect[1], response_sha256=effect[2])), 'RACE_RECEIPT_HASH')
+    ciphertexts = list((base / 'custody').glob('*.enc.json'))
+    need(len(ciphertexts) == 1 and sha(ciphertexts[0].read_bytes()) == race['envelope_sha256'], 'ONE_DURABLE_RACE_CIPHERTEXT')
+    binding = parse((base / 'custody/A0-bind.json').read_bytes())
+    need(digest(binding) == race['bind_sha256'] and [(x['outcome'], x['apply_calls']) for x in binding['records']]
+         == [('BLOCKED', 0), ('COMMITTED', 1)], 'ONE_ACTUAL_BIND_NETWORK_APPLY')
+    checks.update({'two_processes_at_barrier': True, 'both_verified_same_frozen_request': True,
+        'both_arrived_before_first_consume': True, 'single_sqlite_consumption': True, 'single_backend_effect': True,
+        'single_ciphertext': True, 'one_actual_bind_network_apply': True, 'next_sdk_wire_after_response_matches': True,
+        'eight_replays_denied': replay['replay_denials'] + restarted_replay['replay_denials'] == 8,
+        'both_custodies_restart_retain': True, 'same_run_receipts_join': True})
+    need(all(v is True for v in checks.values()), 'ALL_CONCURRENT_NATIVE_CHECKS_REQUIRED')
+    report = {'schema': 'task4.native.os-custody.concurrent.v1', 'audited_commit': head,
+        'source_sha256': sha(Path(__file__).read_bytes()), 'external_pins': pins, 'checks': checks,
+        'native': native_report, 'entered': entered, 'released': released, 'outcomes': outcomes,
+        'old_pids': old_pids, 'new_pids': new_pids, 'before_restart': before, 'after_restart': after,
+        'bind_record': binding, 'replay_denials': 8, 'mock_http_effects': 1, 'custody_consumptions': 1,
+        'ciphertext_count': 1, 'cross_process_concurrent_native_consumption_tested': True,
+        'concurrent_winner_crash_tested': False, 'distributed_cas_proven': False,
+        'real_provider_posts': 0, 'external_bank_effects': 0, 'utility': 'UNSCORED', 'provider_dispatch': 'DENY',
+        'production_bypass_resistance_proven': False, 'independent_administration_proven': False}
+    (output / 'report.json').write_bytes(canonical(report))
+    suite = ET.Element('testsuite', name='Native OS Custody Concurrent', tests=str(len(checks)),
+                       failures='0', errors='0', skipped='0')
+    for name in sorted(checks):
+        ET.SubElement(suite, 'testcase', classname='native_os_custody_concurrent', name=name)
+    ET.ElementTree(suite).write(output / 'junit.xml', encoding='utf-8', xml_declaration=True)
+
+
+def run(output, fault='', restart_both=False, concurrent=False):
     need(fault in ('', *FAULTS), 'EXACT_FAULT_MODE')
     need(type(restart_both) is bool and (not restart_both or fault in FAULTS), 'BOTH_RESTART_REQUIRES_FAULT')
+    need(type(concurrent) is bool and (not concurrent or (not fault and not restart_both)), 'CONCURRENT_FIXTURE_SEPARATE_FROM_FAULTS')
     need(os.geteuid() == 0 and sys.platform == 'linux', 'TRUSTED_DISPOSABLE_LINUX_CI_ROOT_REQUIRED')
     need(not output.exists() and output.resolve().is_relative_to(ROOT), 'NEW_OUTPUT_UNDER_CHECKOUT')
     for uid in (NATIVE, BACKEND, ISSUER, CUSTODY, kernel.STRANGER):
@@ -847,6 +1038,9 @@ def run(output, fault='', restart_both=False):
         if fault:
             (base / 'public/fault').write_text(fault)
             os.chmod(base / 'public/fault', 0o444)
+        if concurrent:
+            (base / 'public/concurrent').write_text('two-custody-v1')
+            os.chmod(base / 'public/concurrent', 0o444)
         credential = secrets.token_bytes(32)
         for role, uid in [('custody', CUSTODY), ('backend', BACKEND)]:
             file = base / role / 'credential'
@@ -914,6 +1108,10 @@ def run(output, fault='', restart_both=False):
                 os.chmod(file, 0o444)
             sink = spawn(BACKEND, 'backend', sink_ns, base / 'backend/ready')
             service = spawn(CUSTODY, 'custody', None, base / 'custody/ready')
+            if concurrent:
+                finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, head, pins)
+                print('TASK4_NATIVE_CONCURRENT_CUSTODY_ONE_EFFECT_NO_PROVIDER')
+                return
             if fault:
                 finish_fault(base, output, fault, worker, spawn, service, native_ns, head, pins,
                              sink, sink_ns, restart_both)
@@ -1009,21 +1207,25 @@ def main():
     parser.add_argument('--output', type=Path)
     parser.add_argument('--fault', choices=FAULTS, default='')
     parser.add_argument('--restart-both', action='store_true')
-    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay'))
+    parser.add_argument('--concurrent', action='store_true')
+    parser.add_argument('--secondary', action='store_true')
+    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay'))
     parser.add_argument('--base', type=Path)
     parser.add_argument('--restart', action='store_true')
     args = parser.parse_args()
     if args.run:
-        need(args.output is not None and args.role is None, 'RUN_OUTPUT_REQUIRED')
-        run(args.output.resolve(), args.fault, args.restart_both)
+        need(args.output is not None and args.role is None and not args.secondary, 'RUN_OUTPUT_REQUIRED')
+        run(args.output.resolve(), args.fault, args.restart_both, args.concurrent)
     else:
-        need(args.role is not None and args.base is not None and not args.fault and not args.restart_both, 'EXPLICIT_LOCAL_ROLE')
+        need(args.role is not None and args.base is not None and not args.fault and not args.restart_both
+             and not args.concurrent and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
         roles = {'issue': issue, 'backend': lambda b: backend(b, args.restart), 'probe': probe,
                  'reachable': lambda b: probe(b, True), 'native': native, 'restart-probe': restart_probe,
                  'wrong-peer': wrong_peer,
                  'fault-native': fault_native, 'fault-replay': fault_replay, 'reconcile-fault': reconcile_fault,
                  'offline-reconcile': offline_reconcile, 'backend-replay': backend_replay,
-                 'custody': lambda b: custody(b, args.restart)}
+                 'concurrent-native': concurrent_native, 'concurrent-replay': concurrent_replay,
+                 'custody': lambda b: custody(b, args.restart, args.secondary)}
         value = roles[args.role](args.base)
         if value is not None:
             print(canonical(value).decode())
