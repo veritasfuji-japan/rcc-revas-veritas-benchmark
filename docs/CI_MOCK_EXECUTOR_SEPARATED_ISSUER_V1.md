@@ -1,5 +1,11 @@
 # Separate synthetic issuer in the existing GitHub Actions proof
 
+Current extension: [Bind Custody](CI_MOCK_BIND_CUSTODY_V1.md) moves the transport
+credential, ledger and Bind execution out of the untrusted Executor into UID
+61106. It requires 15 unit tests / 42 observations. The description below records
+the earlier #493 boundary; the new extension narrows the trusted service but
+does not prove resistance to a compromised Custody.
+
 This extends #492's same-run real VERITAS Bind / mock effect proof. The existing
 every-PR workflow now requires Ed25519 approval from UID 61105. The issuer runs
 in the loopback-only agent namespace, with no capabilities or supplementary

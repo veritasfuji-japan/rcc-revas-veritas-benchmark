@@ -58,9 +58,14 @@ jobs:
           r=json.loads(Path('results/mock-authority/report.json').read_text())
           assert r['audited_commit'] == '${{ github.event.pull_request.head.sha }}'
           assert r['source_sha256'] == hashlib.sha256(Path('scripts/ci_mock_executor_authority_boundary_v1.py').read_bytes()).hexdigest()
-          assert len(r['checks']) == 33 and all(v is True for v in r['checks'].values())
-          assert r['mock_effect_count'] == 1 and r['backend_denial_count'] == 2
-          assert len(set(r['uids'].values())) == 4 and len(set(r['namespace_ids'].values())) == 3
+          assert len(r['checks']) == 42 and all(v is True for v in r['checks'].values())
+          assert r['mock_effect_count'] == 1 and r['backend_denial_count'] == 3
+          assert len(set(r['uids'].values())) == 5 and len(set(r['namespace_ids'].values())) == 3
+          assert r['executor_has_backend_credential'] is False
+          assert r['trusted_bind_custody_uid'] == 61106
+          assert r['bind_enforcement_scope'] == 'UNTRUSTED_EXECUTOR_TO_TRUSTED_CUSTODY'
+          assert r['compromised_custody_resistance_proven'] is False
+          assert r['installed_and_checked_firewall_rule'][-3:] == ['61106','-j','REJECT']
           assert r['issuer_algorithm'] == 'Ed25519'
           assert r['executor_has_issuer_private_key'] is False
           assert r['backend_verifies_issuer_signature'] is True
@@ -77,7 +82,8 @@ jobs:
           assert r['bind_adapter_source_sha256'] == hashlib.sha256(Path('scripts/ci_mock_executor_veritas_bind_v1.py').read_bytes()).hexdigest()
           assert b['veritas_pin'] == 'a1d66aef02262cf8a913295270c3aafd159c6adb'
           assert b['bind_core_git_blob'] == '0f64201e2599495ce4e3991348aa320995716ffc'
-          assert b['same_executor_run_real_bind_and_network_effect'] is True
+          assert b['same_custody_run_real_bind_and_network_effect'] is True
+          assert b['bind_executor_uid'] == r['trusted_bind_custody_uid']
           assert b['native_task4_pipeline_integrated'] is b['production_policy_proven'] is False
           assert b['authenticated_effect_posts'] == 1
           assert b['backend_receipt_sha256'] == r['receipt_sha256'] == b['request_sha256']
@@ -85,7 +91,7 @@ jobs:
               ('authority-denied','BLOCKED',0),('wrong-target','BLOCKED',0),
               ('wrong-prestate','BLOCKED',0),('allow','COMMITTED',1)]
           assert all(digest(x['bind_receipt']) == x['receipt_sha256'] for x in b['records'])
-          for file,count in [('results/mock-executor-unit-junit.xml',13),('results/mock-authority/junit.xml',33)]:
+          for file,count in [('results/mock-executor-unit-junit.xml',15),('results/mock-authority/junit.xml',42)]:
               root=ET.parse(file).getroot()
               assert len(list(root.iter('testcase'))) == count
               assert not list(root.iter('skipped')) and not list(root.iter('failure')) and not list(root.iter('error'))
