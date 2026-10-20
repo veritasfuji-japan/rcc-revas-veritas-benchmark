@@ -1,5 +1,10 @@
 # Task4 evidence-to-production gap register (offline, non-executing)
 
+Historical #488 snapshot. For progress and remaining gates through merged #505,
+see the [Task4 Native proof checkpoint](TASK4_NATIVE_PROOF_CHECKPOINT_V1.md).
+The evidence, limitations and proposed next work below describe the #487 baseline;
+they do not negate the later bounded OS/Bind/fault/concurrency integrations.
+
 **Baseline:** main `64f69d04c748a0a88d6cb1dd849b1e5e70a804b0` (merged PR #487). **Status:** documentation-only; no new authorization, no live Provider calls, no production proof.
 
 ## Evidence ledger (PR HEAD validation; not production claims)

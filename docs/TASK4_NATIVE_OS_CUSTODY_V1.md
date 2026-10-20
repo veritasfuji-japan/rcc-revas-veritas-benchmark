@@ -1,5 +1,11 @@
 # Task4 Native SDK to OS-separated Bind Custody and local HTTP
 
+Historical #499 introduction. For the current evidence matrix, updated test
+counts, integrated fault/concurrency/restart results and remaining research and
+production gates through #505, see the
+[Task4 Native proof checkpoint](TASK4_NATIVE_PROOF_CHECKPOINT_V1.md).
+The original counts and untested-fault statements below describe #499's scope.
+
 The existing #487 Native proof and #494–#498 kernel mock proof previously ran
 as separate experiments. This additive integration sends the actual eight
 frozen Native SDK request bodies through a new separate-UID Custody adapter,
