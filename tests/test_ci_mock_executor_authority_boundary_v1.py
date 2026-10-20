@@ -83,3 +83,15 @@ def test_custody_refuses_no_bind_before_opening_credential(tmp_path, monkeypatch
     monkeypatch.setattr(boundary, 'role_identity', lambda uid: None)
     with pytest.raises(ValueError, match='CUSTODY_REQUIRES_REAL_BIND'):
         boundary.custody(tmp_path, with_bind=False)
+
+
+def test_supervisor_refuses_unknown_fault_before_provisioning(tmp_path):
+    with pytest.raises(ValueError, match='EXACT_TEST_FAULT'):
+        boundary.run(tmp_path / 'proof', with_bind=True, fault='retry-anyway')
+    assert not (tmp_path / 'proof').exists()
+
+
+def test_custody_refuses_unknown_fault_before_opening_credential(tmp_path, monkeypatch):
+    monkeypatch.setattr(boundary, 'role_identity', lambda uid: None)
+    with pytest.raises(ValueError, match='EXACT_TEST_FAULT'):
+        boundary.custody(tmp_path, with_bind=True, fault='retry-anyway')
