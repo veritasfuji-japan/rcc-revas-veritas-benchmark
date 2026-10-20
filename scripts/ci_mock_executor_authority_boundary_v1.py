@@ -27,7 +27,7 @@ import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 
-AGENT, EXECUTOR, BACKEND, STRANGER = 61101, 61102, 61103, 61104
+AGENT, EXECUTOR, BACKEND, STRANGER, ISSUER = 61101, 61102, 61103, 61104, 61105
 HOST, PORT = '10.249.91.2', 18491
 TARGET = 'mock://ci-authority/counter'
 OP = 'CI_ONLY_SINGLE_ATTEMPT'
@@ -73,6 +73,8 @@ def exact_request(request):
 
 
 def validate(packet, key):
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     need(type(packet) is dict and set(packet) == {'request', 'grant'}, 'EXACT_PACKET')
     need(exact_request(packet['request']), 'EXACT_MOCK_REQUEST')
     grant = packet['grant']
@@ -80,9 +82,38 @@ def validate(packet, key):
     statement = grant['statement']
     need(statement == {'scope': 'CI_ONLY', 'operation_id': OP,
                        'request_sha256': digest(REQUEST)}, 'EXACT_TEST_SCOPE')
-    need(type(grant['signature']) is str and hmac.compare_digest(
-        tag(key, b'CI_GRANT_V1\0', statement), grant['signature']), 'GRANT_SIGNATURE')
+    need(type(grant['signature']) is str and len(grant['signature']) == 128, 'GRANT_SIGNATURE')
+    try:
+        Ed25519PublicKey.from_public_bytes(key).verify(
+            bytes.fromhex(grant['signature']), b'CI_GRANT_V2\0' + canonical(statement))
+    except (InvalidSignature, ValueError):
+        raise ValueError('GRANT_SIGNATURE') from None
     return statement
+
+
+def issue(base):
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    role_identity(ISSUER)
+    os.umask(0o077)
+    for rel in ('executor/credential', 'backend/credential'):
+        try:
+            (base / rel).read_bytes()
+        except PermissionError:
+            pass
+        else:
+            raise ValueError('ISSUER_MUST_NOT_HOLD_TRANSPORT_CREDENTIAL')
+    need([x['ifname'] for x in json.loads(command(['ip', '-j', 'link', 'show']).stdout)]
+         == ['lo'], 'ISSUER_LOOPBACK_ONLY')
+    key = Ed25519PrivateKey.generate()
+    path = base / 'issuer/private-key'
+    with path.open('xb') as stream:
+        stream.write(key.private_bytes_raw())
+    statement = {'scope': 'CI_ONLY', 'operation_id': OP, 'request_sha256': digest(REQUEST)}
+    packet = {'request': REQUEST, 'grant': {'statement': statement, 'signature':
+        key.sign(b'CI_GRANT_V2\0' + canonical(statement)).hex()}}
+    # Private key never leaves this UID. Root explicitly enrolls the public key.
+    return {'public_key': key.public_key().public_bytes_raw().hex(), 'packet': packet,
+            'issuer_credential_reads_denied_and_loopback_only': True}
 
 
 def frame_read(conn):
@@ -145,6 +176,7 @@ def sink(base):
     role_identity(BACKEND)
     os.umask(0o077)
     key = (base / 'backend/credential').read_bytes()
+    public_key = (base / 'trust/issuer-public-key').read_bytes()
     db = sqlite3.connect(base / 'backend/state.sqlite3', isolation_level=None)
     db.execute('PRAGMA synchronous=FULL')
     db.execute('CREATE TABLE state (id INTEGER PRIMARY KEY,counter INTEGER,denials INTEGER)')
@@ -175,15 +207,17 @@ def sink(base):
                 length = int(self.headers.get('Content-Length', '0'))
                 need(self.path == '/effect' and 0 < length <= LIMIT, 'EXACT_EFFECT_ENDPOINT')
                 packet = parse(self.rfile.read(length))
-                need(type(packet) is dict and set(packet) == {'operation_id', 'request'}
+                need(type(packet) is dict and set(packet) == {'operation_id', 'request', 'grant'}
                      and packet['operation_id'] == OP and exact_request(packet['request']),
                      'EXACT_BACKEND_OPERATION')
                 need(hmac.compare_digest(tag(key, b'CI_SINK_V1\0', packet),
                                          self.headers.get('X-Mock-Auth', '')), 'MOCK_CREDENTIAL')
+                validate({'request': packet['request'], 'grant': packet['grant']}, public_key)
+                body = {'operation_id': OP, 'request': packet['request']}
                 db.execute('BEGIN IMMEDIATE')
                 before = db.execute('SELECT counter FROM state').fetchone()[0]
                 need(before == 0, 'BACKEND_REPLAY')
-                receipt = digest(packet)
+                receipt = digest(body)
                 db.execute('INSERT INTO spent VALUES (?,?)', (OP, receipt))
                 db.execute('UPDATE state SET counter=1 WHERE id=1')
                 db.commit()
@@ -208,7 +242,7 @@ def executor(base, restart=False, with_bind=False):
     role_identity(EXECUTOR)
     os.umask(0o077)
     credential = (base / 'executor/credential').read_bytes()
-    verifier = (base / 'executor/verifier').read_bytes()
+    verifier = (base / 'trust/issuer-public-key').read_bytes()
     file = base / 'executor/ledger.sqlite3'
     need(file.is_file() if restart else not file.exists(), 'EXACT_LEDGER_LIFECYCLE')
     db = sqlite3.connect(file, isolation_level=None)
@@ -245,16 +279,17 @@ def executor(base, restart=False, with_bind=False):
                 else:
                     db.commit()
                     body = {'operation_id': OP, 'request': packet['request']}
+                    envelope = dict(body, grant=packet['grant'])
                     if with_bind:
                         sys.path.insert(0, str(base))  # Trusted root-owned read-only source copy.
                         from ci_mock_executor_veritas_bind_v1 import integrate
                         response, evidence = integrate(body=body,
-                            post=lambda: http_query(body, tag(credential, b'CI_SINK_V1\0', body)),
+                            post=lambda: http_query(envelope, tag(credential, b'CI_SINK_V1\0', envelope)),
                             status=lambda: status_query(credential))
                         (base / 'executor/bind-evidence.json').write_bytes(canonical(evidence))
                         code = 200
                     else:
-                        code, response = http_query(body, tag(credential, b'CI_SINK_V1\0', body))
+                        code, response = http_query(envelope, tag(credential, b'CI_SINK_V1\0', envelope))
                     need(code == 200 and response == {
                         'decision': 'MOCK_EFFECT_ONCE', 'receipt': digest(body)}, 'BOUND_SINK_RECEIPT')
                     db.execute('UPDATE consumed SET state=?,receipt=? WHERE operation_id=?',
@@ -286,10 +321,37 @@ def denied_connect(host=HOST, port=PORT, family=None):
 
 
 def worker(base, mode):
-    role_identity(STRANGER if mode == 'stranger' else EXECUTOR if mode == 'no-credential' else AGENT)
+    role_identity(STRANGER if mode == 'stranger' else EXECUTOR
+                  if mode in {'no-credential', 'executor-forge', 'executor-key'} else AGENT)
+    if mode in {'executor-key', 'agent-key'}:
+        try:
+            (base / 'issuer/private-key').read_bytes()
+        except PermissionError:
+            pass
+        else:
+            raise ValueError('ISSUER_PRIVATE_KEY_READABLE')
+        try:
+            (base / 'trust/issuer-public-key').write_bytes(b'attacker')
+        except PermissionError:
+            pass
+        else:
+            raise ValueError('TRUST_ROOT_REPLACED')
+        return {mode + '_private_read_denied': True, mode + '_trust_write_denied': True}
+    if mode == 'executor-forge':
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        packet = json.loads((base / 'public/packet.json').read_bytes())
+        packet['grant']['signature'] = Ed25519PrivateKey.generate().sign(
+            b'CI_GRANT_V2\0' + canonical(packet['grant']['statement'])).hex()
+        body = dict(operation_id=OP, request=REQUEST, grant=packet['grant'])
+        credential = (base / 'executor/credential').read_bytes()
+        code, result = http_query(body, tag(credential, b'CI_SINK_V1\0', body))
+        need(code == 403 and result == {'decision': 'DENIED'}, 'FORGED_ISSUER_GRANT_REACHED_EFFECT')
+        need(status_query(credential) == {'counter': 0, 'revision': 0, 'effect_count': 0},
+             'FORGED_GRANT_CHANGED_BACKEND')
+        return {'valid_transport_credential_forged_issuer_denied_at_backend': True}
     if mode == 'probe':
         observations = {}
-        for rel in ('executor/credential', 'executor/verifier', 'executor/ledger.sqlite3',
+        for rel in ('executor/credential', 'executor/ledger.sqlite3',
                     'backend/credential', 'backend/state.sqlite3'):
             try:
                 (base / rel).read_bytes()
@@ -323,12 +385,13 @@ def worker(base, mode):
     if mode == 'host-direct':
         return {'same_agent_uid_host_direct_denied': denied_connect()}
     if mode == 'no-credential':
-        code, result = http_query({'operation_id': OP, 'request': REQUEST})
+        packet = json.loads((base / 'public/packet.json').read_bytes())
+        code, result = http_query(dict(operation_id=OP, **packet))
         need(code == 403 and result == {'decision': 'DENIED'}, 'NETWORK_ALONE_IS_NOT_AUTHORITY')
         return {'executor_uid_reaches_sink_but_unsigned_denied': True}
     packet = json.loads((base / 'public/packet.json').read_bytes())
     if mode == 'tamper':
-        packet['grant']['signature'] = '0' * 64
+        packet['grant']['signature'] = '0' * 128
     elif mode == 'unsigned':
         packet['grant'] = {}
     elif mode == 'forward':
@@ -361,7 +424,7 @@ def run(output, with_bind=False, veritas_root=None):
          'NEW_OUTPUT_DIRECTORY_UNDER_CHECKOUT_REQUIRED')
     for binary in ('ip', 'iptables', 'setpriv'):
         need(shutil.which(binary) is not None, 'MISSING_LINUX_TOOL_' + binary)
-    for uid in (AGENT, EXECUTOR, BACKEND, STRANGER):
+    for uid in (AGENT, EXECUTOR, BACKEND, STRANGER, ISSUER):
         try:
             pwd.getpwuid(uid)
         except KeyError:
@@ -417,24 +480,19 @@ def run(output, with_bind=False, veritas_root=None):
                 need(not path.is_symlink(), 'NO_SYMLINK_IN_BIND_SOURCE')
                 os.chmod(path, 0o555 if path.is_dir() else 0o444)
             os.chmod(base / 'veritas_os', 0o555)
-        for role, uid in [('executor', EXECUTOR), ('backend', BACKEND), ('ipc', EXECUTOR)]:
+        for role, uid in [('executor', EXECUTOR), ('backend', BACKEND), ('ipc', EXECUTOR), ('issuer', ISSUER)]:
             folder = base / role
             folder.mkdir(mode=0o755 if role == 'ipc' else 0o700)
             os.chown(folder, uid, uid)
         (base / 'public').mkdir(mode=0o755)
-        verifier, credential = secrets.token_bytes(32), secrets.token_bytes(32)
+        (base / 'trust').mkdir(mode=0o755)
+        credential = secrets.token_bytes(32)
         for rel, raw, uid in [('executor/credential', credential, EXECUTOR),
-                              ('backend/credential', credential, BACKEND),
-                              ('executor/verifier', verifier, EXECUTOR)]:
+                              ('backend/credential', credential, BACKEND)]:
             path = base / rel
             path.write_bytes(raw)
             os.chmod(path, 0o600)
             os.chown(path, uid, uid)
-        statement = {'scope': 'CI_ONLY', 'operation_id': OP, 'request_sha256': digest(REQUEST)}
-        packet = {'request': REQUEST, 'grant': {'statement': statement,
-                    'signature': tag(verifier, b'CI_GRANT_V1\0', statement)}}
-        (base / 'public/packet.json').write_bytes(canonical(packet))
-        os.chmod(base / 'public/packet.json', 0o444)
 
         def spawn(uid, args, namespace, ready, expected):
             proc = subprocess.Popen(role_command(program, uid, args, namespace),
@@ -494,6 +552,17 @@ def run(output, with_bind=False, veritas_root=None):
                     'readlink', '/proc/self/ns/net']).stdout.strip()
             need(len(set(namespace_ids.values())) == 3, 'THREE_DISTINCT_NETWORK_NAMESPACES')
             checks['three_distinct_network_namespaces'] = True
+            issued = json.loads(command(role_command(program, ISSUER,
+                ['--issue', str(base)], agent_ns)).stdout)
+            public_key = bytes.fromhex(issued['public_key'])
+            validate(issued['packet'], public_key)
+            for rel, raw in [('trust/issuer-public-key', public_key),
+                             ('public/packet.json', canonical(issued['packet']))]:
+                path = base / rel
+                path.write_bytes(raw)
+                os.chmod(path, 0o444)
+            checks['issuer_credential_reads_denied_and_loopback_only'] = issued[
+                'issuer_credential_reads_denied_and_loopback_only']
             sink_proc = spawn(BACKEND, ['--sink', str(base)], sink_ns, base / 'backend/ready', 'ready')
             bind_args = ['--with-veritas-bind'] if with_bind else []
             executor_proc = spawn(EXECUTOR, ['--executor', str(base)] + bind_args,
@@ -501,6 +570,9 @@ def run(output, with_bind=False, veritas_root=None):
             checks.update(probe('probe'))
             checks.update(probe('host-direct', namespace=None))
             checks.update(probe('no-credential', uid=EXECUTOR, namespace=None))
+            checks.update(probe('agent-key'))
+            checks.update(probe('executor-key', uid=EXECUTOR, namespace=None))
+            checks.update(probe('executor-forge', uid=EXECUTOR, namespace=None))
             for mode in ('tamper', 'unsigned', 'forward'):
                 checks[mode + '_denied'] = probe(mode)[mode + '_expected_decision']
             checks['wrong_peer_uid_denied'] = probe('stranger', uid=STRANGER)['stranger_expected_decision']
@@ -520,7 +592,7 @@ def run(output, with_bind=False, veritas_root=None):
                 spent = db.execute('SELECT operation_id,receipt FROM spent').fetchall()
             with sqlite3.connect(base / 'executor/ledger.sqlite3') as db:
                 rows = db.execute('SELECT operation_id,state,receipt FROM consumed').fetchall()
-            need(counter == 1 and denials == 1 and len(spent) == len(rows) == 1,
+            need(counter == 1 and denials == 2 and len(spent) == len(rows) == 1,
                  'BACKEND_COUNTS_AND_DENIED_PROBE_RECONCILIATION')
             need(rows[0] == (OP, 'MOCK_OBSERVED', spent[0][1]), 'LEDGER_BACKEND_RECEIPT_JOIN')
             checks['backend_effect_and_ledger_receipt_reconciled'] = True
@@ -542,7 +614,9 @@ def run(output, with_bind=False, veritas_root=None):
             need(all(value is True for value in checks.values()), 'ALL_CHECKS_REQUIRED')
             report = {'schema': 'ci.mock-executor.authority-boundary.v1', 'audited_commit': head,
                       'source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                      'checks': checks, 'uids': {'agent': AGENT, 'executor': EXECUTOR, 'backend': BACKEND},
+                      'checks': checks, 'uids': {'agent': AGENT, 'executor': EXECUTOR, 'backend': BACKEND, 'issuer': ISSUER},
+                      'issuer_algorithm': 'Ed25519', 'issuer_public_key_sha256': hashlib.sha256(public_key).hexdigest(),
+                      'backend_verifies_issuer_signature': True, 'executor_has_issuer_private_key': False,
                       'namespace_ids': namespace_ids, 'installed_and_checked_firewall_rule': rule,
                       'mock_effect_count': counter, 'backend_denial_count': denials,
                       'receipt_sha256': spent[0][1], 'real_provider_calls': 0, 'real_bank_effects': 0,
@@ -583,6 +657,7 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--run', action='store_true')
     group.add_argument('--sink', type=Path)
+    group.add_argument('--issue', type=Path)
     group.add_argument('--executor', type=Path)
     group.add_argument('--worker', nargs=2)
     parser.add_argument('--restart', action='store_true')
@@ -595,6 +670,8 @@ def main():
         run(args.output, args.with_veritas_bind, args.veritas_root)
     elif args.sink:
         sink(args.sink)
+    elif args.issue:
+        print(json.dumps(issue(args.issue), sort_keys=True))
     elif args.executor:
         executor(args.executor, args.restart, args.with_veritas_bind)
     else:

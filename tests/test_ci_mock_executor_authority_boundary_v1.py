@@ -1,10 +1,13 @@
 import copy
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from scripts import ci_mock_executor_authority_boundary_v1 as boundary
 
 KEY = b'PUBLIC_UNIT_TEST_KEY_NOT_A_RUNTIME_CREDENTIAL'
+SIGNER = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
+PUBLIC = SIGNER.public_key().public_bytes_raw()
 
 
 def packet():
@@ -12,11 +15,11 @@ def packet():
                  'request_sha256': boundary.digest(boundary.REQUEST)}
     return {'request': copy.deepcopy(boundary.REQUEST), 'grant': {
         'statement': statement,
-        'signature': boundary.tag(KEY, b'CI_GRANT_V1\0', statement)}}
+        'signature': SIGNER.sign(b'CI_GRANT_V2\0' + boundary.canonical(statement)).hex()}}
 
 
 def test_exact_mock_scope_accepted_without_network():
-    assert boundary.validate(packet(), KEY)['scope'] == 'CI_ONLY'
+    assert boundary.validate(packet(), PUBLIC)['scope'] == 'CI_ONLY'
 
 
 @pytest.mark.parametrize('fault', ['signature', 'target', 'units_bool', 'revision_bool',
@@ -24,7 +27,7 @@ def test_exact_mock_scope_accepted_without_network():
 def test_forged_or_widened_scope_refused(fault):
     request = packet()
     if fault == 'signature':
-        request['grant']['signature'] = '0' * 64
+        request['grant']['signature'] = '0' * 128
     elif fault == 'target':
         request['request']['target'] = 'https://example.invalid/'
     elif fault == 'units_bool':
@@ -40,7 +43,23 @@ def test_forged_or_widened_scope_refused(fault):
     elif fault == 'scope':
         request['grant']['statement']['scope'] = 'PRODUCTION'
     with pytest.raises(ValueError):
-        boundary.validate(request, KEY)
+        boundary.validate(request, PUBLIC)
+
+
+def test_attacker_signature_refused_under_enrolled_public_key():
+    request = packet()
+    attacker = Ed25519PrivateKey.generate()
+    request['grant']['signature'] = attacker.sign(
+        b'CI_GRANT_V2\0' + boundary.canonical(request['grant']['statement'])).hex()
+    with pytest.raises(ValueError, match='GRANT_SIGNATURE'):
+        boundary.validate(request, PUBLIC)
+
+
+def test_nonhex_signature_refused():
+    request = packet()
+    request['grant']['signature'] = 'z' * 128
+    with pytest.raises(ValueError, match='GRANT_SIGNATURE'):
+        boundary.validate(request, PUBLIC)
 
 
 def test_duplicate_json_and_oversize_refused():

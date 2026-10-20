@@ -116,5 +116,13 @@ sudo /usr/bin/python3 scripts/ci_mock_executor_authority_boundary_v1.py --run --
 
 The integration command requires root, iproute2, iptables and setpriv. It fails
 if prerequisites or required observations are missing; no optional skip is
-treated as a passing integration result. Original no-Bind mode is stdlib only;
-the flagged mode requires the fixed VERITAS package and its pinned import dependencies.
+treated as a passing integration result. All current modes require cryptography;
+the Bind mode additionally requires the fixed VERITAS package and its pinned import dependencies.
+
+## Current issuer extension
+
+The current workflow supersedes the original shared HMAC grant verifier with
+a separate Ed25519 issuer UID and independent backend signature verification.
+See [the current issuer proof](CI_MOCK_EXECUTOR_SEPARATED_ISSUER_V1.md) for the
+required 13 unit tests / 33 observations and the remaining trust boundaries.
+The historical proof description above records the earlier implementation.

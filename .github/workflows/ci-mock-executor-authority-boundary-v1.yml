@@ -58,9 +58,13 @@ jobs:
           r=json.loads(Path('results/mock-authority/report.json').read_text())
           assert r['audited_commit'] == '${{ github.event.pull_request.head.sha }}'
           assert r['source_sha256'] == hashlib.sha256(Path('scripts/ci_mock_executor_authority_boundary_v1.py').read_bytes()).hexdigest()
-          assert len(r['checks']) == 28 and all(v is True for v in r['checks'].values())
-          assert r['mock_effect_count'] == 1 and r['backend_denial_count'] == 1
-          assert len(set(r['uids'].values())) == len(set(r['namespace_ids'].values())) == 3
+          assert len(r['checks']) == 33 and all(v is True for v in r['checks'].values())
+          assert r['mock_effect_count'] == 1 and r['backend_denial_count'] == 2
+          assert len(set(r['uids'].values())) == 4 and len(set(r['namespace_ids'].values())) == 3
+          assert r['issuer_algorithm'] == 'Ed25519'
+          assert r['executor_has_issuer_private_key'] is False
+          assert r['backend_verifies_issuer_signature'] is True
+          assert len(r['issuer_public_key_sha256']) == 64
           assert r['real_provider_calls'] == r['real_bank_effects'] == 0
           assert r['independent_administration_proven'] is False
           assert r['production_bypass_resistance_proven'] is False
@@ -81,7 +85,7 @@ jobs:
               ('authority-denied','BLOCKED',0),('wrong-target','BLOCKED',0),
               ('wrong-prestate','BLOCKED',0),('allow','COMMITTED',1)]
           assert all(digest(x['bind_receipt']) == x['receipt_sha256'] for x in b['records'])
-          for file,count in [('results/mock-executor-unit-junit.xml',11),('results/mock-authority/junit.xml',28)]:
+          for file,count in [('results/mock-executor-unit-junit.xml',13),('results/mock-authority/junit.xml',33)]:
               root=ET.parse(file).getroot()
               assert len(list(root.iter('testcase'))) == count
               assert not list(root.iter('skipped')) and not list(root.iter('failure')) and not list(root.iter('error'))
