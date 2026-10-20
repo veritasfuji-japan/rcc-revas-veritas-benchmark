@@ -1,7 +1,9 @@
 # Task4 evidence-to-production gap register (offline, non-executing)
 
-Historical #488 snapshot. For progress and remaining gates through merged #505,
-see the [Task4 Native proof checkpoint](TASK4_NATIVE_PROOF_CHECKPOINT_V1.md).
+Historical #488 snapshot. For progress and remaining gates through merged #510,
+see the [Provider research restart gap audit](TASK4_PROVIDER_RESEARCH_RESTART_GAP_AUDIT_V1.md).
+The earlier [Task4 Native proof checkpoint](TASK4_NATIVE_PROOF_CHECKPOINT_V1.md)
+preserves the intermediate #505 baseline.
 The evidence, limitations and proposed next work below describe the #487 baseline;
 they do not negate the later bounded OS/Bind/fault/concurrency integrations.
 
