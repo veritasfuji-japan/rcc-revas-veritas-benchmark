@@ -1,5 +1,10 @@
 # Two Custody processes competing for one consumed operation
 
+Current extension: [consumption winner crash](CI_MOCK_CONCURRENT_CONSUMER_CRASH_V1.md)
+adds the explicitly allowed before-post concurrent fault as a separate mandatory
+47-observation run. The normal successful concurrent run below remains required.
+The current unit suite has 32 cases; other concurrent fault modes remain refused.
+
 Extends #496 without removing the normal, crash, or both-restart suites. The
 existing every-PR workflow additionally requires one 47-observation concurrent
 run and 30 unit tests, with no skips/errors/failures.
