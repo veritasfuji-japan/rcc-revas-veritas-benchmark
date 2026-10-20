@@ -84,3 +84,10 @@ historical source pins are changed.
 
 `REAL_PROVIDER_NO_GO` / `UTILITY_UNSCORED` /
 `PRODUCTION_BYPASS_RESISTANCE_NOT_PROVEN` remain unchanged.
+
+## Current issuer extension
+
+The current workflow additionally requires the
+[separate Ed25519 issuer proof](CI_MOCK_EXECUTOR_SEPARATED_ISSUER_V1.md).
+The Bind receipts remain unchanged in scope; backend signature validation does
+not independently attest that a compromised Executor invoked Bind.
