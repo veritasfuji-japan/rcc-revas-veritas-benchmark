@@ -177,17 +177,43 @@ def http_call(method, path, body, key):
         conn.close()
 
 
-def backend(base):
+def open_backend_db(base, restart=False):
+    file = base / 'backend/effects.sqlite3'
+    need(file.is_file() if restart else not file.exists(), 'EXACT_BACKEND_DATABASE_LIFECYCLE')
+    if restart:
+        need(fault_mode(base) in FAULTS, 'FAULT_RECEIPT_ONLY_BACKEND_RESTART')
+        db = sqlite3.connect(file.resolve().as_uri() + '?mode=ro', uri=True, isolation_level=None)
+        try:
+            need(db.execute('PRAGMA quick_check').fetchall() == [('ok',)], 'RETAINED_BACKEND_INTEGRITY')
+            rows = db.execute('SELECT op,request_sha,response_sha,receipt FROM effects ORDER BY op').fetchall()
+            need(len(rows) == int(fault_mode(base) != 'after-consume'), 'RETAINED_BACKEND_EFFECT_COUNT')
+            for op, request_sha, response_sha, receipt in rows:
+                need(op == 'A0' and request_sha == scope()[('A', 0)]
+                     and type(response_sha) is str and len(response_sha) == 64,
+                     'EXACT_RETAINED_NATIVE_REQUEST')
+                need(receipt == digest(dict(operation_id=op, request_sha256=request_sha,
+                                            response_sha256=response_sha)), 'RETAINED_BACKEND_RECEIPT')
+        except BaseException:
+            db.close()
+            raise
+    else:
+        db = sqlite3.connect(file, isolation_level=None)
+        db.execute('PRAGMA synchronous=FULL')
+        db.execute('CREATE TABLE effects (op TEXT PRIMARY KEY,request_sha TEXT,response_sha TEXT,receipt TEXT)')
+    return db
+
+
+def backend(base, restart=False):
     import httpx
     from scripts import task4_325_exact_sdk_wire_offline_v1 as cap
     kernel.role_identity(BACKEND)
     os.umask(0o077)
     key = (base / 'backend/credential').read_bytes()
     public = (base / 'public/issuer-key').read_bytes()
-    db = sqlite3.connect(base / 'backend/effects.sqlite3', isolation_level=None)
-    db.execute('PRAGMA synchronous=FULL')
-    db.execute('CREATE TABLE effects (op TEXT PRIMARY KEY,request_sha TEXT,response_sha TEXT,receipt TEXT)')
-    sources = {arm: cap.GuardedMock(arm) for arm in ('A', 'B')}
+    db = open_backend_db(base, restart)
+    # Restart serves retained receipt evidence only: scripted model state is not
+    # reconstructed and no new completion dispatch is permitted.
+    sources = {} if restart else {arm: cap.GuardedMock(arm) for arm in ('A', 'B')}
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
@@ -225,6 +251,7 @@ def backend(base):
                      {'method': 'POST', 'path': '/effect', 'body': packet}),
                      self.headers.get('X-Mock-Auth', '')), 'CUSTODY_TRANSPORT_AUTH')
                 raw = verify(packet, public)
+                need(not restart, 'RESTART_RECEIPT_ONLY_NO_DISPATCH')
                 arm, ordinal = packet['arm'], packet['ordinal']
                 op = arm + str(ordinal)
                 need(not db.execute('SELECT 1 FROM effects WHERE op=?', (op,)).fetchone(), 'BACKEND_SPENT')
@@ -248,7 +275,7 @@ def backend(base):
                 self.respond(403, {'decision': 'DENIED'})
 
     server = HTTPServer((HOST, PORT), Handler)
-    (base / 'backend/ready').write_text('ready')
+    (base / 'backend/ready').write_text('restarted' if restart else 'ready')
     server.serve_forever()
 
 
@@ -608,7 +635,35 @@ def reconcile_fault(base):
     return {'state': state, 'backend_evidence': evidence, 'post_calls': 0, 'raw_response_recovered': False}
 
 
-def finish_fault(base, output, fault, worker, spawn, service, native_ns, head, pins):
+def offline_reconcile(base):
+    kernel.role_identity(CUSTODY)
+    file = base / 'custody/ledger.sqlite3'
+    with sqlite3.connect(file) as db:
+        before = db.execute('SELECT * FROM consumed ORDER BY op').fetchall()
+    try:
+        reconcile_fault(base)
+    except OSError:
+        pass
+    else:
+        raise ValueError('STOPPED_BACKEND_MUST_BE_UNAVAILABLE')
+    with sqlite3.connect(file) as db:
+        need(db.execute('SELECT * FROM consumed ORDER BY op').fetchall() == before,
+             'UNAVAILABLE_RECONCILIATION_MUST_PRESERVE_LEDGER')
+    return {'backend_unavailable': True, 'ledger_unchanged': True, 'permission_restored': False}
+
+
+def backend_replay(base):
+    kernel.role_identity(CUSTODY)
+    packet = parse((base / 'public/replay-packet.json').read_bytes())
+    key = (base / 'custody/credential').read_bytes()
+    verify(packet, (base / 'public/issuer-key').read_bytes())
+    code, response = http_call('POST', '/effect', packet, key)
+    need(code == 403 and response == {'decision': 'DENIED'}, 'RESTART_BACKEND_AUTHENTIC_REPLAY_DENIED')
+    return {'authentic_replay_denied': True, 'http_status': code}
+
+
+def finish_fault(base, output, fault, worker, spawn, service, native_ns, head, pins,
+                 sink=None, sink_ns=None, restart_both=False):
     checks = worker(NATIVE, 'probe', native_ns)
     native_report = worker(NATIVE, 'fault-native', native_ns)
     if fault == 'backend-response-lost':
@@ -620,8 +675,31 @@ def finish_fault(base, output, fault, worker, spawn, service, native_ns, head, p
         need(service.wait(timeout=5) == {'after-consume': 86, 'after-sealed': 87}[fault], 'ACTUAL_FAULT_EXIT')
         marker = parse((base / 'custody/fault-observed.json').read_bytes())
         need(marker == {'stage': fault, 'op': 'A0'}, 'EXACT_CRASH_STAGE')
+    restart_evidence = None
+    if restart_both:
+        retained = read_fault_rows(base)
+        backend_sha = sha((base / 'backend/effects.sqlite3').read_bytes())
+        old_pids = {'custody': service.pid, 'backend': sink.pid}
+        sink.kill()
+        need(sink.wait(timeout=5) == -9, 'ACTUAL_BACKEND_SIGKILL')
+        (base / 'backend/ready').unlink()
     (base / 'custody/ready').unlink()
     service = spawn(CUSTODY, 'custody', None, base / 'custody/ready', 'restarted', ('--restart',))
+    if restart_both:
+        offline_replay = worker(NATIVE, 'fault-replay', native_ns)
+        unavailable = worker(CUSTODY, 'offline-reconcile')
+        need(read_fault_rows(base) == retained, 'STOPPED_BACKEND_NO_LEDGER_CHANGE')
+        sink = spawn(BACKEND, 'backend', sink_ns, base / 'backend/ready', 'restarted', ('--restart',))
+        need(service.pid != old_pids['custody'] and sink.pid != old_pids['backend'], 'NEW_SERVICE_PROCESSES')
+        need(read_fault_rows(base) == retained, 'BOTH_RESTART_RETAINS_EXACT_ROWS')
+        replay_file = base / 'public/replay-packet.json'
+        replay_file.write_bytes((base / 'native/packet-A0.json').read_bytes())
+        os.chmod(replay_file, 0o444)
+        denied = worker(CUSTODY, 'backend-replay')
+        restart_evidence = {'old_pids': old_pids, 'new_pids': {'custody': service.pid, 'backend': sink.pid},
+            'retained_rows': retained, 'backend_database_sha256': backend_sha,
+            'unavailable': unavailable, 'offline_replay': offline_replay, 'backend_replay': denied,
+            'backend_restart_receipt_only': True}
     replay = worker(NATIVE, 'fault-replay', native_ns)
     before = read_fault_rows(base)
     reconciliation = worker(CUSTODY, 'reconcile-fault')
@@ -665,15 +743,24 @@ def finish_fault(base, output, fault, worker, spawn, service, native_ns, head, p
         'authenticated_reconciliation_idempotent': True, 'reconciliation_never_posts': reconciliation['post_calls'] == 0,
         'no_replay_or_reconciliation_effect': True, 'exact_fault_evidence_join': True,
         'absence_never_restores_permission': True})
+    if restart_both:
+        need(sha((base / 'backend/effects.sqlite3').read_bytes()) == backend_sha,
+             'BACKEND_DATABASE_UNCHANGED_BYTES')
+        need(offline_replay['request_sha256'] == request_sha, 'SAME_REQUEST_WHILE_BACKEND_STOPPED')
+        checks.update({'both_services_new_processes': True, 'stopped_backend_replays_denied': offline_replay['replay_denials'] == 2,
+            'unavailable_reconciliation_preserves_ledger': unavailable['ledger_unchanged'],
+            'backend_retained_database_bytes': True, 'backend_authentic_replay_denied': denied['authentic_replay_denied'],
+            'both_restart_restores_exact_rows': True, 'backend_restart_receipt_only': True})
     need(all(x is True for x in checks.values()), 'ALL_FAULT_CHECKS_REQUIRED')
     report = {'schema': 'task4.native.os-custody.fault.v1', 'fault': fault, 'audited_commit': head,
         'source_sha256': sha(Path(__file__).read_bytes()), 'external_pins': pins, 'checks': checks,
-        'native': native_report, 'replay_denials': 4, 'before_reconciliation': before,
+        'native': native_report, 'replay_denials': 6 if restart_both else 4, 'before_reconciliation': before,
         'after_reconciliation': after, 'reconciliation': reconciliation, 'bind_record': binding,
         'ciphertext_count': len(ciphertexts), 'mock_http_effects': len(effects), 'custody_consumptions': 1,
         'real_provider_posts': 0, 'external_bank_effects': 0, 'utility': 'UNSCORED', 'provider_dispatch': 'DENY',
         'production_bypass_resistance_proven': False, 'independent_administration_proven': False,
-        'raw_response_recovery_proven': False, 'backend_restart_tested': False,
+        'raw_response_recovery_proven': False, 'backend_restart_tested': restart_both,
+        'restart_evidence': restart_evidence, 'scripted_backend_continuation_after_restart_proven': False,
         'cross_process_concurrent_native_consumption_tested': False}
     (output / 'report.json').write_bytes(canonical(report))
     suite = ET.Element('testsuite', name='Native OS Custody Fault ' + fault, tests=str(len(checks)),
@@ -691,8 +778,9 @@ def read_fault_rows(base):
     return {'effects': [list(x) for x in effects], 'consumed': [list(x) for x in consumed]}
 
 
-def run(output, fault=''):
+def run(output, fault='', restart_both=False):
     need(fault in ('', *FAULTS), 'EXACT_FAULT_MODE')
+    need(type(restart_both) is bool and (not restart_both or fault in FAULTS), 'BOTH_RESTART_REQUIRES_FAULT')
     need(os.geteuid() == 0 and sys.platform == 'linux', 'TRUSTED_DISPOSABLE_LINUX_CI_ROOT_REQUIRED')
     need(not output.exists() and output.resolve().is_relative_to(ROOT), 'NEW_OUTPUT_UNDER_CHECKOUT')
     for uid in (NATIVE, BACKEND, ISSUER, CUSTODY, kernel.STRANGER):
@@ -827,7 +915,8 @@ def run(output, fault=''):
             sink = spawn(BACKEND, 'backend', sink_ns, base / 'backend/ready')
             service = spawn(CUSTODY, 'custody', None, base / 'custody/ready')
             if fault:
-                finish_fault(base, output, fault, worker, spawn, service, native_ns, head, pins)
+                finish_fault(base, output, fault, worker, spawn, service, native_ns, head, pins,
+                             sink, sink_ns, restart_both)
                 print('TASK4_NATIVE_OS_FAULT_NO_DUPLICATE_NO_PROVIDER:' + fault)
                 return
             checks = worker(NATIVE, 'probe', native_ns)
@@ -919,19 +1008,21 @@ def main():
     parser.add_argument('--run', action='store_true')
     parser.add_argument('--output', type=Path)
     parser.add_argument('--fault', choices=FAULTS, default='')
-    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault'))
+    parser.add_argument('--restart-both', action='store_true')
+    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay'))
     parser.add_argument('--base', type=Path)
     parser.add_argument('--restart', action='store_true')
     args = parser.parse_args()
     if args.run:
         need(args.output is not None and args.role is None, 'RUN_OUTPUT_REQUIRED')
-        run(args.output.resolve(), args.fault)
+        run(args.output.resolve(), args.fault, args.restart_both)
     else:
-        need(args.role is not None and args.base is not None and not args.fault, 'EXPLICIT_LOCAL_ROLE')
-        roles = {'issue': issue, 'backend': backend, 'probe': probe,
+        need(args.role is not None and args.base is not None and not args.fault and not args.restart_both, 'EXPLICIT_LOCAL_ROLE')
+        roles = {'issue': issue, 'backend': lambda b: backend(b, args.restart), 'probe': probe,
                  'reachable': lambda b: probe(b, True), 'native': native, 'restart-probe': restart_probe,
                  'wrong-peer': wrong_peer,
                  'fault-native': fault_native, 'fault-replay': fault_replay, 'reconcile-fault': reconcile_fault,
+                 'offline-reconcile': offline_reconcile, 'backend-replay': backend_replay,
                  'custody': lambda b: custody(b, args.restart)}
         value = roles[args.role](args.base)
         if value is not None:

@@ -180,7 +180,7 @@ jobs:
           for lineage,record in zip(r['native']['lineage']['response_receipts'],r['native']['records']):
               assert lineage['original_request_raw_sha256'] == record['request_sha256']
               assert lineage['original_response_raw_sha256'] == record['response_sha256']
-          for file,count in [('results/task4-native-os-custody-unit-junit.xml',26),(folder/'junit.xml',22)]:
+          for file,count in [('results/task4-native-os-custody-unit-junit.xml',36),(folder/'junit.xml',22)]:
               t=ET.parse(file).getroot()
               assert len(list(t.iter('testcase'))) == count
               assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
@@ -232,6 +232,59 @@ jobs:
               assert len(list(junit.iter('testcase'))) == 21
               assert not any(list(junit.iter(x)) for x in ('skipped','failure','error'))
           print('THREE_ACTUAL_NATIVE_FAULTS_RESTART_REPLAY_AND_AUTHENTICATED_RECONCILIATION_VERIFIED')
+          PY
+      - name: Restart both Native Custody and backend using retained records only
+        shell: bash
+        run: |
+          set -euo pipefail
+          for fault in after-consume backend-response-lost after-sealed; do
+            sudo -n "$(command -v python)" -m scripts.task4_native_os_custody_v1 \
+              --run --fault "$fault" --restart-both \
+              --output "results/task4-native-both-restart-$fault"
+          done
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.task4_native_os_custody_v1 import FAULTS,digest,scope
+          for fault,state in zip(FAULTS,['CONSUMED_UNKNOWN','MOCK_EFFECT_CONFIRMED_NO_RESPONSE','MOCK_OBSERVED']):
+              folder=Path('results/task4-native-both-restart-'+fault)
+              r=json.loads((folder/'report.json').read_text())
+              assert r['audited_commit'] == subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+              assert r['source_sha256'] == hashlib.sha256(Path('scripts/task4_native_os_custody_v1.py').read_bytes()).hexdigest()
+              assert r['fault'] == fault and r['backend_restart_tested'] is True
+              assert len(r['checks']) == 28 and all(v is True for v in r['checks'].values())
+              assert r['custody_consumptions'] == 1 and r['replay_denials'] == 6
+              assert r['mock_http_effects'] == int(fault != 'after-consume')
+              assert r['ciphertext_count'] == int(fault == 'after-sealed')
+              assert r['reconciliation']['state'] == state and r['reconciliation']['post_calls'] == 0
+              assert r['after_reconciliation']['consumed'][0][1] == state
+              assert r['before_reconciliation']['effects'] == r['after_reconciliation']['effects']
+              e=r['restart_evidence']
+              assert all(e['old_pids'][role] != e['new_pids'][role] for role in ('custody','backend'))
+              assert e['retained_rows'] == r['before_reconciliation']
+              assert e['backend_restart_receipt_only'] is True
+              assert e['unavailable'] == dict(backend_unavailable=True,ledger_unchanged=True,permission_restored=False)
+              assert e['backend_replay'] == dict(authentic_replay_denied=True,http_status=403)
+              assert e['offline_replay']['replay_denials'] == 2
+              assert e['offline_replay']['request_sha256'] == r['native']['observations'][0]['request_sha256'] == scope()[('A',0)]
+              assert r['native']['transport_invocations'] == 1 and len(r['native']['frozen_source_git_blobs']) == 9
+              assert r['native']['sdk_responses_returned'] == r['native']['native_terminal_arms'] == r['native']['scorer_calls'] == 0
+              for row in r['after_reconciliation']['effects']:
+                  assert row[3] == digest(dict(operation_id=row[0],request_sha256=row[1],response_sha256=row[2]))
+              if r['bind_record']:
+                  assert [(x['outcome'],x['apply_calls']) for x in r['bind_record']['records']] == [('BLOCKED',0),('COMMITTED',1)]
+                  assert all(digest(x['receipt']) == x['receipt_sha256'] for x in r['bind_record']['records'])
+              assert r['real_provider_posts'] == r['external_bank_effects'] == 0
+              assert r['provider_dispatch'] == 'DENY' and r['utility'] == 'UNSCORED'
+              for claim in ('raw_response_recovery_proven','scripted_backend_continuation_after_restart_proven',
+                            'cross_process_concurrent_native_consumption_tested',
+                            'production_bypass_resistance_proven','independent_administration_proven'):
+                  assert r[claim] is False
+              junit=ET.parse(folder/'junit.xml').getroot()
+              assert len(list(junit.iter('testcase'))) == 28
+              assert not any(list(junit.iter(x)) for x in ('skipped','failure','error'))
+          print('BOTH_NATIVE_SERVICES_RESTARTED_RETAINED_RECEIPTS_AND_NO_DUPLICATE_VERIFIED')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
