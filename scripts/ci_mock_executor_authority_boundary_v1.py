@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import hmac
 import http.client
+import io
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
@@ -20,6 +21,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import tarfile
 import time
 import urllib.error
 import urllib.request
@@ -111,6 +113,18 @@ def http_query(payload, auth=''):
         conn.close()
 
 
+def status_query(credential):
+    conn = http.client.HTTPConnection(HOST, PORT, timeout=2)
+    try:
+        conn.request('GET', '/status', headers={
+            'X-Mock-Auth': tag(credential, b'CI_STATUS_V1\0', {'op': 'status'})})
+        response = conn.getresponse()
+        need(response.status == 200, 'AUTHENTICATED_BACKEND_STATUS_REQUIRED')
+        return parse(response.read(LIMIT + 1))
+    finally:
+        conn.close()
+
+
 def role_identity(uid):
     need(os.geteuid() == uid and os.getegid() == uid, 'EXACT_UNPRIVILEGED_UID')
     need(os.getgroups() == [], 'NO_SUPPLEMENTARY_GROUPS')
@@ -140,6 +154,21 @@ def sink(base):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
             pass
+
+        def do_GET(self):
+            valid = self.path == '/status' and hmac.compare_digest(
+                tag(key, b'CI_STATUS_V1\0', {'op': 'status'}), self.headers.get('X-Mock-Auth', ''))
+            if valid:
+                counter = db.execute('SELECT counter FROM state').fetchone()[0]
+                result = {'counter': counter, 'revision': counter,
+                          'effect_count': db.execute('SELECT count(*) FROM spent').fetchone()[0]}
+            else:
+                result = {'decision': 'DENIED'}
+            raw = canonical(result)
+            self.send_response(200 if valid else 403)
+            self.send_header('Content-Length', str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
 
         def do_POST(self):
             try:
@@ -175,7 +204,7 @@ def sink(base):
     server.serve_forever()
 
 
-def executor(base, restart=False):
+def executor(base, restart=False, with_bind=False):
     role_identity(EXECUTOR)
     os.umask(0o077)
     credential = (base / 'executor/credential').read_bytes()
@@ -216,8 +245,17 @@ def executor(base, restart=False):
                 else:
                     db.commit()
                     body = {'operation_id': OP, 'request': packet['request']}
-                    status, response = http_query(body, tag(credential, b'CI_SINK_V1\0', body))
-                    need(status == 200 and response == {
+                    if with_bind:
+                        sys.path.insert(0, str(base))  # Trusted root-owned read-only source copy.
+                        from ci_mock_executor_veritas_bind_v1 import integrate
+                        response, evidence = integrate(body=body,
+                            post=lambda: http_query(body, tag(credential, b'CI_SINK_V1\0', body)),
+                            status=lambda: status_query(credential))
+                        (base / 'executor/bind-evidence.json').write_bytes(canonical(evidence))
+                        code = 200
+                    else:
+                        code, response = http_query(body, tag(credential, b'CI_SINK_V1\0', body))
+                    need(code == 200 and response == {
                         'decision': 'MOCK_EFFECT_ONCE', 'receipt': digest(body)}, 'BOUND_SINK_RECEIPT')
                     db.execute('UPDATE consumed SET state=?,receipt=? WHERE operation_id=?',
                                ('MOCK_OBSERVED', response['receipt'], OP))
@@ -314,10 +352,10 @@ def role_command(program, uid, args, namespace=None):
     return (['ip', 'netns', 'exec', namespace] if namespace else []) + [
         'setpriv', '--reuid=' + str(uid), '--regid=' + str(uid), '--clear-groups',
         '--no-new-privs', '--bounding-set=-all', '--inh-caps=-all', '--ambient-caps=-all',
-        '/usr/bin/python3', '-I', str(program)] + args
+        sys.executable, '-I', str(program)] + args
 
 
-def run(output):
+def run(output, with_bind=False, veritas_root=None):
     need(os.geteuid() == 0 and sys.platform == 'linux', 'TRUSTED_DISPOSABLE_LINUX_CI_ROOT_REQUIRED')
     need(output.resolve().is_relative_to(Path.cwd().resolve()) and not output.exists(),
          'NEW_OUTPUT_DIRECTORY_UNDER_CHECKOUT_REQUIRED')
@@ -333,6 +371,18 @@ def run(output):
     output.mkdir(parents=True)
     head = command(['git', '-c', 'safe.directory=' + str(Path.cwd().resolve()),
                     'rev-parse', 'HEAD']).stdout.strip()
+    bind_source = None
+    if with_bind:
+        need(veritas_root is not None, 'PINNED_VERITAS_ROOT_REQUIRED')
+        veritas_root = veritas_root.resolve()
+        from scripts.ci_mock_executor_veritas_bind_v1 import VERITAS_PIN, CORE_BLOB
+        git = ['git', '-c', 'safe.directory=' + str(veritas_root), '-C', str(veritas_root)]
+        need(command(git + ['rev-parse', 'HEAD']).stdout.strip() == VERITAS_PIN, 'EXACT_VERITAS_PIN')
+        command(git + ['diff', '--exit-code', 'HEAD', '--', 'veritas_os'])
+        core = (veritas_root / 'veritas_os/policy/bind_core/core.py').read_bytes()
+        need(hashlib.sha1(b'blob ' + str(len(core)).encode() + b'\0' + core).hexdigest()
+             == CORE_BLOB, 'EXACT_BIND_CORE_SOURCE')
+        bind_source = Path(__file__).with_name('ci_mock_executor_veritas_bind_v1.py')
     token = secrets.token_hex(4)
     sink_ns, agent_ns = 'sink' + token, 'agent' + token
     host_if, sink_if = 'h' + token, 's' + token
@@ -348,6 +398,25 @@ def run(output):
         program = base / 'program.py'
         shutil.copyfile(__file__, program)
         os.chmod(program, 0o444)
+        if with_bind:
+            archive = subprocess.run(git + ['archive', VERITAS_PIN, 'veritas_os'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20, check=True).stdout
+            with tarfile.open(fileobj=io.BytesIO(archive)) as source:
+                for member in source.getmembers():
+                    dest = base / member.name
+                    need(dest.resolve().is_relative_to(base)
+                         and (member.name == 'veritas_os' or member.name.startswith('veritas_os/'))
+                         and (member.isdir() or member.isfile()), 'TRACKED_REGULAR_BIND_SOURCE_ONLY')
+                    if member.isdir():
+                        dest.mkdir(parents=True, exist_ok=True)
+                    else:
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        dest.write_bytes(source.extractfile(member).read())
+            shutil.copyfile(bind_source, base / bind_source.name)
+            for path in [base / bind_source.name, *(base / 'veritas_os').rglob('*')]:
+                need(not path.is_symlink(), 'NO_SYMLINK_IN_BIND_SOURCE')
+                os.chmod(path, 0o555 if path.is_dir() else 0o444)
+            os.chmod(base / 'veritas_os', 0o555)
         for role, uid in [('executor', EXECUTOR), ('backend', BACKEND), ('ipc', EXECUTOR)]:
             folder = base / role
             folder.mkdir(mode=0o755 if role == 'ipc' else 0o700)
@@ -382,7 +451,16 @@ def run(output):
             raise ValueError('SERVICE_READY_TIMEOUT')
 
         def probe(mode, uid=AGENT, namespace=agent_ns):
-            result = command(role_command(program, uid, ['--worker', str(base), mode], namespace))
+            result = command(role_command(program, uid, ['--worker', str(base), mode], namespace), check=False)
+            if result.returncode:
+                # Our services log only constant codes / Python import tracebacks,
+                # never credentials or request/response bodies.
+                for index, proc in enumerate(processes):
+                    if proc.poll() is not None and proc.returncode and proc.stderr:
+                        failure = proc.stderr.read().decode()[-3000:]
+                        (output / ('service-failure-' + str(index) + '.log')).write_text(failure)
+                        print(failure, file=sys.stderr)
+                raise ValueError('WORKER_FAILED:' + mode + ':' + result.stderr[-600:])
             record = json.loads(result.stdout)
             (output / (mode + '.json')).write_text(json.dumps(record, sort_keys=True, indent=2) + '\n')
             return record
@@ -417,7 +495,9 @@ def run(output):
             need(len(set(namespace_ids.values())) == 3, 'THREE_DISTINCT_NETWORK_NAMESPACES')
             checks['three_distinct_network_namespaces'] = True
             sink_proc = spawn(BACKEND, ['--sink', str(base)], sink_ns, base / 'backend/ready', 'ready')
-            executor_proc = spawn(EXECUTOR, ['--executor', str(base)], None, base / 'executor/ready', 'ready')
+            bind_args = ['--with-veritas-bind'] if with_bind else []
+            executor_proc = spawn(EXECUTOR, ['--executor', str(base)] + bind_args,
+                                  None, base / 'executor/ready', 'ready')
             checks.update(probe('probe'))
             checks.update(probe('host-direct', namespace=None))
             checks.update(probe('no-credential', uid=EXECUTOR, namespace=None))
@@ -429,7 +509,7 @@ def run(output):
             executor_proc.terminate()
             executor_proc.wait(timeout=5)
             (base / 'executor/ready').unlink()
-            executor_proc = spawn(EXECUTOR, ['--executor', str(base), '--restart'], None,
+            executor_proc = spawn(EXECUTOR, ['--executor', str(base), '--restart'] + bind_args, None,
                                   base / 'executor/ready', 'restarted')
             checks['restart_replay_denied'] = probe('replay')['replay_expected_decision']
             for proc in (executor_proc, sink_proc):
@@ -444,6 +524,21 @@ def run(output):
                  'BACKEND_COUNTS_AND_DENIED_PROBE_RECONCILIATION')
             need(rows[0] == (OP, 'MOCK_OBSERVED', spent[0][1]), 'LEDGER_BACKEND_RECEIPT_JOIN')
             checks['backend_effect_and_ledger_receipt_reconciled'] = True
+            bind_evidence = None
+            if with_bind:
+                bind_evidence = json.loads((base / 'executor/bind-evidence.json').read_bytes())
+                records = bind_evidence['records']
+                need(len(records) == 4 and bind_evidence['backend_receipt_sha256'] == spent[0][1]
+                     and rows[0][2] == spent[0][1], 'BIND_BACKEND_LEDGER_RECEIPT_JOIN')
+                for record in records[:3]:
+                    need(record['outcome'] == 'BLOCKED' and record['apply_calls'] == 0,
+                         'DENIED_BIND_MUST_NOT_SEND')
+                    checks['bind_blocked:' + record['scenario']] = True
+                need(records[3]['outcome'] == 'COMMITTED' and records[3]['apply_calls'] == 1,
+                     'REAL_BIND_COMMIT_EXACTLY_ONE_APPLY')
+                checks['real_bind_committed_one_network_apply'] = True
+                checks['bind_backend_and_ledger_joined_same_run'] = True
+                (output / 'bind-evidence.json').write_text(json.dumps(bind_evidence, sort_keys=True, indent=2) + '\n')
             need(all(value is True for value in checks.values()), 'ALL_CHECKS_REQUIRED')
             report = {'schema': 'ci.mock-executor.authority-boundary.v1', 'audited_commit': head,
                       'source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
@@ -451,7 +546,9 @@ def run(output):
                       'namespace_ids': namespace_ids, 'installed_and_checked_firewall_rule': rule,
                       'mock_effect_count': counter, 'backend_denial_count': denials,
                       'receipt_sha256': spent[0][1], 'real_provider_calls': 0, 'real_bank_effects': 0,
-                      'independent_administration_proven': False, 'real_veritas_bind_integrated': False,
+                      'independent_administration_proven': False, 'real_veritas_bind_integrated': with_bind,
+                      'bind_evidence_sha256': digest(bind_evidence) if with_bind else None,
+                      'bind_adapter_source_sha256': hashlib.sha256(bind_source.read_bytes()).hexdigest() if with_bind else None,
                       'exact_historical_helper_invocations_tested': False,
                       'production_bypass_resistance_proven': False, 'utility': 'UNSCORED',
                       'provider_dispatch': 'DENY', 'trusted_ci_root_and_kernel': True}
@@ -490,14 +587,16 @@ def main():
     group.add_argument('--worker', nargs=2)
     parser.add_argument('--restart', action='store_true')
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--with-veritas-bind', action='store_true')
+    parser.add_argument('--veritas-root', type=Path)
     args = parser.parse_args()
     if args.run:
         need(args.output is not None, 'OUTPUT_REQUIRED')
-        run(args.output)
+        run(args.output, args.with_veritas_bind, args.veritas_root)
     elif args.sink:
         sink(args.sink)
     elif args.executor:
-        executor(args.executor, args.restart)
+        executor(args.executor, args.restart, args.with_veritas_bind)
     else:
         print(json.dumps(worker(Path(args.worker[0]), args.worker[1]), sort_keys=True))
 
