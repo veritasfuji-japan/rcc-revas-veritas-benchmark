@@ -47,6 +47,8 @@ jobs:
           mkdir -p results
           python -m scripts.task4_native_dependency_ci_audit_v1 --ref HEAD \
             > results/task4-native-current-source-inventory.json
+          python -m scripts.execution_authority_route_inventory_v1 --ref HEAD \
+            > results/execution-authority-source-candidates.json
       - name: Obtain exact frozen public AgentDojo RCC VERITAS sources
         shell: bash
         run: |
@@ -75,7 +77,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pytest -q -o addopts= tests/test_task4_native_dependency_ci_audit_v1.py
+          python -m pytest -q -o addopts= tests/test_task4_native_dependency_ci_audit_v1.py \
+            tests/test_execution_authority_route_inventory_v1.py
           python -m pytest -q -o addopts= \
             tests/test_task4_native_frozen_recipient_v1.py \
             --junitxml=results/task4-native-frozen-recipient-same-run-native-junit.xml \
