@@ -229,3 +229,31 @@ def test_concurrent_configuration_is_root_enrolled_and_exact(tmp_path):
     (tmp_path / 'public/concurrent').write_text('caller-defined-socket')
     with pytest.raises(ValueError, match='EXACT_CONCURRENT_FIXTURE'):
         proof.concurrent_mode(tmp_path)
+
+
+def test_crashed_winner_is_identified_only_with_one_lost_and_one_refused_result():
+    assert proof.select_crashed_winner([{'decision': 'REPLAY_DENIED'}, {'decision': 'IPC_RESPONSE_LOST'}]) == 1
+
+
+@pytest.mark.parametrize('decisions', [[], ['IPC_RESPONSE_LOST']*2, ['REPLAY_DENIED']*2,
+                                     ['SEALED_NATIVE_RESPONSE','IPC_RESPONSE_LOST'],
+                                     ['DENIED_OR_UNKNOWN_NO_RETRY','REPLAY_DENIED']])
+def test_missing_duplicate_successful_or_unknown_crash_outcome_refused(decisions):
+    with pytest.raises(ValueError):
+        proof.select_crashed_winner([{'decision': x} for x in decisions])
+
+
+def test_crash_outcome_cannot_carry_response_data():
+    with pytest.raises(ValueError, match='TWO_EXACT_CRASH_RACE_RESULTS'):
+        proof.select_crashed_winner([{'decision': 'REPLAY_DENIED'},
+                                    {'decision': 'IPC_RESPONSE_LOST', 'envelope_b64': 'unexpected'}])
+
+
+def test_crash_mode_requires_exact_root_enrollment_and_two_process_fixture(tmp_path):
+    assert proof.concurrent_crash_mode(tmp_path) is False
+    (tmp_path / 'public').mkdir()
+    (tmp_path / 'public/concurrent-crash').write_text('consumed-before-bind-v1')
+    with pytest.raises(ValueError, match='EXACT_CONCURRENT_CRASH_FIXTURE'):
+        proof.concurrent_crash_mode(tmp_path)
+    (tmp_path / 'public/concurrent').write_text('two-custody-v1')
+    assert proof.concurrent_crash_mode(tmp_path) is True
