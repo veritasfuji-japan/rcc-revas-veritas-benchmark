@@ -556,6 +556,43 @@ jobs:
               assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
           print('ACTUAL_RETAINED_HELPERS_ALTERNATE_CLIENTS_CHILD_KERNEL_AND_BACKEND_DENIAL_JOINED')
           PY
+      - name: Exercise unchanged default HTTPS helpers in externally disconnected local TLS namespaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_default_https_denial_v1.py \
+            --junitxml=results/task4-default-https-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_default_https_denial_v1 \
+            --run --output results/task4-default-https-denial
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.task4_default_https_denial_v1 import validate,digest,IP
+          folder=Path('results/task4-default-https-denial')
+          r=json.loads((folder/'report.json').read_text())
+          assert r['schema'] == 'task4.default-https-denial.v1'
+          assert r['audited_commit'] == subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert r['source_sha256'] == hashlib.sha256(Path('scripts/task4_default_https_denial_v1.py').read_bytes()).hexdigest()
+          assert len(r['checks']) == 16 and all(v is True for v in r['checks'].values())
+          assert r['evidence_sha256'] == digest(r['evidence']) and validate(r['evidence'])
+          assert r['checked_firewall_rule'] == ['OUTPUT','-d',IP,'-p','tcp','--dport','443',
+              '-m','owner','!','--uid-owner','61106','-j','REJECT']
+          assert set(r['topology']) == {'client','sink','isolated'}
+          for name,t in r['topology'].items():
+              assert len(t['links']) == (1 if name=='isolated' else 2)
+              assert all(x.get('dst') == '10.249.94.0/30' and 'gateway' not in x for x in t['routes'])
+              assert not any(x.get('dst') == 'default' or 'gateway' in x for x in t['routes6'])
+          assert r['trusted_root_kernel_custody_backend'] is r['local_test_ca_not_public_provider_identity'] is True
+          assert r['native_task4_tls_pipeline_integrated'] is r['independent_administration_proven'] is r['production_bypass_resistance_proven'] is False
+          assert r['real_provider_posts'] == r['external_bank_effects'] == 0
+          assert r['provider_dispatch'] == 'DENY' and r['utility'] == 'UNSCORED'
+          for file,count in [('results/task4-default-https-unit-junit.xml',20),(folder/'junit.xml',16)]:
+              t=ET.parse(file).getroot()
+              assert len(list(t.iter('testcase'))) == count
+              assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
+          print('DEFAULT_HTTPS_FACTORIES_LOCAL_TLS_OS_AUTH_DENIAL_AND_ONE_ACTUAL_BIND_MOCK_EFFECT_VERIFIED')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
