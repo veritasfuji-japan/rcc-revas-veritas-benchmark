@@ -1,12 +1,7 @@
 name: Task4 Native Frozen Recipient Offline NO-GO
 on:
   pull_request:
-    paths:
-      - 'scripts/task4_native_frozen_recipient_v1.py'
-      - 'tests/test_task4_native_frozen_recipient_v1.py'
-      - 'docs/TASK4_NATIVE_FROZEN_RECIPIENT_OFFLINE_V1.md'
-      - 'docs/TASK4_NATIVE_FROZEN_RECIPIENT_V1.json'
-      - '.github/workflows/task4-native-frozen-recipient-offline.yml'
+    # Every PR: a hand-maintained dependency/path list can silently miss changes.
 
 permissions:
   contents: read
@@ -45,6 +40,13 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.11.16'
+      - name: Inventory current source without importing target execution code
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python -m scripts.task4_native_dependency_ci_audit_v1 --ref HEAD \
+            > results/task4-native-current-source-inventory.json
       - name: Obtain exact frozen public AgentDojo RCC VERITAS sources
         shell: bash
         run: |
@@ -73,10 +75,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_dependency_ci_audit_v1.py
           python -m pytest -q -o addopts= \
             tests/test_task4_native_frozen_recipient_v1.py \
             --junitxml=results/task4-native-frozen-recipient-same-run-native-junit.xml \
             | tee results/task4-native-frozen-recipient-tests.log
+          python -m scripts.task4_native_dependency_ci_audit_v1 \
+            --junit results/task4-native-frozen-recipient-same-run-native-junit.xml
           python -m scripts.task4_native_frozen_recipient_v1 \
             --output results/task4-native-frozen-recipient-same-run-sanitized.json
           python - <<'PY'
@@ -107,6 +112,7 @@ jobs:
           assert all(p['observed_protected_binds'] == 1 for p in r['protected_broker_startups'])
           assert r['legacy_entrypoint_attempts_in_parent'] == 0
           assert r['new_native_path_uses_protected_custody'] is True
+          assert r['observed_parent_protected_socket_connections'] == 32
           assert r['production_bypass_resistance_proven'] is False
           assert r['same_run_local_capped_sdk_and_preparse_aead_join'] is True
           assert r['capped_sdk_requests'] == 8
@@ -131,4 +137,4 @@ jobs:
         with:
           name: task4-native-frozen-recipient-same-local-native-capped-sdk-aead-junit-hashes
           path: results/*
-          if-no-files-found: warn
+          if-no-files-found: error
