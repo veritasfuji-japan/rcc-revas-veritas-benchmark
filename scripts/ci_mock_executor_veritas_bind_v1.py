@@ -1,6 +1,6 @@
-"""Real pinned VERITAS Bind in the same isolated mock Executor/effect run.
+"""Real pinned VERITAS Bind in the same isolated mock Custody/effect run.
 
-Only the trusted Executor calls this integration. Approval and authority are
+Only the trusted Bind Custody calls this integration. Approval and authority are
 synthetic fixtures; this is not a Native Task4 or production policy adapter.
 """
 import hashlib
@@ -79,7 +79,7 @@ def integrate(*, body, post, status):
             decision_id='CI-SYNTHETIC-BIND-' + mode,
             request_id='CI-SYNTHETIC-NETWORK-MOCK',
             policy_snapshot_id='CI-FIXED-MOCK-ONLY-NOT-OWNER-APPROVAL',
-            actor_identity='ci-executor-os-uid-61102',
+            actor_identity='ci-bind-custody-os-uid-61106',
             target_system='ci-private-netns-mock-backend',
             target_resource=target if mode != 'wrong-target' else 'mock://denied/other',
             intended_action='increment_exactly_one_mock_counter',
@@ -112,5 +112,6 @@ def integrate(*, body, post, status):
         'request_sha256': digest(body), 'records': records,
         'authenticated_effect_posts': 1, 'backend_receipt_sha256': all_posts[0]['receipt'],
         'final_backend_state_sha256': digest(status()),
-        'same_executor_run_real_bind_and_network_effect': True,
+        'same_custody_run_real_bind_and_network_effect': True,
+        'bind_executor_uid': 61106,
         'native_task4_pipeline_integrated': False, 'production_policy_proven': False}

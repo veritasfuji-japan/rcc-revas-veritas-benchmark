@@ -71,3 +71,15 @@ def test_duplicate_json_and_oversize_refused():
 def test_grant_and_sink_authentication_domains_are_distinct():
     value = {'operation_id': boundary.OP}
     assert boundary.tag(KEY, b'CI_GRANT_V1\0', value) != boundary.tag(KEY, b'CI_SINK_V1\0', value)
+
+
+def test_supervisor_refuses_no_bind_mode(tmp_path):
+    with pytest.raises(ValueError, match='REAL_BIND_CUSTODY_MODE_REQUIRED'):
+        boundary.run(tmp_path / 'proof', with_bind=False)
+    assert not (tmp_path / 'proof').exists()
+
+
+def test_custody_refuses_no_bind_before_opening_credential(tmp_path, monkeypatch):
+    monkeypatch.setattr(boundary, 'role_identity', lambda uid: None)
+    with pytest.raises(ValueError, match='CUSTODY_REQUIRES_REAL_BIND'):
+        boundary.custody(tmp_path, with_bind=False)
