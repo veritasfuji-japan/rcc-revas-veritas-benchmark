@@ -766,6 +766,48 @@ jobs:
           assert len(list(j.iter('testcase')))==39 and not any(list(j.iter(x)) for x in ('skipped','failure','error'))
           print('TWELVE_NATIVE_BIND_RAW_HTTP_SCENARIOS_OWNER_RECOVERY_RESTART_NO_RETRY_VERIFIED')
           PY
+      - name: Bind Native raw archive run recipient and expiry into signed authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_raw_authority_v1.py \
+            --junitxml=results/task4-native-raw-authority-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_os_custody_v1 \
+            --run --local-https --raw-ingress success --raw-authority \
+            --output results/task4-native-raw-authority
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.task4_native_raw_authority_v1 import validate,digest
+          from scripts.task4_native_raw_ingress_v1 import validate as validate_raw
+          folder=Path('results/task4-native-raw-authority')
+          r=json.loads((folder/'raw-authority.json').read_text())
+          n=json.loads((folder/'report.json').read_text())
+          assert r['schema']=='task4.native-raw-authority-proof.v1'
+          assert r['audited_commit']==n['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          for key,file in [('source_sha256','scripts/task4_native_raw_ingress_v1.py'),
+                           ('native_source_sha256','scripts/task4_native_os_custody_v1.py'),
+                           ('raw_source_sha256','scripts/task4_provider_shaped_raw_ingress_v1.py')]:
+              assert n[key]==hashlib.sha256(Path(file).read_bytes()).hexdigest()
+          assert r['source_sha256']==hashlib.sha256(Path('scripts/task4_native_raw_authority_v1.py').read_bytes()).hexdigest()
+          assert r['normal_report_sha256']==digest(n) and n['evidence_sha256']==digest(n['evidence']) and validate_raw(n['evidence'])
+          assert r['evidence_sha256']==digest(r['evidence']) and validate(r['evidence'],n)
+          assert len(r['checks'])==12 and len(n['checks'])==14 and all(v is True for x in (r,n) for v in x['checks'].values())
+          assert r['raw_recipient_bound_in_signed_grant'] is r['run_id_and_validity_bound_in_signed_grant'] is True
+          assert r['checks_before_consumption_and_api_post'] is n['raw_recipient_bound_in_signed_grant'] is True
+          for x in (r,n):
+              assert x['real_provider_posts']==x['external_bank_effects']==0
+              assert x['utility']=='UNSCORED' and x['provider_dispatch']=='DENY'
+              assert x['independent_administration_proven'] is x['production_bypass_resistance_proven'] is x['real_data_confidentiality_proven'] is False
+          assert r['independent_clock_proven'] is r['live_recipient_provisioning_proven'] is False
+          for file,count,checks in [('results/task4-native-raw-authority-unit-junit.xml',49,None),
+                                    (folder/'raw-authority-junit.xml',12,r['checks']),(folder/'junit.xml',14,n['checks'])]:
+              j=ET.parse(file).getroot()
+              assert len(list(j.iter('testcase')))==count and not any(list(j.iter(x)) for x in ('skipped','failure','error'))
+              if checks is not None:assert {x.attrib['name'] for x in j.iter('testcase')}==set(checks)
+          print('SIGNED_RUN_RAW_RECIPIENT_TIME_TWELVE_DENIALS_ZERO_CONSUME_EIGHT_NATIVE_BIND_JOINS_VERIFIED')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

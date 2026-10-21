@@ -137,25 +137,41 @@ def recipient():
     return bytes.fromhex(value['recipient_public_hex'])
 
 
-def statement(arm, ordinal, request_sha):
+def statement(arm, ordinal, request_sha, base=None):
     need(arm in {'A', 'B'} and type(ordinal) is int and (arm, ordinal) in scope(), 'EXACT_NATIVE_SLOT')
     need(request_sha == scope()[(arm, ordinal)], 'EXACT_FROZEN_SDK_BYTES')
-    return {'scope': 'CI_ONLY_NATIVE_TASK4', 'arm': arm, 'ordinal': ordinal,
+    value = {'scope': 'CI_ONLY_NATIVE_TASK4', 'arm': arm, 'ordinal': ordinal,
             'request_sha256': request_sha, 'target': TARGET, 'output_cap': 256,
             'recipient_sha256': RECIPIENT_SHA}
+    from scripts import task4_native_raw_authority_v1 as authority
+    context_base = base if base is not None else TLS_BASE
+    if authority.enabled(context_base):
+        value['raw_authority'] = authority.load(context_base)
+    return value
 
 
-def verify_grant(grant, arm, ordinal, request_sha, public):
+def verify_grant(grant, arm, ordinal, request_sha, public, base=None):
     from cryptography.exceptions import InvalidSignature
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     need(type(grant) is dict and set(grant) == {'statement', 'signature'}, 'EXACT_NATIVE_GRANT')
-    need(grant['statement'] == statement(arm, ordinal, request_sha), 'EXACT_SIGNED_SCOPE')
+    from scripts import task4_native_raw_authority_v1 as authority
+    context_base = base if base is not None else TLS_BASE
+    bound = authority.enabled(context_base)
+    expected = statement(arm, ordinal, request_sha, context_base)
+    need(type(grant['statement']) is dict and
+         ({k:v for k,v in grant['statement'].items() if k != 'raw_authority'} ==
+          {k:v for k,v in expected.items() if k != 'raw_authority'} if bound else grant['statement'] == expected),
+         'EXACT_SIGNED_SCOPE')
     need(type(grant['signature']) is str and len(grant['signature']) == 128, 'SIGNATURE_FORMAT')
     try:
         Ed25519PublicKey.from_public_bytes(public).verify(bytes.fromhex(grant['signature']),
             b'TASK4_NATIVE_OS_V1\0' + canonical(grant['statement']))
     except (InvalidSignature, ValueError):
         raise ValueError('ISSUER_SIGNATURE') from None
+    if bound:
+        clock = authority.admit(context_base, grant['statement'].get('raw_authority'))
+        if os.geteuid() == CUSTODY:
+            authority.record_validation(context_base, grant, arm, ordinal, clock)
 
 
 def verify(packet, public):
@@ -185,11 +201,15 @@ def issue(base):
         stream.write(key.private_bytes_raw())
     grants = {}
     for (arm, ordinal), request_sha in scope().items():
-        claim = statement(arm, ordinal, request_sha)
+        claim = statement(arm, ordinal, request_sha, base)
         grants[arm + str(ordinal)] = {'statement': claim,
             'signature': key.sign(b'TASK4_NATIVE_OS_V1\0' + canonical(claim)).hex()}
-    return {'public': key.public_key().public_bytes_raw().hex(), 'grants': grants,
-            'issuer_credential_reads_denied': True}
+    result = {'public': key.public_key().public_bytes_raw().hex(), 'grants': grants,
+              'issuer_credential_reads_denied': True}
+    from scripts import task4_native_raw_authority_v1 as authority
+    if authority.enabled(base):
+        result['raw_authority_denials'] = authority.issue_denials(key, grants['A0'])
+    return result
 
 
 def http_call(method, path, body, key):
@@ -463,6 +483,7 @@ def custody(base, restart=False, secondary=False):
         conn, _ = server.accept()
         with conn:
             conn.settimeout(15)
+            packet = None
             try:
                 packet = frame(conn)
                 _, peer, _ = struct.unpack('3i', conn.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
@@ -525,7 +546,10 @@ def custody(base, restart=False, secondary=False):
                     result = {'decision': 'SEALED_NATIVE_RESPONSE', 'request_sha256': sha(raw),
                               'response_sha256': sha(plaintext), 'backend_receipt_sha256': response['receipt_sha256'],
                               'envelope_sha256': sha(blob), 'envelope_b64': encode(blob), 'bind_sha256': bind_sha}
-            except (ValueError, OSError, KeyError, TypeError):
+            except (ValueError, OSError, KeyError, TypeError) as exc:
+                from scripts import task4_native_raw_authority_v1 as authority
+                if authority.enabled(base):
+                    authority.refusal(base, packet, str(exc))
                 if db.in_transaction:
                     db.rollback()
                 result = {'decision': 'DENIED_OR_UNKNOWN_NO_RETRY'}
@@ -1219,10 +1243,13 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
 
 
 def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False,
-        retained_senders=False, local_https=False, durable_issuer=False, raw_ingress=''):
+        retained_senders=False, local_https=False, durable_issuer=False, raw_ingress='', raw_authority=False):
     from scripts import task4_native_local_https_v1 as tls
     from scripts import task4_durable_issuer_restart_v1 as durable
     from scripts import task4_native_raw_ingress_v1 as ingress
+    from scripts import task4_native_raw_authority_v1 as authority
+    need(type(raw_authority) is bool and (not raw_authority or raw_ingress == 'success'),
+         'SIGNED_RAW_AUTHORITY_REQUIRES_COMPLETE_RAW_SUCCESS')
     need(raw_ingress in ('', *ingress.MODES) and (not raw_ingress or
          (local_https and not durable_issuer and not fault and not restart_both and not concurrent and not retained_senders)),
          'RAW_INGRESS_SEPARATE_CLOSED_TLS_FIXTURE_ONLY')
@@ -1387,6 +1414,8 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             need([x['ifname'] for x in links] == ['lo'], 'NATIVE_LOOPBACK_ONLY')
             if raw_ingress:
                 ingress.enroll(base, raw_ingress, certificates, worker, native_ns)
+                if raw_authority:
+                    authority.enroll(base)
             if durable_issuer:
                 issuer_service = spawn(ISSUER, 'durable-issuer', native_ns, base / 'issuer/ready')
                 issued = durable.rpc(base, 'export-existing')
@@ -1395,7 +1424,7 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 issued = worker(ISSUER, 'issue', native_ns)
             public = bytes.fromhex(issued['public'])
             for op, grant in issued['grants'].items():
-                verify_grant(grant, op[0], int(op[1]), scope()[(op[0], int(op[1]))], public)
+                verify_grant(grant, op[0], int(op[1]), scope()[(op[0], int(op[1]))], public, base)
             for name, data in [('issuer-key', public), ('grants.json', canonical(issued['grants']))]:
                 file = base / 'public' / name
                 file.write_bytes(data)
@@ -1585,28 +1614,31 @@ def main():
     parser.add_argument('--durable-issuer', action='store_true')
     from scripts import task4_native_raw_ingress_v1 as ingress
     parser.add_argument('--raw-ingress', choices=ingress.MODES, default='')
+    parser.add_argument('--raw-authority', action='store_true')
     parser.add_argument('--secondary', action='store_true')
-    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart', 'raw-owner', 'raw-recover'))
+    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart', 'raw-owner', 'raw-recover', 'raw-authority-probe'))
     parser.add_argument('--base', type=Path)
     parser.add_argument('--restart', action='store_true')
     args = parser.parse_args()
     if args.run:
         need(args.output is not None and args.role is None and not args.secondary, 'RUN_OUTPUT_REQUIRED')
         run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash,
-            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer, args.raw_ingress)
+            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer, args.raw_ingress, args.raw_authority)
     else:
         need(args.role is not None and args.base is not None and not args.fault and not args.restart_both
              and not args.concurrent and not args.concurrent_crash and not args.concurrent_response_loss
-             and not args.retained_senders and not args.local_https and not args.durable_issuer and not args.raw_ingress
+             and not args.retained_senders and not args.local_https and not args.durable_issuer and not args.raw_ingress and not args.raw_authority
              and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
         from scripts.task4_retained_sender_denial_v1 import probe as retained_probe
         from scripts import task4_native_local_https_v1 as tls
         from scripts import task4_durable_issuer_restart_v1 as durable
+        from scripts import task4_native_raw_authority_v1 as authority
         TLS_BASE = args.base if tls.enabled(args.base) else None
         if args.role.startswith('tls-'):
             print(canonical(tls.probe(args.base, args.role.removeprefix('tls-'))).decode())
             return
         roles = {'issue': issue, 'backend': lambda b: backend(b, args.restart), 'probe': probe,
+                 'raw-authority-probe': authority.probe,
                  'raw-owner': ingress.raw.recipient, 'raw-recover': ingress.raw.recover,
                  'durable-issuer': lambda b: durable.serve(b, args.restart),
                  'issuer-replay': durable.replay, 'issuer-invalid-restart': durable.invalid_restart,
