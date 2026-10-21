@@ -291,7 +291,7 @@ def fault_checks(base,worker,isolated):
                 result=worker(uid,'retained-check',isolated)
                 need(result==dict(decision='RETAINED_START_DENIED',role=role,uid=uid),'INVALID_RETAINED_STORAGE_DENIED')
                 need((file.read_bytes() if file.exists() else None)==bad,'INVALID_STORAGE_NOT_REPAIRED')
-                observations.append(dict(role=role,fault=fault,**result,regenerated=False))
+                observations.append(dict(fault=fault,**result,regenerated=False))
             finally:
                 if in_place:file.write_bytes(original)
                 else:
