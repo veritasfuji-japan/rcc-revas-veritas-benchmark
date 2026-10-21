@@ -73,6 +73,18 @@ def owner_denied(base):
     raise ValueError('NATIVE_RAW_OWNER_KEY_READABLE')
 
 
+def reachable(base):
+    kernel.role_identity(kernel.AGENT);plan(base)
+    raw.tls.resolved_local()
+    conn=http.client.HTTPSConnection(tls.NAME,443,timeout=3,context=ssl.create_default_context())
+    try:
+        conn.request('POST',raw.PATH,body=b'{}',headers={'Content-Type':'application/json','Authorization':'Bearer invalid'})
+        reply=conn.getresponse()
+        need(reply.status==403 and raw.strict(reply.read())=={'decision':'DENIED'},'REACHABLE_API_AUTH_DENIAL')
+    finally:conn.close()
+    return {'reachable_native_uid_without_credential_http_403':True}
+
+
 def response_wire(body,op,mode):
     if mode in {'malformed-http','timeout','dropped'}:return raw.wire(mode)
     if mode=='malformed-json':body=b'{bad json'
@@ -183,7 +195,7 @@ def validate(e):
          and all(v is True for v in e['checks_before'].values()),'OS_AUTH_PRIVATE_SOURCE_DENIALS')
     need(e['owner_private_read_denied'] is True,'NATIVE_RAW_OWNER_KEY_DENIED')
     posts=e['posts'];admitted=[x for x in posts if x['authorized']]
-    need(len(posts)==1+len(admitted) and posts[0]['authorized'] is False,'ONE_REACHABLE_AUTH_DENIAL')
+    need(len(posts)==1+len(admitted) and posts[0]['authorized'] is False and posts[0]['path']==raw.PATH,'ONE_REACHABLE_API_AUTH_DENIAL')
     need(len(admitted)==(8 if success else int(mode!='after-consume-crash')),'EXACT_RAW_POST_COUNT')
     need(len(e['consumed'])==count and len(e['effects'])==len(admitted),'NO_DUPLICATE_NATIVE_EFFECTS')
     need(e['posts_after_replay_sha256']==digest(posts) and e['events_after_replay_sha256']==digest(e['events']),

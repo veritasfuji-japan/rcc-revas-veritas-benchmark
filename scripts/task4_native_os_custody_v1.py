@@ -535,6 +535,9 @@ def custody(base, restart=False, secondary=False):
 def probe(base, reachable=False):
     kernel.role_identity(NATIVE)
     if reachable:
+        from scripts import task4_native_raw_ingress_v1 as ingress
+        if ingress.enabled(base):
+            return ingress.reachable(base)
         code, result = http_call('POST', '/effect', {}, None)
         need(code == 403 and result == {'decision': 'DENIED'}, 'NETWORK_IS_NOT_TRANSPORT_AUTHORITY')
         return {'reachable_native_uid_without_credential_http_403': True}
