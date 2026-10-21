@@ -235,6 +235,10 @@ def open_backend_db(base, restart=False):
 
 
 def backend(base, restart=False):
+    from scripts import task4_native_raw_ingress_v1 as ingress
+    if ingress.enabled(base):
+        need(not restart, 'RAW_FIXTURE_BACKEND_NO_RESTART')
+        return ingress.backend(base)
     import httpx
     from scripts import task4_325_exact_sdk_wire_offline_v1 as cap
     from scripts.task4_retained_sender_denial_v1 import observe
@@ -358,7 +362,9 @@ def bind_post(packet, raw, key):
 
             def apply(self, intent, snapshot):
                 need(allow and not calls and not responses, 'ONE_NATIVE_MOCK_POST')
-                code, value = http_call('POST', '/effect', packet, key)
+                from scripts import task4_native_raw_ingress_v1 as ingress
+                code, value = (ingress.dispatch(TLS_BASE, packet, raw, key) if TLS_BASE is not None
+                    and ingress.enabled(TLS_BASE) else http_call('POST', '/effect', packet, key))
                 need(code == 200, 'LOCAL_MOCK_RESPONSE_REQUIRED')
                 need(value['request_sha256'] == sha(raw) and value['operation_id'] == op
                      and value['response_sha256'] == sha(decode(value['response_b64'])), 'EXACT_RAW_RESPONSE')
@@ -386,6 +392,10 @@ def bind_post(packet, raw, key):
         adapter = Adapter(state=dict(before), pending_changes={}, target_description=TARGET)
         receipt = execute_bind_adjudication(execution_intent=intent, adapter=adapter,
             bind_ts='2026-10-20T00:00:03Z', append_trustlog=False).to_dict()
+        from scripts import task4_native_raw_ingress_v1 as ingress
+        if TLS_BASE is not None and ingress.enabled(TLS_BASE):
+            ingress.emit(TLS_BASE, op, 'BIND_RECEIPT', receipt=receipt,
+                         apply_calls=len(calls), allowed=allow)
         need(receipt['final_outcome'] == ('COMMITTED' if allow else 'BLOCKED')
              and len(calls) == int(allow), 'REAL_BIND_NATIVE_OUTCOME')
         need(status() == ({'effect_count': index + 1, 'operation_receipt': responses[0]['receipt_sha256']}
@@ -433,7 +443,9 @@ def custody(base, restart=False, secondary=False):
     if not restart and not secondary:
         db.execute('CREATE TABLE consumed (op TEXT PRIMARY KEY,state TEXT,request_sha TEXT,response_sha TEXT,backend_receipt TEXT,envelope_sha TEXT,bind_sha TEXT)')
     else:
-        expected = (1 if restart else 0) if concurrent_mode(base) else (1 if fault_mode(base) else 8)
+        from scripts import task4_native_raw_ingress_v1 as ingress
+        raw_fault = ingress.enabled(base) and ingress.plan(base)['mode'] != 'success'
+        expected = (1 if restart else 0) if concurrent_mode(base) else (1 if fault_mode(base) or raw_fault else 8)
         need(db.execute('SELECT count(*) FROM consumed').fetchone()[0] == expected,
              'EXACT_DURABLE_CONSUMPTIONS')
     vault = SealedLocalVault(base / 'custody', X25519PublicKey.from_public_bytes(recipient()))
@@ -474,6 +486,9 @@ def custody(base, restart=False, secondary=False):
                                        {'pid': os.getpid(), 'decision': 'REPLAY_DENIED'})
                 else:
                     db.commit()
+                    from scripts import task4_native_raw_ingress_v1 as ingress
+                    if ingress.enabled(base):
+                        ingress.consumed(base, op, raw)
                     if racing:
                         durable_marker(base / 'custody' / ('race-outcome-' + role + '.json'),
                                        {'pid': os.getpid(), 'decision': 'CONSUMED'})
@@ -570,6 +585,8 @@ def native(base):
     from scripts.task4_native_protected_custody_v1 import ProtectedAdapter
     from scripts.task4_471_same_run_capped_sdk_aead_native_no_go_v1 import verify_pins
     kernel.role_identity(NATIVE)
+    from scripts import task4_native_raw_ingress_v1 as ingress
+    raw_owner_denied = ingress.owner_denied(base) if ingress.enabled(base) else False
     cap.base.verify_pins()
     frozen_sources = verify_pins()
     grants = parse((base / 'public/grants.json').read_bytes())
@@ -625,6 +642,7 @@ def native(base):
         (base / 'native' / ('packet-' + packet['arm'] + str(packet['ordinal']) + '.json')).write_bytes(
             canonical(packet))  # Ephemeral, never uploaded.
     return {'records': records, 'lineage_sha256': digest(sealed_lineage),
+            'raw_owner_private_read_denied': raw_owner_denied,
             'lineage': sealed_lineage,
             'frozen_source_git_blobs': frozen_sources,
             'native_terminal_hashes': [x['native_selected_terminal_sha256'] for x in rows],
@@ -657,6 +675,8 @@ def fault_native(base):
     from scripts import task4_325_exact_sdk_wire_offline_v1 as cap
     from scripts.task4_471_same_run_capped_sdk_aead_native_no_go_v1 import verify_pins
     kernel.role_identity(NATIVE)
+    from scripts import task4_native_raw_ingress_v1 as ingress
+    raw_owner_denied = ingress.owner_denied(base) if ingress.enabled(base) else False
     cap.base.verify_pins()
     frozen_sources = verify_pins()
     grants = parse((base / 'public/grants.json').read_bytes())
@@ -693,6 +713,7 @@ def fault_native(base):
         pass
     need(len(observations) == 1, 'EXACTLY_ONE_FAULTED_SDK_REQUEST')
     return {'observations': observations, 'sdk_responses_returned': 0, 'native_terminal_arms': 0,
+            'raw_owner_private_read_denied': raw_owner_denied,
             'scorer_calls': 0, 'transport_invocations': len(observations),
             'frozen_source_git_blobs': frozen_sources}
 
@@ -1195,9 +1216,13 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
 
 
 def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False,
-        retained_senders=False, local_https=False, durable_issuer=False):
+        retained_senders=False, local_https=False, durable_issuer=False, raw_ingress=''):
     from scripts import task4_native_local_https_v1 as tls
     from scripts import task4_durable_issuer_restart_v1 as durable
+    from scripts import task4_native_raw_ingress_v1 as ingress
+    need(raw_ingress in ('', *ingress.MODES) and (not raw_ingress or
+         (local_https and not durable_issuer and not fault and not restart_both and not concurrent and not retained_senders)),
+         'RAW_INGRESS_SEPARATE_CLOSED_TLS_FIXTURE_ONLY')
     need(type(durable_issuer) is bool and (not durable_issuer or local_https), 'DURABLE_ISSUER_REQUIRES_LOCAL_TLS')
     need(type(local_https) is bool and (not local_https or
          (not fault and not restart_both and not concurrent and not retained_senders)), 'LOCAL_HTTPS_NORMAL_FIXTURE_ONLY')
@@ -1357,6 +1382,8 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 kernel.command(['iptables', '-C'] + rule)
             links = json.loads(kernel.command(['ip', '-n', native_ns, '-j', 'link', 'show']).stdout)
             need([x['ifname'] for x in links] == ['lo'], 'NATIVE_LOOPBACK_ONLY')
+            if raw_ingress:
+                ingress.enroll(base, raw_ingress, certificates, worker, native_ns)
             if durable_issuer:
                 issuer_service = spawn(ISSUER, 'durable-issuer', native_ns, base / 'issuer/ready')
                 issued = durable.rpc(base, 'export-existing')
@@ -1378,8 +1405,13 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 need(durable.rpc(base, 'export-existing') == issued, 'ISSUER_ENROLLED_BEFORE_FIRST_CONSUME')
             sink = spawn(BACKEND, 'backend', sink_ns, base / 'backend/ready')
             service = spawn(CUSTODY, 'custody', client_ns, base / 'custody/ready')
-            if local_https:
+            if local_https and not raw_ingress:
                 tls_phases = tls.negatives(base, worker, client_ns, sink_ns, native_ns)
+            if raw_ingress:
+                ingress.exercise(base, output, worker, spawn, service, sink, native_ns, client_ns,
+                                 sink_ns, head, pins, network, issued)
+                print('NATIVE_BIND_RAW_HTTP_BEFORE_PARSERS_CLOSED_LOCAL_TLS_NO_PROVIDER:' + raw_ingress)
+                return
             if retained_senders:
                 from scripts.task4_retained_sender_denial_v1 import validate_observations
                 sender_phases = {'native_netns': worker(NATIVE, 'retained-probe', native_ns)}
@@ -1548,19 +1580,21 @@ def main():
     parser.add_argument('--retained-senders', action='store_true')
     parser.add_argument('--local-https', action='store_true')
     parser.add_argument('--durable-issuer', action='store_true')
+    from scripts import task4_native_raw_ingress_v1 as ingress
+    parser.add_argument('--raw-ingress', choices=ingress.MODES, default='')
     parser.add_argument('--secondary', action='store_true')
-    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart'))
+    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart', 'raw-owner', 'raw-recover'))
     parser.add_argument('--base', type=Path)
     parser.add_argument('--restart', action='store_true')
     args = parser.parse_args()
     if args.run:
         need(args.output is not None and args.role is None and not args.secondary, 'RUN_OUTPUT_REQUIRED')
         run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash,
-            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer)
+            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer, args.raw_ingress)
     else:
         need(args.role is not None and args.base is not None and not args.fault and not args.restart_both
              and not args.concurrent and not args.concurrent_crash and not args.concurrent_response_loss
-             and not args.retained_senders and not args.local_https and not args.durable_issuer
+             and not args.retained_senders and not args.local_https and not args.durable_issuer and not args.raw_ingress
              and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
         from scripts.task4_retained_sender_denial_v1 import probe as retained_probe
         from scripts import task4_native_local_https_v1 as tls
@@ -1570,6 +1604,7 @@ def main():
             print(canonical(tls.probe(args.base, args.role.removeprefix('tls-'))).decode())
             return
         roles = {'issue': issue, 'backend': lambda b: backend(b, args.restart), 'probe': probe,
+                 'raw-owner': ingress.raw.recipient, 'raw-recover': ingress.raw.recover,
                  'durable-issuer': lambda b: durable.serve(b, args.restart),
                  'issuer-replay': durable.replay, 'issuer-invalid-restart': durable.invalid_restart,
                  'reachable': lambda b: probe(b, True), 'native': native, 'restart-probe': restart_probe,
