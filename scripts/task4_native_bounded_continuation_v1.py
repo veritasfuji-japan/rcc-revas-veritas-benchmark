@@ -127,6 +127,8 @@ def verify_observation(m,g,response,tools,archived,observed):
 class NativePolicy(p.Policy):
     """Different explicit six-field/four-request profile; old Policy is unchanged."""
     def __init__(self,file,m,key,create=False):
+        from scripts import task4_native_retained_authority_v1 as retained
+        retained.guard_policy(file,m,key,create)
         validate_manifest(m);self.file=Path(file);self.m=copy.deepcopy(m);self.key=key;self.public=key.public_key().public_bytes_raw()
         if create:
             fd=os.open(self.file,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600);os.close(fd)
@@ -143,6 +145,11 @@ class NativePolicy(p.Policy):
         with self.db() as db:
             need(db.execute('PRAGMA quick_check').fetchall()==[('ok',)] and db.execute('SELECT * FROM enrollment').fetchall()==
                  [(digest(m),sha(self.public))],'RETAINED_NATIVE_POLICY_ENROLLMENT')
+
+    def db(self):
+        from scripts import task4_native_retained_authority_v1 as retained
+        retained.guard_policy(self.file,self.m,self.key)
+        return super().db()
 
     def authorize(self,arm,wire,parent=None,now=None):
         p.current(self.m,now);need(arm in self.m['arms'] and type(wire) is bytes and 0<len(wire)<=64000,'NATIVE_REQUEST_BOUND')
@@ -215,13 +222,21 @@ def rpc(base,packet,name='issuer'):
         conn.settimeout(30);conn.connect(str(base/('issuer-ipc' if name=='issuer' else 'ipc')/(name+'.sock')));conn.sendall(canonical(packet)+b'\n');return n.frame(conn)
 
 
-def issuer(base):
+def issuer(base,restart=False):
     from scripts import task4_native_os_custody_v1 as n
+    from scripts import task4_native_retained_authority_v1 as retained
     kernel.role_identity(kernel.ISSUER);os.umask(0o077);m=load(base)
-    policy=NativePolicy(base/'issuer/policy.sqlite3',m,read_key(base),create=True)
+    retained_mode=retained.required(base)
+    need(not restart or retained_mode,'ISSUER_RESTART_REQUIRES_RETAINED_ENROLLMENT')
+    policy=NativePolicy(base/'issuer/policy.sqlite3',m,read_key(base),create=not retained_mode)
+    address=base/'issuer-ipc/issuer.sock'
+    if retained_mode and os.path.lexists(address):
+        import stat
+        s=address.lstat();need(stat.S_ISSOCK(s.st_mode) and s.st_uid==kernel.ISSUER,'OWN_RETAINED_ISSUER_SOCKET_ONLY')
+        address.unlink()
     with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as server:
-        server.bind(str(base/'issuer-ipc/issuer.sock'));os.chmod(base/'issuer-ipc/issuer.sock',0o666);server.listen(8)
-        (base/'issuer/ready').write_text('ready')
+        server.bind(str(address));os.chmod(address,0o666);server.listen(8)
+        (base/'issuer/ready').write_text('restarted' if restart else 'ready')
         while True:
             conn,_=server.accept()
             with conn:
@@ -241,6 +256,8 @@ def issuer(base):
 
 
 def verify_packet(base,packet,public):
+    from scripts import task4_native_retained_authority_v1 as retained
+    if retained.required(base):retained.admit(base,'custody')
     from scripts import task4_native_os_custody_v1 as n
     need(type(packet) is dict and set(packet)=={'arm','ordinal','wire_b64','grant'},'EXACT_NATIVE_PACKET')
     wire=n.decode(packet['wire_b64']);m=load(base);s=packet['grant']['statement']
@@ -251,13 +268,18 @@ def verify_packet(base,packet,public):
 
 def custody(base,restart=False):
     from scripts import task4_native_os_custody_v1 as n
+    from scripts import task4_native_retained_authority_v1 as retained
     kernel.role_identity(kernel.CUSTODY);os.umask(0o077);m=load(base);key=(base/'custody/credential').read_bytes()
     public=(base/'public/issuer-key').read_bytes();signer=read_key(base);file=base/'custody/ledger.sqlite3'
-    need(file.exists() if restart else not file.exists(),'EXACT_NATIVE_BOUNDED_LEDGER_LIFECYCLE')
-    db=sqlite3.connect(file.resolve().as_uri()+'?mode=rw',uri=True,isolation_level=None) if restart else sqlite3.connect(file,isolation_level=None)
-    db.execute('PRAGMA synchronous=FULL')
-    if not restart:db.execute('CREATE TABLE consumed (op TEXT PRIMARY KEY,state TEXT,request_sha TEXT,response_sha TEXT,backend_receipt TEXT,envelope_sha TEXT,bind_sha TEXT)')
-    else:need(db.execute('SELECT count(*) FROM consumed').fetchone()[0]==8,'EIGHT_RETAINED_NATIVE_CONSUMPTIONS')
+    if retained.required(base):
+        db=retained.open_custody(base)
+        if restart:need(db.execute('SELECT count(*) FROM consumed').fetchone()[0]==8,'EIGHT_RETAINED_NATIVE_CONSUMPTIONS')
+    else:
+        need(file.exists() if restart else not file.exists(),'EXACT_NATIVE_BOUNDED_LEDGER_LIFECYCLE')
+        db=sqlite3.connect(file.resolve().as_uri()+'?mode=rw',uri=True,isolation_level=None) if restart else sqlite3.connect(file,isolation_level=None)
+        db.execute('PRAGMA synchronous=FULL')
+        if not restart:db.execute('CREATE TABLE consumed (op TEXT PRIMARY KEY,state TEXT,request_sha TEXT,response_sha TEXT,backend_receipt TEXT,envelope_sha TEXT,bind_sha TEXT)')
+        else:need(db.execute('SELECT count(*) FROM consumed').fetchone()[0]==8,'EIGHT_RETAINED_NATIVE_CONSUMPTIONS')
     address=base/'ipc/native.sock'
     if restart:address.unlink()
     with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as server:
@@ -392,7 +414,10 @@ def native(base):
                 bad['wire_b64']=n.encode(canonical(changed))
                 # First request's parent is intentionally None; a non-None root is refused.
                 need(rpc(base,bad)==dict(decision='DENIED_NO_NEW_GRANT'),'BAD_NATIVE_REQUEST_DENIED');negative.append(name)
-            result=rpc(base,query);need(set(result)=={'grant'},'BOUNDED_NATIVE_GRANT_REQUIRED');g=result['grant']
+            from scripts import task4_native_retained_authority_v1 as retained
+            cached=retained.cached_grant(base,self.arm,self.attempts,request.content)
+            result=dict(grant=cached) if cached is not None else rpc(base,query)
+            need(set(result)=={'grant'},'BOUNDED_NATIVE_GRANT_REQUIRED');g=result['grant']
             need(rpc(base,query)==dict(decision='DENIED_NO_NEW_GRANT'),'PENDING_NATIVE_REISSUE_DENIED');negative.append('pending')
             packet=dict(arm=self.arm,ordinal=self.attempts,wire_b64=n.encode(request.content),grant=g)
             reply=rpc(base,packet,'native');need(reply['decision']=='ARCHIVED_NATIVE_RESPONSE','ACTUAL_NATIVE_CUSTODY_REQUIRED')
@@ -493,11 +518,17 @@ def validate(e):
 
 def exercise(base,output,worker,spawn,isolated,client,sink_ns,head,pins,topology):
     from scripts import task4_native_os_custody_v1 as n
+    from scripts import task4_native_retained_authority_v1 as retained
     issuer_service=spawn(kernel.ISSUER,'bounded-issuer',isolated,base/'issuer/ready')
     sink=spawn(kernel.BACKEND,'backend',sink_ns,base/'backend/ready')
     service=spawn(kernel.CUSTODY,'custody',client,base/'custody/ready')
+    retained_evidence=None
+    if retained.required(base):
+        issuer_service,retained_evidence=retained.before_native(base,worker,spawn,issuer_service,isolated)
     denials=worker(kernel.AGENT,'bounded-probe',isolated)
     native_result=worker(RUNTIME,'bounded-native',isolated)
+    if retained_evidence is not None:
+        issuer_service=retained.after_native(base,worker,spawn,issuer_service,isolated,retained_evidence)
     posts=raw.tls.read_lines(base/'backend/raw-posts.jsonl');events=raw.tls.read_lines(base/'custody/raw-events.jsonl')
     service.terminate();service.wait(timeout=5);(base/'custody/ready').unlink()
     service=spawn(kernel.CUSTODY,'custody',client,base/'custody/ready','restarted',('--restart',))
@@ -535,3 +566,5 @@ def exercise(base,output,worker,spawn,isolated,client,sink_ns,head,pins,topology
     suite=ET.Element('testsuite',name='Native bounded continuation closed TLS',tests=str(len(checks)),failures='0',errors='0',skipped='0')
     for name in checks:ET.SubElement(suite,'testcase',classname='native_bounded_continuation',name=name)
     ET.ElementTree(suite).write(output/'junit.xml',encoding='utf-8',xml_declaration=True)
+    if retained_evidence is not None:
+        retained.finish(base,output,worker,isolated,retained_evidence,r)
