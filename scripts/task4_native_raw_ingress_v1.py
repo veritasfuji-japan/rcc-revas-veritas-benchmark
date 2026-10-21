@@ -166,6 +166,10 @@ def dispatch(base,packet,request,key):
             tls_version=conn.sock.version(),hostname=tls.NAME,port=443,certificate_required=True,hostname_checked=True)
         need(peer['ip']==tls.IP and peer['leaf_sha256']==p['leaf_sha256'],'ROOT_ENROLLED_API_PEER')
         emit(base,op,'API_PEER_VERIFIED',peer=peer)
+        from scripts import task4_native_raw_authority_v1 as authority
+        if authority.enabled(base):
+            # Actual execution clock and signed recipient/run checked again at POST.
+            n.verify(packet,(base/'public/issuer-key').read_bytes())
         conn.request('POST',raw.PATH,body=request,headers={'Content-Type':'application/json',
             'Authorization':'Bearer LOCAL_ONLY_'+key.hex(),'X-Client-Request-Id':p['run_id']+'-'+op,
             'Connection':'close','Accept-Encoding':'identity'})
@@ -272,6 +276,8 @@ def exercise(base,output,worker,spawn,service,sink,isolated,client,sink_ns,head,
     from scripts import task4_native_os_custody_v1 as n
     p=plan(base);success=p['mode']=='success';crashed=p['mode'] in {'after-consume-crash','after-seal-crash'}
     checks=worker(kernel.AGENT,'probe',isolated);checks.update(worker(kernel.AGENT,'reachable',sink_ns))
+    from scripts import task4_native_raw_authority_v1 as authority
+    authority_evidence = authority.negatives(base,worker,isolated,issued) if authority.enabled(base) else None
     native=worker(kernel.AGENT,'native' if success else 'fault-native',isolated)
     replay_denials=8 if success else 0
     if not success and not crashed:replay_denials+=worker(kernel.AGENT,'fault-replay',isolated)['replay_denials']
@@ -314,9 +320,11 @@ def exercise(base,output,worker,spawn,service,sink,isolated,client,sink_ns,head,
         real_provider_posts=0,external_bank_effects=0,utility='UNSCORED',provider_dispatch='DENY',
         independent_administration_proven=False,production_bypass_resistance_proven=False,
         raw_archive_recipient_private_key_publicly_reproducible=False,inner_native_recipient_private_key_publicly_reproducible=True,
-        raw_recipient_bound_in_signed_grant=False,local_test_ca_not_public_provider_identity=True,
+        raw_recipient_bound_in_signed_grant=authority.enabled(base),local_test_ca_not_public_provider_identity=True,
         trusted_root_kernel_custody_backend_owner=True,real_data_confidentiality_proven=False)
     (output/'report.json').write_bytes(canonical(report))
+    if authority_evidence is not None:
+        authority.finish(base,output,authority_evidence,report)
     suite=ET.Element('testsuite',name='Native raw ingress '+p['mode'],tests=str(len(checks)),failures='0',errors='0',skipped='0')
     for name in checks:ET.SubElement(suite,'testcase',classname='native_raw_ingress',name=name)
     ET.ElementTree(suite).write(output/'junit.xml',encoding='utf-8',xml_declaration=True)
