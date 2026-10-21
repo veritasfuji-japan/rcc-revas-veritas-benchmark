@@ -725,6 +725,47 @@ jobs:
               if checks is not None:assert {x.attrib['name'] for x in j.iter('testcase')}==set(checks)
           print('CLOSED_PROVIDER_SHAPED_RAW_HTTP_BEFORE_ALL_PARSERS_OWNER_RECOVERY_NO_RETRY_VERIFIED')
           PY
+      - name: Join Native and real Bind to first raw API ingress in closed local TLS
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_raw_ingress_v1.py \
+            --junitxml=results/task4-native-raw-unit-junit.xml
+          for mode in success http403 malformed-json malformed-http missing-id truncated oversized timeout dropped archive-failure after-consume-crash after-seal-crash; do
+            sudo -n "$(command -v python)" -m scripts.task4_native_os_custody_v1 \
+              --run --local-https --raw-ingress "$mode" --output "results/task4-native-raw-$mode"
+          done
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.task4_native_raw_ingress_v1 import validate,digest,MODES
+          for mode in MODES:
+              folder=Path('results/task4-native-raw-'+mode)
+              r=json.loads((folder/'report.json').read_text())
+              assert r['schema']=='task4.native-raw-ingress.v1'
+              assert r['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+              for key,file in [('source_sha256','scripts/task4_native_raw_ingress_v1.py'),
+                               ('native_source_sha256','scripts/task4_native_os_custody_v1.py'),
+                               ('raw_source_sha256','scripts/task4_provider_shaped_raw_ingress_v1.py')]:
+                  assert r[key]==hashlib.sha256(Path(file).read_bytes()).hexdigest()
+              assert r['evidence']['plan']['mode']==mode and r['evidence_sha256']==digest(r['evidence']) and validate(r['evidence'])
+              assert len(r['checks'])==14 and all(v is True for v in r['checks'].values())
+              assert r['native_bind_pipeline_integrated'] is True
+              assert r['real_provider_posts']==r['external_bank_effects']==0
+              assert r['provider_dispatch']=='DENY' and r['utility']=='UNSCORED'
+              for flag in ('live_credential_provisioning_proven','independent_administration_proven',
+                           'production_bypass_resistance_proven','real_data_confidentiality_proven',
+                           'raw_recipient_bound_in_signed_grant','raw_archive_recipient_private_key_publicly_reproducible'):
+                  assert r[flag] is False
+              assert r['inner_native_recipient_private_key_publicly_reproducible'] is True
+              j=ET.parse(folder/'junit.xml').getroot()
+              assert len(list(j.iter('testcase')))==14 and {x.attrib['name'] for x in j.iter('testcase')}==set(r['checks'])
+              assert not any(list(j.iter(x)) for x in ('skipped','failure','error'))
+          j=ET.parse('results/task4-native-raw-unit-junit.xml').getroot()
+          assert len(list(j.iter('testcase')))==39 and not any(list(j.iter(x)) for x in ('skipped','failure','error'))
+          print('TWELVE_NATIVE_BIND_RAW_HTTP_SCENARIOS_OWNER_RECOVERY_RESTART_NO_RETRY_VERIFIED')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
