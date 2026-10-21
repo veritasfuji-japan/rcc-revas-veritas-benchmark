@@ -175,6 +175,9 @@ def verify_grant(grant, arm, ordinal, request_sha, public, base=None):
 
 
 def verify(packet, public):
+    from scripts import task4_native_bounded_continuation_v1 as bounded
+    if bounded.enabled(TLS_BASE):
+        return bounded.verify_packet(TLS_BASE, packet, public)
     need(type(packet) is dict and set(packet) == {'arm', 'ordinal', 'wire_b64', 'grant'}, 'EXACT_NATIVE_PACKET')
     raw = decode(packet['wire_b64'])
     need(0 < len(raw) <= 64000, 'BOUNDED_ACTUAL_SDK_WIRE')
@@ -255,6 +258,10 @@ def open_backend_db(base, restart=False):
 
 
 def backend(base, restart=False):
+    from scripts import task4_native_bounded_continuation_v1 as bounded
+    if bounded.enabled(base):
+        need(not restart, 'BOUNDED_BACKEND_RESTART_NOT_ENROLLED')
+        return bounded.backend(base)
     from scripts import task4_native_raw_ingress_v1 as ingress
     if ingress.enabled(base):
         need(not restart, 'RAW_FIXTURE_BACKEND_NO_RESTART')
@@ -347,6 +354,7 @@ def backend(base, restart=False):
 
 
 def bind_post(packet, raw, key):
+    from scripts import task4_native_bounded_continuation_v1 as bounded
     from veritas_os.policy.bind_core import execute_bind_adjudication, core
     from veritas_os.policy.bind_core.core import ReferenceBindAdapter
     from veritas_os.policy.bind_artifacts import ExecutionIntent
@@ -402,7 +410,8 @@ def bind_post(packet, raw, key):
                 return False
 
         intent = ExecutionIntent(decision_id='TASK4-OS-' + op + '-' + str(allow), request_id='TASK4-OS-' + op,
-            policy_snapshot_id='SYNTHETIC_FROZEN_NATIVE_SCOPE_NOT_OWNER_APPROVAL',
+            policy_snapshot_id=('SYNTHETIC_BOUNDED_NATIVE_HISTORY_NOT_OWNER_APPROVAL' if bounded.enabled(TLS_BASE)
+                                else 'SYNTHETIC_FROZEN_NATIVE_SCOPE_NOT_OWNER_APPROVAL'),
             actor_identity='custody-uid-61106', target_system='local-mock-backend', target_resource=TARGET,
             intended_action='one_scripted_native_completion', evidence_refs=['signed-wire:' + sha(raw)],
             decision_hash=digest(packet['grant']['statement']), decision_ts='2026-10-20T00:00:00Z',
@@ -448,6 +457,10 @@ def race_barrier(base, role, db, raw):
 
 
 def custody(base, restart=False, secondary=False):
+    from scripts import task4_native_bounded_continuation_v1 as bounded
+    if bounded.enabled(base):
+        need(not secondary, 'BOUNDED_SECONDARY_NOT_ENROLLED')
+        return bounded.custody(base, restart)
     import httpx
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
     from scripts.task4_457_local_response_aead_v1 import SealedLocalVault
@@ -1243,7 +1256,10 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
 
 
 def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False,
-        retained_senders=False, local_https=False, durable_issuer=False, raw_ingress='', raw_authority=False):
+        retained_senders=False, local_https=False, durable_issuer=False, raw_ingress='', raw_authority=False, bounded_native=False):
+    from scripts import task4_native_bounded_continuation_v1 as bounded
+    need(type(bounded_native) is bool and (not bounded_native or
+         (local_https and raw_ingress == 'success' and not raw_authority)), 'BOUNDED_NATIVE_EXPLICIT_SEPARATE_PROFILE')
     from scripts import task4_native_local_https_v1 as tls
     from scripts import task4_durable_issuer_restart_v1 as durable
     from scripts import task4_native_raw_ingress_v1 as ingress
@@ -1416,6 +1432,12 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 ingress.enroll(base, raw_ingress, certificates, worker, native_ns)
                 if raw_authority:
                     authority.enroll(base)
+            if bounded_native:
+                authority.enroll(base)
+                bounded.enroll(base, worker, native_ns)
+                bounded.exercise(base, output, worker, spawn, native_ns, client_ns, sink_ns, head, pins, network)
+                print('NATIVE_BOUNDED_CONTINUATION_CLOSED_TLS_NO_PROVIDER')
+                return
             if durable_issuer:
                 issuer_service = spawn(ISSUER, 'durable-issuer', native_ns, base / 'issuer/ready')
                 issued = durable.rpc(base, 'export-existing')
@@ -1615,25 +1637,34 @@ def main():
     from scripts import task4_native_raw_ingress_v1 as ingress
     parser.add_argument('--raw-ingress', choices=ingress.MODES, default='')
     parser.add_argument('--raw-authority', action='store_true')
+    parser.add_argument('--bounded-native', action='store_true')
     parser.add_argument('--secondary', action='store_true')
-    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart', 'raw-owner', 'raw-recover', 'raw-authority-probe'))
+    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart', 'raw-owner', 'raw-recover', 'raw-authority-probe', 'bounded-init', 'bounded-issuer', 'bounded-native', 'bounded-probe', 'bounded-replay'))
     parser.add_argument('--base', type=Path)
     parser.add_argument('--restart', action='store_true')
     args = parser.parse_args()
     if args.run:
         need(args.output is not None and args.role is None and not args.secondary, 'RUN_OUTPUT_REQUIRED')
         run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash,
-            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer, args.raw_ingress, args.raw_authority)
+            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer, args.raw_ingress, args.raw_authority, args.bounded_native)
     else:
         need(args.role is not None and args.base is not None and not args.fault and not args.restart_both
              and not args.concurrent and not args.concurrent_crash and not args.concurrent_response_loss
-             and not args.retained_senders and not args.local_https and not args.durable_issuer and not args.raw_ingress and not args.raw_authority
+             and not args.retained_senders and not args.local_https and not args.durable_issuer and not args.raw_ingress and not args.raw_authority and not args.bounded_native
              and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
         from scripts.task4_retained_sender_denial_v1 import probe as retained_probe
         from scripts import task4_native_local_https_v1 as tls
         from scripts import task4_durable_issuer_restart_v1 as durable
         from scripts import task4_native_raw_authority_v1 as authority
         TLS_BASE = args.base if tls.enabled(args.base) else None
+        if args.role.startswith('bounded-'):
+            from scripts import task4_native_bounded_continuation_v1 as bounded
+            roles = {'bounded-init': bounded.initialize, 'bounded-issuer': bounded.issuer,
+                     'bounded-native': bounded.native, 'bounded-probe': bounded.probe, 'bounded-replay': bounded.replay}
+            value = roles[args.role](args.base)
+            if value is not None:
+                print(canonical(value).decode())
+            return
         if args.role.startswith('tls-'):
             print(canonical(tls.probe(args.base, args.role.removeprefix('tls-'))).decode())
             return
