@@ -180,7 +180,9 @@ def alternate(base):
     try:b.NativePolicy(target,m,key,create=True)
     except (ValueError,OSError):denied=True
     need(denied and not target.exists() and before==state(base),'ALTERNATE_DIRECTORY_NO_NEW_POLICY')
-    previous=Path.cwd()
+    # The setpriv worker can inherit a runner cwd that it cannot re-enter.
+    # Use a declared readable cwd; do not widen runner/source permissions.
+    previous=base/'public';os.chdir(previous)
     try:
         os.chdir(base/'issuer')
         reopened=b.NativePolicy(Path('policy.sqlite3'),m,key)

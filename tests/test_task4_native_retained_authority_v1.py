@@ -131,3 +131,15 @@ def test_existing_custody_file_reopens_without_reset(enrolled):
     base,_,_,_,_=enrolled
     with r.open_custody(base) as db:db.execute("INSERT INTO consumed VALUES ('A0','CONSUMED_UNKNOWN','hash',NULL,NULL,NULL,NULL)")
     with r.open_custody(base) as db:assert db.execute('SELECT op,state FROM consumed').fetchall()==[('A0','CONSUMED_UNKNOWN')]
+
+
+def test_alternate_probe_does_not_reenter_inaccessible_inherited_cwd(enrolled,tmp_path,monkeypatch):
+    base,policy,_,_,_=enrolled
+    monkeypatch.setattr(r.b.kernel,'ISSUER',os.geteuid())
+    monkeypatch.setattr(r.b.kernel,'role_identity',lambda _:None)
+    inherited=tmp_path/'inherited';inherited.mkdir();monkeypatch.chdir(inherited);inherited.chmod(0)
+    try:
+        result=r.alternate(base)
+        assert result==dict(alternate_directory_denied=True,new_database_created=False,changed_cwd_same_state=True)
+        assert Path.cwd()==base/'public' and not (base/'issuer/alternate/issuer/policy.sqlite3').exists()
+    finally:inherited.chmod(0o700)

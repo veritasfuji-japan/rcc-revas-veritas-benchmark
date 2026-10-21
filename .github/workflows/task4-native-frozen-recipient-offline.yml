@@ -905,7 +905,7 @@ jobs:
               assert report['real_provider_posts']==report['external_bank_effects']==0 and report['utility']=='UNSCORED' and report['provider_dispatch']=='DENY'
           assert n['external_pins']=={'agentdojo':'a75aba7631d3ca5fb7ab938965c97ead2f9ff84b',
               'rcc':'1d3782d3aae5ff9c88036709c1a5642320cc53c2','veritas':'a1d66aef02262cf8a913295270c3aafd159c6adb'}
-          for file,count,checks in [('results/task4-native-retained-authority-unit-junit.xml',32,None),
+          for file,count,checks in [('results/task4-native-retained-authority-unit-junit.xml',33,None),
                                     (folder/'retained-authority-junit.xml',14,r['checks']),(folder/'junit.xml',16,n['checks'])]:
               root=ET.parse(file).getroot();cases=list(root.iter('testcase'));assert len(cases)==count
               assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
