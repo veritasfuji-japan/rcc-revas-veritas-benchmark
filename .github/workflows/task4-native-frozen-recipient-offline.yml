@@ -690,6 +690,41 @@ jobs:
               if checks is not None: assert {x.attrib['name'] for x in j.iter('testcase')}==set(checks)
           print('DURABLE_ISSUER_SIGKILL_RESTART_SAME_EIGHT_GRANTS_NO_EXTRA_TLS_EFFECT_INVALID_STATE_NO_REGENERATION')
           PY
+      - name: Capture Provider-shaped raw HTTP before parsers in closed local TLS only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_provider_shaped_raw_ingress_v1.py \
+            --junitxml=results/task4-provider-shaped-raw-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_provider_shaped_raw_ingress_v1 \
+            --run --output results/task4-provider-shaped-raw-ingress
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from scripts.task4_provider_shaped_raw_ingress_v1 import validate,digest,MODES
+          folder=Path('results/task4-provider-shaped-raw-ingress')
+          r=json.loads((folder/'report.json').read_text())
+          assert r['schema']=='task4.provider-shaped-raw-ingress.v1'
+          assert r['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert r['source_sha256']==hashlib.sha256(Path('scripts/task4_provider_shaped_raw_ingress_v1.py').read_bytes()).hexdigest()
+          assert r['evidence_sha256']==digest(r['evidence']) and validate(r['evidence'])
+          assert len(r['checks'])==17 and all(v is True for v in r['checks'].values())
+          assert len(r['evidence']['results'])==len(r['evidence']['replays'])==len(MODES)==12
+          assert r['sdk_versions']==dict(openai='1.109.1',httpx='0.28.1')
+          assert r['real_provider_posts']==r['external_bank_effects']==0
+          assert r['utility']=='UNSCORED' and r['provider_dispatch']=='DENY'
+          for flag in ('native_bind_pipeline_integrated','live_credential_provisioning_proven',
+                       'independent_administration_proven','production_bypass_resistance_proven'):
+              assert r[flag] is False
+          assert r['local_test_ca_not_public_provider_identity'] is r['trusted_root_kernel_sender_backend_owner'] is True
+          for file,count,checks in [('results/task4-provider-shaped-raw-unit-junit.xml',33,None),(folder/'junit.xml',17,r['checks'])]:
+              j=ET.parse(file).getroot()
+              assert len(list(j.iter('testcase')))==count
+              assert not any(list(j.iter(x)) for x in ('skipped','failure','error'))
+              if checks is not None:assert {x.attrib['name'] for x in j.iter('testcase')}==set(checks)
+          print('CLOSED_PROVIDER_SHAPED_RAW_HTTP_BEFORE_ALL_PARSERS_OWNER_RECOVERY_NO_RETRY_VERIFIED')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
