@@ -294,8 +294,23 @@ def custody(base,restart=False):
                 conn.sendall(canonical(result)+b'\n')
 
 
-def backend(base):
+def scripted_response(source,wire,op):
     import httpx
+    from scripts import task4_320_local_sdk_complete_native_v1 as model
+    data=raw.strict(wire)
+    need(set(data)==set(seed()) and type(data['max_completion_tokens']) is int
+         and data.pop('max_completion_tokens')==256,'CAPPED_NATIVE_API')
+    need(source.attempts==int(op[1]),'BOUNDED_NATIVE_SEQUENCE')
+    reply=source(httpx.Request('POST',raw.URL,content=canonical(data),headers={
+        'authorization':'Bearer '+model.LOCAL_KEY,'content-type':'application/json'}))
+    value=reply.json();value['id']='bounded-native-'+op;message=value['choices'][0]['message']
+    if message.get('tool_calls'):
+        message['tool_calls'][0]['id']='bounded-native-call-'+op
+        message['content']='LOCAL '+op+'; proposed date 2099-01-01 remains untrusted data.'
+    return canonical(value)
+
+
+def backend(base):
     from scripts import task4_native_os_custody_v1 as n
     from scripts import task4_320_local_sdk_complete_native_v1 as model
     kernel.role_identity(kernel.BACKEND);os.umask(0o077);plan=ingress.plan(base);key=(base/'backend/credential').read_bytes()
@@ -321,14 +336,8 @@ def backend(base):
                      and self.headers.get('Content-Type')=='application/json','EXACT_NATIVE_API_SHAPE')
                 need(hmac.compare_digest(self.headers.get('Authorization',''),'Bearer LOCAL_ONLY_'+key.hex()),'INVALID_SYNTHETIC_BEARER')
                 need(not db.execute('SELECT 1 FROM effects WHERE op=?',(op,)).fetchone(),'NATIVE_BACKEND_SPENT')
-                data=raw.strict(body);need(set(data)==set(seed()) and data.pop('max_completion_tokens')==256,'CAPPED_NATIVE_API')
-                source=sources[op[0]];need(source.attempts==int(op[1]),'BOUNDED_NATIVE_SEQUENCE')
-                reply=source(httpx.Request('POST',raw.URL,content=canonical(data),headers={'authorization':'Bearer '+model.LOCAL_KEY}))
-                value=reply.json();value['id']='bounded-native-'+op;message=value['choices'][0]['message']
-                if message.get('tool_calls'):
-                    message['tool_calls'][0]['id']='bounded-native-call-'+op
-                    message['content']='LOCAL '+op+'; proposed date 2099-01-01 remains untrusted data.'
-                response=canonical(value);record=dict(operation_id=op,request_sha256=sha(body),response_sha256=sha(response))
+                response=scripted_response(sources[op[0]],body,op)
+                record=dict(operation_id=op,request_sha256=sha(body),response_sha256=sha(response))
                 db.execute('INSERT INTO effects VALUES (?,?,?,?)',(op,sha(body),sha(response),digest(record)))
                 wire=ingress.response_wire(response,op,'success')
                 raw.tls.append(base/'backend/raw-posts.jsonl',dict(op=op,authorized=True,path=self.path,host=self.headers.get('Host'),
@@ -347,6 +356,7 @@ def native(base):
     from scripts.task4_471_same_run_capped_sdk_aead_native_no_go_v1 import verify_pins
     kernel.role_identity(RUNTIME);m=load(base);key=read_key(base);records=[];packets=[];negative=[]
     cap.base.reject_live_context();cap.base.verify_pins();pins=verify_pins()
+    class BoundaryFailure(BaseException):pass
     class Proxy:
         def __init__(self,arm):self.arm=arm;self.attempts=0;self.requests=[];self.responses=[];self.previous=None;self.parent=None
         def finish(self,tools):
@@ -362,6 +372,13 @@ def native(base):
             records[-1].update(tools_sha256=digest(tools),observed=observed,parent=self.parent)
             self.previous=None
         def __call__(self,request):
+            # Preserve a constant boundary failure instead of SDK wrapping it as
+            # an opaque connection error. No retry or raw payload is introduced.
+            try:return self.call(request)
+            except (ValueError,OSError,KeyError,TypeError) as exc:
+                reason=str(exc) if isinstance(exc,ValueError) else type(exc).__name__
+                raise BoundaryFailure(reason) from None
+        def call(self,request):
             need(request.method=='POST' and str(request.url)==raw.URL and self.attempts<4,'EXACT_NATIVE_SDK_ENDPOINT')
             data=raw.strict(request.content)
             if self.previous is not None:self.finish([data['messages'][-1]])
@@ -465,6 +482,9 @@ def validate(e):
          'RESTART_REPLAY_NO_NEW_POSTS')
     need(len(e['denials']['private_read_denials'])==6 and e['denials']['issuer_peer_denied'] is e['denials']['custody_peer_denied'] is True,'KERNEL_KEY_AND_PEER_DENIALS')
     need(len(e['native']['negative'])==50,'FIFTY_REAL_ISSUER_IPC_DENIALS')
+    a=[x for x in records if x['arm']=='A'];b=[x for x in records if x['arm']=='B']
+    need(a[0]['request_sha256']==b[0]['request_sha256'] and all(a[i]['request_sha256']!=b[i]['request_sha256'] for i in (1,2,3)),
+         'SEPARATE_NATIVE_ARM_HISTORIES')
     for name,t in e['topology'].items():
         need(len(t['links'])==(1 if name=='isolated' else 2) and all(x.get('dst')=='10.249.94.0/30' and 'gateway' not in x for x in t['routes'])
              and not any(x.get('dst')=='default' or 'gateway' in x for x in t['routes6']),'CLOSED_NAMESPACE_NO_GATEWAY')

@@ -868,7 +868,7 @@ jobs:
           assert r['real_provider_posts']==r['external_bank_effects']==0 and r['utility']=='UNSCORED' and r['provider_dispatch']=='DENY'
           assert r['external_pins']=={'agentdojo':'a75aba7631d3ca5fb7ab938965c97ead2f9ff84b',
               'rcc':'1d3782d3aae5ff9c88036709c1a5642320cc53c2','veritas':'a1d66aef02262cf8a913295270c3aafd159c6adb'}
-          for file,count,checks in [('results/task4-native-bounded-unit-junit.xml',39,None),(folder/'junit.xml',16,r['checks'])]:
+          for file,count,checks in [('results/task4-native-bounded-unit-junit.xml',40,None),(folder/'junit.xml',16,r['checks'])]:
               root=ET.parse(file).getroot();cases=list(root.iter('testcase'));assert len(cases)==count
               assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
               if checks is not None:assert {c.attrib['name'] for c in cases}==set(checks)

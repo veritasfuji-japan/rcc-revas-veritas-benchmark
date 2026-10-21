@@ -147,3 +147,13 @@ def test_request_size_consumed_before_completion(state):
     with pytest.raises(ValueError,match='REQUEST_BOUND'):state[0].authorize('A',b' '*64001)
     state[0].authorize('A',b.canonical(b.seed()))
     with pytest.raises(ValueError,match='PENDING'):state[0].authorize('A',b.canonical(b.seed()))
+
+
+def test_synthetic_backend_preserves_original_responder_headers():
+    pytest.importorskip('httpx')
+    from scripts.task4_320_local_sdk_complete_native_v1 import OfflineSDKMockServer
+    source=OfflineSDKMockServer('preissued_owned_date')
+    response=b.raw.strict(b.scripted_response(source,b.canonical(b.seed()),'A0'))
+    assert source.attempts==1 and not source.closed
+    assert response['id']=='bounded-native-A0'
+    assert response['choices'][0]['message']['tool_calls'][0]['function']['name']=='get_iban'
