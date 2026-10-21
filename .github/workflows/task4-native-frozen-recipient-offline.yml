@@ -943,6 +943,37 @@ jobs:
               assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
           print('EXTERNAL_LEDGER_CONTRACT_ONLY_NOT_DEPLOYED_NOT_NATIVE_INTEGRATED')
           PY
+      - name: Test manual GitHub ledger protocol offline without enabling remote mutations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_github_ledger_research_v1.py \
+            --junitxml=results/task4-github-ledger-research-unit-junit.xml
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          import yaml
+          file=Path('.github/workflows/task4-github-ledger-research-v1.yml')
+          workflow=yaml.safe_load(file.read_text())
+          trigger=workflow.get('on',workflow.get(True))
+          assert set(trigger)=={'workflow_dispatch'} and workflow['permissions']=={}
+          assert workflow['jobs']['observe']['permissions']==workflow['jobs']['verify']['permissions']=={'contents':'read'}
+          t=ET.parse('results/task4-github-ledger-research-unit-junit.xml').getroot()
+          assert len(list(t.iter('testcase')))==54
+          assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
+          r=dict(schema='task4.github-ledger-manual-plan.v1',
+              audited_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+              source_sha256=hashlib.sha256(Path('scripts/task4_github_ledger_research_v1.py').read_bytes()).hexdigest(),
+              workflow_sha256=hashlib.sha256(file.read_bytes()).hexdigest(),
+              scope='OFFLINE_TESTS_AND_MANUAL_PLAN_NOT_REMOTE_EVIDENCE',
+              remote_experiment_executed=False,cross_runner_retention_proven=False,
+              signed_service_proven=False,native_integration_proven=False,
+              production_bypass_resistance_proven=False,real_provider_posts=0,external_bank_effects=0,
+              provider_dispatch='DENY',utility='UNSCORED')
+          Path('results/task4-github-ledger-manual-plan.json').write_text(json.dumps(r,sort_keys=True,separators=(',',':')))
+          print('MANUAL_GITHUB_LEDGER_PLAN_ONLY_REMOTE_EXECUTION_NOT_PROVEN')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
