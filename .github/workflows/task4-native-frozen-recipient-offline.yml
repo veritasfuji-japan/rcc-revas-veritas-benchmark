@@ -912,6 +912,37 @@ jobs:
               if checks is not None:assert {c.attrib['name'] for c in cases}==set(checks)
           assert not Path('/run/veritas-task4-retained-bounded-v1').exists()
           PY
+      - name: Verify external ledger contract with unavailable and ambiguous acknowledgements
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_external_ledger_contract_v1.py \
+            --junitxml=results/task4-external-ledger-contract-unit-junit.xml
+          python -m scripts.task4_external_ledger_contract_v1 \
+            --output results/task4-external-ledger-contract
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          folder=Path('results/task4-external-ledger-contract')
+          r=json.loads((folder/'report.json').read_bytes())
+          assert r['schema']=='task4.external-ledger-contract.v1'
+          assert r['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert r['source_sha256']==hashlib.sha256(Path('scripts/task4_external_ledger_contract_v1.py').read_bytes()).hexdigest()
+          assert r['scope']=='LOCAL_REFERENCE_CONTRACT_NO_NATIVE_OR_NETWORK'
+          assert len(r['checks'])==6 and all(v is True for v in r['checks'].values())
+          assert r['synthetic_issue_callbacks']==r['synthetic_send_callbacks']==1
+          assert r['final_revision']==3 and r['final_states']==['CONSUMED_UNKNOWN','RESERVED']
+          assert r['client_local_state_files']==r['real_provider_posts']==r['external_bank_effects']==0
+          assert all(r[k] is False for k in ('external_storage_deployed','cross_runner_retention_proven',
+              'native_integration_proven','independent_administration_proven','production_bypass_resistance_proven'))
+          assert r['provider_dispatch']=='DENY' and r['utility']=='UNSCORED'
+          for file,count in [('results/task4-external-ledger-contract-unit-junit.xml',52),(folder/'junit.xml',6)]:
+              t=ET.parse(file).getroot();cases=list(t.iter('testcase'))
+              assert len(cases)>0 and (count is None or len(cases)==count)
+              assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
+          print('EXTERNAL_LEDGER_CONTRACT_ONLY_NOT_DEPLOYED_NOT_NATIVE_INTEGRATED')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
