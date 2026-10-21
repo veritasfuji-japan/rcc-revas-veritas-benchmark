@@ -1,0 +1,9 @@
+{
+  "schema": "task4.github-committable-branch-reference.v1",
+  "source_url": "https://docs.github.com/en/graphql/reference/git#committablebranch",
+  "reviewed_date": "2026-10-21",
+  "input_object": "CommittableBranch",
+  "allowed_fields": ["branchName", "id", "repositoryNameWithOwner"],
+  "client_form_fields": ["branchName", "repositoryNameWithOwner"],
+  "unsupported_field_regression": "refName"
+}

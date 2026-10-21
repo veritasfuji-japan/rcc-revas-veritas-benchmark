@@ -7,6 +7,8 @@ import pytest
 from scripts import task4_github_ledger_research_v1 as g
 
 RUN, SOURCE, EXECUTION = 'a'*64, 'b'*40, '12345'
+BRANCH_SCHEMA = g.decode((Path(__file__).resolve().parents[1] /
+    'fixtures/task4_github_committable_branch_schema_v1.json').read_bytes())
 
 
 class FakeAPI:
@@ -27,9 +29,13 @@ class FakeAPI:
         self.calls.append((method, path, copy.deepcopy(value)))
         if method == 'POST' and path == '/graphql':
             self.mutations.append(value)
+            v = value['variables']['input']
+            # Contract fixture comes from the published input type, not the
+            # mutation's prose. Coercion precedes resolver permission checks.
+            if set(v['branch']) != set(BRANCH_SCHEMA['client_form_fields']):
+                return dict(errors=[dict(type='INPUT_VALIDATION_ERROR', message='Invalid CommittableBranch input fields')])
             if not self.writable:
                 return dict(errors=[dict(type='FORBIDDEN')])
-            v = value['variables']['input']
             if v['expectedHeadOid'] != self.head:
                 return dict(errors=[dict(type='STALE_DATA')])
             state = g.decode(base64.b64decode(v['fileChanges']['additions'][0]['contents']))
@@ -90,6 +96,46 @@ def test_new_clients_reopen_same_state_and_reject_run_reset(store):
     with pytest.raises(g.Stop, match='DUPLICATE_RUN'):
         g.run_stage('reserve', fresh, RUN, SOURCE, EXECUTION)
     assert len(api.mutations) == 1
+
+
+def test_wire_branch_fields_follow_published_input_type(store):
+    api, ledger = store
+    reserved(store)
+    payload = api.mutations[0]['variables']['input']
+    assert payload['branch'] == dict(repositoryNameWithOwner=g.REPO, branchName=g.BRANCH)
+    assert set(payload['branch']) <= set(BRANCH_SCHEMA['allowed_fields'])
+    assert payload['expectedHeadOid'] == api.genesis
+    assert BRANCH_SCHEMA['unsupported_field_regression'] not in payload['branch']
+
+
+@pytest.mark.parametrize('writable', [True, False])
+def test_old_refname_shape_rejected_before_permission_or_commit(store, writable):
+    api, ledger = store
+    reserved(store)
+    old = copy.deepcopy(api.mutations[0])
+    old['variables']['input']['branch']['refName'] = old['variables']['input']['branch'].pop('branchName')
+    old['variables']['input']['expectedHeadOid'] = api.head
+    api.writable = writable; before = api.head
+    result = api.call('POST', '/graphql', old)
+    assert result['errors'][0]['type'] == 'INPUT_VALIDATION_ERROR'
+    assert api.head == before
+
+
+def test_graphql_diagnostics_redact_before_truncation_and_omit_other_fields():
+    token = 'ghs_' + 'Z'*40
+    error = dict(type='VALIDATION_ERROR', message='Bad field refName '+token+'\n\x1b token github_pat_ABC123 '+('x'*900),
+                 extensions=dict(secret=token), variables=dict(secret=token), headers=dict(Authorization=token))
+    safe = g.graphql_diagnostics([error]*9, token)
+    encoded = g.canonical(safe).decode()
+    assert len(safe) == 3 and all(set(x) == {'type','message'} and len(x['message']) <= 384 for x in safe)
+    assert token not in encoded and 'github_pat_ABC123' not in encoded and 'Authorization' not in encoded
+    assert 'refName' in encoded and '[REDACTED]' in encoded
+    assert all('\n' not in x['message'] and '\x1b' not in x['message'] for x in safe)
+
+
+@pytest.mark.parametrize('errors', [None, ['ghs_SENSITIVE'], {'message':'ghs_SENSITIVE'}])
+def test_malformed_graphql_diagnostics_do_not_dump_raw_errors(errors):
+    assert 'SENSITIVE' not in g.canonical(g.graphql_diagnostics(errors)).decode()
 
 
 def test_late_contender_still_submits_original_expected_head(store):

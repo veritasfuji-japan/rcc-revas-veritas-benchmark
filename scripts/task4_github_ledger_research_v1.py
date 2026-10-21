@@ -66,6 +66,31 @@ def decode(data):
                       parse_constant=lambda _: (_ for _ in ()).throw(Stop('NONFINITE_JSON')))
 
 
+def graphql_diagnostics(errors, token=''):
+    """Bounded error fields only; never dump a response, variables or headers."""
+    if type(errors) is not list:
+        return [dict(type='MALFORMED_ERRORS', message='Error details omitted')]
+    safe = []
+    for error in errors[:3]:
+        if type(error) is not dict:
+            safe.append(dict(type='MALFORMED_ERROR', message='Error details omitted'))
+            continue
+        kind = error.get('type')
+        if type(kind) is not str or re.fullmatch('[A-Z_]{1,64}', kind) is None:
+            kind = 'UNTYPED_ERROR'
+        message = error.get('message', '')
+        if type(message) is not str:
+            message = 'Error details omitted'
+        if type(token) is str and token:
+            message = message.replace(token, '[REDACTED]')
+            if token in kind:
+                kind = 'REDACTED_ERROR_TYPE'
+        message = re.sub(r'\b(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]+', '[REDACTED]', message)
+        message = re.sub(r'[\x00-\x1f\x7f-\x9f]', ' ', message)[:384]
+        safe.append(dict(type=kind, message=message))
+    return safe
+
+
 def empty():
     return dict(schema=SCHEMA, ledger_id=LEDGER_ID, scope=SCOPE, reviewed_source_base=BASE, revision=0, runs={})
 
@@ -194,13 +219,15 @@ class Ledger:
             ref { name target { oid } }
           }
         }'''
-        variables = dict(input=dict(branch=dict(repositoryNameWithOwner=REPO, refName=BRANCH),
+        variables = dict(input=dict(branch=dict(repositoryNameWithOwner=REPO, branchName=BRANCH),
             expectedHeadOid=expected, clientMutationId=nonce,
             message=dict(headline='Task4 synthetic metadata transition ' + nonce),
             fileChanges=dict(additions=[dict(path=FILE, contents=base64.b64encode(canonical(value)).decode())])))
         result = self.api.call('POST', '/graphql', dict(query=query, variables=variables))
         if result.get('errors'):
-            types = [e.get('type') for e in result['errors'] if type(e) is dict]
+            details = graphql_diagnostics(result['errors'], getattr(self.api, 'token', ''))
+            print(canonical(dict(event='TASK4_GRAPHQL_REJECTED', errors=details)).decode())
+            types = [e['type'] for e in details]
             raise Stop('FORBIDDEN' if 'FORBIDDEN' in types else 'GRAPHQL_ERRORS_STOP')
         mutation = result.get('data', {}).get('createCommitOnBranch')
         need(type(mutation) is dict, 'PARTIAL_GRAPHQL_RESULT_STOP')
