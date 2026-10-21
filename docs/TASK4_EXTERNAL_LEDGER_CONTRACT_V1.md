@@ -24,6 +24,11 @@ The injected transport must authenticate issuer and Custody separately and suppl
 
 ## Verification and limits
 
+The subsequent [backend selection](TASK4_EXTERNAL_LEDGER_BACKEND_SELECTION_V1.md)
+conditionally selects a GitHub expected-head state branch for research storage.
+It does not provision that branch, supply this client's signed transport, or
+establish cross-runner retention; deployment remains blocked on explicit gates.
+
 The existing Actions workflow runs the contract tests and a sanitized rehearsal on every PR. Tests cover a new service process reopening the same database after a prior reservation, clients with separate empty working directories, duplicate/changed enrollment, role crossing, binding/signature/nonce/command mismatches, stale revisions, simultaneous reserve/consume races, storage failures and lost acknowledgements before/after commit. The subprocess uses a synthetic signing key passed privately on stdin. No key, raw history or database is uploaded. Separate working directories and a fresh process in one CI host are explicitly **not separate GitHub runners**.
 
 Run locally with the pinned cryptographic/test dependencies:
