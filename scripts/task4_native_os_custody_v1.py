@@ -1256,7 +1256,9 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
 
 
 def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False,
-        retained_senders=False, local_https=False, durable_issuer=False, raw_ingress='', raw_authority=False, bounded_native=False):
+        retained_senders=False, local_https=False, durable_issuer=False, raw_ingress='', raw_authority=False, bounded_native=False, retained_bounded=False):
+    from scripts import task4_native_retained_authority_v1 as retained
+    need(type(retained_bounded) is bool and (not retained_bounded or bounded_native), 'RETAINED_AUTHORITY_EXPLICIT_BOUNDED_PROFILE')
     from scripts import task4_native_bounded_continuation_v1 as bounded
     need(type(bounded_native) is bool and (not bounded_native or
          (local_https and raw_ingress == 'success' and not raw_authority)), 'BOUNDED_NATIVE_EXPLICIT_SEPARATE_PROFILE')
@@ -1435,6 +1437,8 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             if bounded_native:
                 authority.enroll(base)
                 bounded.enroll(base, worker, native_ns)
+                if retained_bounded:
+                    retained.enroll(base, worker, native_ns)
                 bounded.exercise(base, output, worker, spawn, native_ns, client_ns, sink_ns, head, pins, network)
                 print('NATIVE_BOUNDED_CONTINUATION_CLOSED_TLS_NO_PROVIDER')
                 return
@@ -1618,6 +1622,8 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
             tls.cleanup(directories)
             if link_created:
                 kernel.command(['ip', 'link', 'del', host_if], check=False)
+            if retained_bounded:
+                retained.cleanup(base)
     print('TASK4_NATIVE_OS_CUSTODY_BIND_LOCAL_HTTP_NO_PROVIDER')
 
 
@@ -1638,28 +1644,37 @@ def main():
     parser.add_argument('--raw-ingress', choices=ingress.MODES, default='')
     parser.add_argument('--raw-authority', action='store_true')
     parser.add_argument('--bounded-native', action='store_true')
+    parser.add_argument('--retained-bounded', action='store_true')
     parser.add_argument('--secondary', action='store_true')
-    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart', 'raw-owner', 'raw-recover', 'raw-authority-probe', 'bounded-init', 'bounded-issuer', 'bounded-native', 'bounded-probe', 'bounded-replay'))
+    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart', 'raw-owner', 'raw-recover', 'raw-authority-probe', 'bounded-init', 'bounded-issuer', 'bounded-native', 'bounded-probe', 'bounded-replay', 'retained-init-issuer', 'retained-init-custody', 'retained-state', 'retained-check', 'retained-alternate', 'retained-prepare', 'retained-pending', 'retained-terminal'))
     parser.add_argument('--base', type=Path)
     parser.add_argument('--restart', action='store_true')
     args = parser.parse_args()
     if args.run:
         need(args.output is not None and args.role is None and not args.secondary, 'RUN_OUTPUT_REQUIRED')
         run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash,
-            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer, args.raw_ingress, args.raw_authority, args.bounded_native)
+            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer, args.raw_ingress, args.raw_authority, args.bounded_native, args.retained_bounded)
     else:
         need(args.role is not None and args.base is not None and not args.fault and not args.restart_both
              and not args.concurrent and not args.concurrent_crash and not args.concurrent_response_loss
-             and not args.retained_senders and not args.local_https and not args.durable_issuer and not args.raw_ingress and not args.raw_authority and not args.bounded_native
+             and not args.retained_senders and not args.local_https and not args.durable_issuer and not args.raw_ingress and not args.raw_authority and not args.bounded_native and not args.retained_bounded
              and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
         from scripts.task4_retained_sender_denial_v1 import probe as retained_probe
         from scripts import task4_native_local_https_v1 as tls
         from scripts import task4_durable_issuer_restart_v1 as durable
         from scripts import task4_native_raw_authority_v1 as authority
         TLS_BASE = args.base if tls.enabled(args.base) else None
+        if args.role in {'retained-init-issuer','retained-init-custody','retained-state','retained-check',
+                         'retained-alternate','retained-prepare','retained-pending','retained-terminal'}:
+            from scripts import task4_native_retained_authority_v1 as retained
+            roles = {'retained-init-issuer': retained.create_issuer, 'retained-init-custody': retained.create_custody,
+                     'retained-state': retained.state, 'retained-check': retained.check, 'retained-alternate': retained.alternate,
+                     'retained-prepare': retained.prepare, 'retained-pending': retained.pending, 'retained-terminal': retained.terminal}
+            print(canonical(roles[args.role](args.base)).decode())
+            return
         if args.role.startswith('bounded-'):
             from scripts import task4_native_bounded_continuation_v1 as bounded
-            roles = {'bounded-init': bounded.initialize, 'bounded-issuer': bounded.issuer,
+            roles = {'bounded-init': bounded.initialize, 'bounded-issuer': lambda b: bounded.issuer(b, args.restart),
                      'bounded-native': bounded.native, 'bounded-probe': bounded.probe, 'bounded-replay': bounded.replay}
             value = roles[args.role](args.base)
             if value is not None:
