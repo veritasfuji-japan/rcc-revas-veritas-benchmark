@@ -161,7 +161,7 @@ There are no public model API or real bank calls in any mode.
 
 ## Local/PR validation
 
-54 unit tests model the REST/GraphQL shapes and cover exact namespace/state,
+61 unit tests model the REST/GraphQL shapes and cover exact namespace/state,
 same-head contention including a late-starting runner, commit-before-callback,
 discarded/lost/malformed acknowledgements, read-only permission errors,
 duplicate/replay refusal, full registry stop, state integrity, source/event
@@ -176,3 +176,40 @@ Platform references: [GraphQL commits and expectedHeadOid](https://docs.github.c
 [REST Git refs](https://docs.github.com/en/rest/git/refs), and
 [workflow dispatch](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
 All are design/API references, not repository administrative verification.
+
+## First manual exercise failure and input-schema correction
+
+Bootstrap [39584774958](https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/39584774958)
+succeeded at source `813a4ef70f30113a587eb7d497c865262f303e85`, creating
+genesis `e71487da54ce8d4096c68e836ea19956cec54d6d` on the fixed state branch.
+Exercise [39585508504](https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/actions/runs/39585508504)
+then failed in reserve job `119173285916` with GRAPHQL_ERRORS_STOP. The other
+exercise jobs were skipped. Read-only inspection after failure found the branch
+still at that genesis, revision 0, with an empty run registry. No callback or
+Provider execution occurred. This is a failed experiment, not cross-runner proof.
+
+The published [CommittableBranch input definition](https://docs.github.com/en/graphql/reference/git#committablebranch)
+accepts `branchName`, `id` and `repositoryNameWithOwner`. The client incorrectly
+sent `refName`, following wording in the mutation description instead of checking
+the input type. The request therefore violates the documented schema. The
+original sanitized log did not retain the server's exact validation message, so
+that message is not reconstructed or quoted here. The correction changes the
+wire field to `branchName`; expectedHeadOid, namespace, permissions, transitions,
+acknowledgement validation and the no-retry rule remain enforced.
+
+The API model now validates branch inputs against an independently documented
+schema fixture **before** resolver permission checks. This prevents the old
+model from accepting an invalid writer request or misclassifying the read-only
+probe as a permission success. Regression cases reject the old field for both
+writer and read-only tokens without committing. Errors continue to stop the
+callback. Diagnostics now retain at most three type/message pairs, with bounded
+messages, token redaction before truncation, no control characters and no raw
+response, variables, extensions or headers. Existing malformed/lost response,
+replay and callback-order tests remain required.
+
+This correction PR does not retry the failed workflow, mutate the state branch
+or create another namespace. After review/merge, inspect the retained state again
+and use a fresh owner-approved authorization ID for a new manual exercise with
+the **same approved genesis**. Do not bootstrap again or reset the registry.
+Successful remote reservation/permission/contention/fault evidence remains open
+until a complete, separately reviewed execution succeeds.

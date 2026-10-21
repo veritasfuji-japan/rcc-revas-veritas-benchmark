@@ -960,7 +960,7 @@ jobs:
           assert set(trigger)=={'workflow_dispatch'} and workflow['permissions']=={}
           assert workflow['jobs']['observe']['permissions']==workflow['jobs']['verify']['permissions']=={'contents':'read'}
           t=ET.parse('results/task4-github-ledger-research-unit-junit.xml').getroot()
-          assert len(list(t.iter('testcase')))==54
+          assert len(list(t.iter('testcase')))==61
           assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
           r=dict(schema='task4.github-ledger-manual-plan.v1',
               audited_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
