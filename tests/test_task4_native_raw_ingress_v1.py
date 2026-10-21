@@ -10,7 +10,7 @@ from scripts import task4_native_os_custody_v1 as n
 def evidence(mode):
     success=mode=='success';ops=[a+str(i) for a,i in n.scope()] if success else ['A0']
     plan=dict(schema=p.MARKER,mode=mode,run_id='a'*64,recipient_sha256='b'*64,leaf_sha256='c'*64)
-    posts=[dict(authorized=False,path=p.raw.PATH)];events=[];recovered=[];consumed=[];effects=[];bindings=[];records=[];lines=[]
+    posts=[dict(authorized=False,path=p.raw.PATH,reason='INVALID_SYNTHETIC_BEARER')];events=[];recovered=[];consumed=[];effects=[];bindings=[];records=[];lines=[]
     blocked=dict(final_outcome='BLOCKED');committed=dict(final_outcome='COMMITTED')
     for op in ops:
         req=n.scope()[(op[0],int(op[1]))];res='d'*64

@@ -74,11 +74,12 @@ def owner_denied(base):
 
 
 def reachable(base):
-    kernel.role_identity(kernel.AGENT);plan(base)
+    kernel.role_identity(kernel.AGENT);p=plan(base)
     raw.tls.resolved_local()
     conn=http.client.HTTPSConnection(tls.NAME,443,timeout=3,context=ssl.create_default_context())
     try:
-        conn.request('POST',raw.PATH,body=b'{}',headers={'Content-Type':'application/json','Authorization':'Bearer invalid'})
+        conn.request('POST',raw.PATH,body=b'{}',headers={'Content-Type':'application/json','Authorization':'Bearer invalid',
+            'X-Client-Request-Id':p['run_id']+'-A0'})
         reply=conn.getresponse()
         need(reply.status==403 and raw.strict(reply.read())=={'decision':'DENIED'},'REACHABLE_API_AUTH_DENIAL')
     finally:conn.close()
@@ -122,9 +123,10 @@ def backend(base):
                 op=self.headers.get('X-Client-Request-Id','').removeprefix(p['run_id']+'-')
                 need(op in {a+str(i) for a,i in n.scope()} and self.path==raw.PATH and self.headers.get('Host')==tls.NAME
                      and self.headers.get('X-Client-Request-Id')==p['run_id']+'-'+op
-                     and self.headers.get('Content-Type')=='application/json'
-                     and hmac.compare_digest(self.headers.get('Authorization',''),'Bearer LOCAL_ONLY_'+key.hex())
-                     and sha(body)==n.scope()[(op[0],int(op[1]))],'ENROLLED_API_BEARER_AND_NATIVE_BODY')
+                     and self.headers.get('Content-Type')=='application/json','ENROLLED_API_SHAPE')
+                need(hmac.compare_digest(self.headers.get('Authorization',''),'Bearer LOCAL_ONLY_'+key.hex()),
+                     'INVALID_SYNTHETIC_BEARER')
+                need(sha(body)==n.scope()[(op[0],int(op[1]))],'EXACT_NATIVE_API_BODY')
                 need(not db.execute('SELECT 1 FROM effects WHERE op=?',(op,)).fetchone(),'BACKEND_SPENT')
                 source=sources[op[0]];need(source.attempts==int(op[1]),'ORIGINAL_SCRIPTED_SEQUENCE')
                 request=httpx.Request('POST',raw.URL,content=body,headers={'authorization':'Bearer '+cap.base.LOCAL_KEY,'content-type':'application/json'})
@@ -139,8 +141,8 @@ def backend(base):
                 if wire:self.connection.sendall(wire)
                 if p['mode']=='timeout':time.sleep(2)
                 self.close_connection=True
-            except (ValueError,KeyError,TypeError,sqlite3.IntegrityError):
-                raw.tls.append(base/'backend/raw-posts.jsonl',dict(authorized=False,path=self.path,request_sha256=sha(body)))
+            except (ValueError,KeyError,TypeError,sqlite3.IntegrityError) as exc:
+                raw.tls.append(base/'backend/raw-posts.jsonl',dict(authorized=False,path=self.path,request_sha256=sha(body),reason=str(exc)))
                 self.respond(403,{'decision':'DENIED'})
     # SQLite access stays in the single server thread; only timeout delay is bounded.
     server=tls.server_class(base)((tls.IP,tls.PORT),Handler)
@@ -195,7 +197,8 @@ def validate(e):
          and all(v is True for v in e['checks_before'].values()),'OS_AUTH_PRIVATE_SOURCE_DENIALS')
     need(e['owner_private_read_denied'] is True,'NATIVE_RAW_OWNER_KEY_DENIED')
     posts=e['posts'];admitted=[x for x in posts if x['authorized']]
-    need(len(posts)==1+len(admitted) and posts[0]['authorized'] is False and posts[0]['path']==raw.PATH,'ONE_REACHABLE_API_AUTH_DENIAL')
+    need(len(posts)==1+len(admitted) and posts[0]['authorized'] is False and posts[0]['path']==raw.PATH
+         and posts[0]['reason']=='INVALID_SYNTHETIC_BEARER','ONE_REACHABLE_API_AUTH_DENIAL')
     need(len(admitted)==(8 if success else int(mode!='after-consume-crash')),'EXACT_RAW_POST_COUNT')
     need(len(e['consumed'])==count and len(e['effects'])==len(admitted),'NO_DUPLICATE_NATIVE_EFFECTS')
     need(e['posts_after_replay_sha256']==digest(posts) and e['events_after_replay_sha256']==digest(e['events']),
