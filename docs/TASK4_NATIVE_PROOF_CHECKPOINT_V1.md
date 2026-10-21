@@ -1,5 +1,11 @@
 # Task4 Native proof checkpoint and remaining gates
 
+Historical #505 checkpoint. For later #507–#510 helper/TLS/durable-issuer progress
+and the remaining live-research acceptance gates, see the
+[Provider research restart gap audit](TASK4_PROVIDER_RESEARCH_RESTART_GAP_AUDIT_V1.md).
+The fresh-key/issuer-persistence and next-step statements below describe #505;
+they do not negate the later bounded integrations.
+
 Reviewed on 2026-10-20 JST against main
 [`38b89770c712a2cea9e6b4fcc339e765ea70bb4d`](https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/commit/38b89770c712a2cea9e6b4fcc339e765ea70bb4d)
 (merged [#505](https://github.com/veritasfuji-japan/rcc-revas-veritas-benchmark/pull/505)).
