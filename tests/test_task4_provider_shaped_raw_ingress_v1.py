@@ -17,7 +17,8 @@ def test_complete_raw_http_can_be_parsed_after_capture():
 
 
 def test_actual_pinned_sdk_serializes_original_parameters_and_parses_one_completion():
-    import httpx
+    httpx=pytest.importorskip('httpx',reason='Pinned SDK dependencies are mandatory in the dedicated Native workflow')
+    pytest.importorskip('openai',reason='Pinned SDK dependencies are mandatory in the dedicated Native workflow')
     calls=[]
     class Transport(httpx.BaseTransport):
         def handle_request(self,request):

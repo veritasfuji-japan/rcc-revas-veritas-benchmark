@@ -109,6 +109,9 @@ checks/JUnit. Unit tests exercise framing/partial capture, AEAD metadata/key
 tampering, durable duplicate refusal, actual pinned SDK serialization/parser and
 false-green evidence rejection. Privileged OS/TLS assertions run only in the
 dedicated disposable CI fixture; unit test doubles are not OS evidence.
+The minimal common CI skips only the SDK-specific test if its optional SDK
+dependencies are absent. The dedicated workflow installs the pins and requires
+all 33 unit cases and all 17 integration cases with zero skipped cases.
 
 This advances bounded G1/G4 evidence only. Integrating this archive/transport
 with Native, actual Bind, reviewed adaptive run-bound authority, full deployment
