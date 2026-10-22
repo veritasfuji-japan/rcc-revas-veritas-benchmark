@@ -12,6 +12,11 @@ to the signed contract. The service still uses #518's private local reference
 SQLite file. No running remote service, persistent host, live key custodian,
 Native connection, separate Runner or independent administrator is provided.
 
+The subsequent [signed GitHub adapter](TASK4_SIGNED_GITHUB_LEDGER_ADAPTER_V1.md)
+uses the same authenticated listener with an injected eight-slot Git backend.
+Its CI exercises a memory API model over real loopback mTLS; remote GitHub
+acceptance, host provisioning and Native integration remain unproven.
+
 `REAL_PROVIDER_NO_GO / UTILITY_UNSCORED / PRODUCTION_BYPASS_RESISTANCE_NOT_PROVEN`
 
 ## Implemented boundary
