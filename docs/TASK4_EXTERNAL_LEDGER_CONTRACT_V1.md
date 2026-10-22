@@ -29,6 +29,12 @@ conditionally selects a GitHub expected-head state branch for research storage.
 It does not provision that branch, supply this client's signed transport, or
 establish cross-runner retention; deployment remains blocked on explicit gates.
 
+Subsequent [manual GitHub metadata evidence](TASK4_GITHUB_LEDGER_OBSERVED_EVIDENCE_V1.md)
+records normal and controlled response-discard exercises across hosted jobs on
+one retained branch. That narrower backend experiment does not implement this
+contract's signed service, eight operation slots, authenticated issuer/Custody
+roles or Native integration; those gates remain open.
+
 The existing Actions workflow runs the contract tests and a sanitized rehearsal on every PR. Tests cover a new service process reopening the same database after a prior reservation, clients with separate empty working directories, duplicate/changed enrollment, role crossing, binding/signature/nonce/command mismatches, stale revisions, simultaneous reserve/consume races, storage failures and lost acknowledgements before/after commit. The subprocess uses a synthetic signing key passed privately on stdin. No key, raw history or database is uploaded. Separate working directories and a fresh process in one CI host are explicitly **not separate GitHub runners**.
 
 Run locally with the pinned cryptographic/test dependencies:

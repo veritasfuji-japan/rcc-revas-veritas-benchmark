@@ -4,9 +4,12 @@ This increment implements the conditional storage proposal from
 [#519](TASK4_EXTERNAL_LEDGER_BACKEND_SELECTION_V1.md). It supplies a
 `workflow_dispatch`-only experiment with separate standard Ubuntu jobs and a real
 GitHub API backend. **PR CI runs unit API models and workflow checks only; it does
-not execute this remote experiment or prove cross-runner retention.** Record
-actual manual run/job/commit/artifact identities after the workflow is merged,
-bootstrapped and exercised. Until then the remote result is NOT_RUN.
+not execute this remote experiment or prove cross-runner retention.** The
+separate manual normal and response-discard exercises have now been reviewed;
+see [observed evidence and Native integration gates](TASK4_GITHUB_LEDGER_OBSERVED_EVIDENCE_V1.md)
+for exact run/job/commit/artifact identities and the bounded conclusions. PR CI's
+manual-plan artifact remains remote_experiment_executed=false because PR CI
+itself does not dispatch this experiment.
 
 `REAL_PROVIDER_NO_GO / UTILITY_UNSCORED / PRODUCTION_BYPASS_RESISTANCE_NOT_PROVEN`
 
@@ -153,8 +156,9 @@ follow the reviewed cost basis in #519, subject to actual platform/account limit
    to bypass its retained consumption. Do not rerun failed jobs to obtain a new
    permission; inspect state read-only and keep incomplete runs NOT_PROVEN.
 
-These instructions describe the concrete proposed experiment. This implementation
-PR does not itself dispatch bootstrap/exercise, create the state branch, change
+These instructions describe the experiment implemented in #520 and corrected in
+#521. Those implementation PRs did not themselves dispatch bootstrap/exercise,
+create the state branch, change
 Secrets/Environments/Rulesets/tags, or claim that remote validation ran. The
 operator's merge is followed by the separately observable manual experiment.
 There are no public model API or real bank calls in any mode.
@@ -211,5 +215,7 @@ This correction PR does not retry the failed workflow, mutate the state branch
 or create another namespace. After review/merge, inspect the retained state again
 and use a fresh owner-approved authorization ID for a new manual exercise with
 the **same approved genesis**. Do not bootstrap again or reset the registry.
-Successful remote reservation/permission/contention/fault evidence remains open
-until a complete, separately reviewed execution succeeds.
+At the time of #521, successful remote reservation/permission/contention/fault
+evidence remained open. The later [observed evidence](TASK4_GITHUB_LEDGER_OBSERVED_EVIDENCE_V1.md)
+records the two completed manual exercises without changing the Native or
+production proof status.
