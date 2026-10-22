@@ -64,8 +64,9 @@ existing custody slot must be retained: do not rerun `init`, replace its key,
 reset the old metadata ledger or use an old genesis for this signed namespace.
 No operator configuration or private file is changed by this PR.
 
-A reviewed real GitHub API transport, isolated writer credential, separately
-approved create-only root/enrollment procedure, TLS/role custody and remote
+A [fixed GitHub HTTPS transport](TASK4_SIGNED_GITHUB_API_V1.md) is now available
+for explicit backend construction; its tests remain offline. Isolated writer
+credentials, an explicitly approved create-only root/enrollment procedure, TLS/role custody and remote
 access design remain open gates in the
 [deployment runbook](TASK4_SIGNED_LEDGER_MANUAL_DEPLOYMENT_RUNBOOK_V1.md).
 The older SQLite reference startup remains unchanged and is not this entry
