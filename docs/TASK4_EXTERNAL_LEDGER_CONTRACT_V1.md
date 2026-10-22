@@ -35,6 +35,11 @@ one retained branch. That narrower backend experiment does not implement this
 contract's signed service, eight operation slots, authenticated issuer/Custody
 roles or Native integration; those gates remain open.
 
+The [loopback mTLS adapter](TASK4_EXTERNAL_LEDGER_MTLS_V1.md) adds real TLS peer
+authentication to this reference service and process-restart rehearsal. It is
+separate from the GitHub backend and remains on one host; no external authority
+or Native integration is deployed by that increment.
+
 The existing Actions workflow runs the contract tests and a sanitized rehearsal on every PR. Tests cover a new service process reopening the same database after a prior reservation, clients with separate empty working directories, duplicate/changed enrollment, role crossing, binding/signature/nonce/command mismatches, stale revisions, simultaneous reserve/consume races, storage failures and lost acknowledgements before/after commit. The subprocess uses a synthetic signing key passed privately on stdin. No key, raw history or database is uploaded. Separate working directories and a fresh process in one CI host are explicitly **not separate GitHub runners**.
 
 Run locally with the pinned cryptographic/test dependencies:

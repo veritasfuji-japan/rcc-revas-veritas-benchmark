@@ -943,6 +943,37 @@ jobs:
               assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
           print('EXTERNAL_LEDGER_CONTRACT_ONLY_NOT_DEPLOYED_NOT_NATIVE_INTEGRATED')
           PY
+      - name: Verify signed ledger role authentication over actual loopback mTLS
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_external_ledger_mtls_v1.py \
+            --junitxml=results/task4-external-ledger-mtls-unit-junit.xml
+          python -m scripts.task4_external_ledger_mtls_rehearsal_v1 \
+            --output results/task4-external-ledger-mtls
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          r=json.loads(Path('results/task4-external-ledger-mtls/report.json').read_bytes())
+          assert r['schema']=='task4.external-ledger-loopback-mtls.v1'
+          assert r['scope']=='SAME_HOST_LOOPBACK_MTLS_REFERENCE_ONLY'
+          assert r['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert r['source_sha256']==hashlib.sha256(Path('scripts/task4_external_ledger_mtls_v1.py').read_bytes()).hexdigest()
+          assert r['rehearsal_sha256']==hashlib.sha256(Path('scripts/task4_external_ledger_mtls_rehearsal_v1.py').read_bytes()).hexdigest()
+          assert len(r['checks'])==9 and all(v is True for v in r['checks'].values())
+          assert r['service_processes']==r['final_revision']==4
+          assert r['synthetic_issue_callbacks']==r['synthetic_send_callbacks']==1
+          assert r['real_provider_posts']==r['external_bank_effects']==0
+          assert all(r[k] is False for k in ('github_backend_connected','external_storage_deployed',
+              'cross_runner_retention_proven','native_integration_proven','independent_administration_proven',
+              'production_bypass_resistance_proven'))
+          assert r['provider_dispatch']=='DENY' and r['utility']=='UNSCORED'
+          t=ET.parse('results/task4-external-ledger-mtls-unit-junit.xml').getroot()
+          assert len(list(t.iter('testcase')))==34
+          assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
+          print('LOOPBACK_MTLS_REFERENCE_ONLY_NOT_DEPLOYED_NOT_NATIVE_INTEGRATED')
+          PY
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
         run: |
