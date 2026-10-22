@@ -103,8 +103,12 @@ GitHub service, Provider or external bank receives a request in these tests.
 CI runs all 82 cases with zero skips and exports JUnit only for this increment.
 
 Remaining gates include credential delivery and independent writer isolation,
-explicit create-only genesis/enrollment approval, TLS/role custody, deployable
-manual service entry point, remote access and actual remote commit/readback/fault
+explicit create-only genesis/enrollment approval, TLS/role custody, protected
+runtime installation, remote access and actual remote commit/readback/fault
 evidence. See the [deployment runbook](TASK4_SIGNED_LEDGER_MANUAL_DEPLOYMENT_RUNBOOK_V1.md).
 This PR does not select a token, create a state branch, reuse the old metadata
 genesis, alter an operator VM/key, dispatch a workflow or authorize Provider use.
+
+The [manual existing-state entry point](TASK4_SIGNED_LEDGER_ENTRYPOINT_V1.md)
+now joins this transport to protected configuration and retained-key startup.
+It does not create or enroll a ledger, provision credentials or supply remote evidence.
