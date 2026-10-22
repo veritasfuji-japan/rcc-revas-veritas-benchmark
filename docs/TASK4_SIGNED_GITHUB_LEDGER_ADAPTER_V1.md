@@ -126,3 +126,8 @@ profile before any branch mutation. Actual Native reservation-before-grant and
 consumption-before-send remain later integration work. Existing Provider,
 credential/egress, private-recipient, independent A/B and fresh-consent gates are
 unchanged. This increment creates no paid resource or public service endpoint.
+
+The [manual deployment preparation runbook](TASK4_SIGNED_LEDGER_MANUAL_DEPLOYMENT_RUNBOOK_V1.md)
+records key custody, the public approval record, create-only root/enrollment
+requirements, evidence boundaries and the current DEPLOYMENT_BLOCKED stopping
+point. It is not an executable remote profile or permission to create resources.
