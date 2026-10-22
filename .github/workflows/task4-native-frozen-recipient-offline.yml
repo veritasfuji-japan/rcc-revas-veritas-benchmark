@@ -1059,6 +1059,20 @@ jobs:
           assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
           print('MANUAL_ENTRYPOINT_SYNTHETIC_MODEL_LOOPBACK_ONLY_NO_REMOTE_DEPLOYMENT_NO_PROVIDER')
           PY
+      - name: Verify create-only signed-ledger administration without remote mutations
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTHONPATH,PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_signed_ledger_admin_v1.py \
+            --junitxml=results/task4-signed-ledger-admin-junit.xml
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-signed-ledger-admin-junit.xml').getroot()
+          assert len(list(root.iter('testcase'))) == 48
+          assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
+          print('CREATE_ONLY_SIGNED_ADMIN_MODEL_ONLY_NO_REMOTE_ROOT_NO_PROVIDER')
+          PY
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
         run: |

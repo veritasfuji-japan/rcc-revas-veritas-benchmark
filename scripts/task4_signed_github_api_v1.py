@@ -24,7 +24,87 @@ TIMEOUT = 10.0
 STOP = 'SIGNED_GITHUB_API_STOP'
 
 
-class API:
+class FixedHTTPS:
+    """Shared fixed-host mechanics; concrete profiles must supply an allowlist."""
+    def __init__(self, token):
+        try:
+            need(type(token) is str and re.fullmatch('[A-Za-z0-9_]{20,255}', token), 'EXPLICIT_TOKEN')
+            self._token = token
+        except Exception:
+            raise Denied(STOP) from None
+
+    def _request(self, method, path, value):
+        raise Denied(STOP)
+
+    def _status(self, method, path):
+        return 200
+
+    def _response(self, method, path, result):
+        need(type(result) is dict and not result.get('errors'), 'API_ERRORS_STOP')
+        return result
+
+    def call(self, method, path, value=None):
+        connection = response = None
+        try:
+            path, body = self._request(method, path, value)  # Before a socket/token is used.
+            context = ssl.create_default_context()
+            context.minimum_version = ssl.TLSVersion.TLSv1_2
+            connection = http.client.HTTPSConnection(HOST, 443, timeout=TIMEOUT, context=context)
+            # http.client has no proxy/environment discovery, redirect handler or retry loop.
+            connection.request(method, path, body=body, headers={
+                'Authorization': 'Bearer ' + self._token,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json',
+                'Accept-Encoding': 'identity',
+                'X-GitHub-Api-Version': API_VERSION,
+                'User-Agent': 'task4-signed-ledger-api-v1',
+                'Connection': 'close',
+            })
+            active_socket = connection.sock
+            response = connection.getresponse()
+            need(response.status == self._status(method, path), 'HTTP_STOP')  # Includes redirects, rate limits and auth errors.
+            headers = response.getheaders()
+            def values(name):
+                return [v for k, v in headers if k.lower() == name]
+            types = values('content-type')
+            need(len(types) == 1 and types[0].split(';')[0].strip().lower()
+                 in ('application/json', 'application/vnd.github+json'), 'JSON_RESPONSE')
+            encoding = values('content-encoding')
+            need(not encoding or encoding == ['identity'], 'NO_COMPRESSED_RESPONSE')
+            lengths = values('content-length')
+            need(not lengths or (len(lengths) == 1 and re.fullmatch('[0-9]{1,7}', lengths[0])
+                 and int(lengths[0]) <= MAX_RESPONSE), 'BOUNDED_CONTENT_LENGTH')
+            transfers = values('transfer-encoding')
+            need(not transfers or (not lengths and transfers == ['chunked']), 'UNAMBIGUOUS_FRAMING')
+            deadline, data = time.monotonic() + TIMEOUT, bytearray()
+            while True:
+                remaining = deadline - time.monotonic()
+                need(remaining > 0, 'BODY_DEADLINE')
+                need(active_socket is not None, 'CONNECTED_SOCKET')
+                active_socket.settimeout(remaining)
+                part = response.read1(min(65536, MAX_RESPONSE + 1 - len(data)))
+                if not part:
+                    break
+                data.extend(part)
+                need(len(data) <= MAX_RESPONSE, 'BOUNDED_RESPONSE')
+                if lengths and len(data) == int(lengths[0]):
+                    break  # HTTPResponse may already have closed the completed socket.
+            need(not lengths or len(data) == int(lengths[0]), 'COMPLETE_RESPONSE')
+            result = decode(bytes(data))  # Duplicate fields/nonfinite JSON are denied.
+            return self._response(method, path, result)
+        except Exception:
+            # No server text, request headers/body, token or exception detail escapes.
+            raise Denied(STOP) from None
+        finally:
+            for resource in (response, connection):
+                if resource is not None:
+                    try:
+                        resource.close()
+                    except Exception:
+                        pass  # Cleanup must never expose a credential-bearing exception.
+
+
+class API(FixedHTTPS):
     """One explicit request per call; no ambient token, proxy or endpoint setting.
 
     HTTPSConnection uses the default verified CA/hostname context. Socket timeouts
@@ -34,7 +114,7 @@ class API:
     """
     def __init__(self, token, genesis, signer_sha256):
         try:
-            need(type(token) is str and re.fullmatch('[A-Za-z0-9_]{20,255}', token), 'EXPLICIT_TOKEN')
+            super().__init__(token)
             need(hx(genesis, 40) and hex64(signer_sha256), 'APPROVED_IDENTITY')
             self._token, self.genesis, self.signer = token, genesis, signer_sha256
         except Exception:
@@ -74,66 +154,6 @@ class API:
         need(len(body) <= MAX_REQUEST, 'BOUNDED_REQUEST')
         return path, body
 
-    def call(self, method, path, value=None):
-        connection = response = None
-        try:
-            path, body = self._request(method, path, value)  # Before a socket/token is used.
-            context = ssl.create_default_context()
-            context.minimum_version = ssl.TLSVersion.TLSv1_2
-            connection = http.client.HTTPSConnection(HOST, 443, timeout=TIMEOUT, context=context)
-            # http.client has no proxy/environment discovery, redirect handler or retry loop.
-            connection.request(method, path, body=body, headers={
-                'Authorization': 'Bearer ' + self._token,
-                'Accept': 'application/vnd.github+json',
-                'Content-Type': 'application/json',
-                'Accept-Encoding': 'identity',
-                'X-GitHub-Api-Version': API_VERSION,
-                'User-Agent': 'task4-signed-ledger-api-v1',
-                'Connection': 'close',
-            })
-            active_socket = connection.sock
-            response = connection.getresponse()
-            need(response.status == 200, 'HTTP_STOP')  # Includes redirects, rate limits and auth errors.
-            headers = response.getheaders()
-            def values(name):
-                return [v for k, v in headers if k.lower() == name]
-            types = values('content-type')
-            need(len(types) == 1 and types[0].split(';')[0].strip().lower()
-                 in ('application/json', 'application/vnd.github+json'), 'JSON_RESPONSE')
-            encoding = values('content-encoding')
-            need(not encoding or encoding == ['identity'], 'NO_COMPRESSED_RESPONSE')
-            lengths = values('content-length')
-            need(not lengths or (len(lengths) == 1 and re.fullmatch('[0-9]{1,7}', lengths[0])
-                 and int(lengths[0]) <= MAX_RESPONSE), 'BOUNDED_CONTENT_LENGTH')
-            transfers = values('transfer-encoding')
-            need(not transfers or (not lengths and transfers == ['chunked']), 'UNAMBIGUOUS_FRAMING')
-            deadline, data = time.monotonic() + TIMEOUT, bytearray()
-            while True:
-                remaining = deadline - time.monotonic()
-                need(remaining > 0, 'BODY_DEADLINE')
-                need(active_socket is not None, 'CONNECTED_SOCKET')
-                active_socket.settimeout(remaining)
-                part = response.read1(min(65536, MAX_RESPONSE + 1 - len(data)))
-                if not part:
-                    break
-                data.extend(part)
-                need(len(data) <= MAX_RESPONSE, 'BOUNDED_RESPONSE')
-                if lengths and len(data) == int(lengths[0]):
-                    break  # HTTPResponse may already have closed the completed socket.
-            need(not lengths or len(data) == int(lengths[0]), 'COMPLETE_RESPONSE')
-            result = decode(bytes(data))  # Duplicate fields/nonfinite JSON are denied.
-            need(type(result) is dict and not result.get('errors'), 'API_ERRORS_STOP')
-            return result
-        except Exception:
-            # No server text, request headers/body, token or exception detail escapes.
-            raise Denied(STOP) from None
-        finally:
-            for resource in (response, connection):
-                if resource is not None:
-                    try:
-                        resource.close()
-                    except Exception:
-                        pass  # Cleanup must never expose a credential-bearing exception.
 
 
 def approved_backend(token, genesis, signer_sha256):
