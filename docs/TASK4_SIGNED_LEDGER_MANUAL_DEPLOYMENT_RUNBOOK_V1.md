@@ -6,9 +6,13 @@ to create a ledger, generate a live key, issue a credential or dispatch a workfl
 The [adapter](TASK4_SIGNED_GITHUB_LEDGER_ADAPTER_V1.md) has only model-backed
 GitHub evidence. Its remote result remains NOT_RUN.
 
-**Current stopping point: DEPLOYMENT_BLOCKED.** A persistent key custodian,
-isolated writer, approved root and reviewed real-API execution entry point have
-not been supplied. The existing manual workflow
+**Current stopping point: DEPLOYMENT_BLOCKED.** Source now supplies
+[create-once custody](TASK4_RECEIPT_KEY_CUSTODY_V1.md),
+[retained startup](TASK4_RETAINED_SIGNED_LEDGER_SERVICE_V1.md),
+[fixed HTTPS transport](TASK4_SIGNED_GITHUB_API_V1.md) and a
+[manual existing-state entry point](TASK4_SIGNED_LEDGER_ENTRYPOINT_V1.md).
+Actual isolated writer provisioning, approved root/enrollment, TLS/role custody,
+protected runtime installation and remote evidence remain open gates. The existing manual workflow
 `task4-github-ledger-research-v1.yml` runs the older one-operation metadata
 experiment; it cannot execute this signed eight-slot service. Do not enter a
 new key/root into that workflow or rerun its bootstrap for this purpose.
@@ -38,8 +42,9 @@ is not a step authorized by this runbook.
 ## 2. Define custody and role ownership
 
 The [create-once receipt custody utility](TASK4_RECEIPT_KEY_CUSTODY_V1.md)
-provides explicit key initialization and pin-required reopen only. It is not
-called by existing services and does not remove the remaining deployment gates.
+provides explicit key initialization and pin-required reopen. The retained
+startup and manual entry point explicitly use reopen only; initialization is
+never part of startup. These interfaces do not remove the remaining deployment gates.
 
 | Material | Intended holder | Public review value |
 | --- | --- | --- |
@@ -112,8 +117,8 @@ distinct when reviewing a future setup procedure.
 
 ## 4. Required create/enroll procedure for a future implementation
 
-These are acceptance requirements for the missing execution entry point, not
-commands available in #524:
+These are acceptance requirements for the still-missing root/enrollment
+administration commands. The existing-state entry point never performs them:
 
 1. Perform read-only namespace/source/identity checks. Validate the approved
    fixed repository, ref, service signer and synthetic-only scope before using
