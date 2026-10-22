@@ -37,6 +37,10 @@ is not a step authorized by this runbook.
 
 ## 2. Define custody and role ownership
 
+The [create-once receipt custody utility](TASK4_RECEIPT_KEY_CUSTODY_V1.md)
+provides explicit key initialization and pin-required reopen only. It is not
+called by existing services and does not remove the remaining deployment gates.
+
 | Material | Intended holder | Public review value |
 | --- | --- | --- |
 | Stable Ed25519 service receipt key, raw 32 bytes | Dedicated authority-service account on retained private storage | Raw 32-byte public key and its SHA-256 |

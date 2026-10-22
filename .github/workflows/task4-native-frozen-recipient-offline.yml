@@ -1004,6 +1004,21 @@ jobs:
           assert not any(list(t.iter(x)) for x in ('skipped','failure','error'))
           print('SIGNED_ADAPTER_MODEL_WITH_REAL_MTLS_NOT_REMOTE_GITHUB_NOT_NATIVE')
           PY
+      - name: Verify create-once receipt custody and actual cross-UID synthetic access
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTHONPATH,PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_receipt_key_custody_v1.py \
+            --junitxml=results/task4-receipt-key-custody-junit.xml
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-receipt-key-custody-junit.xml').getroot()
+          assert len(list(root.iter('testcase'))) == 29
+          assert any(t.get('name')=='test_actual_crossuid_custody_access' for t in root.iter('testcase'))
+          assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
+          print('LOCAL_RECEIPT_KEY_CUSTODY_ONLY_NO_GITHUB_DEPLOYMENT_NO_PROVIDER')
+          PY
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
         run: |
