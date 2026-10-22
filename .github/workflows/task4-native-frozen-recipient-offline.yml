@@ -1019,6 +1019,19 @@ jobs:
           assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
           print('LOCAL_RECEIPT_KEY_CUSTODY_ONLY_NO_GITHUB_DEPLOYMENT_NO_PROVIDER')
           PY
+      - name: Verify retained custody joins signed service before loopback binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_retained_signed_ledger_service_v1.py \
+            --junitxml=results/task4-retained-signed-ledger-service-junit.xml
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-retained-signed-ledger-service-junit.xml').getroot()
+          assert len(list(root.iter('testcase'))) == 14
+          assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
+          print('RETAINED_SIGNER_MODEL_BACKEND_LOOPBACK_ONLY_NO_REMOTE_GITHUB_NO_PROVIDER')
+          PY
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
         run: |
