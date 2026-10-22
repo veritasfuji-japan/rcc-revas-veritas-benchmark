@@ -21,6 +21,12 @@ SCOPE = 'SYNTHETIC_SIGNED_LEDGER_ONLY_NO_PROVIDER'
 BASE = '266f9add41daf94a778f247a6f3c0560318e2da2'
 LEDGER_ID = sha((REPO + ':' + BRANCH + ':' + STATE_SCHEMA).encode())
 MAX_RUNS, MAX_BLOB = 32, 65536
+MUTATION_QUERY = '''mutation($input:CreateCommitOnBranchInput!) {
+          createCommitOnBranch(input:$input) { clientMutationId
+            commit { oid parents(first:2) { nodes { oid } } }
+            ref { name target { oid } }
+          }
+        }'''
 
 
 def empty(signer):
@@ -93,13 +99,7 @@ class GitState:
         validate(state, self.signer)
         nonce = os.urandom(32).hex()
         need(hx(previous, 40), 'EXPECTED_HEAD')
-        query = '''mutation($input:CreateCommitOnBranchInput!) {
-          createCommitOnBranch(input:$input) { clientMutationId
-            commit { oid parents(first:2) { nodes { oid } } }
-            ref { name target { oid } }
-          }
-        }'''
-        payload = dict(query=query, variables=dict(input=dict(
+        payload = dict(query=MUTATION_QUERY, variables=dict(input=dict(
             branch=dict(repositoryNameWithOwner=REPO, branchName=BRANCH), expectedHeadOid=previous,
             clientMutationId=nonce, message=dict(headline='Task4 synthetic signed-ledger transition ' + nonce),
             fileChanges=dict(additions=[dict(path=FILE, contents=base64.b64encode(canonical(state)).decode())]))))
