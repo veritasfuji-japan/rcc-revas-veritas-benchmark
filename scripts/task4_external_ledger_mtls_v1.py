@@ -98,6 +98,20 @@ def serve(configuration, ready, discard_consume_ack=False):
     context.load_verify_locations(cafile=cfg['client_ca'])
     context.load_cert_chain(cfg['tls_certificate'], cfg['tls_key'])
 
+    with listener(service, context, peers, discard_consume_ack) as server:
+        ready.send(dict(port=server.server_address[1], pid=os.getpid(),
+                        signer_sha256=sha(key.public_key().public_bytes_raw())))
+        ready.close()
+        server.serve_forever(poll_interval=0.05)
+
+
+def listener(service, context, peers, discard_consume_ack=False):
+    """Trusted service injection; TLS roles and loopback binding remain mandatory."""
+    need(context.protocol == ssl.PROTOCOL_TLS_SERVER and context.verify_mode == ssl.CERT_REQUIRED
+         and context.minimum_version >= ssl.TLSVersion.TLSv1_2, 'REQUIRED_SERVER_MTLS')
+    need(type(peers) is dict and len(peers) == 2 and len(set(peers.values())) == 2
+         and all(hex64(k) and hex64(v) for k, v in peers.items()), 'EXACT_TLS_PEER_MAPPING')
+
     class Handler(socketserver.BaseRequestHandler):
         def handle(self):
             try:
@@ -120,11 +134,7 @@ def serve(configuration, ready, discard_consume_ack=False):
         allow_reuse_address = False
         request_queue_size = 4
 
-    with Server(('127.0.0.1', 0), Handler) as server:
-        ready.send(dict(port=server.server_address[1], pid=os.getpid(),
-                        signer_sha256=sha(key.public_key().public_bytes_raw())))
-        ready.close()
-        server.serve_forever(poll_interval=0.05)
+    return Server(('127.0.0.1', 0), Handler)
 
 
 class LoopbackTransport:
