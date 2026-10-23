@@ -25,8 +25,9 @@ an independently reproduced experiment.
 The implementation baseline is the current merged source at preparation time.
 The protected-runtime source bytes were not independently collected here.
 `execution_source` and `genesis` are approval/report metadata, not runtime
-attestation or fields signed by the existing receipt. The complete binding and
-raw service public key have not been collected for this review.
+attestation or fields signed by the existing receipt. The operator later supplied the selected public approval fields, including
+the full binding and raw receipt public key. Their hashes match the previously
+reported identities. Approval-file bytes and TLS peer mappings were not collected.
 
 The exercise uses the [manual role client](TASK4_SIGNED_LEDGER_CLIENT_V1.md),
 [existing-state entry point](TASK4_SIGNED_LEDGER_ENTRYPOINT_V1.md) and
@@ -122,10 +123,11 @@ or source-installation hashes.
 Preparation checks cover JSON parsing, command SHA-256 under the contract's
 canonical JSON encoding, command/statement nonce and binding agreement,
 reported snapshot/receipt equality, final revision/states, signature byte
-length, and request/grant hashes against the pinned manifest. These consistency
-checks do not verify Ed25519 signatures. The raw pinned public key was not
-collected; independent signature verification remains pending. Operator client
-success reports are not a substitute for that verification.
+length, and request/grant hashes against the pinned manifest. Those initial consistency
+checks did not verify Ed25519 signatures. A subsequent cryptographic check of
+the one preserved final view was executed separately in the assistant environment,
+as described below. Earlier operator client success reports are not independently
+verified historical signatures.
 
 No private keys, API tokens, TLS private keys or private configuration files
 are included. This PR only records observations; it does not run a service,
@@ -139,8 +141,8 @@ reported slot names share run ID:
 
 `546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c`
 
-This is an ID parsed from slot names, not an independent check of the complete
-approved binding. No file was recreated, removed or modified by the supplied
+This ID was initially parsed from slot names. The later operator-supplied
+binding contains the same run ID and hashes to the recorded binding SHA-256. No file was recreated, removed or modified by the supplied
 inspection script. The JSON record includes full slot names and explicit
 absence records. Exact inspection time was not captured.
 
@@ -163,17 +165,48 @@ or historical callback count. A0 had all three expected files in each role.
 
 These hashes identify the bytes the operator's script read at inspection time.
 They have not been independently recomputed from transferred original files,
-and file contents, signatures and cross-record bindings remain unverified.
+and journal contents, journal receipt signatures and cross-record bindings
+remain unverified. The final transcript-derived view signature is separately
+verified below.
 A digest inventory preserves identifiers, not the original evidence bytes.
+
+## Separate cryptographic check of the final view
+
+On 2026-10-24 JST, the assistant execution environment used Python cryptography
+Ed25519PublicKey.verify on the final custody view at revision 4. It did not call
+the Linux service or a Provider. The signed bytes are the pinned contract's
+`b'TASK4_EXTERNAL_LEDGER_RECEIPT_V1\\0'` domain followed by the statement encoded
+using `json.dumps(sort_keys=True, separators=(',', ':'), allow_nan=False).encode()`.
+The original source constant and encoding were read at the recorded 335a3c9 pin.
+
+| Check | Result |
+| --- | --- |
+| Raw receipt public key | `b41a562bd2c5559dd49d7bbdf5e5fab64067737ddbb4cb9f98ffa8ac06d59d92` |
+| Raw public-key SHA-256 vs previously reported pin | MATCH |
+| Full public binding SHA-256 vs command/statement/report | MATCH |
+| Binding run ID vs all four reported slot names | MATCH |
+| Source/genesis/certificate approval metadata vs report | MATCH (metadata consistency only) |
+| Command digest, nonce/action and reported snapshot | MATCH |
+| Ed25519 signature on the preserved final statement | VALID |
+| Same signature with statement revision changed from 4 to 5 | REJECTED (InvalidSignature) |
+| Canonical final statement SHA-256 | `ffd902e4dd74184150a0349b08d644e37884f6c6ace4c17f0323c4dcf76be0f3` |
+
+The JSON record includes the selected public approval fields and verification
+results. This verifies one reconstructed final receipt's signature under a key
+whose hash matches the earlier operator-supplied pin. It does not authenticate
+the pin through an independent administrator, reproduce the experiment, attest
+the host/source, establish historical freshness for earlier receipts, or verify
+the uncollected journal bytes. No independent human/third-party validation is
+claimed. A0/A1 journal receipt signatures remain pending collection.
 
 ## Remaining evidence and integration gates
 
 - Collect reviewed public contents of the existing A0/A1 journals where
   present, and independently recompute the operator-reported hashes above.
   Retain absence records; do not recreate missing files or delete burned slots.
-- Collect only reviewed public binding/receipt verification material, check
-  its pin, and independently validate preserved signatures. A public snapshot
-  alone does not provide the full backend commit history.
+- Independently validate the public journal receipts after collection, using
+  the now-preserved binding and pinned public key. The final view check above
+  does not provide the full backend commit history or validate earlier receipts.
 - Establish safe, bounded evidence that distinguishes a specific service
   refusal from transport/backend unavailability.
 - Treat host administration, privileged rollback, actual crash/restore,
