@@ -18,6 +18,11 @@ protected runtime installation and remote evidence remain open gates. The existi
 experiment; it cannot execute this signed eight-slot service. Do not enter a
 new key/root into that workflow or rerun its bootstrap for this purpose.
 
+The [fixed synthetic manifest and manual role client](TASK4_SIGNED_LEDGER_CLIENT_V1.md)
+now provide client-side preparation and explicit single-attempt operations after
+separate source/identity/root/enrollment approval. Their tests use model storage;
+they do not close actual deployment, remote reachability or independent enforcement gates.
+
 `REAL_PROVIDER_NO_GO / UTILITY_UNSCORED / PRODUCTION_BYPASS_RESISTANCE_NOT_PROVEN`
 
 ## 1. Establish a usable host before creating secrets

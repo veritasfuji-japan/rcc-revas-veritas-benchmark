@@ -1073,6 +1073,20 @@ jobs:
           assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
           print('CREATE_ONLY_SIGNED_ADMIN_MODEL_ONLY_NO_REMOTE_ROOT_NO_PROVIDER')
           PY
+      - name: Verify fixed synthetic role clients with retained attempts and two Linux UIDs
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTHONPATH,PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_signed_ledger_client_v1.py \
+            --junitxml=results/task4-signed-ledger-client-junit.xml
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-signed-ledger-client-junit.xml').getroot()
+          assert len(list(root.iter('testcase'))) == 62
+          assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
+          print('FIXED_SYNTHETIC_CLIENT_TWO_UID_MODEL_BACKEND_NO_REMOTE_MUTATION_NO_PROVIDER')
+          PY
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
         run: |
