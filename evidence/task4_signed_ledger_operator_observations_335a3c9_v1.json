@@ -7,10 +7,11 @@
     "representation": "JSON reconstructed from the final custody view; original stdout byte formatting not retained",
     "original_host_files_collected": false,
     "original_host_file_hashes_collected": true,
-    "independent_signature_verification_performed": false,
-    "service_public_key_raw_collected": false,
+    "independent_signature_verification_performed": true,
+    "service_public_key_raw_collected": true,
     "not_a_new_execution": true,
-    "host_file_hashes_provenance": "operator-reported hashes from a read-only host inspection; original bytes not transferred or independently rehashed"
+    "host_file_hashes_provenance": "operator-reported hashes from a read-only host inspection; original bytes not transferred or independently rehashed",
+    "signature_verification_scope": "one reconstructed final custody view; independently executed cryptographic check, not independent human attestation or host-file byte collection"
   },
   "execution_source": "335a3c939fbef7158159853d2891e112718db085",
   "service_identity": {
@@ -183,7 +184,7 @@
     "run_id_from_slot_names": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c",
     "original_file_bytes_collected": false,
     "independent_file_rehash_performed": false,
-    "exact_run_binding_not_yet_collected": true,
+    "exact_run_binding_not_yet_collected": false,
     "slots": [
       {
         "role": "issuer",
@@ -286,5 +287,43 @@
         ]
       }
     ]
+  },
+  "public_approval_subset": {
+    "provenance": "operator-pasted selected public approval fields; no approval-file bytes or peers collected",
+    "binding": {
+      "custody_public_sha256": "6c78fbac11e00d919b645352552201f0a7819c5bdd276112501013cc58a82e83",
+      "issuer_public_sha256": "3ab927c912b2d833c676af3f7b05746fc20fc30dde79bbbce707414d2ce5dc04",
+      "ledger_id": "568a79d3c6f1a642237a67c92d193f6d8cb3dd831ebf9cf47b00951573adc806",
+      "manifest_sha256": "ff4180c808fb30e7c3f5c9cfe6f2ccff6be0c35bfed6ec42ab6a90c0dd866f6d",
+      "run_id": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c",
+      "schema": "task4.external-ledger-contract.v1"
+    },
+    "execution_source": "335a3c939fbef7158159853d2891e112718db085",
+    "genesis": "16f730c8d3385537c7816b1a6cdf3ff6b4e1037b",
+    "schema": "task4.signed-ledger-client-approval.v1",
+    "scope": "SYNTHETIC_SIGNED_LEDGER_ONLY_NO_PROVIDER",
+    "server_certificate_sha256": "b89dbb148c762172c1935a563f17888c49109b72471383d194645e24ed74ed66",
+    "service_public_hex": "b41a562bd2c5559dd49d7bbdf5e5fab64067737ddbb4cb9f98ffa8ac06d59d92"
+  },
+  "final_receipt_verification": {
+    "schema": "task4.operator-transcript-receipt-verification.v1",
+    "verification_date_jst": "2026-10-24",
+    "evidence_scope": "one final custody view at revision 4, reconstructed from operator transcript",
+    "verification_environment": "assistant execution environment; separate from operator Linux service",
+    "algorithm": "Ed25519",
+    "domain_hex": "5441534b345f45585445524e414c5f4c45444745525f524543454950545f563100",
+    "canonical_encoding": "json.dumps(sort_keys=True, separators=(comma, colon), allow_nan=False).encode()",
+    "canonical_statement_sha256": "ffd902e4dd74184150a0349b08d644e37884f6c6ace4c17f0323c4dcf76be0f3",
+    "signature_verified": true,
+    "tampered_revision_rejected": true,
+    "service_public_key_pin_matched": true,
+    "approval_binding_sha256_matched": true,
+    "run_id_matches_reported_slots": true,
+    "source_genesis_certificate_metadata_matched": true,
+    "command_digest_nonce_action_matched": true,
+    "original_host_bytes_independently_rehashed": false,
+    "independent_human_or_administrator_attestation": false,
+    "provider_dispatch": "DENY",
+    "utility": "UNSCORED"
   }
 }
