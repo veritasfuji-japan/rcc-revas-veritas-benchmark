@@ -285,6 +285,23 @@ def test_actual_two_uids_use_separate_keys_and_signed_model_service(prepared):
     f = prepared
     with tempfile.TemporaryDirectory(prefix='task4-client-two-uids-') as temp:
         top = Path(temp); top.chmod(0o755)
+        # GitHub's runner-owned checkout ancestors are not accessible to arbitrary
+        # UIDs. Reproduce a root-owned installation, not a chmod of that checkout.
+        runtime = top/'runtime'; runtime.mkdir(mode=0o755)
+        package = runtime/'scripts'; package.mkdir(mode=0o755)
+        (package/'__init__.py').write_bytes(b''); (package/'__init__.py').chmod(0o644)
+        source = Path(__file__).resolve().parents[1]/'scripts'
+        modules = ('task4_external_ledger_contract_v1 task4_external_ledger_mtls_v1 '
+            'task4_github_ledger_research_v1 task4_receipt_key_custody_v1 '
+            'task4_retained_signed_ledger_service_v1 task4_signed_github_api_v1 '
+            'task4_signed_github_ledger_v1 task4_signed_ledger_admin_v1 '
+            'task4_signed_ledger_entrypoint_v1 task4_signed_ledger_client_v1').split()
+        for module in modules:
+            destination = package/(module+'.py')
+            destination.write_bytes((source/(module+'.py')).read_bytes()); destination.chmod(0o644)
+        launch = ('import sys; sys.path.insert(0, sys.argv[1]); '
+                  'from scripts.task4_signed_ledger_client_v1 import main; '
+                  'raise SystemExit(main(sys.argv[2:]))')
         approval = top/'approval.json'; approval.write_bytes(canonical(f['approval'])); approval.chmod(0o644)
         configs = {}
         for (role, uid) in zip(('issuer','custody'), ids):
@@ -301,15 +318,20 @@ def test_actual_two_uids_use_separate_keys_and_signed_model_service(prepared):
             for role, uid, action in zip(('issuer','custody'), ids, ('reserve','consume')):
                 def drop(uid=uid):
                     os.setgroups([]); os.setgid(uid); os.setuid(uid)
-                result = subprocess.run([sys.executable, '-B', '-m', 'scripts.task4_signed_ledger_client_v1', action,
+                result = subprocess.run([sys.executable, '-I', '-B', '-c', launch, str(runtime), action,
                     '--configuration', str(configs[role]), '--port', str(ready['port']), '--operation', 'A0',
-                    '--acknowledge-synthetic-only'], capture_output=True, text=True, timeout=15, preexec_fn=drop)
+                    '--acknowledge-synthetic-only'], capture_output=True, text=True, timeout=15,
+                    cwd=str(top), preexec_fn=drop)
                 assert result.returncode == 0, result.stderr
                 assert json.loads(result.stdout)['synthetic_callbacks'] == 1
                 # The other role cannot open this role's private key.
                 denied = subprocess.run([sys.executable, '-I', '-c',
                     'import sys; open(sys.argv[1], "rb")', str(configs['custody' if role == 'issuer' else 'issuer'].parent/'key.pem')],
-                    capture_output=True, text=True, timeout=5, preexec_fn=drop)
+                    capture_output=True, text=True, timeout=5, cwd=str(top), preexec_fn=drop)
+                assert denied.returncode != 0 and 'PermissionError' in denied.stderr
+                denied = subprocess.run([sys.executable, '-I', '-c',
+                    'import sys; open(sys.argv[1], "wb")', str(package/'task4_signed_ledger_client_v1.py')],
+                    capture_output=True, text=True, timeout=5, cwd=str(top), preexec_fn=drop)
                 assert denied.returncode != 0 and 'PermissionError' in denied.stderr
         assert f['backend'].read()[1]['runs'][f['b']['run_id']]['snapshot']['revision'] == 2
 
