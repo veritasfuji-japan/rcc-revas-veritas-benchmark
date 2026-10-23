@@ -1083,7 +1083,7 @@ jobs:
           python - <<'PY'
           import xml.etree.ElementTree as ET
           root=ET.parse('results/task4-signed-ledger-client-junit.xml').getroot()
-          assert len(list(root.iter('testcase'))) == 62
+          assert len(list(root.iter('testcase'))) == 80
           assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
           print('FIXED_SYNTHETIC_CLIENT_TWO_UID_MODEL_BACKEND_NO_REMOTE_MUTATION_NO_PROVIDER')
           PY

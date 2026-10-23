@@ -3,10 +3,13 @@ import copy
 import datetime
 import json
 import os
+import struct
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
+from contextlib import nullcontext
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -18,6 +21,7 @@ from cryptography.hazmat.primitives import serialization
 from scripts import task4_signed_ledger_client_v1 as client
 from scripts import task4_signed_github_ledger_rehearsal_v1 as model
 from scripts import task4_external_ledger_mtls_rehearsal_v1 as tls
+from scripts import task4_external_ledger_mtls_v1 as mtls
 from scripts.task4_external_ledger_contract_v1 import Denied, canonical, digest, sha
 
 pytestmark = pytest.mark.skipif(os.geteuid() != 0, reason='root-owned public approval fixture requires sudo')
@@ -358,3 +362,111 @@ def test_ed25519_tls_identity_must_differ_from_all_authority_keys(prepared, iden
     else:
         with pytest.raises(Denied): client.run('check', f['files']['issuer'])
     assert not f['api'].calls
+
+
+@pytest.mark.parametrize('timeout', [0, -1, 120.001, float('inf'), float('nan'), True, False, None, '2'])
+def test_frame_timeout_is_finite_positive_bounded_and_checked_before_read(monkeypatch, timeout):
+    monkeypatch.setattr(mtls, 'receive', lambda *a: pytest.fail('socket read reached'))
+    with pytest.raises(Denied, match='BOUNDED_FRAME_TIMEOUT'): mtls.read_frame(object(), timeout=timeout)
+
+
+@pytest.mark.parametrize('timeout,deadline', [(None,12.0), (120.0,130.0)])
+def test_default_request_budget_stays_short_and_response_budget_is_explicit(monkeypatch, timeout, deadline):
+    calls = []
+    monkeypatch.setattr(mtls.time, 'monotonic', lambda: 10.0)
+    def receive(sock, count, until):
+        calls.append((count, until))
+        return struct.pack('!I', 1) if len(calls) == 1 else b'x'
+    monkeypatch.setattr(mtls, 'receive', receive)
+    result = mtls.read_frame(object()) if timeout is None else mtls.read_frame(object(), timeout=timeout)
+    assert result == b'x' and calls == [(4, deadline), (1, deadline)]
+    assert mtls.TIMEOUT == 2.0 and mtls.RESPONSE_TIMEOUT == 120.0
+
+
+@pytest.mark.parametrize('size', [0, 8193])
+def test_long_response_budget_keeps_original_frame_size_bound(monkeypatch, size):
+    calls = []
+    def receive(sock, count, until):
+        calls.append(count)
+        return struct.pack('!I', size)
+    monkeypatch.setattr(mtls, 'receive', receive)
+    with pytest.raises(Denied, match='BOUNDED_FRAME'): mtls.read_frame(object(), timeout=120)
+    assert calls == [4]
+
+
+def test_fragmented_header_and_body_share_one_absolute_deadline(monkeypatch):
+    clock = iter([0.0, .01, .02, .03, .04, .05])
+    monkeypatch.setattr(mtls.time, 'monotonic', lambda: next(clock))
+    class Wire:
+        def __init__(self): self.data = bytearray(struct.pack('!I', 1)+b'x'); self.timeouts = []
+        def settimeout(self, value): self.timeouts.append(value)
+        def recv(self, count): return bytes([self.data.pop(0)])
+    wire = Wire()
+    assert mtls.read_frame(wire, timeout=.1) == b'x'
+    assert wire.timeouts == pytest.approx([.09,.08,.07,.06,.05])
+
+
+def test_fragment_progress_does_not_renew_expired_budget(monkeypatch):
+    clock = iter([0.0, .01, .02, .03, .04, .11])
+    monkeypatch.setattr(mtls.time, 'monotonic', lambda: next(clock))
+    class Wire:
+        def __init__(self): self.data = bytearray(struct.pack('!I', 1)+b'x')
+        def settimeout(self, value): pass
+        def recv(self, count): return bytes([self.data.pop(0)])
+    wire = Wire()
+    with pytest.raises(Denied, match='FRAME_DEADLINE'): mtls.read_frame(wire, timeout=.1)
+    assert wire.data == b'x'
+
+
+def test_real_tls_signed_view_survives_processing_beyond_old_two_second_limit(prepared, monkeypatch):
+    f = prepared; original = f['service'].exchange
+    def delayed(encoded, peer):
+        time.sleep(2.1)  # Delay is processing, not a slowly transmitted request.
+        return original(encoded, peer)
+    monkeypatch.setattr(f['service'], 'exchange', delayed)
+    started = time.monotonic()
+    with model.connected(f['service'], f['fixture']) as ready:
+        result = client.run('view', f['files']['issuer'], ready['port'])
+    assert time.monotonic()-started >= 2.1
+    assert result['snapshot']['revision'] == 0 and result['synthetic_callbacks'] == 0
+    assert len(result['exchanges']) == 1 and not any(call[0] == 'POST' for call in f['api'].calls)
+
+
+def test_response_deadline_after_commit_still_burns_attempt_without_retry(prepared, monkeypatch):
+    f = prepared; original = f['service'].exchange
+    monkeypatch.setattr(client, 'RESPONSE_TIMEOUT', .1)
+    def delayed_after_commit(encoded, peer):
+        reply = original(encoded, peer)
+        if json.loads(encoded)['action'] == 'reserve': time.sleep(.25)
+        return reply
+    monkeypatch.setattr(f['service'], 'exchange', delayed_after_commit)
+    with model.connected(f['service'], f['fixture']) as ready:
+        with pytest.raises(Denied): client.run('reserve', f['files']['issuer'], ready['port'], 'A0')
+    assert len([call for call in f['api'].calls if call[0] == 'POST']) == 1
+    assert f['backend'].read()[1]['runs'][f['b']['run_id']]['snapshot']['revision'] == 1
+    assert sorted(p.name for p in slot(f,'issuer').iterdir()) == ['attempt.json']
+    before = len(f['api'].calls)
+    with pytest.raises(FileExistsError): client.run('reserve', f['files']['issuer'], 1, 'A0')
+    assert len(f['api'].calls) == before
+
+
+def test_transport_extends_response_only_while_connect_and_tls_keep_short_timeout(prepared, monkeypatch):
+    f = prepared; calls = []
+    cert = x509.load_pem_x509_certificate((f['fixture']['root']/'server.pem').read_bytes())
+    class Channel:
+        def getpeercert(self, binary_form): return cert.public_bytes(serialization.Encoding.DER)
+    channel = Channel()
+    class Context:
+        def wrap_socket(self, raw, server_hostname):
+            assert server_hostname == 'task4-ledger.test'; return nullcontext(channel)
+    def connect(address, timeout):
+        calls.append(('connect', address, timeout)); return nullcontext(object())
+    monkeypatch.setattr(client.socket, 'create_connection', connect)
+    monkeypatch.setattr(client, 'write_frame', lambda *a: calls.append(('write',)))
+    def read(sock, timeout):
+        calls.append(('read', timeout)); return canonical(dict(synthetic=True))
+    monkeypatch.setattr(client, 'read_frame', read)
+    request = dict(schema=client.SCHEMA, binding_sha256=digest(f['b']), nonce='0'*64,
+        action='view', expected_revision=None, operation_id=None, request_sha256=None, grant_sha256=None)
+    client.Transport(Context(), 1234, f['fixture']['pins']['server'])(canonical(request))
+    assert calls == [('connect', ('127.0.0.1',1234), 2.0), ('write',), ('read', 120.0)]

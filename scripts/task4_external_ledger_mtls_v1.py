@@ -22,6 +22,7 @@ from scripts.task4_external_ledger_contract_v1 import (
 PROFILE = 'task4.external-ledger-loopback-mtls.v1'
 SERVER_NAME = 'task4-ledger.test'
 TIMEOUT = 2.0
+RESPONSE_TIMEOUT = 120.0
 
 
 def private_file(file):
@@ -48,8 +49,11 @@ def receive(sock, count, deadline):
     return bytes(result)
 
 
-def read_frame(sock):
-    deadline = time.monotonic() + TIMEOUT
+def read_frame(sock, timeout=TIMEOUT):
+    # Default request/header admission stays short. Only the explicit signed
+    # client response read uses the longer bounded GitHub-processing allowance.
+    need(type(timeout) in (int, float) and 0 < timeout <= RESPONSE_TIMEOUT, 'BOUNDED_FRAME_TIMEOUT')
+    deadline = time.monotonic() + timeout
     count = struct.unpack('!I', receive(sock, 4, deadline))[0]
     need(0 < count <= MAX_WIRE, 'BOUNDED_FRAME')
     return receive(sock, count, deadline)
