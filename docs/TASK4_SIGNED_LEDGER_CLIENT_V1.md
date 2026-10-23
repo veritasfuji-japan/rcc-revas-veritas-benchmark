@@ -95,6 +95,38 @@ checks their pairing. A CA/hostname-verified TLS >= 1.2 context connects only to
 pin is checked before sending any command. Local check is not certificate-chain
 or revocation proof: peer authentication is exercised on connection.
 
+### Separate response and admission deadlines
+
+The manual signed client allows at most **120 seconds for one complete response
+frame**. Reading its length header and body shares one monotonic deadline;
+fragment progress never renews the budget. The existing 8192-byte bound remains.
+Connection, TLS handshake, frame writes and the service's default request-frame
+read keep the **2-second** admission/socket timeout. The legacy reference client
+also keeps its default short response timeout. Only this manual signed client's
+explicit response read selects the longer allowance. There is no environment,
+command-line, configuration or peer-controlled timeout setting or retry.
+
+The previous signed client inherited the same 2-second frame deadline used for
+short local requests. An actual GitHub-backed view needs multiple HTTPS reads
+before signing, so even a correctly authenticated connection could time out
+before the first response. Processing time is separate from admission of a
+client request. Each view/mutation response has its own finite frame deadline;
+120 seconds is not a hard end-to-end run or GitHub-call bound. DNS, setup and
+underlying HTTP timeout limitations remain those of the existing transport.
+The service may still finish backend work after a client deadline expires.
+Expiry therefore still means STOP/unknown outcome, never permission to retry.
+
+For an already-provisioned experiment, review/install the fixed source as a new
+protected runtime. Keep the existing receipt signer, CA/TLS/authority keys, root,
+run ID, binding, backend records and attempt parents. The manifest digest is
+unchanged; do **not** bootstrap or re-enroll. Prepare a separately reviewed public
+approval naming the new execution source and versioned private configuration
+files referencing the same retained material. Do not overwrite prior approval,
+configuration, logs or journals to resume an uncertain action. Stop the old
+listener before a reviewed restart, then use the newly reported loopback port.
+Start with local checks and read-only reconciliation; a timed-out mutation is
+not made repeatable by installing this fix.
+
 ## Manual sequence after provisioning and explicit approval
 
 These interface forms use placeholders for actual protected paths/ports; they
@@ -161,7 +193,7 @@ barrier; this PR is not privileged rollback, cross-host retention or power-loss 
 
 ## Validation and limits
 
-62 tests cover fixed manifest/payloads, local faults before network, actual
+80 tests cover fixed manifest/payloads, local faults before network, actual
 loopback TLS and signed receipts, normal one-marker transitions, discarded
 committed responses, new-process repeat denial, malformed signatures, unavailable
 service, wrong server pin, journal races/fsync/write failures, role crossing,
@@ -169,6 +201,12 @@ unsafe paths, public-only output and Ed25519 TLS/authority separation. Full-root
 Linux CI runs the two-UID subprocess test with separate owned keys and filesystem
 denial. Mapped local root may skip only that test. The Git backend is an in-memory
 model, not actual GitHub storage, and those fixture keys are disposable.
+
+The 18 response-budget regressions include an actual loopback TLS signed view
+delayed beyond the former two-second limit, an expired mutation response after
+model commit with no success evidence/retry, explicit finite timeout bounds,
+unchanged short admission defaults, shared header/body deadlines, fragment
+progress without renewal, and unchanged zero/oversized-frame rejection.
 
 No actual run enrollment or signed-ledger mutation is performed by this PR.
 Existing operator-reported VM preparation, bootstrap and TLS-only handshake

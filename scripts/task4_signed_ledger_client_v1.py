@@ -16,7 +16,7 @@ from scripts import task4_receipt_key_custody_v1 as custody
 from scripts.task4_external_ledger_contract_v1 import (
     LedgerClient, SCHEMA, canonical, command, digest, exact, hex64, need, sha, strict,
 )
-from scripts.task4_external_ledger_mtls_v1 import SERVER_NAME, TIMEOUT, read_frame, write_frame
+from scripts.task4_external_ledger_mtls_v1 import SERVER_NAME, TIMEOUT, RESPONSE_TIMEOUT, read_frame, write_frame
 from scripts.task4_signed_github_ledger_v1 import LEDGER_ID
 from scripts.task4_signed_ledger_admin_v1 import write_record
 from scripts.task4_signed_ledger_entrypoint_v1 import SCOPE, owned_file, read_file
@@ -97,7 +97,7 @@ class Transport:
             with self.context.wrap_socket(raw, server_hostname=SERVER_NAME) as channel:
                 need(sha(channel.getpeercert(binary_form=True)) == self.pin, 'SERVER_CERTIFICATE_PIN')
                 write_frame(channel, encoded)
-                receipt = read_frame(channel)
+                receipt = read_frame(channel, timeout=RESPONSE_TIMEOUT)
         if self.discard and c['action'] != 'view':
             raise ValueError('CONTROLLED_RECEIPT_DISCARD_BEFORE_VALIDATION')
         self.exchanges.append(dict(command=c, receipt=strict(receipt)))
