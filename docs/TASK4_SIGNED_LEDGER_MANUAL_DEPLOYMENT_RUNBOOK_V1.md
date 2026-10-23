@@ -10,7 +10,8 @@ GitHub evidence. Its remote result remains NOT_RUN.
 [create-once custody](TASK4_RECEIPT_KEY_CUSTODY_V1.md),
 [retained startup](TASK4_RETAINED_SIGNED_LEDGER_SERVICE_V1.md),
 [fixed HTTPS transport](TASK4_SIGNED_GITHUB_API_V1.md) and a
-[manual existing-state entry point](TASK4_SIGNED_LEDGER_ENTRYPOINT_V1.md).
+[manual existing-state entry point](TASK4_SIGNED_LEDGER_ENTRYPOINT_V1.md), plus
+[create-only administration](TASK4_SIGNED_LEDGER_ADMIN_V1.md).
 Actual isolated writer provisioning, approved root/enrollment, TLS/role custody,
 protected runtime installation and remote evidence remain open gates. The existing manual workflow
 `task4-github-ledger-research-v1.yml` runs the older one-operation metadata
@@ -117,12 +118,13 @@ distinct when reviewing a future setup procedure.
 
 ## 4. Required create/enroll procedure for a future implementation
 
-These are acceptance requirements for the still-missing root/enrollment
-administration commands. The existing-state entry point never performs them:
+The create-only administration CLI now implements these root/enrollment
+requirements in offline tests. Actual execution requires separate owner approval
+and operator provisioning. The existing-state service entry point never performs them:
 
 1. Perform read-only namespace/source/identity checks. Validate the approved
-   fixed repository, ref, service signer and synthetic-only scope before using
-   any write credential. Never discover a replacement root from a latest artifact.
+   fixed repository, ref, service signer and synthetic-only scope before making
+   any mutation. Never discover a replacement root from a latest artifact.
 2. On explicit owner-approved bootstrap only, create one tree containing the
    bounded canonical empty signed registry, a parentless commit and the fixed
    ref using create-only semantics. Require exact readback of the root and
@@ -173,11 +175,11 @@ commit badge or a successful PR CI cannot stand in for those results.
 
 ## Stop and next action
 
-While the host is unavailable, complete code review, CI and public configuration
-planning only. The next operator action is to inspect the proposed computer's
-available storage and choose a supported Linux environment when it is accessible.
-After that, review the concrete isolated key-custody and real-API entry point
-before creating anything. No new mock fault matrix alone closes deployment.
+Before real execution, prepare the protected module installation, dedicated
+credential/access evidence and concrete public approval record. Preserve any
+already-created receipt custody and its independent pin; do not repeat setup or
+generate a replacement. If the host is unavailable, complete review and public
+configuration planning only. No new mock fault matrix alone closes deployment.
 
 Actual Native reservation-before-grant / consumption-before-send, Provider
 credential/egress isolation, private archive/recipient lifecycle, independent A/B
