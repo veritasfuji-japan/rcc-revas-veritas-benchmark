@@ -1,0 +1,178 @@
+{
+  "schema": "task4.signed-ledger-operator-observations.v1",
+  "prepared_date_jst": "2026-10-24",
+  "observation_time": null,
+  "provenance": {
+    "source": "operator-pasted terminal output in this conversation",
+    "representation": "JSON reconstructed from the final custody view; original stdout byte formatting not retained",
+    "original_host_files_collected": false,
+    "original_host_file_hashes_collected": false,
+    "independent_signature_verification_performed": false,
+    "service_public_key_raw_collected": false,
+    "not_a_new_execution": true
+  },
+  "execution_source": "335a3c939fbef7158159853d2891e112718db085",
+  "service_identity": {
+    "public_key_sha256": "d81fc3e80ba460a264355eb5b479ad6f33ed2e661353344cbce40313bff7af32",
+    "server_certificate_sha256": "b89dbb148c762172c1935a563f17888c49109b72471383d194645e24ed74ed66"
+  },
+  "boundaries": {
+    "provider_dispatch": "DENY",
+    "utility": "UNSCORED",
+    "real_provider_status": "REAL_PROVIDER_NO_GO",
+    "production_bypass_resistance": "NOT_PROVEN",
+    "scope": "SYNTHETIC_SIGNED_LEDGER_ONLY_NO_PROVIDER",
+    "same_host_loopback": true,
+    "real_network_outage_injected": false,
+    "controlled_client_response_discard": true,
+    "rejection_reason_dynamically_observed": false
+  },
+  "observations": [
+    {
+      "id": "A0-reserve",
+      "action": "reserve",
+      "operation": "A0",
+      "role": "issuer",
+      "revision": 1,
+      "state": "RESERVED",
+      "reported_synthetic_callbacks": 1
+    },
+    {
+      "id": "A0-consume",
+      "action": "consume",
+      "operation": "A0",
+      "role": "custody",
+      "revision": 2,
+      "state": "CONSUMED_UNKNOWN",
+      "reported_synthetic_callbacks": 1
+    },
+    {
+      "id": "A0-ordinary-repeat",
+      "exit_code": 1,
+      "output": "SIGNED_LEDGER_CLIENT_STOP",
+      "after_revision": 2
+    },
+    {
+      "id": "A0-direct-repeat-before-restart",
+      "output": "Denied",
+      "before_revision": 2,
+      "after_revision": 2,
+      "snapshot_unchanged": true,
+      "callback_invoked_by_probe": false
+    },
+    {
+      "id": "A0-service-restart",
+      "before_revision": 2,
+      "after_revision": 2,
+      "issuer_and_custody_views_matched": true,
+      "state": "CONSUMED_UNKNOWN"
+    },
+    {
+      "id": "A0-direct-repeat-after-restart",
+      "output": "Denied",
+      "before_revision": 2,
+      "after_revision": 2,
+      "snapshot_unchanged": true,
+      "callback_invoked_by_probe": false
+    },
+    {
+      "id": "A1-reserve-response-discard",
+      "exit_code": 1,
+      "output": "SIGNED_LEDGER_CLIENT_STOP",
+      "reconciled_revision": 3,
+      "reconciled_state": "RESERVED"
+    },
+    {
+      "id": "A1-ordinary-reserve-repeat",
+      "exit_code": 1,
+      "output": "SIGNED_LEDGER_CLIENT_STOP",
+      "after_revision": 3
+    },
+    {
+      "id": "A1-consume-response-discard",
+      "exit_code": 1,
+      "output": "SIGNED_LEDGER_CLIENT_STOP",
+      "reconciled_revision": 4,
+      "reconciled_state": "CONSUMED_UNKNOWN"
+    },
+    {
+      "id": "A1-ordinary-consume-repeat",
+      "exit_code": 1,
+      "output": "SIGNED_LEDGER_CLIENT_STOP",
+      "after_revision": 4
+    }
+  ],
+  "final_custody_view": {
+    "action": "view",
+    "binding_sha256": "c4dc53c6ee2d1e9dbd0b71e0c6c011e5ad07ce78c76c174db118b54bc5fd88b1",
+    "exchanges": [
+      {
+        "command": {
+          "action": "view",
+          "binding_sha256": "c4dc53c6ee2d1e9dbd0b71e0c6c011e5ad07ce78c76c174db118b54bc5fd88b1",
+          "expected_revision": null,
+          "grant_sha256": null,
+          "nonce": "d69de8158763d6800b92846e98873d5316ce88cdb3056b85fe274dc61c9f1f39",
+          "operation_id": null,
+          "request_sha256": null,
+          "schema": "task4.external-ledger-contract.v1"
+        },
+        "receipt": {
+          "signature": "9a0630145f0fa6132cc226af9f05e6f0aea4ed3802266e997542fa36df07b461431374b8d4eabdafd1e15ad6a16bd2e6812ac243d52db446ada3e18f4fc70e02",
+          "statement": {
+            "action": "view",
+            "binding_sha256": "c4dc53c6ee2d1e9dbd0b71e0c6c011e5ad07ce78c76c174db118b54bc5fd88b1",
+            "command_sha256": "d2f2fcfaad1ae3f84857e34aae103bc37312dfacc81da5ded6123fd95d35e72a",
+            "ledger_id": "568a79d3c6f1a642237a67c92d193f6d8cb3dd831ebf9cf47b00951573adc806",
+            "nonce": "d69de8158763d6800b92846e98873d5316ce88cdb3056b85fe274dc61c9f1f39",
+            "schema": "task4.external-ledger-contract.v1",
+            "snapshot": {
+              "attempts": [
+                {
+                  "grant_sha256": "c9d1af741de979a827c07cde7a23d6fd536f15c5a85cbda7daa9a0e53b935182",
+                  "operation_id": "A0",
+                  "request_sha256": "2da0cb330ac75508a2a80dc0f96761c3c038a89e24f2c283913188a380e157ad",
+                  "state": "CONSUMED_UNKNOWN"
+                },
+                {
+                  "grant_sha256": "c0a3aea2cd7ed78624f66c9d4852cf23e89a6eca6145be8466f68ffebb8d28f7",
+                  "operation_id": "A1",
+                  "request_sha256": "e72ee15f04d79439c20b30e40c247db65181ebcf550fbf6ff924570d421f8962",
+                  "state": "CONSUMED_UNKNOWN"
+                }
+              ],
+              "revision": 4
+            }
+          }
+        }
+      }
+    ],
+    "execution_source": "335a3c939fbef7158159853d2891e112718db085",
+    "genesis": "16f730c8d3385537c7816b1a6cdf3ff6b4e1037b",
+    "manifest_sha256": "ff4180c808fb30e7c3f5c9cfe6f2ccff6be0c35bfed6ec42ab6a90c0dd866f6d",
+    "network_used": true,
+    "provider_dispatch": "DENY",
+    "role": "custody",
+    "schema": "task4.signed-ledger-client.v1",
+    "scope": "SYNTHETIC_SIGNED_LEDGER_ONLY_NO_PROVIDER",
+    "snapshot": {
+      "attempts": [
+        {
+          "grant_sha256": "c9d1af741de979a827c07cde7a23d6fd536f15c5a85cbda7daa9a0e53b935182",
+          "operation_id": "A0",
+          "request_sha256": "2da0cb330ac75508a2a80dc0f96761c3c038a89e24f2c283913188a380e157ad",
+          "state": "CONSUMED_UNKNOWN"
+        },
+        {
+          "grant_sha256": "c0a3aea2cd7ed78624f66c9d4852cf23e89a6eca6145be8466f68ffebb8d28f7",
+          "operation_id": "A1",
+          "request_sha256": "e72ee15f04d79439c20b30e40c247db65181ebcf550fbf6ff924570d421f8962",
+          "state": "CONSUMED_UNKNOWN"
+        }
+      ],
+      "revision": 4
+    },
+    "synthetic_callbacks": 0,
+    "utility": "UNSCORED"
+  }
+}
