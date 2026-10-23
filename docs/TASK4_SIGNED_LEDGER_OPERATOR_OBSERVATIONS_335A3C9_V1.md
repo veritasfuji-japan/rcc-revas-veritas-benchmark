@@ -83,8 +83,8 @@ The source creates an exclusive retained attempt slot before the initial
 network view. Existing slots stop ordinary retries before a socket is opened.
 The displayed generic STOP does not independently identify which guard
 stopped each actual repeat. No attempt was deleted or reset in the supplied
-procedure. Host journals have not yet been collected to corroborate their
-contents.
+procedure. The operator subsequently reported journal existence, sizes and hashes below;
+the journal contents have not yet been independently collected or verified.
 
 In the reviewed source, the controlled-discard exception occurs before writing
 verified-receipts.json/result.json or reaching the fixed in-memory callback.
@@ -131,11 +131,46 @@ No private keys, API tokens, TLS private keys or private configuration files
 are included. This PR only records observations; it does not run a service,
 modify retained state or workflows, grant permission, or authorize a Provider.
 
+## Operator-reported host journal inventory
+
+A later read-only inspection was supplied through terminal output. Each of the
+four role/operation suffixes matched exactly one non-symlink directory. All
+reported slot names share run ID:
+
+`546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c`
+
+This is an ID parsed from slot names, not an independent check of the complete
+approved binding. No file was recreated, removed or modified by the supplied
+inspection script. The JSON record includes full slot names and explicit
+absence records. Exact inspection time was not captured.
+
+| Role / operation | File | Bytes | Reported SHA-256 |
+| --- | --- | --- | --- |
+| issuer / A0 | `attempt.json` | 340 | `afffac6af0f3ee0808fbffe1bf8c1669c90097d851d5f57ffd37be0093c7d082` |
+| issuer / A0 | `verified-receipts.json` | 2737 | `a14f383a82b336e01ab8f2af155b067d0d5b33ea280f2cee6917861fe9889e83` |
+| issuer / A0 | `result.json` | 2737 | `dc1401225d92cdaf14e10ad87cb8f40c3df00ef2dc5ebc300aaf40faf8bc16d3` |
+| issuer / A1 | `attempt.json` | 340 | `b1d8e07e6d04e1958068dd0299434e50358b59da1525465a19fc139aca111a4f` |
+| custody / A0 | `attempt.json` | 340 | `f26b5c3718356f54daca3eb1bf8a48d0e11449b456e72f26c7aab6fb35f41d87` |
+| custody / A0 | `verified-receipts.json` | 3084 | `f7211f01e398176a8684620126fbae15a0e4648cad860a0fa779eaa2a342a769` |
+| custody / A0 | `result.json` | 3084 | `e077a01950eeacb4fbe20df0a8be71d46ad8df699e4faf86fa46d043672d49d3` |
+| custody / A1 | `attempt.json` | 340 | `719c59631f46aa02bb6a9673e13a9067a95e7378227d2ad1781bdbb5607a4edb` |
+
+For both Issuer/reserve A1 and Custody/consume A1, verified-receipts.json and
+result.json were reported ABSENT. Only attempt.json was present. This matches
+the source path for a complete response discarded before validation and before
+the callback. It does not independently establish the precise exception cause
+or historical callback count. A0 had all three expected files in each role.
+
+These hashes identify the bytes the operator's script read at inspection time.
+They have not been independently recomputed from transferred original files,
+and file contents, signatures and cross-record bindings remain unverified.
+A digest inventory preserves identifiers, not the original evidence bytes.
+
 ## Remaining evidence and integration gates
 
-- Collect and hash the existing A0/A1 attempt.json, verified-receipts.json and
-  result.json where present. Record missing files; do not recreate them or
-  delete burned attempt slots.
+- Collect reviewed public contents of the existing A0/A1 journals where
+  present, and independently recompute the operator-reported hashes above.
+  Retain absence records; do not recreate missing files or delete burned slots.
 - Collect only reviewed public binding/receipt verification material, check
   its pin, and independently validate preserved signatures. A public snapshot
   alone does not provide the full backend commit history.
