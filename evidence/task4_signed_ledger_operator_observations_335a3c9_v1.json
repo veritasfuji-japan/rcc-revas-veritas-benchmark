@@ -6,10 +6,11 @@
     "source": "operator-pasted terminal output in this conversation",
     "representation": "JSON reconstructed from the final custody view; original stdout byte formatting not retained",
     "original_host_files_collected": false,
-    "original_host_file_hashes_collected": false,
+    "original_host_file_hashes_collected": true,
     "independent_signature_verification_performed": false,
     "service_public_key_raw_collected": false,
-    "not_a_new_execution": true
+    "not_a_new_execution": true,
+    "host_file_hashes_provenance": "operator-reported hashes from a read-only host inspection; original bytes not transferred or independently rehashed"
   },
   "execution_source": "335a3c939fbef7158159853d2891e112718db085",
   "service_identity": {
@@ -174,5 +175,116 @@
     },
     "synthetic_callbacks": 0,
     "utility": "UNSCORED"
+  },
+  "host_journal_inventory": {
+    "provenance": "operator-pasted read-only inspection stdout",
+    "received_date_jst": "2026-10-24",
+    "collection_time": null,
+    "run_id_from_slot_names": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c",
+    "original_file_bytes_collected": false,
+    "independent_file_rehash_performed": false,
+    "exact_run_binding_not_yet_collected": true,
+    "slots": [
+      {
+        "role": "issuer",
+        "action": "reserve",
+        "operation": "A0",
+        "matching_folders": 1,
+        "slot": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c-reserve-A0",
+        "files": [
+          {
+            "name": "attempt.json",
+            "status": "PRESENT",
+            "size_bytes": 340,
+            "sha256": "afffac6af0f3ee0808fbffe1bf8c1669c90097d851d5f57ffd37be0093c7d082"
+          },
+          {
+            "name": "verified-receipts.json",
+            "status": "PRESENT",
+            "size_bytes": 2737,
+            "sha256": "a14f383a82b336e01ab8f2af155b067d0d5b33ea280f2cee6917861fe9889e83"
+          },
+          {
+            "name": "result.json",
+            "status": "PRESENT",
+            "size_bytes": 2737,
+            "sha256": "dc1401225d92cdaf14e10ad87cb8f40c3df00ef2dc5ebc300aaf40faf8bc16d3"
+          }
+        ]
+      },
+      {
+        "role": "issuer",
+        "action": "reserve",
+        "operation": "A1",
+        "matching_folders": 1,
+        "slot": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c-reserve-A1",
+        "files": [
+          {
+            "name": "attempt.json",
+            "status": "PRESENT",
+            "size_bytes": 340,
+            "sha256": "b1d8e07e6d04e1958068dd0299434e50358b59da1525465a19fc139aca111a4f"
+          },
+          {
+            "name": "verified-receipts.json",
+            "status": "ABSENT"
+          },
+          {
+            "name": "result.json",
+            "status": "ABSENT"
+          }
+        ]
+      },
+      {
+        "role": "custody",
+        "action": "consume",
+        "operation": "A0",
+        "matching_folders": 1,
+        "slot": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c-consume-A0",
+        "files": [
+          {
+            "name": "attempt.json",
+            "status": "PRESENT",
+            "size_bytes": 340,
+            "sha256": "f26b5c3718356f54daca3eb1bf8a48d0e11449b456e72f26c7aab6fb35f41d87"
+          },
+          {
+            "name": "verified-receipts.json",
+            "status": "PRESENT",
+            "size_bytes": 3084,
+            "sha256": "f7211f01e398176a8684620126fbae15a0e4648cad860a0fa779eaa2a342a769"
+          },
+          {
+            "name": "result.json",
+            "status": "PRESENT",
+            "size_bytes": 3084,
+            "sha256": "e077a01950eeacb4fbe20df0a8be71d46ad8df699e4faf86fa46d043672d49d3"
+          }
+        ]
+      },
+      {
+        "role": "custody",
+        "action": "consume",
+        "operation": "A1",
+        "matching_folders": 1,
+        "slot": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c-consume-A1",
+        "files": [
+          {
+            "name": "attempt.json",
+            "status": "PRESENT",
+            "size_bytes": 340,
+            "sha256": "719c59631f46aa02bb6a9673e13a9067a95e7378227d2ad1781bdbb5607a4edb"
+          },
+          {
+            "name": "verified-receipts.json",
+            "status": "ABSENT"
+          },
+          {
+            "name": "result.json",
+            "status": "ABSENT"
+          }
+        ]
+      }
+    ]
   }
 }
