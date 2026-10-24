@@ -912,6 +912,46 @@ jobs:
               if checks is not None:assert {c.attrib['name'] for c in cases}==set(checks)
           assert not Path('/run/veritas-task4-retained-bounded-v1').exists()
           PY
+      - name: Gate actual Native issuance and Bind dispatch on separate UID signed ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_signed_ledger_integration_v1.py \
+            tests/test_task4_native_signed_ledger_gate_v1.py \
+            --junitxml=results/task4-native-signed-ledger-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_os_custody_v1 \
+            --run --local-https --raw-ingress success --bounded-native --retained-bounded \
+            --signed-ledger-native --output results/task4-native-signed-ledger
+          python - <<'PYCODE'
+          import hashlib,json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_signed_ledger_integration_v1 as integration
+          from scripts import task4_native_bounded_continuation_v1 as native
+          folder=Path('results/task4-native-signed-ledger')
+          r=json.loads((folder/'signed-ledger-integration.json').read_bytes())
+          n=json.loads((folder/'report.json').read_bytes())
+          assert r['schema']==integration.SCHEMA
+          assert r['audited_commit']==n['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert r['source_sha256']==hashlib.sha256(Path(integration.__file__).read_bytes()).hexdigest()
+          assert n['source_sha256']==hashlib.sha256(Path(native.__file__).read_bytes()).hexdigest()
+          assert n['native_source_sha256']==hashlib.sha256(Path('scripts/task4_native_os_custody_v1.py').read_bytes()).hexdigest()
+          assert native.validate(n['evidence']) and integration.validate(r['evidence'],n)
+          assert r['evidence_sha256']==integration.l.digest(r['evidence'])
+          assert r['normal_report_sha256']==integration.l.digest(n)
+          assert r['separate_uid_ledger']==61109 and r['actual_native_bind_closed_tls_integrated'] is True
+          assert r['ledger_backend']=='LOCAL_SQLITE_REFERENCE_NOT_GITHUB'
+          assert r['ledger_transport']=='AF_UNIX_SO_PEERCRED_NOT_MTLS'
+          for report in (r,n):
+              assert report['real_provider_posts']==report['external_bank_effects']==0
+              assert report['provider_dispatch']=='DENY' and report['utility']=='UNSCORED'
+              assert report['production_bypass_resistance_proven'] is report['independent_administration_proven'] is False
+          root=ET.parse('results/task4-native-signed-ledger-unit-junit.xml').getroot()
+          assert len(list(root.iter('testcase')))==62
+          assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
+          assert not integration.DIRECTORY.exists()
+          assert not Path('/run/veritas-task4-retained-bounded-v1').exists()
+          print('NATIVE_SIGNED_LEDGER_16_MUTATIONS_8_BIND_TLS_ARCHIVES_RESTART_DENIED_NO_PROVIDER')
+          PYCODE
       - name: Verify external ledger contract with unavailable and ambiguous acknowledgements
         shell: bash
         run: |

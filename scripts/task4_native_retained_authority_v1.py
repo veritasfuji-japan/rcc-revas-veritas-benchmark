@@ -218,6 +218,8 @@ def prepare(base):
 
 
 def cached_grant(base,arm,ordinal,wire):
+    from scripts import task4_native_signed_ledger_integration_v1 as signed
+    if signed.required(base):return None  # No legacy cached-grant recovery in this profile.
     if not required(base) or (arm,ordinal)!=('A',0):return None
     from scripts import task4_native_os_custody_v1 as n
     packet=b.raw.strict(regular(base/'runtime/retained-first.json',b.RUNTIME,0o600))
