@@ -1209,6 +1209,22 @@ jobs:
           assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
           print('NATIVE_PUBLIC_CANDIDATE_SEPARATE_ROOT_RENDER_NO_INSTALL_NO_TOKEN_NO_NETWORK_NO_EXECUTION')
           PYCODE
+      - name: Verify create-once Native role keys and actual cross-UID private-key denial
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_native_role_keys_v1.py \
+            --junitxml=results/task4-native-role-keys-junit.xml
+          python - <<'PYCODE'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-native-role-keys-junit.xml').getroot()
+          cases=list(root.iter('testcase'))
+          assert len(cases)==73
+          assert any(x.get('name')=='test_actual_four_uid_keys_are_retained_and_twelve_cross_role_key_reads_are_denied' for x in cases)
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          print('NATIVE_FOUR_UID_CREATE_ONCE_KEYS_TWELVE_PRIVATE_READ_DENIALS_PUBLIC_JOIN_ONLY_NO_EXECUTION')
+          PYCODE
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
         run: |
