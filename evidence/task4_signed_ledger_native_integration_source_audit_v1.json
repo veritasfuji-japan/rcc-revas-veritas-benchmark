@@ -1,0 +1,350 @@
+{
+  "schema": "task4.signed-ledger-native-integration-source-audit.v1",
+  "prepared_date_jst": "2026-10-24",
+  "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+  "source_commit": "98640673e85fc9a6bce39159d22a6d292b52e520",
+  "method": "byte-exact Git blob verification, SHA-256, AST anchors/import/call checks and fixed manifest comparison; no repository module imported",
+  "source_files": [
+    {
+      "path": "scripts/task4_native_os_custody_v1.py",
+      "git_blob_sha1": "381b0b8c609e2982470c8675e52a2fc07845360c",
+      "sha256": "c6b01312754b08b7b512fd65419ccb70d05a1d5485d3ff95dac0b4c7674cc7c5",
+      "size_bytes": 103690
+    },
+    {
+      "path": "scripts/task4_durable_issuer_restart_v1.py",
+      "git_blob_sha1": "4c2c39e5a7988602b9493a111c67dcfbf9e08e49",
+      "sha256": "dcd8bb502071bc16d17a9f1a7ef7496ff282ea39b869fef3955a252935b231ec",
+      "size_bytes": 18477
+    },
+    {
+      "path": "scripts/task4_native_retained_authority_v1.py",
+      "git_blob_sha1": "2a692efc6d2a537cfb0128af0f39535966732552",
+      "sha256": "a492cd67827cda1a45a6d36109aa76210d193a08b10aabacd2a7824b719f0337",
+      "size_bytes": 22671
+    },
+    {
+      "path": "scripts/task4_native_raw_authority_v1.py",
+      "git_blob_sha1": "4970d0d5b508dc6f2250c341e411606146229190",
+      "sha256": "2ecad1f0bf8e436a1dd886c88b2df7fb9b20a30fc1abfb81daad754679879e01",
+      "size_bytes": 14390
+    },
+    {
+      "path": "scripts/task4_signed_ledger_client_v1.py",
+      "git_blob_sha1": "4d01806de5bbbddca392bdf8ca7487fc896faf27",
+      "sha256": "67b801d3284738e3d059bab3fbe1d9a798eaa1a6056c173df2441c928e6386a6",
+      "size_bytes": 10311
+    },
+    {
+      "path": "scripts/task4_external_ledger_contract_v1.py",
+      "git_blob_sha1": "084c97efd40eba03018cffdce3c36d88ae139397",
+      "sha256": "c91f4b95c99f8cf217b73bfb0b3333243e87cb324c7d2da7002f841ba799a95b",
+      "size_bytes": 16741
+    },
+    {
+      "path": "scripts/task4_signed_github_ledger_v1.py",
+      "git_blob_sha1": "ae6bce9e101a12524a99716d58a03a342216e6d5",
+      "sha256": "9982c61d32103c73c92ffc6b072c24ca15a25f23018c1a4faa2214ffbd0b27ea",
+      "size_bytes": 9331
+    },
+    {
+      "path": "scripts/task4_native_local_https_v1.py",
+      "git_blob_sha1": "8a0367fbd92668371ac867bd5a6639eebb38c7f5",
+      "sha256": "d3e8dc134fe451157c289f60211cf257ba06f42720d249381dc202d8d980df6f",
+      "size_bytes": 16470
+    },
+    {
+      "path": "scripts/task4_native_bounded_continuation_v1.py",
+      "git_blob_sha1": "815695944471a32e23077f51bc15edcf9f0887b0",
+      "sha256": "acfc9c6661c3a2b63b27c6d17a007e3a638ae354b673bd75b23197c6c1a891c4",
+      "size_bytes": 41283
+    },
+    {
+      "path": "scripts/task4_bounded_continuation_policy_v1.py",
+      "git_blob_sha1": "a2b26030806421f49565e3def3d05d8bd8bfca19",
+      "sha256": "427f434cbce7357e78825f3f4096acef0e666d0741d543437cd0fb65cb849259",
+      "size_bytes": 22345
+    },
+    {
+      "path": "docs/TASK4_NATIVE_FROZEN_SIGNER_SCOPE_V1.json",
+      "git_blob_sha1": "2980b82dad780732f58b7c29fb961ace5375e4ad",
+      "sha256": "ee33c0a2d768ad4c7ceb4699a1abb702f6eb8e2f1ca8e0a64ce6c1867f860309",
+      "size_bytes": 2026
+    },
+    {
+      "path": "docs/TASK4_BOUNDED_CONTINUATION_POLICY_V1.md",
+      "git_blob_sha1": "4daa85794ffabcbddff222c215df2cb8ce94829f",
+      "sha256": "479087a78b4819b2b89e3a51f2b73676fffa2d6ed7024ce7dfb8d2acb83cae6a",
+      "size_bytes": 6084
+    }
+  ],
+  "anchors": [
+    {
+      "path": "scripts/task4_native_bounded_continuation_v1.py",
+      "symbol": "manifest",
+      "start_line": 39,
+      "end_line": 48
+    },
+    {
+      "path": "scripts/task4_native_bounded_continuation_v1.py",
+      "symbol": "verify_grant",
+      "start_line": 67,
+      "end_line": 73
+    },
+    {
+      "path": "scripts/task4_native_bounded_continuation_v1.py",
+      "symbol": "verify_observation",
+      "start_line": 107,
+      "end_line": 124
+    },
+    {
+      "path": "scripts/task4_native_bounded_continuation_v1.py",
+      "symbol": "NativePolicy.authorize",
+      "start_line": 154,
+      "end_line": 169
+    },
+    {
+      "path": "scripts/task4_native_bounded_continuation_v1.py",
+      "symbol": "NativePolicy.complete",
+      "start_line": 171,
+      "end_line": 184
+    },
+    {
+      "path": "scripts/task4_native_bounded_continuation_v1.py",
+      "symbol": "issuer",
+      "start_line": 225,
+      "end_line": 255
+    },
+    {
+      "path": "scripts/task4_native_bounded_continuation_v1.py",
+      "symbol": "verify_packet",
+      "start_line": 258,
+      "end_line": 266
+    },
+    {
+      "path": "scripts/task4_native_bounded_continuation_v1.py",
+      "symbol": "custody",
+      "start_line": 269,
+      "end_line": 316
+    },
+    {
+      "path": "scripts/task4_native_bounded_continuation_v1.py",
+      "symbol": "native",
+      "start_line": 374,
+      "end_line": 444
+    },
+    {
+      "path": "scripts/task4_native_retained_authority_v1.py",
+      "symbol": "admit",
+      "start_line": 73,
+      "end_line": 85
+    },
+    {
+      "path": "scripts/task4_native_retained_authority_v1.py",
+      "symbol": "guard_policy",
+      "start_line": 88,
+      "end_line": 94
+    },
+    {
+      "path": "scripts/task4_native_retained_authority_v1.py",
+      "symbol": "open_custody",
+      "start_line": 146,
+      "end_line": 154
+    },
+    {
+      "path": "scripts/task4_native_retained_authority_v1.py",
+      "symbol": "cached_grant",
+      "start_line": 220,
+      "end_line": 227
+    },
+    {
+      "path": "scripts/task4_native_retained_authority_v1.py",
+      "symbol": "cleanup",
+      "start_line": 138,
+      "end_line": 143
+    },
+    {
+      "path": "scripts/task4_durable_issuer_restart_v1.py",
+      "symbol": "state_value",
+      "start_line": 33,
+      "end_line": 44
+    },
+    {
+      "path": "scripts/task4_durable_issuer_restart_v1.py",
+      "symbol": "initialize",
+      "start_line": 96,
+      "end_line": 109
+    },
+    {
+      "path": "scripts/task4_durable_issuer_restart_v1.py",
+      "symbol": "serve",
+      "start_line": 118,
+      "end_line": 157
+    },
+    {
+      "path": "scripts/task4_native_os_custody_v1.py",
+      "symbol": "scope",
+      "start_line": 123,
+      "end_line": 128
+    },
+    {
+      "path": "scripts/task4_native_os_custody_v1.py",
+      "symbol": "statement",
+      "start_line": 140,
+      "end_line": 150
+    },
+    {
+      "path": "scripts/task4_native_os_custody_v1.py",
+      "symbol": "verify_grant",
+      "start_line": 153,
+      "end_line": 174
+    },
+    {
+      "path": "scripts/task4_native_os_custody_v1.py",
+      "symbol": "issue",
+      "start_line": 191,
+      "end_line": 215
+    },
+    {
+      "path": "scripts/task4_native_os_custody_v1.py",
+      "symbol": "bind_post",
+      "start_line": 356,
+      "end_line": 434
+    },
+    {
+      "path": "scripts/task4_native_os_custody_v1.py",
+      "symbol": "custody",
+      "start_line": 459,
+      "end_line": 569
+    },
+    {
+      "path": "scripts/task4_signed_ledger_client_v1.py",
+      "symbol": "manifest",
+      "start_line": 30,
+      "end_line": 36
+    },
+    {
+      "path": "scripts/task4_signed_ledger_client_v1.py",
+      "symbol": "prepare",
+      "start_line": 39,
+      "end_line": 85
+    },
+    {
+      "path": "scripts/task4_signed_ledger_client_v1.py",
+      "symbol": "claim",
+      "start_line": 107,
+      "end_line": 116
+    },
+    {
+      "path": "scripts/task4_signed_ledger_client_v1.py",
+      "symbol": "Transport.__call__",
+      "start_line": 94,
+      "end_line": 104
+    },
+    {
+      "path": "scripts/task4_signed_ledger_client_v1.py",
+      "symbol": "run",
+      "start_line": 119,
+      "end_line": 154
+    },
+    {
+      "path": "scripts/task4_external_ledger_contract_v1.py",
+      "symbol": "binding",
+      "start_line": 72,
+      "end_line": 76
+    },
+    {
+      "path": "scripts/task4_external_ledger_contract_v1.py",
+      "symbol": "command",
+      "start_line": 79,
+      "end_line": 89
+    },
+    {
+      "path": "scripts/task4_external_ledger_contract_v1.py",
+      "symbol": "LedgerClient.exchange",
+      "start_line": 219,
+      "end_line": 245
+    },
+    {
+      "path": "scripts/task4_external_ledger_contract_v1.py",
+      "symbol": "LedgerClient.gate",
+      "start_line": 247,
+      "end_line": 251
+    },
+    {
+      "path": "scripts/task4_signed_github_ledger_v1.py",
+      "symbol": "SignedGitHubService.exchange",
+      "start_line": 138,
+      "end_line": 171
+    }
+  ],
+  "selected_native_entrypoints": [
+    "scripts/task4_native_bounded_continuation_v1.py",
+    "scripts/task4_native_os_custody_v1.py",
+    "scripts/task4_native_retained_authority_v1.py",
+    "scripts/task4_durable_issuer_restart_v1.py"
+  ],
+  "direct_external_ledger_imports": [],
+  "direct_LedgerClient_constructors": [],
+  "scope_check_limit": "selected modules and direct AST references only; not repository-wide transitive reachability or runtime enforcement",
+  "manual_manifest_sha256": "ff4180c808fb30e7c3f5c9cfe6f2ccff6be0c35bfed6ec42ab6a90c0dd866f6d",
+  "manual_vs_frozen_request_comparison": [
+    {
+      "operation_id": "A0",
+      "native_frozen_request_sha256": "9f456a06ee49b00ba67d5b2bbd5f4e7437be37b6ae2a4402dfb2da0889bdb96a",
+      "manual_synthetic_request_sha256": "2da0cb330ac75508a2a80dc0f96761c3c038a89e24f2c283913188a380e157ad",
+      "equal": false
+    },
+    {
+      "operation_id": "A1",
+      "native_frozen_request_sha256": "cd429fad752020739cd68e5cf8d8b5cdc39c8127ef0eddf10aeb445f7f30e64a",
+      "manual_synthetic_request_sha256": "e72ee15f04d79439c20b30e40c247db65181ebcf550fbf6ff924570d421f8962",
+      "equal": false
+    },
+    {
+      "operation_id": "A2",
+      "native_frozen_request_sha256": "3e1f6e2b03a95a8e9cc464c0adc493d31ca699e55897fb8d5d1cedfa2766dbd1",
+      "manual_synthetic_request_sha256": "ec2e82b36d328c0ea8dce11ead1f1df1f3918c04a310f8eab92cfaeaa4c539a1",
+      "equal": false
+    },
+    {
+      "operation_id": "A3",
+      "native_frozen_request_sha256": "81403d7647e5aa23d8994ef13e4d84a620fc7dbc15b9b92b92d8de18eb23a199",
+      "manual_synthetic_request_sha256": "a16cbb634628b119e62bdac47925db01ba20a0d55fe4134ad35cf5a2fb6d0760",
+      "equal": false
+    },
+    {
+      "operation_id": "B0",
+      "native_frozen_request_sha256": "9f456a06ee49b00ba67d5b2bbd5f4e7437be37b6ae2a4402dfb2da0889bdb96a",
+      "manual_synthetic_request_sha256": "a5d553fb4167f3c7a968ce26301a0684717e6259d0d4be0ad1717c5b3d4799b8",
+      "equal": false
+    },
+    {
+      "operation_id": "B1",
+      "native_frozen_request_sha256": "8c3326b7a09b811f8b6f9efa219c09eebbf469a597b4bfb9927959bca79325ba",
+      "manual_synthetic_request_sha256": "7343ec94555f0479e298e578d24d09de77bbfda9aca3eaeca71383ac2bea83b6",
+      "equal": false
+    },
+    {
+      "operation_id": "B2",
+      "native_frozen_request_sha256": "ff54a05e450f9bc7bc631a53b559d7d9eceb38a6afbece7898bbef631e89f18b",
+      "manual_synthetic_request_sha256": "df361fdbc8594835a0204ccd4812a74942570310256cffe543929b6fe6f8e6bf",
+      "equal": false
+    },
+    {
+      "operation_id": "B3",
+      "native_frozen_request_sha256": "a1163ac867cb2bf2c724c1ae844ef6cb81ac6838002510043dfd186991657535",
+      "manual_synthetic_request_sha256": "a5dad2ce3b38308e2d70b57cf838cd199f828026fa4550914178cb5618e23b49",
+      "equal": false
+    }
+  ],
+  "primary_integration_candidate": "scripts/task4_native_bounded_continuation_v1.py:NativePolicy.authorize and custody",
+  "status": "AUDIT_ONLY_NATIVE_LEDGER_NOT_CONNECTED",
+  "remote_experiment_executed": false,
+  "original_state_modified": false,
+  "real_provider_posts": 0,
+  "provider_dispatch": "DENY",
+  "utility": "UNSCORED",
+  "production_bypass_resistance_proven": false,
+  "native_frozen_scope_file_sha256": "ee33c0a2d768ad4c7ceb4699a1abb702f6eb8e2f1ca8e0a64ce6c1867f860309"
+}
