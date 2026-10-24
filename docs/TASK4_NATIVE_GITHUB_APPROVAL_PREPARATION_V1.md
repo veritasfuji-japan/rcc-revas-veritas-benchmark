@@ -35,6 +35,12 @@ not read an untrusted user's mutable directory merely because the digest is know
 
 ## Required public inputs
 
+The separate [role-local key preparation workflow](TASK4_NATIVE_ROLE_KEYS_V1.md)
+creates fixed-role keys once, requires external public/export pins for reopening,
+and matches public-only exports to these exact input fields before candidate
+review. It does not produce the missing Native archive/leaf context or TLS
+certificates, and a public match does not prove VM origin or grant execution.
+
 The exact input fields are listed below. Extra fields, including private-key,
 token or custody paths, are rejected. No input is discovered from the operator's
 old configuration, CI artifacts, environment or home directory.
