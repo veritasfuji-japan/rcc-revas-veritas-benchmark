@@ -1177,6 +1177,22 @@ jobs:
           assert not any(list(root.iter(x)) for x in ('skipped','failure','error'))
           print('FIXED_SYNTHETIC_CLIENT_TWO_UID_MODEL_BACKEND_NO_REMOTE_MUTATION_NO_PROVIDER')
           PY
+      - name: Verify Native-specific GET-only readiness without remote requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_native_github_readiness_v1.py \
+            --junitxml=results/task4-native-github-readiness-junit.xml
+          python - <<'PYCODE'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-native-github-readiness-junit.xml').getroot()
+          cases=list(root.iter('testcase'))
+          assert len(cases)==53
+          assert any(x.get('name')=='test_actual_nonroot_check_reads_own_configuration_and_denies_other_uid' for x in cases)
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          print('NATIVE_READINESS_GET_ONLY_MODEL_HTTP_REAL_UID_CONFIG_DENIAL_NO_TOKEN_DISCOVERY_NO_EXECUTION_PERMISSION')
+          PYCODE
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
         run: |

@@ -1,0 +1,86 @@
+{
+  "schema": "task4.native-github-readonly-connector-observation.v1",
+  "scope": "PUBLIC_GITHUB_CONNECTOR_GET_OBSERVATION_NOT_OPERATOR_RUNTIME_ATTESTATION",
+  "observed_date_utc": "2026-10-24",
+  "source_commit": "a338001ca9b19ab2bca3c6354f9fd4c5c7bd2241",
+  "repository": "veritasfuji-japan/rcc-revas-veritas-benchmark",
+  "branch": "research/task4-signed-ledger-v1",
+  "approved_genesis": "16f730c8d3385537c7816b1a6cdf3ff6b4e1037b",
+  "operator_previously_supplied_service_public_hex": "b41a562bd2c5559dd49d7bbdf5e5fab64067737ddbb4cb9f98ffa8ac06d59d92",
+  "head_before": "3b3e0154939cdda1a2863f771946636a316d9574",
+  "head_after": "3b3e0154939cdda1a2863f771946636a316d9574",
+  "records": {
+    "/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/commits/16f730c8d3385537c7816b1a6cdf3ff6b4e1037b": {
+      "sha": "16f730c8d3385537c7816b1a6cdf3ff6b4e1037b",
+      "tree": {
+        "sha": "b8a63ca987c08dadea98ca12830471c2083120dd"
+      },
+      "parents": []
+    },
+    "/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/commits/3b3e0154939cdda1a2863f771946636a316d9574": {
+      "sha": "3b3e0154939cdda1a2863f771946636a316d9574",
+      "tree": {
+        "sha": "ead3209a487045a03687a6425c809be49dd3d101"
+      },
+      "parents": [
+        {
+          "sha": "2c659d0f4f6d5f3c34040fcd76e93400eb7d6b1b"
+        }
+      ]
+    },
+    "/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/compare/16f730c8d3385537c7816b1a6cdf3ff6b4e1037b...3b3e0154939cdda1a2863f771946636a316d9574": {
+      "status": "ahead",
+      "merge_base_commit": {
+        "sha": "16f730c8d3385537c7816b1a6cdf3ff6b4e1037b"
+      },
+      "total_commits": 5
+    },
+    "/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/trees/b8a63ca987c08dadea98ca12830471c2083120dd": {
+      "truncated": false,
+      "tree": [
+        {
+          "path": "ledger.json",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "28058c27d192613b9e9700fe8d15e4fb448d362b"
+        }
+      ]
+    },
+    "/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/trees/ead3209a487045a03687a6425c809be49dd3d101": {
+      "truncated": false,
+      "tree": [
+        {
+          "path": "ledger.json",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "b06bc94b890c5a389188577c11f295b7f4adbb3c"
+        }
+      ]
+    },
+    "/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/ref/heads/research/task4-signed-ledger-v1": {
+      "ref": "refs/heads/research/task4-signed-ledger-v1",
+      "object": {
+        "type": "commit",
+        "sha": "3b3e0154939cdda1a2863f771946636a316d9574"
+      }
+    },
+    "/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/blobs/28058c27d192613b9e9700fe8d15e4fb448d362b": {
+      "sha": "28058c27d192613b9e9700fe8d15e4fb448d362b",
+      "decoded_blob_utf8": "{\"ledger_id\":\"568a79d3c6f1a642237a67c92d193f6d8cb3dd831ebf9cf47b00951573adc806\",\"reviewed_source_base\":\"266f9add41daf94a778f247a6f3c0560318e2da2\",\"revision\":0,\"runs\":{},\"schema\":\"task4.github-signed-ledger-state.v1\",\"scope\":\"SYNTHETIC_SIGNED_LEDGER_ONLY_NO_PROVIDER\",\"service_public_sha256\":\"d81fc3e80ba460a264355eb5b479ad6f33ed2e661353344cbce40313bff7af32\"}"
+    },
+    "/repos/veritasfuji-japan/rcc-revas-veritas-benchmark/git/blobs/b06bc94b890c5a389188577c11f295b7f4adbb3c": {
+      "sha": "b06bc94b890c5a389188577c11f295b7f4adbb3c",
+      "decoded_blob_utf8": "{\"ledger_id\":\"568a79d3c6f1a642237a67c92d193f6d8cb3dd831ebf9cf47b00951573adc806\",\"reviewed_source_base\":\"266f9add41daf94a778f247a6f3c0560318e2da2\",\"revision\":5,\"runs\":{\"546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c\":{\"binding\":{\"custody_public_sha256\":\"6c78fbac11e00d919b645352552201f0a7819c5bdd276112501013cc58a82e83\",\"issuer_public_sha256\":\"3ab927c912b2d833c676af3f7b05746fc20fc30dde79bbbce707414d2ce5dc04\",\"ledger_id\":\"568a79d3c6f1a642237a67c92d193f6d8cb3dd831ebf9cf47b00951573adc806\",\"manifest_sha256\":\"ff4180c808fb30e7c3f5c9cfe6f2ccff6be0c35bfed6ec42ab6a90c0dd866f6d\",\"run_id\":\"546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c\",\"schema\":\"task4.external-ledger-contract.v1\"},\"snapshot\":{\"attempts\":[{\"grant_sha256\":\"c9d1af741de979a827c07cde7a23d6fd536f15c5a85cbda7daa9a0e53b935182\",\"operation_id\":\"A0\",\"request_sha256\":\"2da0cb330ac75508a2a80dc0f96761c3c038a89e24f2c283913188a380e157ad\",\"state\":\"CONSUMED_UNKNOWN\"},{\"grant_sha256\":\"c0a3aea2cd7ed78624f66c9d4852cf23e89a6eca6145be8466f68ffebb8d28f7\",\"operation_id\":\"A1\",\"request_sha256\":\"e72ee15f04d79439c20b30e40c247db65181ebcf550fbf6ff924570d421f8962\",\"state\":\"CONSUMED_UNKNOWN\"}],\"revision\":4}}},\"schema\":\"task4.github-signed-ledger-state.v1\",\"scope\":\"SYNTHETIC_SIGNED_LEDGER_ONLY_NO_PROVIDER\",\"service_public_sha256\":\"d81fc3e80ba460a264355eb5b479ad6f33ed2e661353344cbce40313bff7af32\"}"
+    }
+  },
+  "projection_note": "GET metadata fields are semantic projections. decoded_blob_utf8 is exact decoded ledger.json content; blob hashes are checked against Git trees. These are not raw HTTP response envelopes.",
+  "remote_mutations_performed": 0,
+  "operator_credential_used": false,
+  "operator_tls_handshake_performed": false,
+  "operator_os_egress_verified": false,
+  "native_execution_performed": false,
+  "execution_permission_issued": false,
+  "provider_dispatch": "DENY",
+  "utility": "UNSCORED",
+  "production_bypass_resistance_proven": false
+}
