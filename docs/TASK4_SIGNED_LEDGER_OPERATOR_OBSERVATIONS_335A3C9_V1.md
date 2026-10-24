@@ -2,15 +2,31 @@
 
 Prepared 2026-10-24 JST against source
 `335a3c939fbef7158159853d2891e112718db085`.
-This records operator-pasted terminal output from a same-host Linux exercise.
-Exact execution timestamps were not captured. This document and its
-[public observation record](../evidence/task4_signed_ledger_operator_observations_335a3c9_v1.json)
-are based on operator-provided terminal data, not direct independent host
-acquisition or an independently reproduced experiment. A later linked issuer
-byte record preserves four operator-exported original files, separately decoded,
-rehashed and signature-checked as described below.
+This records a same-host Linux exercise from operator-provided terminal output
+and Base64 exports. Exact execution times were not captured. Acquisition was
+not direct independent host access or independent human/administrator attestation.
 
 `REAL_PROVIDER_NO_GO / UTILITY_UNSCORED / PRODUCTION_BYPASS_RESISTANCE_NOT_PROVEN`
+
+## Result and preserved evidence
+
+The reported A0 reservation/consumption is corroborated by original exported
+journal byte sequences: issuer signed revision 0 -> 1, Custody signed revision
+1 -> 2, with an exact snapshot join between them. All eight present files
+match the previously reported sizes and SHA-256 values. A separately preserved
+final signed view at revision 4 retains A0 and A1 as CONSUMED_UNKNOWN.
+
+| Public record | Contents and provenance |
+| --- | --- |
+| [Observation and verification record](../evidence/task4_signed_ledger_operator_observations_335a3c9_v1.json) | Labeled summaries, reconstructed final custody view, selected public approval fields, reported inventory and separately executed verification results |
+| [Issuer byte record](../evidence/task4_signed_ledger_335a3c9_issuer_journal_bytes_v1.json) | Four original file byte sequences preserved as operator-supplied Base64, with issuer-stage verification results |
+| [Custody byte record](../evidence/task4_signed_ledger_335a3c9_custody_journal_bytes_v1.json) | Four original file byte sequences from the attached operator export, plus the final joined verification results |
+
+Verification records in earlier stages are historical snapshots; the joined
+record describes the completed eight-file collection. Original stdout formatting
+of the final view was not retained; its parsed signed statement was preserved.
+The raw journal bytes are retained exactly through Base64 rather than
+reconstructed from pretty-printed JSON.
 
 ## Source and fixed identities
 
@@ -21,234 +37,160 @@ rehashed and signature-checked as described below.
 | Binding SHA-256 | `c4dc53c6ee2d1e9dbd0b71e0c6c011e5ad07ce78c76c174db118b54bc5fd88b1` |
 | Manifest SHA-256 | `ff4180c808fb30e7c3f5c9cfe6f2ccff6be0c35bfed6ec42ab6a90c0dd866f6d` |
 | Ledger ID | `568a79d3c6f1a642237a67c92d193f6d8cb3dd831ebf9cf47b00951573adc806` |
+| Run ID | `546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c` |
 | Receipt public-key SHA-256 | `d81fc3e80ba460a264355eb5b479ad6f33ed2e661353344cbce40313bff7af32` |
+| Receipt raw public key | `b41a562bd2c5559dd49d7bbdf5e5fab64067737ddbb4cb9f98ffa8ac06d59d92` |
 | Server DER certificate SHA-256 | `b89dbb148c762172c1935a563f17888c49109b72471383d194645e24ed74ed66` |
 
-The implementation baseline is the current merged source at preparation time.
-The protected-runtime source bytes were not independently collected here.
-`execution_source` and `genesis` are approval/report metadata, not runtime
-attestation or fields signed by the existing receipt. The operator later supplied the selected public approval fields, including
-the full binding and raw receipt public key. Their hashes match the previously
-reported identities. Approval-file bytes and TLS peer mappings were not collected.
+The selected public approval fields include the full binding and raw public key.
+Their hashes match the earlier reported pins, and the binding run ID matches all
+four reported attempt-directory names. These are consistency checks against
+operator-provided approval material, not independent trust-anchor enrollment.
+Execution-source/genesis approval metadata are not runtime attestation or fields
+signed into the existing receipt. Protected installation hashes, full approval
+file bytes and TLS peer mappings were not independently collected.
 
 The exercise uses the [manual role client](TASK4_SIGNED_LEDGER_CLIENT_V1.md),
 [existing-state entry point](TASK4_SIGNED_LEDGER_ENTRYPOINT_V1.md) and
 [retained service](TASK4_RETAINED_SIGNED_LEDGER_SERVICE_V1.md).
-Issuer and Custody used separate Linux accounts; their clients connected to
-the same loopback mTLS listener. The service uses the signed GitHub ledger
-backend. This is not an entirely offline or zero-external-network exercise.
-No SDK/AI Provider request or real bank effect is represented by these results.
+Separate Linux role accounts connected to the same loopback mTLS listener.
+The service uses a GitHub-backed ledger; the exercise is not entirely offline.
+No actual SDK/AI Provider request, bank effect or benchmark utility measurement
+is represented. A0/A1 are synthetic manifest IDs, not benchmark Arm A/B results.
 
-## Observed sequence
+## Observed sequence and limits
 
-| Step | Terminal observation and subsequent reconciliation |
+| Step | Reported output and subsequent reconciliation |
 | --- | --- |
 | Upgrade | Old listener stopped; new 335a3c9 listener reported backend_verified=true and listener_started=true |
-| Local checks | Both role clients completed local check; matching binding/manifest, network_used=false |
+| Local checks | Both roles completed check with matching binding/manifest, network_used=false |
 | Initial views | Both clients accepted signed views at revision 0, empty attempts |
 | A0 reserve | Issuer reported RESERVED, revision 1, one synthetic marker |
 | A0 consume | Custody reported CONSUMED_UNKNOWN, revision 2, one synthetic marker |
-| A0 ordinary repeat | STOP / exit 1; subsequent signed view remained revision 2 |
-| A0 direct repeat | Probe omitted the ordinary client's local attempt claim; exchange returned Denied; signed views before/after were identical at revision 2 |
-| Service restart | Existing service stopped and reopened; receipt-key and certificate pins matched; both clients observed A0 consumed at revision 2 |
-| A0 direct repeat after restart | Denied; signed views before/after remained identical at revision 2 |
-| A1 reserve, response discarded | STOP / exit 1; subsequent signed view showed A1 RESERVED at revision 3 |
-| A1 ordinary reserve repeat | STOP / exit 1; subsequent signed view retained A1 RESERVED at revision 3 |
-| A1 consume, response discarded | STOP / exit 1; subsequent signed view showed A1 CONSUMED_UNKNOWN at revision 4 |
-| A1 ordinary consume repeat | STOP / exit 1; final signed view retained revision 4 and both A0/A1 consumed |
+| Ordinary A0 repeat | STOP / exit 1; subsequent signed view remained revision 2 |
+| Direct A0 repeat | Probe omitted the ordinary client's attempt claim; Denied; signed snapshots before/after identical at revision 2 |
+| Service restart | Existing service stopped/reopened; receipt-key and certificate pins matched; both clients observed A0 consumed at revision 2 |
+| Direct A0 repeat after restart | Denied; snapshots before/after identical at revision 2 |
+| A1 reserve with response discard | STOP / exit 1; subsequent signed view showed RESERVED at revision 3 |
+| Ordinary A1 reserve repeat | STOP / exit 1; subsequent signed view retained revision 3 |
+| A1 consume with response discard | STOP / exit 1; subsequent signed view showed CONSUMED_UNKNOWN at revision 4 |
+| Ordinary A1 consume repeat | STOP / exit 1; final signed view retained revision 4 and both consumed records |
 
-The direct-repeat probes called LedgerClient.exchange without a callback or
-LedgerClient.gate. Their printed zero callback count describes that probe code,
-not a global effect counter.
+Only A0's consumed state was checked across the service restart; A1 was
+exercised later. No power-loss, VM restore, administrator rollback or
+separate-host test is claimed. Other manifest operations were not exercised.
+Earlier restart/repeat views are transcript observations, not all preserved as
+raw historical receipt files in this PR.
 
-Only A0's consumed state was checked across the service restart. A1 was
-exercised after that restart; its persistence across another restart was not
-tested. This was a process termination/reopen experiment, not power-loss,
-backup restoration, administrator rollback, or separate-host testing.
+## Original journal bytes and joined verification
 
-A0 and A1 are fixed synthetic manifest IDs, not benchmark Arm A/B utility
-results. Other manifest operations were not exercised in this transcript.
+Each role exported A0 attempt.json, verified-receipts.json, result.json and
+A1 attempt.json. Decoding all eight Base64 entries in the assistant execution
+environment reproduced the prior inventory's exact lengths and SHA-256 values.
+The decoded bytes also match the contract's canonical JSON encoding.
+No Linux service, GitHub ledger, Provider, callback or mutation was invoked by
+this verification. Reading or writing this documentation is not an execution
+approval.
+
+| Check | Separately executed result |
+| --- | --- |
+| Present file bytes and prior inventory | 8/8 lengths and SHA-256 match |
+| Receipt public-key pin and full binding digest/run ID | Match |
+| Original A0 receipts | 4 distinct Ed25519 signatures valid; each appears in both receipt/result files |
+| Final reconstructed custody view | 1 additional Ed25519 signature valid |
+| Issuer state transition | Empty revision 0 -> A0 RESERVED revision 1 |
+| Cross-role join | Issuer reservation snapshot exactly equals Custody's initial signed view |
+| Custody state transition | RESERVED revision 1 -> CONSUMED_UNKNOWN revision 2 |
+| Final-view join | A0's consumed record exactly matches A0 in the signed revision-4 view |
+| Commands | Digest, nonce/action, ledger/binding, expected revision and fixed A0 request/grant match |
+| Signature negative control | Modified consume-statement revision rejected with InvalidSignature |
+| Local receipt/result files | Differ only in unsigned synthetic_callbacks: 0 -> 1, in each role |
+| Attempt records | Matching approved binding/manifest and correct operation/action; within-role configuration digests agree, cross-role digests differ |
+
+There were nine signature checks over five distinct receipts: eight checks for
+the two duplicated journal copies of four A0 receipts, plus the final view.
+Do not count duplicated copies as independent executions or signatures.
+
+The pinned contract uses
+`b'TASK4_EXTERNAL_LEDGER_RECEIPT_V1\0'` followed by
+`json.dumps(statement, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()`.
+The contract constant/encoding were read at the recorded 335a3c9 source.
+The final view's canonical statement SHA-256 is
+`ffd902e4dd74184150a0349b08d644e37884f6c6ace4c17f0323c4dcf76be0f3`.
+Tampered final-view and issuer reserve revisions were also rejected in the
+earlier recorded verification stages.
+
+Receipt signatures cover statements and snapshots. They do not sign the local
+callback counter, role-report metadata, configuration hashes or acquisition
+provenance. The 0/1 markers are preserved local records, not independent
+effect/callback attestations. Matching configuration digests do not authenticate
+uncollected configuration contents. The two role keys/TLS identities were not
+used here to validate actual grant issuance or real Provider permission.
+
+## Reported inventory and absences
+
+Every role/operation suffix matched one non-symlink attempt directory in the
+operator's earlier inspection. Full slot names and all eight hashes are in the
+observation JSON; hashes have now been recomputed from exported present bytes.
+
+| Role / action / operation | attempt.json | verified-receipts.json | result.json |
+| --- | --- | --- | --- |
+| issuer / reserve / A0 | 340 bytes | 2737 bytes | 2737 bytes |
+| custody / consume / A0 | 340 bytes | 3084 bytes | 3084 bytes |
+| issuer / reserve / A1 | 340 bytes | ABSENT (reported) | ABSENT (reported) |
+| custody / consume / A1 | 340 bytes | ABSENT (reported) | ABSENT (reported) |
+
+Present-file exports cannot prove the absence of other files or historical
+filesystem metadata. The four A1 success-file absences remain operator-reported.
+Do not recreate missing files or delete burned attempt slots.
 
 ## Controlled response discard and uncertain outcomes
 
-The A1 commands explicitly selected `--discard-mutation-response`.
-The client reads the complete service response and then discards it before
-receipt validation. This is a controlled client-side fault, not observed packet
-loss, server-side acknowledgement suppression, a real network outage, or
-proof that the service never signed a receipt.
+A1 explicitly used `--discard-mutation-response`: the complete service response
+is read, then discarded before receipt validation. This is controlled
+client-side discard, not actual packet loss, server-side suppression, a network
+outage or proof that the service never signed.
 
-Despite the client STOP, read-only reconciliation observed the committed
-reservation and consumption. STOP must not be treated as proof of no commit or
-as permission to retry. CONSUMED_UNKNOWN is a consumed authorization record;
-it is not confirmation that an external effect occurred.
+The client stopped while the later signed view showed committed reservation and
+consumption. STOP is not proof of no commit and never authorizes automatic
+retry. CONSUMED_UNKNOWN is authorization bookkeeping, not confirmed external
+effect. The source places discard before verified-receipts.json/result.json and
+before the fixed callback; reported file absences are consistent with that path.
+The exact failure branch and historical callback count are not independently
+traced. The final view's synthetic_callbacks=0 applies only to that read.
 
-The source creates an exclusive retained attempt slot before the initial
-network view. Existing slots stop ordinary retries before a socket is opened.
-The displayed generic STOP does not independently identify which guard
-stopped each actual repeat. No attempt was deleted or reset in the supplied
-procedure. The operator subsequently reported journal existence, sizes and hashes below;
-issuer journal bytes were later exported and separately verified as described
-below. Custody journal contents remain uncollected.
+## Duplicate probes and trust boundary
 
-In the reviewed source, the controlled-discard exception occurs before writing
-verified-receipts.json/result.json or reaching the fixed in-memory callback.
-That is a source-path inference, not a separately captured callback trace.
-The final view's synthetic_callbacks=0 applies only to that read operation.
+The ordinary client creates an exclusive retained attempt slot before network
+access; an existing slot stops ordinary retry. The server's static consume guard
+requires RESERVED and a matching request before mutation. But STOP/Denied also
+covers transport, backend and receipt-verification errors. The transport logs no
+detailed reason. Actual repeat observations establish no verified duplicate
+success and no observed signed-state change; they do not prove the precise
+server rejection branch.
 
-## What the duplicate probes establish
+Direct-repeat probes called LedgerClient.exchange without an effect callback.
+Their printed zero marker count describes those probes, not a global counter.
+The fixed eight-operation request/grant allowlist is client-enforced; the
+underlying server does not independently enforce that manifest's first-request
+allowlist. Authorized alternative clients, host administrators and backend
+credential holders remain within the trust model.
 
-The service implementation requires a consumed operation's prior state to be
-RESERVED and its request digest to match before changing state. A0 was already
-CONSUMED_UNKNOWN. This is a static server-side guard.
+## Open gates and disposition
 
-The transport closes on exceptions without detailed logging, and the signed
-service and client sanitize errors. Denied can also mean a transport, backend,
-or receipt-validation failure. The dynamic result is therefore bounded to:
-the duplicate request did not produce verified success, and signed views
-before and after showed no state change. The exact server rejection branch
-was not dynamically witnessed. Do not upgrade this to a reason-specific
-server rejection proof.
+The original issuer/Custody present-byte collection, rehashing, A0 signature
+checks and cross-role snapshot join are complete for these supplied exports.
+This makes the bounded observation record reviewable; it is not a promotion to
+production or independent third-party validation.
 
-The fixed eight-operation request/grant manifest is enforced by the ordinary
-client. The underlying server does not independently enforce that manifest's
-request allowlist. These probes do not prove isolation against an authorized
-alternative client, a host administrator, or a holder of the backend writer
-credential.
+Remaining gates include full backend commit-chain verification, independent
+administrator/host/source attestations, safe reason-specific refusal evidence,
+actual crash/restore or separate-host tests, credential/egress isolation,
+Native reservation-before-grant and consumption-before-send integration,
+independent A/B generation/scoring and Final128 remeasurement.
 
-## Evidence provenance and validation
-
-The JSON record preserves the final custody view's parsed command, signed
-statement and signature, plus explicitly labeled summaries of earlier outputs.
-It does not preserve original stdout bytes, all earlier signed receipts,
-backend commit-chain readbacks, full public-approval file bytes, or source-
-installation hashes. A later linked record preserves four original issuer
-journal byte sequences; Custody journal bytes remain pending.
-
-Preparation checks cover JSON parsing, command SHA-256 under the contract's
-canonical JSON encoding, command/statement nonce and binding agreement,
-reported snapshot/receipt equality, final revision/states, signature byte
-length, and request/grant hashes against the pinned manifest. Those initial consistency
-checks did not verify Ed25519 signatures. A subsequent cryptographic check of
-the one preserved final view was executed separately in the assistant environment,
-as described below. Earlier operator client success reports are not independently
-verified historical signatures.
-
-No private keys, API tokens, TLS private keys or private configuration files
-are included. This PR only records observations; it does not run a service,
-modify retained state or workflows, grant permission, or authorize a Provider.
-
-## Operator-reported host journal inventory
-
-A later read-only inspection was supplied through terminal output. Each of the
-four role/operation suffixes matched exactly one non-symlink directory. All
-reported slot names share run ID:
-
-`546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c`
-
-This ID was initially parsed from slot names. The later operator-supplied
-binding contains the same run ID and hashes to the recorded binding SHA-256. No file was recreated, removed or modified by the supplied
-inspection script. The JSON record includes full slot names and explicit
-absence records. Exact inspection time was not captured.
-
-| Role / operation | File | Bytes | Reported SHA-256 |
-| --- | --- | --- | --- |
-| issuer / A0 | `attempt.json` | 340 | `afffac6af0f3ee0808fbffe1bf8c1669c90097d851d5f57ffd37be0093c7d082` |
-| issuer / A0 | `verified-receipts.json` | 2737 | `a14f383a82b336e01ab8f2af155b067d0d5b33ea280f2cee6917861fe9889e83` |
-| issuer / A0 | `result.json` | 2737 | `dc1401225d92cdaf14e10ad87cb8f40c3df00ef2dc5ebc300aaf40faf8bc16d3` |
-| issuer / A1 | `attempt.json` | 340 | `b1d8e07e6d04e1958068dd0299434e50358b59da1525465a19fc139aca111a4f` |
-| custody / A0 | `attempt.json` | 340 | `f26b5c3718356f54daca3eb1bf8a48d0e11449b456e72f26c7aab6fb35f41d87` |
-| custody / A0 | `verified-receipts.json` | 3084 | `f7211f01e398176a8684620126fbae15a0e4648cad860a0fa779eaa2a342a769` |
-| custody / A0 | `result.json` | 3084 | `e077a01950eeacb4fbe20df0a8be71d46ad8df699e4faf86fa46d043672d49d3` |
-| custody / A1 | `attempt.json` | 340 | `719c59631f46aa02bb6a9673e13a9067a95e7378227d2ad1781bdbb5607a4edb` |
-
-For both Issuer/reserve A1 and Custody/consume A1, verified-receipts.json and
-result.json were reported ABSENT. Only attempt.json was present. This matches
-the source path for a complete response discarded before validation and before
-the callback. It does not independently establish the precise exception cause
-or historical callback count. A0 had all three expected files in each role.
-
-These hashes identify the bytes the operator's script read at inspection time.
-Issuer hashes were subsequently recomputed from operator-transferred Base64
-bytes and matched all four prior entries. Custody hashes remain operator-
-reported, with original bytes and receipt signatures pending. The inventory
-alone preserves identifiers; the linked issuer byte record preserves those
-four original byte sequences.
-
-## Separate cryptographic check of the final view
-
-On 2026-10-24 JST, the assistant execution environment used Python cryptography
-Ed25519PublicKey.verify on the final custody view at revision 4. It did not call
-the Linux service or a Provider. The signed bytes are the pinned contract's
-`b'TASK4_EXTERNAL_LEDGER_RECEIPT_V1\\0'` domain followed by the statement encoded
-using `json.dumps(sort_keys=True, separators=(',', ':'), allow_nan=False).encode()`.
-The original source constant and encoding were read at the recorded 335a3c9 pin.
-
-| Check | Result |
-| --- | --- |
-| Raw receipt public key | `b41a562bd2c5559dd49d7bbdf5e5fab64067737ddbb4cb9f98ffa8ac06d59d92` |
-| Raw public-key SHA-256 vs previously reported pin | MATCH |
-| Full public binding SHA-256 vs command/statement/report | MATCH |
-| Binding run ID vs all four reported slot names | MATCH |
-| Source/genesis/certificate approval metadata vs report | MATCH (metadata consistency only) |
-| Command digest, nonce/action and reported snapshot | MATCH |
-| Ed25519 signature on the preserved final statement | VALID |
-| Same signature with statement revision changed from 4 to 5 | REJECTED (InvalidSignature) |
-| Canonical final statement SHA-256 | `ffd902e4dd74184150a0349b08d644e37884f6c6ace4c17f0323c4dcf76be0f3` |
-
-The JSON record includes the selected public approval fields and verification
-results. This verifies one reconstructed final receipt's signature under a key
-whose hash matches the earlier operator-supplied pin. It does not authenticate
-the pin through an independent administrator, reproduce the experiment, attest
-the host/source, establish historical freshness for earlier receipts, or verify
-uncollected Custody journal bytes. No independent human/third-party validation
-is claimed. Original issuer journal checks are separately documented below.
-
-## Original issuer journal bytes: separate verification
-
-The operator supplied a Base64 export of issuer A0 attempt.json,
-verified-receipts.json, result.json, and A1 attempt.json. The
-[issuer byte record](../evidence/task4_signed_ledger_335a3c9_issuer_journal_bytes_v1.json)
-preserves the exported byte sequences and verification results. Base64 decoding
-in the assistant execution environment reproduced all four recorded lengths and
-SHA-256 values, matching the prior inventory. No source-host access or
-filesystem metadata attestation was available; the acquisition remains an
-operator-supplied export.
-
-The A0 receipt and result files contain the same two signed exchanges: an
-empty view at revision 0 and an A0 reservation at revision 1. All four signature
-checks passed under the previously pinned public key (two distinct receipts,
-each present in both files). The command digest, nonce/action, binding/ledger,
-fixed A0 request, expected revision and exact RESERVED snapshot matched.
-A reserve statement with a changed revision failed signature verification.
-
-The files differ only in synthetic_callbacks: 0 in verified-receipts.json and
-1 in result.json. Those local fields are unsigned marker records, not an
-independent callback-count witness. Both attempts bind the same configuration
-hash, manifest and binding, with operation IDs A0 and A1; private configuration
-contents were not collected or authenticated by that comparison. A1 has no
-exported success receipt/result, consistent with the reported absences.
-
-These checks involved no network call, mutation, callback, reset or retry.
-They do not verify Custody's original consumption records, A1's missing files,
-backend history or independent administration.
-
-## Remaining evidence and integration gates
-
-- Collect the existing Custody A0/A1 public journal bytes where present,
-  and independently recompute their reported hashes. Issuer's four exported
-  files are preserved and checked above. Retain absence records; do not
-  recreate missing files or delete burned slots.
-- Validate the Custody journal receipts after collection, using the preserved
-  binding and pinned public key, and join them to issuer's verified reservation.
-  Neither byte/signature check provides the full backend commit history.
-- Establish safe, bounded evidence that distinguishes a specific service
-  refusal from transport/backend unavailability.
-- Treat host administration, privileged rollback, actual crash/restore,
-  separate-host operation, credential/egress denial, Native reservation-before-
-  grant / consumption-before-send integration and independent A/B scoring as
-  separate open gates.
-
-These observations supplement the historical
-[deployment preparation runbook](TASK4_SIGNED_LEDGER_MANUAL_DEPLOYMENT_RUNBOOK_V1.md).
-They do not retroactively turn its model tests into remote evidence or close
-all deployment/production acceptance conditions.
+No private key, API token, TLS private key or private configuration contents are
+included. Historical preparation and model results in the
+[deployment runbook](TASK4_SIGNED_LEDGER_MANUAL_DEPLOYMENT_RUNBOOK_V1.md) are not
+retroactively upgraded. No workflow/runtime, retained state or permission change
+is made by this PR.
