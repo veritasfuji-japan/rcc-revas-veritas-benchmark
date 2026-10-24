@@ -1,0 +1,52 @@
+name: Task4 Isolated Egress Watchdog NO-GO
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  isolated-watchdog:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Install test dependencies
+        run: |
+          python -m pip install 'pytest==9.1.1'
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends nftables
+          mkdir -p results
+      - name: Verify detached timed rollback and killed controller in isolated namespaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_native_egress_watchdog_v1.py \
+            -o junit_family=xunit1 --junitxml=results/task4-native-egress-watchdog-junit.xml
+          python - <<'PYCODE'
+          import json,xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-native-egress-watchdog-junit.xml').getroot()
+          assert len(list(root.iter('testcase')))==30
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          props=[p for p in root.iter('property') if p.get('name')=='watchdog_rehearsal_json']
+          proofs=[json.loads(p.get('value')) for p in props]
+          assert {p['scenario'] for p in proofs}=={'deadline','controller_killed','foreign_marker','extra_rule','collision'}
+          assert len(proofs)==5 and all(p['unrelated_canary_unchanged'] for p in proofs)
+          assert all(not p['host_rules_applied'] and not p['execution_permission_issued'] for p in proofs)
+          print('DETACHED_WATCHDOG_DEADLINE_CONTROLLER_SIGKILL_CHANGED_TABLE_REFUSAL_ISOLATED_ONLY')
+          PYCODE
+      - name: Retain actual kernel watchdog proof
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: task4-isolated-egress-watchdog-proof
+          path: results/
+          if-no-files-found: error
