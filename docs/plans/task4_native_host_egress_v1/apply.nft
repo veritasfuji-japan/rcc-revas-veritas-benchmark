@@ -1,0 +1,8 @@
+# REVIEW CANDIDATE ONLY: no host installation is authorized by this file.
+create table inet veritas_native_host_egress_v1 { comment "veritas-native-host-egress-v1"; }
+create chain inet veritas_native_host_egress_v1 output { type filter hook output priority 0; policy accept; }
+add rule inet veritas_native_host_egress_v1 output meta skuid 61103 counter reject with icmpx type admin-prohibited comment "backend"
+add rule inet veritas_native_host_egress_v1 output meta skuid 61105 counter reject with icmpx type admin-prohibited comment "issuer"
+add rule inet veritas_native_host_egress_v1 output meta skuid 61106 counter reject with icmpx type admin-prohibited comment "custody"
+add rule inet veritas_native_host_egress_v1 output meta skuid 61107 counter reject with icmpx type admin-prohibited comment "archive"
+add rule inet veritas_native_host_egress_v1 output meta skuid 61108 counter reject with icmpx type admin-prohibited comment "runtime"

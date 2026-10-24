@@ -1,0 +1,2 @@
+# REVIEW CANDIDATE ONLY: verify exclusive ownership and exact table shape before deletion.
+delete table inet veritas_native_host_egress_v1

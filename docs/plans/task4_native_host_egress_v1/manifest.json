@@ -1,0 +1,60 @@
+{
+  "automatic_rollback_implemented": false,
+  "chain": "output",
+  "collision_behavior": "CREATE_TABLE_MUST_FAIL_IF_NAME_EXISTS; ATOMIC_BATCH_MUST_NOT_MODIFY_EXISTING_TABLE",
+  "command_files": {
+    "apply.nft": {
+      "sha256": "8e78a32fc31a24d32da1576869db5795d214544461c8d60ef6f30c5eb4dd9345",
+      "size_bytes": 946
+    },
+    "rollback.nft": {
+      "sha256": "fed2c2c26ddc887d84afdce11ab292f24d4170fbcce337b2c8756e6cd173bb55",
+      "size_bytes": 139
+    }
+  },
+  "credential_loaded": false,
+  "default_policy": "accept",
+  "execution_permission_issued": false,
+  "exempt_scope": {
+    "administrator": 0,
+    "other_uids": "NOT_MATCHED",
+    "reader": 61109,
+    "retained_service": 109
+  },
+  "family": "inet",
+  "hook": "output",
+  "host_apply_authorized": false,
+  "host_egress_verified": false,
+  "host_rules_applied": false,
+  "ownership_comment": "veritas-native-host-egress-v1",
+  "prior_operator_isolated_report_sha256": "5450e2639db054f176a3f01c9978513232a661497e365610b995adbd645e7c72",
+  "prior_source_sha256": "f6865825a1f7435a1821e56f3e2e64db806c4ffad23f402d21cba8b394e48857",
+  "priority": 0,
+  "private_key_loaded": false,
+  "production_bypass_resistance_proven": false,
+  "provider_dispatch": "DENY",
+  "reader_github_only_policy_implemented": false,
+  "reboot_persistence_implemented": false,
+  "required_before_any_host_trial": [
+    "fresh-readonly-host-inventory",
+    "actual-target-uid-process-review",
+    "protected-source-and-candidate-byte-pins",
+    "exact-nft-json-ownership-and-shape-checks",
+    "bounded-independent-rollback-and-recovery-test",
+    "explicit-operator-host-trial-action"
+  ],
+  "retained_service_egress_policy_implemented": false,
+  "rollback_scope": "DELETE_ONLY_THE_DEDICATED_TABLE_AFTER_OWNERSHIP_AND_EXACT_SHAPE_CHECK",
+  "schema": "task4.native-host-egress-review-candidate.v1",
+  "scope": "REVIEW_CANDIDATE_ONLY_NO_HOST_APPLY_NO_EXECUTION",
+  "table": "veritas_native_host_egress_v1",
+  "target_uids": {
+    "archive": 61107,
+    "backend": 61103,
+    "custody": 61106,
+    "issuer": 61105,
+    "runtime": 61108
+  },
+  "traffic": "ALL_IPV4_IPV6_OUTPUT_INCLUDING_LOOPBACK_FOR_FIVE_TARGET_SOCKET_UIDS",
+  "utility": "UNSCORED"
+}

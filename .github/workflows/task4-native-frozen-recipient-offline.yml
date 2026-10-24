@@ -93,6 +93,29 @@ jobs:
           assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
           print('ISOLATED_NETNS_20_IPV4_IPV6_TCP_UDP_DENIALS_12_EXEMPT_CONTROLS_NO_HOST_APPLY_NO_EXECUTION')
           PYCODE
+      - name: Verify operator VM egress evidence and review-only host nft batch in isolated namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_native_vm_egress_host_plan_v1.py \
+            -o junit_family=xunit1 --junitxml=results/task4-native-vm-egress-host-plan-junit.xml
+          python - <<'PYCODE'
+          import json,xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-native-vm-egress-host-plan-junit.xml').getroot()
+          cases=list(root.iter('testcase'))
+          assert len(cases)==8
+          actual=[x for x in cases if x.get('name')=='test_actual_candidate_create_collision_and_inverse_are_atomic_in_fresh_netns']
+          assert len(actual)==1
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          props=[p for p in actual[0].iter('property') if p.get('name')=='candidate_transaction_json']
+          assert len(props)==1
+          proof=json.loads(props[0].get('value'))
+          assert proof['duplicate_create_failed'] and proof['duplicate_state_unchanged']
+          assert proof['inverse_removed_only_candidate'] and proof['unrelated_canary_unchanged']
+          assert not proof['host_rules_applied']
+          print('OPERATOR_VM_EVIDENCE_SHA_MATCH_CANDIDATE_CREATE_COLLISION_ROLLBACK_ISOLATED_ONLY_NO_HOST_APPLY')
+          PYCODE
       - name: Verify original SDK capped wires and same-run AEAD before parser
         shell: bash
         run: |
