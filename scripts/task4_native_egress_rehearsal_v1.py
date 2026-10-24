@@ -200,10 +200,11 @@ print(json.dumps(result,sort_keys=True,separators=(',',':')))
 '''
 
 
-def probe_clients(roles, endpoints, binaries):
+def probe_clients(roles, endpoints, binaries, snapshot=None):
     records = []
     for role, uid in roles.items():
         for version, protocol in FLOWS:
+            before = snapshot()[uid] if snapshot is not None else None
             raw = execute([binaries['setpriv'], '--reuid=' + str(uid), '--regid=' + str(GIDS[uid]),
                 '--clear-groups', '--no-new-privs', '--bounding-set=-all', '--inh-caps=-all', '--ambient-caps=-all',
                 sys.executable, '-I', '-B', '-c', CLIENT, str(uid), str(GIDS[uid]), str(version), protocol,
@@ -212,6 +213,8 @@ def probe_clients(roles, endpoints, binaries):
             need(record['uid'] == uid and record['gid'] == GIDS[uid] and record['version'] == version
                  and record['protocol'] == protocol and record['effective_capabilities'] == 0
                  and record['no_new_privs'] is True, 'ACTUAL_UID_CAPABILITY_FLOW')
+            if snapshot is not None:
+                record.update(kernel_packets_before=before, kernel_packets_after=snapshot()[uid])
             records.append(dict(record, role=role))
     return records
 
@@ -243,8 +246,11 @@ def validate_phase(records, roles, success):
     expected = {(role, uid, version, protocol) for role, uid in roles.items() for version, protocol in FLOWS}
     actual = set()
     for row in records:
-        need(set(row) == {'uid', 'gid', 'version', 'protocol', 'effective_capabilities', 'no_new_privs',
-                         'result', 'errno', 'role'}, 'EXACT_FLOW_RECORD')
+        fields = {'uid', 'gid', 'version', 'protocol', 'effective_capabilities', 'no_new_privs',
+                  'result', 'errno', 'role'}
+        if not success:
+            fields |= {'kernel_packets_before', 'kernel_packets_after'}
+        need(set(row) == fields, 'EXACT_FLOW_RECORD')
         uid = row['uid']
         need(type(uid) is int and uid in GIDS and type(row['gid']) is int and row['gid'] == GIDS[uid]
              and type(row['version']) is int and row['effective_capabilities'] == 0
@@ -256,12 +262,16 @@ def validate_phase(records, roles, success):
         if success:
             need(row['result'] == 'SUCCESS' and row['errno'] is None, 'POSITIVE_BANNER_CONTROL')
         else:
-            # A timeout, missing route or unavailable listener is not a firewall
-            # denial. Linux local-output administrative reject returns EPERM or
-            # EACCES; the kernel counter join is also required below.
+            # IPv4 ICMP admin-prohibited maps to ICMP_PKT_FILTERED and then
+            # EHOSTUNREACH on Linux. That errno alone is not proof: each flow
+            # must also increase its socket-UID rule's actual kernel counter.
+            allowed = (1, 13, 113) if row['version'] == 4 else (1, 13)
             need(row['result'] == 'SOCKET_ERROR' and type(row['errno']) is int
-                 and row['errno'] in (1, 13), 'ADMINISTRATIVE_SOCKET_DENIAL:' + canonical(
+                 and row['errno'] in allowed, 'ADMINISTRATIVE_SOCKET_DENIAL:' + canonical(
                      {k: row[k] for k in ('uid', 'version', 'protocol', 'result', 'errno')}).decode('ascii'))
+            need(type(row['kernel_packets_before']) is int and row['kernel_packets_before'] >= 0
+                 and type(row['kernel_packets_after']) is int
+                 and row['kernel_packets_after'] > row['kernel_packets_before'], 'FLOW_KERNEL_COUNTER_INCREASE')
     need(actual == expected, 'COMPLETE_FLOW_COVERAGE')
 
 
@@ -295,6 +305,13 @@ def validate_report(value):
     validate_phase(phases['after_local_table_removal'], all_roles, True)
     need(set(value['kernel_denial_packets']) == {str(x) for x in DENIED.values()}, 'FIVE_KERNEL_COUNTERS')
     need(all(type(x) is int and x >= 4 for x in value['kernel_denial_packets'].values()), 'PACKET_COUNTER_AND_SOCKET_JOIN')
+    for uid in DENIED.values():
+        last = 0
+        for row in phases['denied']:
+            if row['uid'] == uid:
+                need(row['kernel_packets_before'] >= last, 'MONOTONIC_UID_COUNTER')
+                last = row['kernel_packets_after']
+        need(value['kernel_denial_packets'][str(uid)] >= last, 'FINAL_UID_COUNTER_JOIN')
     need(value['source_sha256'] == source_sha256(), 'SAME_REHEARSAL_SOURCE')
     return value
 
@@ -314,7 +331,9 @@ def _isolated_probe(parent_pid, parent_namespace):
         guard(parent_pid, parent_namespace, binaries)
         execute([binaries['nft'], '--check', '--file', '-'], rules().encode('ascii'))
         execute([binaries['nft'], '--file', '-'], rules().encode('ascii'))
-        phases['denied'] = probe_clients(DENIED, endpoints, binaries)
+        def snapshot():
+            return counters(execute([binaries['nft'], '--json', '--numeric', 'list', 'table', 'inet', TABLE]))
+        phases['denied'] = probe_clients(DENIED, endpoints, binaries, snapshot)
         phases['exempt_controls'] = probe_clients(CONTROLS, endpoints, binaries)
         validate_phase(phases['denied'], DENIED, False)
         validate_phase(phases['exempt_controls'], CONTROLS, True)

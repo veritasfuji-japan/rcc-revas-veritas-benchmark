@@ -89,11 +89,16 @@ host rules, IPv4-only probing or a different UID profile.
    Fork clients through `setpriv` with the exact UID/GID, cleared supplementary
    groups, empty capability bounds and `no_new_privs`. Each child verifies its
    effective capabilities are zero and that its real/effective IDs match.
-5. All five target UIDs must fail with administrative EACCES/EPERM in each of
-   the four flows: **20 denials**. Timeout, missing route, connection refused,
-   a missing IPv6 result or success is a stop. Join these results to all five
-   numeric kernel socket-UID rule counters; each must have at least four
-   rejected packets. Counter increases alone are not sufficient.
+5. All five target UIDs must fail with administrative socket errors in each of
+   the four flows: **20 denials**. Linux maps IPv4 admin-prohibited ICMP to EHOSTUNREACH
+   (113); IPv4 therefore admits errno 1/13/113, IPv6 only 1/13. No errno alone
+   counts as denial: each individual flow must increase its numeric socket-UID
+   rule counter, the counters must remain monotonic, and the final five
+   counters must cover those increases with at least four packets per UID.
+   A timeout, ENETUNREACH, connection refused, a missing IPv6 result, success
+   or an error without the matching counter increase stops. All baseline and
+   post-removal successes are also required; counter increases alone are not
+   sufficient.
 6. The three exempt UIDs must still exchange the banner in each flow:
    **12 positive controls**. These are new controlled processes under the
    same numeric UIDs, not a live GitHub GET, retained service or SSH session.
@@ -135,7 +140,7 @@ retained signer, DNS, local transport, existing connections and rollback scope.
 
 ## Validation and evidence separation
 
-The targeted suite has 61 cases. Pure tests cover fixed UID/family scope, no
+The targeted suite has 68 cases. Pure tests cover fixed UID/family scope, no
 commands in plan mode, root/ack checks, namespace/loopback guards, public report
 confusion, capability/flow/counter substitution, administrative-denial errno
 classification, missing/untrusted tools and constant errors. Synthetic report
@@ -144,8 +149,9 @@ fixtures are shape tests and are never presented as kernel observations.
 A mandatory root CI case performs the actual isolated rehearsal: 20 TCP/UDP
 IPv4/IPv6 denials, 12 exempt controls, successful baselines/removal controls,
 actual dropped capabilities, per-UID kernel counters and unchanged parent
-netns identity. All 61 cases must run with zero skips/failures in that job; its
-JUnit artifact is retained. A workspace without root network capabilities
+netns identity. All 68 cases must run with zero skips/failures in that job; its
+JUnit artifact retains the complete successful rehearsal JSON as a property
+   on the actual kernel test case. A workspace without root network capabilities
 skips the actual case locally, which is not counted as proof. CI conditionally
 installs nftables if missing; this provisioning is not in the operator CLI.
 
@@ -164,3 +170,10 @@ or touch their storage.
 - [network_namespaces(7), Linux man-pages](https://man7.org/linux/man-pages/man7/network_namespaces.7.html):
   network namespaces isolate interfaces, IPv4/IPv6 stacks, routing and firewall
   state. This isolation is not a full security boundary against privileged root.
+
+The IPv4 error mapping is documented in the Linux v6.8 primary sources:
+[nft_reject.c](https://github.com/torvalds/linux/blob/v6.8/net/netfilter/nft_reject.c)
+maps ICMPX admin-prohibited to ICMP_PKT_FILTERED, and
+[icmp.c](https://github.com/torvalds/linux/blob/v6.8/net/ipv4/icmp.c) maps that
+IPv4 ICMP code to EHOSTUNREACH. The rehearsal still requires actual per-flow
+rule counter increases and both successful control phases.

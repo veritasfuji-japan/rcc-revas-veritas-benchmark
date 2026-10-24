@@ -10,9 +10,13 @@ from scripts import task4_native_egress_rehearsal_v1 as t
 
 
 def record(role, uid, version, protocol, success):
-    return dict(role=role, uid=uid, gid=t.GIDS[uid], version=version, protocol=protocol,
+    value = dict(role=role, uid=uid, gid=t.GIDS[uid], version=version, protocol=protocol,
                 effective_capabilities=0, no_new_privs=True,
                 result='SUCCESS' if success else 'SOCKET_ERROR', errno=None if success else 13)
+    if not success:
+        ordinal = t.FLOWS.index((version, protocol))
+        value.update(kernel_packets_before=ordinal, kernel_packets_after=ordinal + 1)
+    return value
 
 
 def phase(roles, success):
@@ -224,7 +228,7 @@ def test_cli_failure_sanitizes_exception_and_has_no_fallback(monkeypatch, capsys
     assert out.out == '' and out.err.strip() == t.STOP and calls == [True]
 
 
-def test_actual_network_namespace_uid_tcp_udp_ipv4_ipv6_rehearsal(monkeypatch):
+def test_actual_network_namespace_uid_tcp_udp_ipv4_ipv6_rehearsal(monkeypatch, record_property):
     caps = int(next(x.split()[1] for x in Path('/proc/self/status').read_text().splitlines() if x.startswith('CapEff:')), 16)
     if os.geteuid() != 0 or not all(caps & (1 << bit) for bit in (6, 7, 12, 21)):
         pytest.skip('requires disposable root CI with setuid/setgid/net-admin/sys-admin')
@@ -246,7 +250,9 @@ def test_actual_network_namespace_uid_tcp_udp_ipv4_ipv6_rehearsal(monkeypatch):
     assert t.namespace() == before
     assert t.validate_report(result) == result
     assert len(result['phases']['denied']) == 20
-    assert all(x['errno'] in (1, 13) for x in result['phases']['denied'])
+    assert all(x['errno'] in ((1, 13, 113) if x['version'] == 4 else (1, 13)) for x in result['phases']['denied'])
+    assert all(x['kernel_packets_after'] > x['kernel_packets_before'] for x in result['phases']['denied'])
+    record_property('isolated_rehearsal_json', t.canonical(result).decode('ascii'))
     assert len(result['phases']['exempt_controls']) == 12
     assert result['parent_namespace_before'] == result['parent_namespace_after'] == before
     assert result['isolated_namespace'] != before
@@ -290,3 +296,28 @@ def test_failed_or_unbounded_command_is_not_a_successful_rehearsal(monkeypatch, 
         stdout=b'x' * (t.LIMIT + 1) if fault == 'oversized' else b'', stderr=b'RAW_FAILURE'))
     with pytest.raises(ValueError):
         t.execute(['/never/run'])
+
+
+def test_ipv4_admin_error_113_requires_positive_kernel_counter_and_all_controls(report):
+    report['phases']['denied'][0]['errno'] = 113
+    assert t.validate_report(report) == report
+
+
+@pytest.mark.parametrize('fault', ['no-hit', 'negative-before', 'bool-after', 'decreasing', 'final-mismatch', 'ipv6-113'])
+def test_errno_alone_or_unmatched_counter_cannot_prove_denial(report, fault):
+    row = report['phases']['denied'][0]
+    row['errno'] = 113
+    if fault == 'no-hit':
+        row['kernel_packets_after'] = row['kernel_packets_before']
+    elif fault == 'negative-before':
+        row['kernel_packets_before'] = -1
+    elif fault == 'bool-after':
+        row['kernel_packets_after'] = True
+    elif fault == 'decreasing':
+        report['phases']['denied'][1].update(kernel_packets_before=0, kernel_packets_after=1)
+    elif fault == 'final-mismatch':
+        report['phases']['denied'][3]['kernel_packets_after'] = 10
+    else:
+        report['phases']['denied'][1]['errno'] = 113
+    with pytest.raises(ValueError):
+        t.validate_report(report)
