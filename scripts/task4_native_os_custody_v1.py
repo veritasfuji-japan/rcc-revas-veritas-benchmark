@@ -1256,7 +1256,10 @@ def finish_concurrent(base, output, worker, spawn, service, native_ns, sink_ns, 
 
 
 def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash=False, concurrent_response_loss=False,
-        retained_senders=False, local_https=False, durable_issuer=False, raw_ingress='', raw_authority=False, bounded_native=False, retained_bounded=False, signed_ledger_native=False):
+        retained_senders=False, local_https=False, durable_issuer=False, raw_ingress='', raw_authority=False, bounded_native=False, retained_bounded=False, signed_ledger_native=False, signed_github_native=False, signed_github_fault=''):
+    from scripts import task4_native_github_mtls_v1 as github
+    need(type(signed_github_native) is bool and (not signed_github_native or signed_ledger_native)
+         and signed_github_fault in ('',*github.FAULTS) and (not signed_github_fault or signed_github_native), 'EXPLICIT_SIGNED_GITHUB_MODEL_NATIVE_PROFILE')
     from scripts import task4_native_signed_ledger_integration_v1 as signed
     need(type(signed_ledger_native) is bool and (not signed_ledger_native or retained_bounded), 'SIGNED_LEDGER_REQUIRES_RETAINED_NATIVE_PROFILE')
     from scripts import task4_native_retained_authority_v1 as retained
@@ -1442,7 +1445,7 @@ def run(output, fault='', restart_both=False, concurrent=False, concurrent_crash
                 if retained_bounded:
                     retained.enroll(base, worker, native_ns)
                 if signed_ledger_native:
-                    signed.enroll(base, worker, native_ns)
+                    signed.enroll(base, worker, native_ns, signed_github_native, signed_github_fault)
                 bounded.exercise(base, output, worker, spawn, native_ns, client_ns, sink_ns, head, pins, network)
                 print('NATIVE_BOUNDED_CONTINUATION_CLOSED_TLS_NO_PROVIDER')
                 return
@@ -1652,25 +1655,32 @@ def main():
     parser.add_argument('--bounded-native', action='store_true')
     parser.add_argument('--retained-bounded', action='store_true')
     parser.add_argument('--signed-ledger-native', action='store_true')
+    parser.add_argument('--signed-github-native', action='store_true')
+    from scripts import task4_native_github_mtls_v1 as github
+    parser.add_argument('--signed-github-fault', choices=github.FAULTS, default='')
     parser.add_argument('--secondary', action='store_true')
-    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart', 'raw-owner', 'raw-recover', 'raw-authority-probe', 'bounded-init', 'bounded-issuer', 'bounded-native', 'bounded-probe', 'bounded-replay', 'retained-init-issuer', 'retained-init-custody', 'retained-state', 'retained-check', 'retained-alternate', 'retained-prepare', 'retained-pending', 'retained-terminal', 'signed-ledger-init', 'signed-ledger-provision', 'signed-ledger-bootstrap', 'signed-ledger-server', 'signed-ledger-journal', 'signed-ledger-view'))
+    parser.add_argument('--role', choices=('issue', 'backend', 'custody', 'probe', 'reachable', 'native', 'restart-probe', 'wrong-peer', 'fault-native', 'fault-replay', 'reconcile-fault', 'offline-reconcile', 'backend-replay', 'concurrent-native', 'concurrent-replay', 'concurrent-crash-replay', 'retained-probe', 'retained-reachable', 'tls-isolated', 'tls-firewall', 'tls-reachable', 'tls-bad_ca', 'durable-issuer', 'issuer-replay', 'issuer-invalid-restart', 'raw-owner', 'raw-recover', 'raw-authority-probe', 'bounded-init', 'bounded-issuer', 'bounded-native', 'bounded-probe', 'bounded-replay', 'retained-init-issuer', 'retained-init-custody', 'retained-state', 'retained-check', 'retained-alternate', 'retained-prepare', 'retained-pending', 'retained-terminal', 'signed-ledger-init', 'signed-ledger-provision', 'signed-ledger-bootstrap', 'signed-ledger-server', 'signed-ledger-journal', 'signed-ledger-view', 'signed-github-project', 'signed-github-fault-native', 'signed-github-fault-replay'))
     parser.add_argument('--base', type=Path)
     parser.add_argument('--restart', action='store_true')
     args = parser.parse_args()
     if args.run:
         need(args.output is not None and args.role is None and not args.secondary, 'RUN_OUTPUT_REQUIRED')
         run(args.output.resolve(), args.fault, args.restart_both, args.concurrent, args.concurrent_crash,
-            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer, args.raw_ingress, args.raw_authority, args.bounded_native, args.retained_bounded, args.signed_ledger_native)
+            args.concurrent_response_loss, args.retained_senders, args.local_https, args.durable_issuer, args.raw_ingress, args.raw_authority, args.bounded_native, args.retained_bounded, args.signed_ledger_native, args.signed_github_native, args.signed_github_fault)
     else:
         need(args.role is not None and args.base is not None and not args.fault and not args.restart_both
              and not args.concurrent and not args.concurrent_crash and not args.concurrent_response_loss
-             and not args.retained_senders and not args.local_https and not args.durable_issuer and not args.raw_ingress and not args.raw_authority and not args.bounded_native and not args.retained_bounded and not args.signed_ledger_native
+             and not args.retained_senders and not args.local_https and not args.durable_issuer and not args.raw_ingress and not args.raw_authority and not args.bounded_native and not args.retained_bounded and not args.signed_ledger_native and not args.signed_github_native and not args.signed_github_fault
              and (not args.secondary or args.role == 'custody'), 'EXPLICIT_LOCAL_ROLE')
         from scripts.task4_retained_sender_denial_v1 import probe as retained_probe
         from scripts import task4_native_local_https_v1 as tls
         from scripts import task4_durable_issuer_restart_v1 as durable
         from scripts import task4_native_raw_authority_v1 as authority
         TLS_BASE = args.base if tls.enabled(args.base) else None
+        if args.role.startswith('signed-github-'):
+            roles = {'signed-github-project': github.project, 'signed-github-fault-native': github.fault_native,
+                     'signed-github-fault-replay': github.fault_replay}
+            print(canonical(roles[args.role](args.base)).decode());return
         if args.role.startswith('signed-ledger-'):
             from scripts import task4_native_signed_ledger_integration_v1 as signed
             roles = {'signed-ledger-init': signed.initialize, 'signed-ledger-provision': signed.provision,

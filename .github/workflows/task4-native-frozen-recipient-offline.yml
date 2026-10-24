@@ -952,6 +952,56 @@ jobs:
           assert not Path('/run/veritas-task4-retained-bounded-v1').exists()
           print('NATIVE_SIGNED_LEDGER_16_MUTATIONS_8_BIND_TLS_ARCHIVES_RESTART_DENIED_NO_PROVIDER')
           PYCODE
+      - name: Join actual Native to retained GitHub API model and real mutual TLS
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_github_mtls_v1.py \
+            --junitxml=results/task4-native-github-mtls-unit-junit.xml
+          for fault in normal api-reserve-ack-lost tls-consume-ack-lost; do
+            fault_args=()
+            if [ "$fault" != normal ]; then fault_args=(--signed-github-fault "$fault"); fi
+            sudo -n "$(command -v python)" -m scripts.task4_native_os_custody_v1 \
+              --run --local-https --raw-ingress success --bounded-native --retained-bounded \
+              --signed-ledger-native --signed-github-native "${fault_args[@]}" \
+              --output "results/task4-native-github-mtls-$fault"
+          done
+          python - <<'PYCODE'
+          import hashlib,json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_github_mtls_v1 as model
+          from scripts import task4_native_signed_ledger_integration_v1 as integration
+          from scripts import task4_native_bounded_continuation_v1 as native
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          folder=Path('results/task4-native-github-mtls-normal')
+          r=json.loads((folder/'native-github-mtls.json').read_bytes())
+          i=json.loads((folder/'signed-ledger-integration.json').read_bytes())
+          n=json.loads((folder/'report.json').read_bytes())
+          assert r['audited_commit']==i['audited_commit']==n['audited_commit']==sha
+          assert r['source_sha256']==hashlib.sha256(Path(model.__file__).read_bytes()).hexdigest()
+          assert r['native_report_sha256']==model.l.digest(n) and r['integration_report_sha256']==model.l.digest(i)
+          assert r['evidence_sha256']==model.l.digest(r['evidence'])
+          assert native.validate(n['evidence']) and integration.validate(i['evidence'],n) and model.validate(r['evidence'],n,i)
+          assert i['ledger_backend']=='GITHUB_API_MODEL_NOT_REMOTE_GITHUB'
+          assert i['ledger_transport']=='MTLS_OVER_AF_UNIX_WITH_SO_PEERCRED'
+          for fault in model.FAULTS:
+              folder=Path('results/task4-native-github-mtls-'+fault)
+              f=json.loads((folder/'native-github-mtls-fault.json').read_bytes())
+              assert f['audited_commit']==sha and f['schema']==model.PROFILE and f['fault']==fault
+              assert f['source_sha256']==hashlib.sha256(Path(model.__file__).read_bytes()).hexdigest()
+              assert f['evidence_sha256']==model.l.digest(f['evidence']) and model.validate_fault(f['evidence'])
+              assert f['actual_native_sdk_stopped'] is True
+              assert f['remote_github_experiment_executed'] is False
+              assert f['real_provider_posts']==f['external_bank_effects']==0 and f['utility']=='UNSCORED' and f['provider_dispatch']=='DENY'
+              assert f['production_bypass_resistance_proven'] is f['independent_administration_proven'] is False
+          assert r['remote_github_experiment_executed'] is r['external_storage_deployed'] is False
+          assert r['real_provider_posts']==r['external_bank_effects']==0 and r['utility']=='UNSCORED' and r['provider_dispatch']=='DENY'
+          root=ET.parse('results/task4-native-github-mtls-unit-junit.xml').getroot()
+          assert len(list(root.iter('testcase')))==26
+          assert not any(list(root.iter(tag)) for tag in ('skipped','error','failure'))
+          assert not integration.DIRECTORY.exists() and not Path('/run/veritas-task4-retained-bounded-v1').exists()
+          print('NATIVE_GITHUB_API_MODEL_MTLS_READBACK_SIGKILL_API_AND_TLS_ACK_LOSS_NO_REMOTE_GITHUB_NO_PROVIDER')
+          PYCODE
       - name: Verify external ledger contract with unavailable and ambiguous acknowledgements
         shell: bash
         run: |
