@@ -21,6 +21,7 @@ from scripts.task4_external_ledger_contract_v1 import canonical, digest, exact, 
 
 PROFILE='task4.native-github-readiness.v1'
 APPROVAL='task4.native-github-readiness-approval.v1'
+RETAINED_APPROVAL='task4.native-github-retained-signer-approval.v1'
 SCOPE='SYNTHETIC_NATIVE_GITHUB_READ_ONLY_NO_EXECUTION'
 STOP='NATIVE_GITHUB_READINESS_STOP'
 MODULES=(
@@ -55,6 +56,9 @@ def source_manifest():
 
 
 def validate_approval(a):
+    if type(a) is dict and a.get('schema')==RETAINED_APPROVAL:
+        from scripts import task4_native_retained_signer_profile_v1 as retained
+        return retained.validate_approval(a)
     exact(a,'schema scope execution_source genesis binding native_manifest issuer_public_hex service_public_hex source_sha256 roles tls')
     need(a['schema']==APPROVAL and a['scope']==SCOPE and signed.hx(a['execution_source'],40)
          and signed.hx(a['genesis'],40),'EXPLICIT_NATIVE_READ_APPROVAL')
@@ -113,31 +117,51 @@ class ReadOnlyAPI(wire.API):
         return result
 
 
+def reader_uid(a):
+    return a['roles']['reader'] if a['schema']==RETAINED_APPROVAL else a['roles']['ledger']
+
+
+def service_uid(a):
+    return a['roles']['service'] if a['schema']==RETAINED_APPROVAL else a['roles']['ledger']
+
+
 def plan(a):
     """Reviewable desired rules, never an applied/observed firewall claim."""
-    return dict(schema='task4.native-github-egress-plan.v1',default_external_egress='DENY',
-        allowed_github_https=dict(uid=a['roles']['ledger'],host=wire.HOST,port=443,methods=['GET'],
+    result=dict(schema='task4.native-github-egress-plan.v1',default_external_egress='DENY',
+        allowed_github_https=dict(uid=reader_uid(a),host=wire.HOST,port=443,methods=['GET'],
             repository=signed.REPO,branch=signed.BRANCH,proxy=False,redirect=False,retry=False),
         denied_external_uids={role:a['roles'][role] for role in ('issuer','custody','runtime')},
         native_mtls_transport=a['tls']['transport'],dns_resolver_policy='REQUIRES_SEPARATE_REVIEW',
         token_permissions='DEDICATED_CONTENTS_READ_ONLY_REQUIRED_NOT_VERIFIED',
         os_rules_applied=False,os_egress_verified=False,tls_handshake_performed=False)
+    if a['schema']==RETAINED_APPROVAL:
+        result.update(applies_to_uids={role:a['roles'][role] for role in ('reader','issuer','custody','runtime')},
+            retained_service_excluded_uid=service_uid(a),
+            retained_service_egress_policy='OUTSIDE_READ_ONLY_CHECKER_PLAN_REQUIRES_SEPARATE_REVIEW')
+    return result
 
 
 def report(action,cfg,a):
     now=time.time();c=a['native_manifest']['execution']
     window='NOT_YET_VALID' if now<c['not_before'] else 'EXPIRED' if now>=c['expires_at'] else 'CURRENT'
-    return dict(schema=PROFILE,scope=SCOPE,action=action,approval_sha256=digest(a),configuration_sha256=digest(cfg),
+    result=dict(schema=PROFILE,scope=SCOPE,action=action,approval_sha256=digest(a),configuration_sha256=digest(cfg),
         declared_execution_source=a['execution_source'],reviewed_source_bytes_match=True,genesis=a['genesis'],
-        source_pin_scope='ELEVEN_SELECTED_FILES_NOT_FULL_RUNTIME_ATTESTATION',
+        source_pin_scope=('FOURTEEN_SELECTED_FILES_NOT_FULL_RUNTIME_ATTESTATION'
+                          if a['schema']==RETAINED_APPROVAL else 'ELEVEN_SELECTED_FILES_NOT_FULL_RUNTIME_ATTESTATION'),
         binding_sha256=digest(a['binding']),native_manifest_sha256=digest(a['native_manifest']),native_window_status=window,
-        account_matches_ledger_uid=current_uid()==a['roles']['ledger'],egress_plan=plan(a),
+        account_matches_ledger_uid=current_uid()==service_uid(a),
+        account_matches_reader_uid=current_uid()==reader_uid(a),read_account_uid=reader_uid(a),
+        service_account_uid=service_uid(a),egress_plan=plan(a),
         network_used=False,credential_loaded=False,backend_verified=False,native_run_present=None,
         credential_permissions_verified=False,
         execution_permission_issued=False,live_execution_ready=False,listener_started=False,
         service_receipt_verified=False,operator_mtls_verified=False,
         remote_mutations_attempted=0,real_provider_posts=0,native_execution_performed=False,
         provider_dispatch='DENY',utility='UNSCORED',production_bypass_resistance_proven=False)
+    if a['schema']==RETAINED_APPROVAL:
+        result.update(retained_private_key_loaded=False,retained_service_uid_observed=False,
+            service_reconfigured=False,native_runtime_profile_applied=False)
+    return result
 
 
 def run(action,configuration,allow_github_read=False):
@@ -146,7 +170,7 @@ def run(action,configuration,allow_github_read=False):
              and allow_github_read==(action=='read-existing'),'EXPLICIT_READ_ONLY_ACTION')
         cfg,a=prepare(configuration);result=report(action,cfg,a)
         if action=='check':return result  # No token contents, transport or socket.
-        need(current_uid()==a['roles']['ledger'],'APPROVED_NONROOT_LEDGER_ACCOUNT')
+        need(current_uid()==reader_uid(a),'APPROVED_NONROOT_READ_ACCOUNT')
         credential=token(cfg)
         api=ReadOnlyAPI(credential,a['genesis'],sha(bytes.fromhex(a['service_public_hex'])))
         backend=signed.GitState(api,a['genesis'],sha(bytes.fromhex(a['service_public_hex'])))
@@ -155,7 +179,7 @@ def run(action,configuration,allow_github_read=False):
         need(row is None or row['binding']==a['binding'],'EXISTING_NATIVE_BINDING_MISMATCH')
         cfg_after,a_after=prepare(configuration)
         need(cfg_after==cfg and a_after==a and token(cfg_after)==credential
-             and current_uid()==a['roles']['ledger'],'UNCHANGED_READ_APPROVAL_CONFIGURATION_CREDENTIAL')
+             and current_uid()==reader_uid(a),'UNCHANGED_READ_APPROVAL_CONFIGURATION_CREDENTIAL')
         result.update(network_used=True,credential_loaded=True,backend_verified=True,head_oid=head,
             github_get_requests=len(api.reads),native_run_present=row is not None,
             result='NATIVE_BINDING_OBSERVED_NO_EXECUTION_PERMISSION' if row else 'NATIVE_RUN_ABSENT_NO_ENROLLMENT',
