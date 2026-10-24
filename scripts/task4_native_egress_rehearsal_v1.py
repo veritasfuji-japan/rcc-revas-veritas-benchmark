@@ -260,7 +260,8 @@ def validate_phase(records, roles, success):
             # denial. Linux local-output administrative reject returns EPERM or
             # EACCES; the kernel counter join is also required below.
             need(row['result'] == 'SOCKET_ERROR' and type(row['errno']) is int
-                 and row['errno'] in (1, 13), 'ADMINISTRATIVE_SOCKET_DENIAL')
+                 and row['errno'] in (1, 13), 'ADMINISTRATIVE_SOCKET_DENIAL:' + canonical(
+                     {k: row[k] for k in ('uid', 'version', 'protocol', 'result', 'errno')}).decode('ascii'))
     need(actual == expected, 'COMPLETE_FLOW_COVERAGE')
 
 
