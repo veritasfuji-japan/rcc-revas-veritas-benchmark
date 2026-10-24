@@ -5,13 +5,14 @@
   "provenance": {
     "source": "operator-pasted terminal output in this conversation",
     "representation": "JSON reconstructed from the final custody view; original stdout byte formatting not retained",
-    "original_host_files_collected": false,
+    "original_host_files_collected": true,
     "original_host_file_hashes_collected": true,
     "independent_signature_verification_performed": true,
     "service_public_key_raw_collected": true,
     "not_a_new_execution": true,
-    "host_file_hashes_provenance": "operator-reported hashes from a read-only host inspection; original bytes not transferred or independently rehashed",
-    "signature_verification_scope": "one reconstructed final custody view; independently executed cryptographic check, not independent human attestation or host-file byte collection"
+    "host_file_hashes_provenance": "issuer: decoded bytes independently rehashed against prior inventory; custody: operator-reported hashes only",
+    "signature_verification_scope": "final reconstructed custody view and two distinct original issuer A0 receipts; separate cryptographic execution, not independent human attestation",
+    "original_host_file_collection_scope": "issuer only: four original byte sequences exported as Base64 by the operator, decoded and rehashed separately; no direct host acquisition"
   },
   "execution_source": "335a3c939fbef7158159853d2891e112718db085",
   "service_identity": {
@@ -182,8 +183,8 @@
     "received_date_jst": "2026-10-24",
     "collection_time": null,
     "run_id_from_slot_names": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c",
-    "original_file_bytes_collected": false,
-    "independent_file_rehash_performed": false,
+    "original_file_bytes_collected": true,
+    "independent_file_rehash_performed": true,
     "exact_run_binding_not_yet_collected": false,
     "slots": [
       {
@@ -286,7 +287,11 @@
           }
         ]
       }
-    ]
+    ],
+    "original_file_bytes_collected_roles": [
+      "issuer"
+    ],
+    "independent_file_rehash_scope": "all four issuer files only; custody pending"
   },
   "public_approval_subset": {
     "provenance": "operator-pasted selected public approval fields; no approval-file bytes or peers collected",
@@ -325,5 +330,60 @@
     "independent_human_or_administrator_attestation": false,
     "provider_dispatch": "DENY",
     "utility": "UNSCORED"
+  },
+  "issuer_journal_verification": {
+    "byte_record": "task4_signed_ledger_335a3c9_issuer_journal_bytes_v1.json",
+    "schema": "task4.issuer-journal-byte-verification.v1",
+    "verification_date_jst": "2026-10-24",
+    "input_provenance": "operator-supplied Base64; bytes decoded and verified in assistant environment",
+    "file_count": 4,
+    "file_checks": [
+      {
+        "operation": "A0",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "afffac6af0f3ee0808fbffe1bf8c1669c90097d851d5f57ffd37be0093c7d082",
+        "matches_prior_inventory": true
+      },
+      {
+        "operation": "A0",
+        "name": "verified-receipts.json",
+        "size_bytes": 2737,
+        "sha256": "a14f383a82b336e01ab8f2af155b067d0d5b33ea280f2cee6917861fe9889e83",
+        "matches_prior_inventory": true
+      },
+      {
+        "operation": "A0",
+        "name": "result.json",
+        "size_bytes": 2737,
+        "sha256": "dc1401225d92cdaf14e10ad87cb8f40c3df00ef2dc5ebc300aaf40faf8bc16d3",
+        "matches_prior_inventory": true
+      },
+      {
+        "operation": "A1",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "b1d8e07e6d04e1958068dd0299434e50358b59da1525465a19fc139aca111a4f",
+        "matches_prior_inventory": true
+      }
+    ],
+    "original_bytes_preserved_as_base64": true,
+    "all_file_hashes_match_prior_inventory": true,
+    "distinct_receipts_verified": 2,
+    "signature_verifications": 4,
+    "signed_revision_transition": [
+      0,
+      1
+    ],
+    "signed_final_state": "RESERVED",
+    "tampered_reserve_revision_rejected": true,
+    "result_differs_only_in_synthetic_callbacks": true,
+    "verified_record_callback_count": 0,
+    "result_record_callback_count": 1,
+    "callback_count_independently_attested": false,
+    "attempt_configuration_digests_match": true,
+    "private_configuration_bytes_collected": false,
+    "custody_original_bytes_collected": false,
+    "no_network_or_mutation_performed": true
   }
 }
