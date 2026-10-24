@@ -37,7 +37,11 @@ def anchor(base):
     r.identity(DIRECTORY, ROOT_UID, 0o755, True)
     raw = r.regular(DIRECTORY / 'enrollment.json', ROOT_UID, 0o444)
     a = l.strict(raw)
-    l.exact(a, 'schema base base_identity retained_sha256 binding service_public gates ledger_storage')
+    fields='schema base base_identity retained_sha256 binding service_public gates ledger_storage'
+    l.exact(a,fields+(' github_mtls' if 'github_mtls' in a else ''))
+    if 'github_mtls' in a:
+        from scripts import task4_native_github_mtls_v1 as github
+        github.validate_enrollment(a)
     l.need(a['schema'] == SCHEMA and a['base'] == str(Path(base).absolute()), 'EXACT_NATIVE_LEDGER_BASE')
     r.check_identity(a['base_identity'])
     l.need(l.strict(r.regular(Path(base) / LOCAL, ROOT_UID, 0o444)) ==
@@ -68,7 +72,14 @@ def admit(base, role):
 
 def gate(base, role):
     a = admit(base, role)
-    return g.NativeLedgerGate(a['gates'][role], bytes.fromhex(a['service_public']), UnixTransport(base))
+    return g.NativeLedgerGate(a['gates'][role], bytes.fromhex(a['service_public']), transport(base,a,role))
+
+
+def transport(base,a,role):
+    if 'github_mtls' in a:
+        from scripts import task4_native_github_mtls_v1 as github
+        return github.Transport(base,a,role)
+    return UnixTransport(base)
 
 
 class UnixTransport:
@@ -122,8 +133,11 @@ def initialize(base):
     return dict(public=key.public_key().public_bytes_raw().hex())
 
 
-def enroll(base, worker, isolated):
+def enroll(base, worker, isolated, github_mtls=False, github_fault=''):
     b, r, n = modules()
+    from scripts import task4_native_github_mtls_v1 as github
+    l.need(type(github_mtls) is bool and github_fault in ('',*github.FAULTS)
+           and (not github_fault or github_mtls),'EXPLICIT_NATIVE_GITHUB_MODEL_PROFILE')
     l.need(os.geteuid() == ROOT_UID and not required(base), 'EXCLUSIVE_ROOT_NATIVE_LEDGER_ENROLLMENT')
     try:
         pwd.getpwuid(LEDGER)
@@ -139,15 +153,20 @@ def enroll(base, worker, isolated):
         run_id=m['execution']['run_id'], manifest_sha256=l.digest(m),
         issuer_public_sha256=l.sha((base / 'public/issuer-key').read_bytes()),
         custody_public_sha256=l.sha(bytes.fromhex(m['custody_public'])))
-    n.durable_marker(base / PROVISION, dict(binding=binding, service_public=public)); os.chmod(base / PROVISION, 0o444)
+    v=dict(binding=binding,service_public=public)
+    if github_mtls:
+        binding['ledger_id']=github.signed.LEDGER_ID
+        v['github_mtls']=github.provision_tls(base,binding,github_fault)
+    n.durable_marker(base / PROVISION,v); os.chmod(base / PROVISION, 0o444)
     gates = {role: worker(uid, 'signed-ledger-provision', isolated)
              for role, uid in [('issuer', b.kernel.ISSUER), ('custody', b.kernel.CUSTODY)]}
     # Database creation/enrollment happens in the distinct ledger UID worker.
-    worker(LEDGER, 'signed-ledger-bootstrap', isolated)
+    initialized=worker(LEDGER, 'signed-ledger-bootstrap', isolated)
     storage = {name: r.identity(base / 'ledger' / name, LEDGER, 0o600)
-               for name in ('signing-key', 'state.sqlite3')}
+               for name in ('signing-key',github.MODEL if github_mtls else 'state.sqlite3')}
     a = dict(schema=SCHEMA, base=str(base), base_identity=r.identity(base, ROOT_UID, 0o755, True),
         retained_sha256=l.digest(r.anchor()), binding=binding, service_public=public, gates=gates, ledger_storage=storage)
+    if github_mtls:a['github_mtls']=dict(v['github_mtls'],genesis=initialized['genesis'])
     DIRECTORY.mkdir(mode=0o755)
     n.durable_marker(DIRECTORY / 'enrollment.json', a); os.chmod(DIRECTORY / 'enrollment.json', 0o444)
     n.durable_marker(base / LOCAL, dict(schema=SCHEMA, enrollment_sha256=l.digest(a))); os.chmod(base / LOCAL, 0o444)
@@ -165,6 +184,9 @@ def bootstrap(base):
     b, r, _ = modules()
     b.kernel.role_identity(LEDGER); l.need(not required(base), 'NO_LEDGER_REBOOTSTRAP')
     v = l.strict(r.regular(base / PROVISION, ROOT_UID, 0o444)); key = service_key(base)
+    if 'github_mtls' in v:
+        from scripts import task4_native_github_mtls_v1 as github
+        return github.bootstrap(base,v,key)
     service = l.ReferenceService.bootstrap(base / 'ledger/state.sqlite3', v['binding']['ledger_id'], key)
     service.enroll(v['binding']); r.sync_dir(base / 'ledger')
     return dict(enrolled=True)
@@ -176,6 +198,9 @@ def serve(base):
     for value in a['ledger_storage'].values(): r.check_identity(value)
     key = service_key(base)
     l.need(l.sha(key.public_key().public_bytes_raw()) == l.sha(bytes.fromhex(a['service_public'])), 'LEDGER_SIGNER_PIN')
+    if 'github_mtls' in a:
+        from scripts import task4_native_github_mtls_v1 as github
+        return github.serve(base,a,key)
     service = l.ReferenceService(base / 'ledger/state.sqlite3', a['binding']['ledger_id'], key)
     address = base / 'ledger-ipc/service.sock'
     if os.path.lexists(address):
@@ -223,13 +248,14 @@ def journal(base):
 
 def view(base):
     a = admit(base, 'issuer')
-    return l.LedgerClient(a['binding'], bytes.fromhex(a['service_public']), UnixTransport(base)).exchange('view')
+    return l.LedgerClient(a['binding'], bytes.fromhex(a['service_public']), transport(base,a,'issuer')).exchange('view')
 
 
 def probe(base):
     b, _, _ = modules()
-    b.kernel.role_identity(b.kernel.AGENT); denied=[]
-    for name in ('signing-key', 'state.sqlite3'):
+    b.kernel.role_identity(b.kernel.AGENT); denied=[];a=anchor(base)
+    from scripts import task4_native_github_mtls_v1 as github
+    for name in ('signing-key',github.MODEL if 'github_mtls' in a else 'state.sqlite3'):
         try:(base / 'ledger' / name).read_bytes()
         except PermissionError:denied.append(name)
         else:raise ValueError('UNTRUSTED_LEDGER_STORAGE_READ')
@@ -280,8 +306,9 @@ def validate(e, normal):
                    and receipts['snapshot'] == snapshot, 'EXACT_COMMITTED_NATIVE_ATTEMPT')
             revisions.append(snapshot['revision'])
     l.need(sorted(revisions) == list(range(1, 17)), 'SIXTEEN_EXACT_NATIVE_MUTATIONS')
+    from scripts import task4_native_github_mtls_v1 as github
     l.need(normal['evidence']['denials']['signed_ledger'] == dict(
-        private_read_denials=['signing-key','state.sqlite3'],unknown_uid_closed_without_receipt=True), 'LEDGER_KERNEL_PEER_PRIVATE_KEY_DENIALS')
+        private_read_denials=['signing-key',github.MODEL if 'github_mtls' in a else 'state.sqlite3'],unknown_uid_closed_without_receipt=True), 'LEDGER_KERNEL_PEER_PRIVATE_KEY_DENIALS')
     restart=e['restart']
     l.need(restart['before'] == restart['after'] == e['post_replay'] and restart['after']['revision'] == 16
            and len(restart['after']['attempts']) == 8
@@ -306,7 +333,12 @@ def finish(base, output, worker, isolated, normal, restart):
         ledger_transport='AF_UNIX_SO_PEERCRED_NOT_MTLS', real_provider_posts=0, external_bank_effects=0,
         provider_dispatch='DENY', utility='UNSCORED', production_bypass_resistance_proven=False,
         independent_administration_proven=False, cross_runner_retention_proven=False)
+    if 'github_mtls' in e['enrollment']:
+        report.update(ledger_backend='GITHUB_API_MODEL_NOT_REMOTE_GITHUB',ledger_transport='MTLS_OVER_AF_UNIX_WITH_SO_PEERCRED')
     (output / 'signed-ledger-integration.json').write_bytes(l.canonical(report))
+    if 'github_mtls' in e['enrollment']:
+        from scripts import task4_native_github_mtls_v1 as github
+        github.finish(base,output,worker,isolated,normal,report)
 
 
 def cleanup(base):

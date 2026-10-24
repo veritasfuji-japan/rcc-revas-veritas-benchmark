@@ -29,6 +29,11 @@ ARCHIVE_DOMAIN=b'TASK4_NATIVE_ARCHIVED_RESPONSE_V1\0'
 TOOL_DOMAIN=b'TASK4_NATIVE_TOOL_OBSERVATION_V1\0'
 
 
+class NativeBoundaryFailure(BaseException):
+    """Do not let the SDK translate an explicit boundary stop into a retry."""
+    pass
+
+
 def seed():
     initial=p.seed()
     for name in ('n','store','stream'):del initial[name]
@@ -289,7 +294,10 @@ def custody(base,restart=False):
     public=(base/'public/issuer-key').read_bytes();signer=read_key(base);file=base/'custody/ledger.sqlite3'
     if retained.required(base):
         db=retained.open_custody(base)
-        if restart:need(db.execute('SELECT count(*) FROM consumed').fetchone()[0]==8,'EIGHT_RETAINED_NATIVE_CONSUMPTIONS')
+        if restart:
+            from scripts import task4_native_github_mtls_v1 as github
+            expected=0 if github.fault_mode(base) else 8
+            need(db.execute('SELECT count(*) FROM consumed').fetchone()[0]==expected,'EXACT_RETAINED_NATIVE_CONSUMPTIONS')
     else:
         need(file.exists() if restart else not file.exists(),'EXACT_NATIVE_BOUNDED_LEDGER_LIFECYCLE')
         db=sqlite3.connect(file.resolve().as_uri()+'?mode=rw',uri=True,isolation_level=None) if restart else sqlite3.connect(file,isolation_level=None)
@@ -408,7 +416,7 @@ def native(base):
     from scripts.task4_471_same_run_capped_sdk_aead_native_no_go_v1 import verify_pins
     kernel.role_identity(RUNTIME);m=load(base);key=read_key(base);records=[];packets=[];negative=[]
     cap.base.reject_live_context();cap.base.verify_pins();pins=verify_pins()
-    class BoundaryFailure(BaseException):pass
+    BoundaryFailure=NativeBoundaryFailure
     class Proxy:
         def __init__(self,arm):self.arm=arm;self.attempts=0;self.requests=[];self.responses=[];self.previous=None;self.parent=None
         def finish(self,tools):
@@ -554,6 +562,9 @@ def exercise(base,output,worker,spawn,isolated,client,sink_ns,head,pins,topology
     from scripts import task4_native_retained_authority_v1 as retained
     from scripts import task4_native_signed_ledger_integration_v1 as signed
     signed_mode=signed.required(base)
+    from scripts import task4_native_github_mtls_v1 as github
+    if signed_mode and github.fault_mode(base):
+        return github.exercise_fault(base,output,worker,spawn,isolated,client,sink_ns,head)
     ledger_service=spawn(signed.LEDGER,'signed-ledger-server',isolated,base/'ledger/ready') if signed_mode else None
     issuer_service=spawn(kernel.ISSUER,'bounded-issuer',isolated,base/'issuer/ready')
     sink=spawn(kernel.BACKEND,'backend',sink_ns,base/'backend/ready')
