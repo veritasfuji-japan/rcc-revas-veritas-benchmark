@@ -159,6 +159,8 @@ only, and performs actual kernel checks of the exact candidate bytes:
 
 - Syntax check has no state effect; the creation batch installs only the
   commented candidate table, one chain and the expected five kernel rules.
+  JSON reject codes are matched as the exact symbolic admin-prohibited value
+  or its numeric ICMPX ABI value 3; other reject codes are not accepted.
 - A duplicate create fails and the existing kernel table state stays identical;
   the transaction does not append rules or overwrite the table.
 - Inverse check does not delete; the exact inverse removes the candidate table

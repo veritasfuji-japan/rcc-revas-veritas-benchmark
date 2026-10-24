@@ -144,7 +144,11 @@ for row in rs:
     assert type(uid) is int and uid in wanted.values() and uid not in seen
     seen.add(uid)
     assert expr[1]['counter']=={'packets':0,'bytes':0}
-    assert expr[2]['reject']=={'type':'icmpx','expr':'admin-prohibited'}
+    reject=expr[2]['reject']
+    assert set(reject)=={'type','expr'} and reject['type']=='icmpx', reject
+    code=reject['expr']
+    # --numeric can render ICMPX_ADMIN_PROHIBITED as its ABI enum value 3.
+    assert (type(code) is int and code==3) or (type(code) is str and code=='admin-prohibited'), reject
 assert seen==set(wanted.values())
 e.guard(parent_pid,before,b)
 duplicate=subprocess.run([b['nft'],'--file','-'],input=apply,capture_output=True,timeout=15,
