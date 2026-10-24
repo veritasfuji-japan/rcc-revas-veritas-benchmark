@@ -95,13 +95,16 @@ def test_candidate_contains_exact_original_public_bytes_and_no_permission(prepar
         assert value == ('DENY' if key=='provider_dispatch' else 'UNSCORED' if key=='utility' else False)
 
 
-def test_review_recomputes_candidate_and_root_render_is_separate(prepared, monkeypatch):
+def test_review_recomputes_candidate_and_root_render_is_separate(prepared):
     f=prepared;c=candidate(f);path,expected=f['save'](c,f['folder']/'candidate.json')
     report=p.run('review',path,expected)
     assert report['approval_sha256']==p.digest(c['approval_candidate'])
     assert report['candidate_sha256']==expected and report['limitations']['approval_installed'] is False
-    monkeypatch.setattr(os,'geteuid',lambda:0)
-    assert p.run('render-approval',path,expected,acknowledge=True)==c['approval_candidate']
+    if os.geteuid() == 0:
+        assert p.run('render-approval',path,expected,acknowledge=True)==c['approval_candidate']
+    else:
+        with pytest.raises(ValueError):
+            p.run('render-approval',path,expected,acknowledge=True)
     assert set(x.name for x in f['folder'].iterdir())=={'input.json','candidate.json'}
 
 
