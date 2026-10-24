@@ -80,7 +80,10 @@ It is distinct from #546's static host-policy candidate.
 
 Every case preserves an unrelated canary table. Refusal-case cleanup is done
 explicitly by the disposable namespace test harness, not counted as successful
-automatic recovery. Exact transient units are stopped and checked inactive;
+automatic recovery. Transient units carry the per-trial nonce in their Description. Cleanup verifies
+that exact Description and Transient=yes before stopping each unit; a name alone
+is insufficient, and foreign or non-transient units are left untouched. Exact
+owned units are stopped and checked inactive;
 root-private staged files are removed only after all cases succeed. Failure
 retains private staging for diagnosis instead of claiming successful cleanup.
 No global nft flush, host table mutation, interface/route change, existing
@@ -95,13 +98,17 @@ were unchanged or establish absence of omitted privileged activity.
 
 ## Validation and remaining boundary
 
-The dedicated mandatory root workflow requires all 34 tests with zero skips:
+The dedicated mandatory root workflow requires all 39 tests with zero skips:
 request/nonce validation, namespace rejection before nft, staged-file protections,
 unit-collision checks, report joins and one actual five-scenario systemd/kernel
 rehearsal. The whole actual report is retained in its JUnit
 `systemd_egress_rehearsal_json` property. Tests without the required root
 capabilities or actual systemd PID 1 may skip locally; CI rejects such skips.
-Existing #545 network, #546 transaction and #547 watchdog gates stay unchanged.
+A separate actual-manager test creates a harmless, deliberately foreign-tagged
+transient timer, verifies cleanup refuses it and leaves it active with unchanged
+properties, then removes only that harness-owned test fixture. Its proof is
+retained as `systemd_foreign_unit_preserved_json`. Existing #545 network, #546
+transaction and #547 watchdog gates stay unchanged.
 
 Creating transient systemd units **is** a bounded host-side mutation; the report
 marks that explicitly. The firewall operations remain in isolated namespaces.

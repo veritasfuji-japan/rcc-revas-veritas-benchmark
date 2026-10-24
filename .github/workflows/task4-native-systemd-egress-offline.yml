@@ -34,7 +34,7 @@ jobs:
           python - <<'PYCODE'
           import json,xml.etree.ElementTree as ET
           root=ET.parse('results/task4-native-systemd-egress-junit.xml').getroot()
-          assert len(list(root.iter('testcase')))==34
+          assert len(list(root.iter('testcase')))==39
           assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
           props=[p for p in root.iter('property') if p.get('name')=='systemd_egress_rehearsal_json']
           assert len(props)==1
@@ -42,6 +42,11 @@ jobs:
           from scripts.task4_native_systemd_egress_v1 import validate_report
           validate_report(proof)
           assert len(proof['scenarios'])==5
+          foreign=[p for p in root.iter('property') if p.get('name')=='systemd_foreign_unit_preserved_json']
+          assert len(foreign)==1
+          f=json.loads(foreign[0].get('value'))
+          assert f['foreign_nonce_description_unchanged'] and f['foreign_timer_remained_active']
+          assert f['harness_removed_only_its_test_units'] and not f['host_rules_applied']
           print('ACTUAL_SYSTEMD_PID1_NO_NEW_PRIVILEGES_ISOLATED_NETNS_FIVE_RECOVERY_SCENARIOS_NO_HOST_NFT_APPLY')
           PYCODE
       - name: Retain actual systemd recovery proof

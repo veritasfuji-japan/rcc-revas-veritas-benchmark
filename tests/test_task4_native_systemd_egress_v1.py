@@ -154,3 +154,64 @@ def test_worker_refuses_bad_namespace_identity_before_any_nft_tool(monkeypatch,c
     monkeypatch.setattr(m.e,'namespace',namespace)
     monkeypatch.setattr(m.e,'tools',lambda:pytest.fail('tools reached before namespace rejection'))
     with pytest.raises(ValueError):m._worker('/run/synthetic/request.json')
+
+
+@pytest.mark.parametrize('kind',['foreign_description','not_transient','owned','missing'])
+def test_unit_cleanup_checks_nonce_description_and_transient_ownership(monkeypatch,kind):
+    token='a'*32;unit=m.unit_name(token);calls=[]
+    def run(argv,**kwargs):
+        calls.append(argv)
+        if 'show' in argv:
+            if kind=='missing':return subprocess.CompletedProcess(argv,1,b'LoadState=not-found\n',b'')
+            description='foreign' if kind=='foreign_description' else unit
+            transient='no' if kind=='not_transient' else 'yes'
+            raw=f'LoadState=loaded\nDescription={description}\nTransient={transient}\n'.encode()
+            return subprocess.CompletedProcess(argv,0,raw,b'')
+        if 'stop' in argv:return subprocess.CompletedProcess(argv,0,b'',b'')
+        if 'is-active' in argv:return subprocess.CompletedProcess(argv,3,b'',b'')
+        pytest.fail('unexpected command')
+    monkeypatch.setattr(m.subprocess,'run',run)
+    if kind in ('foreign_description','not_transient'):
+        with pytest.raises(ValueError):m.stop_units({'systemctl':'/systemctl'},token)
+        assert not any('stop' in x for x in calls)
+    else:
+        m.stop_units({'systemctl':'/systemctl'},token)
+        stopped=[x[-1] for x in calls if 'stop' in x]
+        assert stopped==([] if kind=='missing' else [unit+'.timer',unit+'.service'])
+
+
+def test_actual_manager_foreign_transient_unit_is_not_stopped(record_property):
+    if os.geteuid()!=0 or Path('/proc/1/comm').read_text().strip()!='systemd':
+        pytest.skip('requires actual root systemd manager')
+    token=m.secrets.token_hex(16);unit=m.unit_name(token);tag='foreign-unit-test-'+token
+    tools=m.system_tools()
+    for suffix in ('.timer','.service'):m.absent_unit(tools,unit+suffix)
+    def properties(suffix):
+        r=subprocess.run([tools['systemctl'],'show',unit+suffix,'--property=LoadState,Transient,Description,ActiveState'],capture_output=True,timeout=10,env=m.ENV)
+        assert r.returncode in (0,1)
+        return dict(line.split('=',1) for line in r.stdout.decode().splitlines() if '=' in line)
+    created=False
+    try:
+        m.e.execute([tools['systemd-run'],'--quiet','--collect','--unit='+unit,'--on-active=30s',
+            '--property=Description='+tag,'--timer-property=Description='+tag,
+            '--property=NoNewPrivileges=yes','/usr/bin/true'])
+        created=True
+        before={suffix:properties(suffix) for suffix in ('.timer','.service')}
+        assert before['.timer']['ActiveState']=='active'
+        assert all(x['Description']==tag and x['Transient']=='yes' for x in before.values())
+        with pytest.raises(ValueError):m.stop_units(tools,token)
+        assert {suffix:properties(suffix) for suffix in before}==before
+    finally:
+        if created:
+            for suffix in ('.timer','.service'):
+                # Harness removes only its deliberately foreign-tagged test units.
+                info=properties(suffix)
+                if info.get('LoadState')=='not-found':continue
+                assert info['Description']==tag and info['Transient']=='yes'
+                stopped=subprocess.run([tools['systemctl'],'stop',unit+suffix],capture_output=True,timeout=10,env=m.ENV)
+                assert stopped.returncode in (0,5)
+                state=subprocess.run([tools['systemctl'],'is-active','--quiet',unit+suffix],capture_output=True,timeout=10,env=m.ENV)
+                assert state.returncode in (3,4)
+    record_property('systemd_foreign_unit_preserved_json',json.dumps(dict(
+        foreign_nonce_description_unchanged=True,foreign_timer_remained_active=True,
+        harness_removed_only_its_test_units=True,host_rules_applied=False,execution_permission_issued=False),sort_keys=True))

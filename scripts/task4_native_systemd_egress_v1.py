@@ -148,6 +148,8 @@ def timer_command(tools, source, request, cfg):
     cfg = validate_request(cfg)
     return [tools['systemd-run'], '--quiet', '--collect', '--unit=' + unit_name(cfg['token']),
         '--on-active=1s', '--timer-property=AccuracySec=100ms', '--property=Type=oneshot',
+        '--property=Description=' + unit_name(cfg['token']),
+        '--timer-property=Description=' + unit_name(cfg['token']),
         '--property=NoNewPrivileges=yes', '--property=UMask=0077',
         '--property=StandardOutput=null', '--property=StandardError=null',
         '--property=NetworkNamespacePath=/proc/' + str(cfg['namespace_pid']) + '/ns/net',
@@ -172,12 +174,22 @@ def schedule(tools, source, request, cfg):
 
 def stop_units(tools, token):
     unit = unit_name(token)
-    subprocess.run([tools['systemctl'], 'stop', unit + '.timer', unit + '.service'],
-                   capture_output=True, timeout=10, env=ENV)
     for suffix in ('.timer', '.service'):
-        result = subprocess.run([tools['systemctl'], 'is-active', '--quiet', unit + suffix],
-                                capture_output=True, timeout=10, env=ENV)
-        need(result.returncode in (3, 4))
+        target = unit + suffix
+        info = subprocess.run([tools['systemctl'], 'show', target,
+            '--property=LoadState,Transient,Description'], capture_output=True, timeout=10, env=ENV)
+        fields = dict(line.split('=', 1) for line in info.stdout.decode('utf-8').splitlines() if '=' in line)
+        need(info.returncode in (0, 1))
+        if fields.get('LoadState') == 'not-found':
+            continue
+        need(info.returncode == 0 and fields.get('LoadState') == 'loaded'
+             and fields.get('Transient') == 'yes' and fields.get('Description') == unit)
+        # Stop only an explicitly tagged transient unit. Names alone are not ownership.
+        stopped = subprocess.run([tools['systemctl'], 'stop', target], capture_output=True, timeout=10, env=ENV)
+        # A completed --collect service may disappear between inspection and stop.
+        state = subprocess.run([tools['systemctl'], 'is-active', '--quiet', target],
+                               capture_output=True, timeout=10, env=ENV)
+        need(stopped.returncode in (0, 5) and state.returncode in (3, 4))
 
 
 def wait_file(path, expected=None, seconds=15):
