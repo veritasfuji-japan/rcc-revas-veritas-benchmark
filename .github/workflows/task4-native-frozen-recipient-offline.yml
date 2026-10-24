@@ -73,6 +73,26 @@ jobs:
             --lock _pins/agentdojo/uv.lock \
             --output /tmp/task4-native-frozen-recipient-agentdojo-locked.txt
           pip install -r /tmp/task4-native-frozen-recipient-agentdojo-locked.txt
+      - name: Verify isolated IPv4 IPv6 TCP UDP UID egress denial without host firewall changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v nft >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends nftables
+          fi
+          sudo --preserve-env=PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_native_egress_rehearsal_v1.py -o junit_family=xunit1 \
+            --junitxml=results/task4-native-egress-rehearsal-junit.xml
+          python - <<'PYCODE'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-native-egress-rehearsal-junit.xml').getroot()
+          cases=list(root.iter('testcase'))
+          assert len(cases)==68
+          assert any(x.get('name')=='test_actual_network_namespace_uid_tcp_udp_ipv4_ipv6_rehearsal' for x in cases)
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          print('ISOLATED_NETNS_20_IPV4_IPV6_TCP_UDP_DENIALS_12_EXEMPT_CONTROLS_NO_HOST_APPLY_NO_EXECUTION')
+          PYCODE
       - name: Verify original SDK capped wires and same-run AEAD before parser
         shell: bash
         run: |
