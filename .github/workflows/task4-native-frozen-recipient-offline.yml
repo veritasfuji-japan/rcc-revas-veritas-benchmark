@@ -1193,6 +1193,22 @@ jobs:
           assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
           print('NATIVE_READINESS_GET_ONLY_MODEL_HTTP_REAL_UID_CONFIG_DENIAL_NO_TOKEN_DISCOVERY_NO_EXECUTION_PERMISSION')
           PYCODE
+      - name: Verify public Native approval candidates and root rendering without installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_native_github_approval_preparation_v1.py \
+            --junitxml=results/task4-native-github-approval-preparation-junit.xml
+          python - <<'PYCODE'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-native-github-approval-preparation-junit.xml').getroot()
+          cases=list(root.iter('testcase'))
+          assert len(cases)==85
+          assert any(x.get('name')=='test_actual_nonroot_can_prepare_but_cannot_render_approval' for x in cases)
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          print('NATIVE_PUBLIC_CANDIDATE_SEPARATE_ROOT_RENDER_NO_INSTALL_NO_TOKEN_NO_NETWORK_NO_EXECUTION')
+          PYCODE
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
         run: |
