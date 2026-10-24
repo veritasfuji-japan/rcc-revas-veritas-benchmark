@@ -1,0 +1,500 @@
+{
+  "schema": "task4.signed-ledger-operator-observations.v1",
+  "prepared_date_jst": "2026-10-24",
+  "observation_time": null,
+  "provenance": {
+    "source": "operator-pasted terminal output in this conversation",
+    "representation": "JSON reconstructed from the final custody view; original stdout byte formatting not retained",
+    "original_host_files_collected": true,
+    "original_host_file_hashes_collected": true,
+    "independent_signature_verification_performed": true,
+    "service_public_key_raw_collected": true,
+    "not_a_new_execution": true,
+    "host_file_hashes_provenance": "all eight exported byte sequences independently rehashed against prior operator-reported inventory",
+    "signature_verification_scope": "four distinct original A0 issuer/custody receipts plus one reconstructed final custody view; separate cryptographic execution, not independent human attestation",
+    "original_host_file_collection_scope": "all eight present issuer/custody files exported as Base64 by the operator, decoded and rehashed separately; no direct host acquisition",
+    "verification_records_are_stage_specific": true
+  },
+  "execution_source": "335a3c939fbef7158159853d2891e112718db085",
+  "service_identity": {
+    "public_key_sha256": "d81fc3e80ba460a264355eb5b479ad6f33ed2e661353344cbce40313bff7af32",
+    "server_certificate_sha256": "b89dbb148c762172c1935a563f17888c49109b72471383d194645e24ed74ed66"
+  },
+  "boundaries": {
+    "provider_dispatch": "DENY",
+    "utility": "UNSCORED",
+    "real_provider_status": "REAL_PROVIDER_NO_GO",
+    "production_bypass_resistance": "NOT_PROVEN",
+    "scope": "SYNTHETIC_SIGNED_LEDGER_ONLY_NO_PROVIDER",
+    "same_host_loopback": true,
+    "real_network_outage_injected": false,
+    "controlled_client_response_discard": true,
+    "rejection_reason_dynamically_observed": false
+  },
+  "observations": [
+    {
+      "id": "A0-reserve",
+      "action": "reserve",
+      "operation": "A0",
+      "role": "issuer",
+      "revision": 1,
+      "state": "RESERVED",
+      "reported_synthetic_callbacks": 1
+    },
+    {
+      "id": "A0-consume",
+      "action": "consume",
+      "operation": "A0",
+      "role": "custody",
+      "revision": 2,
+      "state": "CONSUMED_UNKNOWN",
+      "reported_synthetic_callbacks": 1
+    },
+    {
+      "id": "A0-ordinary-repeat",
+      "exit_code": 1,
+      "output": "SIGNED_LEDGER_CLIENT_STOP",
+      "after_revision": 2
+    },
+    {
+      "id": "A0-direct-repeat-before-restart",
+      "output": "Denied",
+      "before_revision": 2,
+      "after_revision": 2,
+      "snapshot_unchanged": true,
+      "callback_invoked_by_probe": false
+    },
+    {
+      "id": "A0-service-restart",
+      "before_revision": 2,
+      "after_revision": 2,
+      "issuer_and_custody_views_matched": true,
+      "state": "CONSUMED_UNKNOWN"
+    },
+    {
+      "id": "A0-direct-repeat-after-restart",
+      "output": "Denied",
+      "before_revision": 2,
+      "after_revision": 2,
+      "snapshot_unchanged": true,
+      "callback_invoked_by_probe": false
+    },
+    {
+      "id": "A1-reserve-response-discard",
+      "exit_code": 1,
+      "output": "SIGNED_LEDGER_CLIENT_STOP",
+      "reconciled_revision": 3,
+      "reconciled_state": "RESERVED"
+    },
+    {
+      "id": "A1-ordinary-reserve-repeat",
+      "exit_code": 1,
+      "output": "SIGNED_LEDGER_CLIENT_STOP",
+      "after_revision": 3
+    },
+    {
+      "id": "A1-consume-response-discard",
+      "exit_code": 1,
+      "output": "SIGNED_LEDGER_CLIENT_STOP",
+      "reconciled_revision": 4,
+      "reconciled_state": "CONSUMED_UNKNOWN"
+    },
+    {
+      "id": "A1-ordinary-consume-repeat",
+      "exit_code": 1,
+      "output": "SIGNED_LEDGER_CLIENT_STOP",
+      "after_revision": 4
+    }
+  ],
+  "final_custody_view": {
+    "action": "view",
+    "binding_sha256": "c4dc53c6ee2d1e9dbd0b71e0c6c011e5ad07ce78c76c174db118b54bc5fd88b1",
+    "exchanges": [
+      {
+        "command": {
+          "action": "view",
+          "binding_sha256": "c4dc53c6ee2d1e9dbd0b71e0c6c011e5ad07ce78c76c174db118b54bc5fd88b1",
+          "expected_revision": null,
+          "grant_sha256": null,
+          "nonce": "d69de8158763d6800b92846e98873d5316ce88cdb3056b85fe274dc61c9f1f39",
+          "operation_id": null,
+          "request_sha256": null,
+          "schema": "task4.external-ledger-contract.v1"
+        },
+        "receipt": {
+          "signature": "9a0630145f0fa6132cc226af9f05e6f0aea4ed3802266e997542fa36df07b461431374b8d4eabdafd1e15ad6a16bd2e6812ac243d52db446ada3e18f4fc70e02",
+          "statement": {
+            "action": "view",
+            "binding_sha256": "c4dc53c6ee2d1e9dbd0b71e0c6c011e5ad07ce78c76c174db118b54bc5fd88b1",
+            "command_sha256": "d2f2fcfaad1ae3f84857e34aae103bc37312dfacc81da5ded6123fd95d35e72a",
+            "ledger_id": "568a79d3c6f1a642237a67c92d193f6d8cb3dd831ebf9cf47b00951573adc806",
+            "nonce": "d69de8158763d6800b92846e98873d5316ce88cdb3056b85fe274dc61c9f1f39",
+            "schema": "task4.external-ledger-contract.v1",
+            "snapshot": {
+              "attempts": [
+                {
+                  "grant_sha256": "c9d1af741de979a827c07cde7a23d6fd536f15c5a85cbda7daa9a0e53b935182",
+                  "operation_id": "A0",
+                  "request_sha256": "2da0cb330ac75508a2a80dc0f96761c3c038a89e24f2c283913188a380e157ad",
+                  "state": "CONSUMED_UNKNOWN"
+                },
+                {
+                  "grant_sha256": "c0a3aea2cd7ed78624f66c9d4852cf23e89a6eca6145be8466f68ffebb8d28f7",
+                  "operation_id": "A1",
+                  "request_sha256": "e72ee15f04d79439c20b30e40c247db65181ebcf550fbf6ff924570d421f8962",
+                  "state": "CONSUMED_UNKNOWN"
+                }
+              ],
+              "revision": 4
+            }
+          }
+        }
+      }
+    ],
+    "execution_source": "335a3c939fbef7158159853d2891e112718db085",
+    "genesis": "16f730c8d3385537c7816b1a6cdf3ff6b4e1037b",
+    "manifest_sha256": "ff4180c808fb30e7c3f5c9cfe6f2ccff6be0c35bfed6ec42ab6a90c0dd866f6d",
+    "network_used": true,
+    "provider_dispatch": "DENY",
+    "role": "custody",
+    "schema": "task4.signed-ledger-client.v1",
+    "scope": "SYNTHETIC_SIGNED_LEDGER_ONLY_NO_PROVIDER",
+    "snapshot": {
+      "attempts": [
+        {
+          "grant_sha256": "c9d1af741de979a827c07cde7a23d6fd536f15c5a85cbda7daa9a0e53b935182",
+          "operation_id": "A0",
+          "request_sha256": "2da0cb330ac75508a2a80dc0f96761c3c038a89e24f2c283913188a380e157ad",
+          "state": "CONSUMED_UNKNOWN"
+        },
+        {
+          "grant_sha256": "c0a3aea2cd7ed78624f66c9d4852cf23e89a6eca6145be8466f68ffebb8d28f7",
+          "operation_id": "A1",
+          "request_sha256": "e72ee15f04d79439c20b30e40c247db65181ebcf550fbf6ff924570d421f8962",
+          "state": "CONSUMED_UNKNOWN"
+        }
+      ],
+      "revision": 4
+    },
+    "synthetic_callbacks": 0,
+    "utility": "UNSCORED"
+  },
+  "host_journal_inventory": {
+    "provenance": "operator-pasted read-only inspection stdout",
+    "received_date_jst": "2026-10-24",
+    "collection_time": null,
+    "run_id_from_slot_names": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c",
+    "original_file_bytes_collected": true,
+    "independent_file_rehash_performed": true,
+    "exact_run_binding_not_yet_collected": false,
+    "slots": [
+      {
+        "role": "issuer",
+        "action": "reserve",
+        "operation": "A0",
+        "matching_folders": 1,
+        "slot": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c-reserve-A0",
+        "files": [
+          {
+            "name": "attempt.json",
+            "status": "PRESENT",
+            "size_bytes": 340,
+            "sha256": "afffac6af0f3ee0808fbffe1bf8c1669c90097d851d5f57ffd37be0093c7d082"
+          },
+          {
+            "name": "verified-receipts.json",
+            "status": "PRESENT",
+            "size_bytes": 2737,
+            "sha256": "a14f383a82b336e01ab8f2af155b067d0d5b33ea280f2cee6917861fe9889e83"
+          },
+          {
+            "name": "result.json",
+            "status": "PRESENT",
+            "size_bytes": 2737,
+            "sha256": "dc1401225d92cdaf14e10ad87cb8f40c3df00ef2dc5ebc300aaf40faf8bc16d3"
+          }
+        ]
+      },
+      {
+        "role": "issuer",
+        "action": "reserve",
+        "operation": "A1",
+        "matching_folders": 1,
+        "slot": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c-reserve-A1",
+        "files": [
+          {
+            "name": "attempt.json",
+            "status": "PRESENT",
+            "size_bytes": 340,
+            "sha256": "b1d8e07e6d04e1958068dd0299434e50358b59da1525465a19fc139aca111a4f"
+          },
+          {
+            "name": "verified-receipts.json",
+            "status": "ABSENT"
+          },
+          {
+            "name": "result.json",
+            "status": "ABSENT"
+          }
+        ]
+      },
+      {
+        "role": "custody",
+        "action": "consume",
+        "operation": "A0",
+        "matching_folders": 1,
+        "slot": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c-consume-A0",
+        "files": [
+          {
+            "name": "attempt.json",
+            "status": "PRESENT",
+            "size_bytes": 340,
+            "sha256": "f26b5c3718356f54daca3eb1bf8a48d0e11449b456e72f26c7aab6fb35f41d87"
+          },
+          {
+            "name": "verified-receipts.json",
+            "status": "PRESENT",
+            "size_bytes": 3084,
+            "sha256": "f7211f01e398176a8684620126fbae15a0e4648cad860a0fa779eaa2a342a769"
+          },
+          {
+            "name": "result.json",
+            "status": "PRESENT",
+            "size_bytes": 3084,
+            "sha256": "e077a01950eeacb4fbe20df0a8be71d46ad8df699e4faf86fa46d043672d49d3"
+          }
+        ]
+      },
+      {
+        "role": "custody",
+        "action": "consume",
+        "operation": "A1",
+        "matching_folders": 1,
+        "slot": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c-consume-A1",
+        "files": [
+          {
+            "name": "attempt.json",
+            "status": "PRESENT",
+            "size_bytes": 340,
+            "sha256": "719c59631f46aa02bb6a9673e13a9067a95e7378227d2ad1781bdbb5607a4edb"
+          },
+          {
+            "name": "verified-receipts.json",
+            "status": "ABSENT"
+          },
+          {
+            "name": "result.json",
+            "status": "ABSENT"
+          }
+        ]
+      }
+    ],
+    "original_file_bytes_collected_roles": [
+      "issuer",
+      "custody"
+    ],
+    "independent_file_rehash_scope": "all eight present issuer/custody files; absent files remain operator-reported"
+  },
+  "public_approval_subset": {
+    "provenance": "operator-pasted selected public approval fields; no approval-file bytes or peers collected",
+    "binding": {
+      "custody_public_sha256": "6c78fbac11e00d919b645352552201f0a7819c5bdd276112501013cc58a82e83",
+      "issuer_public_sha256": "3ab927c912b2d833c676af3f7b05746fc20fc30dde79bbbce707414d2ce5dc04",
+      "ledger_id": "568a79d3c6f1a642237a67c92d193f6d8cb3dd831ebf9cf47b00951573adc806",
+      "manifest_sha256": "ff4180c808fb30e7c3f5c9cfe6f2ccff6be0c35bfed6ec42ab6a90c0dd866f6d",
+      "run_id": "546d9ab659e2fb54e3dcd20700ab6d8422e0b4d5ef81ef59a2ca622f91fad16c",
+      "schema": "task4.external-ledger-contract.v1"
+    },
+    "execution_source": "335a3c939fbef7158159853d2891e112718db085",
+    "genesis": "16f730c8d3385537c7816b1a6cdf3ff6b4e1037b",
+    "schema": "task4.signed-ledger-client-approval.v1",
+    "scope": "SYNTHETIC_SIGNED_LEDGER_ONLY_NO_PROVIDER",
+    "server_certificate_sha256": "b89dbb148c762172c1935a563f17888c49109b72471383d194645e24ed74ed66",
+    "service_public_hex": "b41a562bd2c5559dd49d7bbdf5e5fab64067737ddbb4cb9f98ffa8ac06d59d92"
+  },
+  "final_receipt_verification": {
+    "schema": "task4.operator-transcript-receipt-verification.v1",
+    "verification_date_jst": "2026-10-24",
+    "evidence_scope": "one final custody view at revision 4, reconstructed from operator transcript",
+    "verification_environment": "assistant execution environment; separate from operator Linux service",
+    "algorithm": "Ed25519",
+    "domain_hex": "5441534b345f45585445524e414c5f4c45444745525f524543454950545f563100",
+    "canonical_encoding": "json.dumps(sort_keys=True, separators=(comma, colon), allow_nan=False).encode()",
+    "canonical_statement_sha256": "ffd902e4dd74184150a0349b08d644e37884f6c6ace4c17f0323c4dcf76be0f3",
+    "signature_verified": true,
+    "tampered_revision_rejected": true,
+    "service_public_key_pin_matched": true,
+    "approval_binding_sha256_matched": true,
+    "run_id_matches_reported_slots": true,
+    "source_genesis_certificate_metadata_matched": true,
+    "command_digest_nonce_action_matched": true,
+    "original_host_bytes_independently_rehashed": false,
+    "independent_human_or_administrator_attestation": false,
+    "provider_dispatch": "DENY",
+    "utility": "UNSCORED"
+  },
+  "issuer_journal_verification": {
+    "byte_record": "task4_signed_ledger_335a3c9_issuer_journal_bytes_v1.json",
+    "schema": "task4.issuer-journal-byte-verification.v1",
+    "verification_date_jst": "2026-10-24",
+    "input_provenance": "operator-supplied Base64; bytes decoded and verified in assistant environment",
+    "file_count": 4,
+    "file_checks": [
+      {
+        "operation": "A0",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "afffac6af0f3ee0808fbffe1bf8c1669c90097d851d5f57ffd37be0093c7d082",
+        "matches_prior_inventory": true
+      },
+      {
+        "operation": "A0",
+        "name": "verified-receipts.json",
+        "size_bytes": 2737,
+        "sha256": "a14f383a82b336e01ab8f2af155b067d0d5b33ea280f2cee6917861fe9889e83",
+        "matches_prior_inventory": true
+      },
+      {
+        "operation": "A0",
+        "name": "result.json",
+        "size_bytes": 2737,
+        "sha256": "dc1401225d92cdaf14e10ad87cb8f40c3df00ef2dc5ebc300aaf40faf8bc16d3",
+        "matches_prior_inventory": true
+      },
+      {
+        "operation": "A1",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "b1d8e07e6d04e1958068dd0299434e50358b59da1525465a19fc139aca111a4f",
+        "matches_prior_inventory": true
+      }
+    ],
+    "original_bytes_preserved_as_base64": true,
+    "all_file_hashes_match_prior_inventory": true,
+    "distinct_receipts_verified": 2,
+    "signature_verifications": 4,
+    "signed_revision_transition": [
+      0,
+      1
+    ],
+    "signed_final_state": "RESERVED",
+    "tampered_reserve_revision_rejected": true,
+    "result_differs_only_in_synthetic_callbacks": true,
+    "verified_record_callback_count": 0,
+    "result_record_callback_count": 1,
+    "callback_count_independently_attested": false,
+    "attempt_configuration_digests_match": true,
+    "private_configuration_bytes_collected": false,
+    "custody_original_bytes_collected": false,
+    "no_network_or_mutation_performed": true
+  },
+  "joined_journal_verification": {
+    "issuer_byte_record": "task4_signed_ledger_335a3c9_issuer_journal_bytes_v1.json",
+    "custody_byte_record": "task4_signed_ledger_335a3c9_custody_journal_bytes_v1.json",
+    "schema": "task4.joined-journal-byte-verification.v1",
+    "verification_date_jst": "2026-10-24",
+    "acquisition": "operator-supplied Base64 via chat/text attachment; not direct independent host acquisition",
+    "verification_environment": "assistant execution environment",
+    "file_count": 8,
+    "file_checks": [
+      {
+        "role": "issuer",
+        "operation": "A0",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "afffac6af0f3ee0808fbffe1bf8c1669c90097d851d5f57ffd37be0093c7d082",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "issuer",
+        "operation": "A0",
+        "name": "verified-receipts.json",
+        "size_bytes": 2737,
+        "sha256": "a14f383a82b336e01ab8f2af155b067d0d5b33ea280f2cee6917861fe9889e83",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "issuer",
+        "operation": "A0",
+        "name": "result.json",
+        "size_bytes": 2737,
+        "sha256": "dc1401225d92cdaf14e10ad87cb8f40c3df00ef2dc5ebc300aaf40faf8bc16d3",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "issuer",
+        "operation": "A1",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "b1d8e07e6d04e1958068dd0299434e50358b59da1525465a19fc139aca111a4f",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "custody",
+        "operation": "A0",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "f26b5c3718356f54daca3eb1bf8a48d0e11449b456e72f26c7aab6fb35f41d87",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "custody",
+        "operation": "A0",
+        "name": "verified-receipts.json",
+        "size_bytes": 3084,
+        "sha256": "f7211f01e398176a8684620126fbae15a0e4648cad860a0fa779eaa2a342a769",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "custody",
+        "operation": "A0",
+        "name": "result.json",
+        "size_bytes": 3084,
+        "sha256": "e077a01950eeacb4fbe20df0a8be71d46ad8df699e4faf86fa46d043672d49d3",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "custody",
+        "operation": "A1",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "719c59631f46aa02bb6a9673e13a9067a95e7378227d2ad1781bdbb5607a4edb",
+        "matches_prior_inventory": true
+      }
+    ],
+    "all_file_lengths_and_hashes_match_prior_inventory": true,
+    "canonical_json_bytes_match": true,
+    "distinct_receipts_verified": 5,
+    "signature_verifications": 9,
+    "issuer_receipt_revisions": [
+      0,
+      1
+    ],
+    "custody_receipt_revisions": [
+      1,
+      2
+    ],
+    "issuer_reserved_snapshot_equals_custody_initial_view": true,
+    "custody_consumed_A0_equals_final_revision4_A0": true,
+    "approval_binding_and_run_id_matched": true,
+    "source_genesis_and_no_go_metadata_matched": true,
+    "result_differences_only_unsigned_callback_count": true,
+    "reported_verified_callback_counts": {
+      "issuer": 0,
+      "custody": 0
+    },
+    "reported_result_callback_counts": {
+      "issuer": 1,
+      "custody": 1
+    },
+    "callback_counts_independently_attested": false,
+    "within_role_configuration_digests_match": true,
+    "cross_role_configuration_digests_differ": true,
+    "private_configuration_bytes_collected": false,
+    "tampered_consume_revision_rejected": true,
+    "A1_success_file_absences": "operator-reported only; not directly observable from exported present-file bytes",
+    "backend_commit_chain_verified": false,
+    "independent_human_or_administrator_attestation": false,
+    "no_network_or_mutation_performed": true
+  }
+}
