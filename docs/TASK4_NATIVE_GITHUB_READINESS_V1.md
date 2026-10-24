@@ -116,6 +116,13 @@ input, not evidence that an execution service can reach only approved hosts.
 
 ## Validation and operator handoff
 
+The separate [public approval preparation workflow](TASK4_NATIVE_GITHUB_APPROVAL_PREPARATION_V1.md)
+builds a candidate from explicit public inputs, rechecks its digest and derived
+fields, and separates root-only read-only approval rendering from installation.
+It does not generate missing operator keys/context or attest a declared origin.
+Readiness configuration/approval files must contain exact canonical JSON bytes
+without ordinary pretty-print spacing or a final newline.
+
 53 cases cover local no-token/no-socket checks, exact metadata reads through
 model HTTP, mutation denial before connection, Native/manual/profile/hash/key
 refusals, private/public file safety, mid-read withdrawal, no retry, sanitized
