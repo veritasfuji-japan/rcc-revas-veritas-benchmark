@@ -152,6 +152,10 @@ class NativePolicy(p.Policy):
         return super().db()
 
     def authorize(self,arm,wire,parent=None,now=None):
+        from scripts import task4_native_signed_ledger_integration_v1 as signed
+        base=self.file.absolute().parent.parent
+        ledger=signed.gate(base,'issuer') if signed.required(base) else None
+        need(ledger is None or now is None,'LEDGER_NATIVE_USES_ACTUAL_CLOCK')
         p.current(self.m,now);need(arm in self.m['arms'] and type(wire) is bytes and 0<len(wire)<=64000,'NATIVE_REQUEST_BOUND')
         data=raw.strict(wire)
         need(type(data) is dict and set(data)==set(seed()) and digest({k:v for k,v in data.items() if k!='messages'})==
@@ -159,14 +163,26 @@ class NativePolicy(p.Policy):
         with self.db() as db:
             db.execute('BEGIN IMMEDIATE')
             ordinal,total,state,expected,messages=db.execute('SELECT ordinal,total_bytes,state,parent,messages FROM arms WHERE arm=?',(arm,)).fetchone()
-            need(state=='READY','NATIVE_PENDING_UNKNOWN_OR_TERMINAL')
-            need(ordinal<4 and total+len(wire)<=256000,'NATIVE_CONTINUATION_EXHAUSTED')
-            need((parent is None if ordinal==0 else parent==expected),'NATIVE_EXACT_PARENT')
-            need(canonical(data['messages'])==canonical(raw.strict(messages)),'NATIVE_EXACT_OBSERVED_HISTORY')
-            grant=p.sign(self.key,p.DOMAIN,p.grant_statement(self.m,arm,ordinal,wire,expected))
-            db.execute('INSERT INTO attempts VALUES (?,?,?,?,?,NULL,NULL)',(arm,ordinal,sha(wire),canonical(grant).decode(),'CONSUMED_UNKNOWN'))
-            db.execute('UPDATE arms SET ordinal=?,total_bytes=?,state=? WHERE arm=?',(ordinal+1,total+len(wire),'PENDING',arm))
-        return grant
+            def admit():
+                p.current(self.m,now)
+                if ledger is not None:
+                    a=signed.admit(base,'issuer')
+                    need(a['binding']['manifest_sha256']==digest(self.m)
+                         and a['binding']['issuer_public_sha256']==sha(self.public),'ENROLLED_NATIVE_ISSUER')
+                need(state=='READY','NATIVE_PENDING_UNKNOWN_OR_TERMINAL')
+                need(ordinal<4 and total+len(wire)<=256000,'NATIVE_CONTINUATION_EXHAUSTED')
+                need((parent is None if ordinal==0 else parent==expected),'NATIVE_EXACT_PARENT')
+                need(canonical(data['messages'])==canonical(raw.strict(messages)),'NATIVE_EXACT_OBSERVED_HISTORY')
+            def issue(_snapshot=None):
+                grant=p.sign(self.key,p.DOMAIN,p.grant_statement(self.m,arm,ordinal,wire,expected))
+                db.execute('INSERT INTO attempts VALUES (?,?,?,?,?,NULL,NULL)',(arm,ordinal,sha(wire),canonical(grant).decode(),'CONSUMED_UNKNOWN'))
+                db.execute('UPDATE arms SET ordinal=?,total_bytes=?,state=? WHERE arm=?',(ordinal+1,total+len(wire),'PENDING',arm))
+                return grant
+            if ledger is None:
+                admit();return issue()
+            # The gate's fsynced intent is outside this rollbackable DB. A lost
+            # acknowledgement/commit failure cannot make the attempt reusable.
+            return ledger.execute(operation=arm+str(ordinal),wire=wire,admit=admit,effect=issue)
 
     def complete(self,g,response,tools,archived,observed):
         p.verify_signature(self.public,p.DOMAIN,g);s=g['statement'];need(s['manifest_sha256']==digest(self.m),'NATIVE_OBSERVATION_MANIFEST')
@@ -290,30 +306,44 @@ def custody(base,restart=False):
                 try:
                     conn.settimeout(30);_,uid,_=struct.unpack('3i',conn.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12))
                     need(uid==RUNTIME,'EXACT_NATIVE_RUNTIME_PEER');packet=n.frame(conn);wire=verify_packet(base,packet,public)
-                    op=packet['arm']+str(packet['ordinal'])
-                    db.execute('BEGIN IMMEDIATE')
-                    if db.execute('SELECT 1 FROM consumed WHERE op=?',(op,)).fetchone():
-                        db.rollback();result=dict(decision='REPLAY_DENIED')
-                    else:
-                        ordinal=packet['ordinal'];prior=db.execute('SELECT op,state FROM consumed WHERE op LIKE ? ORDER BY op',(packet['arm']+'%',)).fetchall()
-                        need(prior==[(packet['arm']+str(i),'MOCK_OBSERVED') for i in range(ordinal)],'NATIVE_CONTIGUOUS_OBSERVED_CONSUMPTIONS')
-                        db.execute('INSERT INTO consumed VALUES (?,?,?,NULL,NULL,NULL,NULL)',(op,'CONSUMED_UNKNOWN',sha(wire)));db.commit()
-                        ingress.consumed(base,op,wire)
-                        response,binding=n.bind_post(packet,wire,key);body=n.decode(response['response_b64'])
-                        events=raw.tls.read_lines(base/'custody/raw-events.jsonl')
-                        archive=next(x['archive'] for x in events if x['op']==op and x['phase']=='SEALED_FSYNCED')
-                        signed=p.sign(signer,ARCHIVE_DOMAIN,dict(manifest_sha256=digest(m),grant_sha256=digest(packet['grant']),
-                            operation_id=op,request_sha256=sha(wire),response_sha256=sha(body),archive=archive,bind_sha256=digest(binding),
-                            origin='CLOSED_LOCAL_CUSTODY_TLS_ARCHIVE_BIND'))
-                        n.durable_marker(base/'custody'/(op+'-bind.json'),binding)
-                        n.durable_marker(base/'custody'/(op+'-archive-receipt.json'),signed)
-                        db.execute('UPDATE consumed SET state=?,response_sha=?,backend_receipt=?,envelope_sha=?,bind_sha=? WHERE op=?',
-                            ('MOCK_OBSERVED',sha(body),response['receipt_sha256'],archive['envelope_sha256'],digest(binding),op))
-                        result=dict(decision='ARCHIVED_NATIVE_RESPONSE',body_b64=n.encode(body),archive=signed)
+                    result=consume_packet(base,db,packet,public,key,signer)
                 except (ValueError,OSError,KeyError,TypeError,sqlite3.Error):
                     if db.in_transaction:db.rollback()
                     result=dict(decision='DENIED_OR_UNKNOWN_NO_RETRY')
                 conn.sendall(canonical(result)+b'\n')
+
+
+def consume_packet(base,db,packet,public,key,signer):
+    """Actual Custody handler; authenticated runtime peer is checked by caller."""
+    from scripts import task4_native_os_custody_v1 as n
+    from scripts import task4_native_signed_ledger_integration_v1 as external
+    wire=verify_packet(base,packet,public);m=load(base);op=packet['arm']+str(packet['ordinal'])
+    ledger=external.gate(base,'custody') if external.required(base) else None
+    db.execute('BEGIN IMMEDIATE')
+    if db.execute('SELECT 1 FROM consumed WHERE op=?',(op,)).fetchone():
+        db.rollback();return dict(decision='REPLAY_DENIED')
+    def admit():
+        need(verify_packet(base,packet,public)==wire,'UNCHANGED_NATIVE_CUSTODY_PACKET')
+        if ledger is not None:external.admit(base,'custody')
+        ordinal=packet['ordinal'];prior=db.execute('SELECT op,state FROM consumed WHERE op LIKE ? ORDER BY op',(packet['arm']+'%',)).fetchall()
+        need(prior==[(packet['arm']+str(i),'MOCK_OBSERVED') for i in range(ordinal)],'NATIVE_CONTIGUOUS_OBSERVED_CONSUMPTIONS')
+    def dispatch(_snapshot=None):
+        db.execute('INSERT INTO consumed VALUES (?,?,?,NULL,NULL,NULL,NULL)',(op,'CONSUMED_UNKNOWN',sha(wire)));db.commit()
+        ingress.consumed(base,op,wire)
+        response,binding=n.bind_post(packet,wire,key);body=n.decode(response['response_b64'])
+        events=raw.tls.read_lines(base/'custody/raw-events.jsonl')
+        archive=next(x['archive'] for x in events if x['op']==op and x['phase']=='SEALED_FSYNCED')
+        signed=p.sign(signer,ARCHIVE_DOMAIN,dict(manifest_sha256=digest(m),grant_sha256=digest(packet['grant']),
+            operation_id=op,request_sha256=sha(wire),response_sha256=sha(body),archive=archive,bind_sha256=digest(binding),
+            origin='CLOSED_LOCAL_CUSTODY_TLS_ARCHIVE_BIND'))
+        n.durable_marker(base/'custody'/(op+'-bind.json'),binding)
+        n.durable_marker(base/'custody'/(op+'-archive-receipt.json'),signed)
+        db.execute('UPDATE consumed SET state=?,response_sha=?,backend_receipt=?,envelope_sha=?,bind_sha=? WHERE op=?',
+            ('MOCK_OBSERVED',sha(body),response['receipt_sha256'],archive['envelope_sha256'],digest(binding),op))
+        return dict(decision='ARCHIVED_NATIVE_RESPONSE',body_b64=n.encode(body),archive=signed)
+    if ledger is None:
+        admit();return dispatch()
+    return ledger.execute(operation=op,wire=wire,grant=packet['grant'],admit=admit,effect=dispatch)
 
 
 def scripted_response(source,wire,op):
@@ -452,7 +482,10 @@ def probe(base):
         else:raise ValueError('NATIVE_BOUNDED_PRIVATE_READ_ALLOWED')
     need(rpc(base,dict(action='authorize'))==dict(decision='DENIED_NO_NEW_GRANT'),'UNTRUSTED_ISSUER_PEER_DENIED')
     need(rpc(base,{},'native')==dict(decision='DENIED_OR_UNKNOWN_NO_RETRY'),'UNTRUSTED_CUSTODY_PEER_DENIED')
-    return dict(private_read_denials=denied,issuer_peer_denied=True,custody_peer_denied=True)
+    result=dict(private_read_denials=denied,issuer_peer_denied=True,custody_peer_denied=True)
+    from scripts import task4_native_signed_ledger_integration_v1 as signed
+    if signed.required(base):result['signed_ledger']=signed.probe(base)
+    return result
 
 
 def replay(base):
@@ -519,16 +552,30 @@ def validate(e):
 def exercise(base,output,worker,spawn,isolated,client,sink_ns,head,pins,topology):
     from scripts import task4_native_os_custody_v1 as n
     from scripts import task4_native_retained_authority_v1 as retained
+    from scripts import task4_native_signed_ledger_integration_v1 as signed
+    signed_mode=signed.required(base)
+    ledger_service=spawn(signed.LEDGER,'signed-ledger-server',isolated,base/'ledger/ready') if signed_mode else None
     issuer_service=spawn(kernel.ISSUER,'bounded-issuer',isolated,base/'issuer/ready')
     sink=spawn(kernel.BACKEND,'backend',sink_ns,base/'backend/ready')
     service=spawn(kernel.CUSTODY,'custody',client,base/'custody/ready')
     retained_evidence=None
-    if retained.required(base):
+    if retained.required(base) and not signed_mode:
         issuer_service,retained_evidence=retained.before_native(base,worker,spawn,issuer_service,isolated)
     denials=worker(kernel.AGENT,'bounded-probe',isolated)
     native_result=worker(RUNTIME,'bounded-native',isolated)
     if retained_evidence is not None:
         issuer_service=retained.after_native(base,worker,spawn,issuer_service,isolated,retained_evidence)
+    signed_restart=None
+    if signed_mode:
+        before=worker(kernel.ISSUER,'signed-ledger-view',isolated)
+        signed_restart=dict(before=before,ledger_before_pid=ledger_service.pid,issuer_before_pid=issuer_service.pid)
+        for process in (ledger_service,issuer_service):process.kill();process.wait(timeout=5)
+        signed_restart.update(ledger_exit=ledger_service.returncode,issuer_exit=issuer_service.returncode)
+        (base/'ledger/ready').unlink();(base/'issuer/ready').unlink()
+        ledger_service=spawn(signed.LEDGER,'signed-ledger-server',isolated,base/'ledger/ready')
+        issuer_service=spawn(kernel.ISSUER,'bounded-issuer',isolated,base/'issuer/ready','restarted',('--restart',))
+        signed_restart.update(ledger_after_pid=ledger_service.pid,issuer_after_pid=issuer_service.pid,
+            after=worker(kernel.ISSUER,'signed-ledger-view',isolated),terminal=worker(RUNTIME,'retained-terminal',isolated))
     posts=raw.tls.read_lines(base/'backend/raw-posts.jsonl');events=raw.tls.read_lines(base/'custody/raw-events.jsonl')
     service.terminate();service.wait(timeout=5);(base/'custody/ready').unlink()
     service=spawn(kernel.CUSTODY,'custody',client,base/'custody/ready','restarted',('--restart',))
@@ -568,3 +615,6 @@ def exercise(base,output,worker,spawn,isolated,client,sink_ns,head,pins,topology
     ET.ElementTree(suite).write(output/'junit.xml',encoding='utf-8',xml_declaration=True)
     if retained_evidence is not None:
         retained.finish(base,output,worker,isolated,retained_evidence,r)
+    if signed_mode:
+        signed.finish(base,output,worker,isolated,r,signed_restart)
+        ledger_service.terminate();ledger_service.wait(timeout=5)
