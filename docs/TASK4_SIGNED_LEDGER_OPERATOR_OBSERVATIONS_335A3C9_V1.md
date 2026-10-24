@@ -5,8 +5,10 @@ Prepared 2026-10-24 JST against source
 This records operator-pasted terminal output from a same-host Linux exercise.
 Exact execution timestamps were not captured. This document and its
 [public observation record](../evidence/task4_signed_ledger_operator_observations_335a3c9_v1.json)
-are transcript-derived records, not independently collected host artifacts or
-an independently reproduced experiment.
+are based on operator-provided terminal data, not direct independent host
+acquisition or an independently reproduced experiment. A later linked issuer
+byte record preserves four operator-exported original files, separately decoded,
+rehashed and signature-checked as described below.
 
 `REAL_PROVIDER_NO_GO / UTILITY_UNSCORED / PRODUCTION_BYPASS_RESISTANCE_NOT_PROVEN`
 
@@ -85,7 +87,8 @@ network view. Existing slots stop ordinary retries before a socket is opened.
 The displayed generic STOP does not independently identify which guard
 stopped each actual repeat. No attempt was deleted or reset in the supplied
 procedure. The operator subsequently reported journal existence, sizes and hashes below;
-the journal contents have not yet been independently collected or verified.
+issuer journal bytes were later exported and separately verified as described
+below. Custody journal contents remain uncollected.
 
 In the reviewed source, the controlled-discard exception occurs before writing
 verified-receipts.json/result.json or reaching the fixed in-memory callback.
@@ -117,8 +120,9 @@ credential.
 The JSON record preserves the final custody view's parsed command, signed
 statement and signature, plus explicitly labeled summaries of earlier outputs.
 It does not preserve original stdout bytes, all earlier signed receipts,
-protected host journals, backend commit-chain readbacks, the public approval,
-or source-installation hashes.
+backend commit-chain readbacks, full public-approval file bytes, or source-
+installation hashes. A later linked record preserves four original issuer
+journal byte sequences; Custody journal bytes remain pending.
 
 Preparation checks cover JSON parsing, command SHA-256 under the contract's
 canonical JSON encoding, command/statement nonce and binding agreement,
@@ -164,11 +168,11 @@ the callback. It does not independently establish the precise exception cause
 or historical callback count. A0 had all three expected files in each role.
 
 These hashes identify the bytes the operator's script read at inspection time.
-They have not been independently recomputed from transferred original files,
-and journal contents, journal receipt signatures and cross-record bindings
-remain unverified. The final transcript-derived view signature is separately
-verified below.
-A digest inventory preserves identifiers, not the original evidence bytes.
+Issuer hashes were subsequently recomputed from operator-transferred Base64
+bytes and matched all four prior entries. Custody hashes remain operator-
+reported, with original bytes and receipt signatures pending. The inventory
+alone preserves identifiers; the linked issuer byte record preserves those
+four original byte sequences.
 
 ## Separate cryptographic check of the final view
 
@@ -196,17 +200,47 @@ results. This verifies one reconstructed final receipt's signature under a key
 whose hash matches the earlier operator-supplied pin. It does not authenticate
 the pin through an independent administrator, reproduce the experiment, attest
 the host/source, establish historical freshness for earlier receipts, or verify
-the uncollected journal bytes. No independent human/third-party validation is
-claimed. A0/A1 journal receipt signatures remain pending collection.
+uncollected Custody journal bytes. No independent human/third-party validation
+is claimed. Original issuer journal checks are separately documented below.
+
+## Original issuer journal bytes: separate verification
+
+The operator supplied a Base64 export of issuer A0 attempt.json,
+verified-receipts.json, result.json, and A1 attempt.json. The
+[issuer byte record](../evidence/task4_signed_ledger_335a3c9_issuer_journal_bytes_v1.json)
+preserves the exported byte sequences and verification results. Base64 decoding
+in the assistant execution environment reproduced all four recorded lengths and
+SHA-256 values, matching the prior inventory. No source-host access or
+filesystem metadata attestation was available; the acquisition remains an
+operator-supplied export.
+
+The A0 receipt and result files contain the same two signed exchanges: an
+empty view at revision 0 and an A0 reservation at revision 1. All four signature
+checks passed under the previously pinned public key (two distinct receipts,
+each present in both files). The command digest, nonce/action, binding/ledger,
+fixed A0 request, expected revision and exact RESERVED snapshot matched.
+A reserve statement with a changed revision failed signature verification.
+
+The files differ only in synthetic_callbacks: 0 in verified-receipts.json and
+1 in result.json. Those local fields are unsigned marker records, not an
+independent callback-count witness. Both attempts bind the same configuration
+hash, manifest and binding, with operation IDs A0 and A1; private configuration
+contents were not collected or authenticated by that comparison. A1 has no
+exported success receipt/result, consistent with the reported absences.
+
+These checks involved no network call, mutation, callback, reset or retry.
+They do not verify Custody's original consumption records, A1's missing files,
+backend history or independent administration.
 
 ## Remaining evidence and integration gates
 
-- Collect reviewed public contents of the existing A0/A1 journals where
-  present, and independently recompute the operator-reported hashes above.
-  Retain absence records; do not recreate missing files or delete burned slots.
-- Independently validate the public journal receipts after collection, using
-  the now-preserved binding and pinned public key. The final view check above
-  does not provide the full backend commit history or validate earlier receipts.
+- Collect the existing Custody A0/A1 public journal bytes where present,
+  and independently recompute their reported hashes. Issuer's four exported
+  files are preserved and checked above. Retain absence records; do not
+  recreate missing files or delete burned slots.
+- Validate the Custody journal receipts after collection, using the preserved
+  binding and pinned public key, and join them to issuer's verified reservation.
+  Neither byte/signature check provides the full backend commit history.
 - Establish safe, bounded evidence that distinguishes a specific service
   refusal from transport/backend unavailability.
 - Treat host administration, privileged rollback, actual crash/restore,
