@@ -224,12 +224,25 @@ def test_cli_failure_sanitizes_exception_and_has_no_fallback(monkeypatch, capsys
     assert out.out == '' and out.err.strip() == t.STOP and calls == [True]
 
 
-def test_actual_network_namespace_uid_tcp_udp_ipv4_ipv6_rehearsal():
+def test_actual_network_namespace_uid_tcp_udp_ipv4_ipv6_rehearsal(monkeypatch):
     caps = int(next(x.split()[1] for x in Path('/proc/self/status').read_text().splitlines() if x.startswith('CapEff:')), 16)
     if os.geteuid() != 0 or not all(caps & (1 << bit) for bit in (6, 7, 12, 21)):
         pytest.skip('requires disposable root CI with setuid/setgid/net-admin/sys-admin')
+    # Capture only public isolated-probe diagnostics on failure. The CLI still
+    # emits its constant STOP, and subprocess arguments/environment are unchanged.
+    original_run = subprocess.run
+    failures = []
+    def observed_run(*args, **kwargs):
+        completed = original_run(*args, **kwargs)
+        if completed.returncode:
+            failures.append(completed.stderr.decode('utf-8', errors='replace')[-8000:])
+        return completed
+    monkeypatch.setattr(subprocess, 'run', observed_run)
     before = t.namespace()
-    result = t.rehearse(True)
+    try:
+        result = t.rehearse(True)
+    except Exception as error:
+        pytest.fail(type(error).__name__ + ': ' + str(error) + '\n' + '\n'.join(failures))
     assert t.namespace() == before
     assert t.validate_report(result) == result
     assert len(result['phases']['denied']) == 20
