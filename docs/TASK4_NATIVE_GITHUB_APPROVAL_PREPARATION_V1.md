@@ -33,6 +33,15 @@ effective account with mode 0600 or 0644 and trusted ancestors. Root review must
 therefore stage candidate bytes into trusted root-owned storage first; it must
 not read an untrusted user's mutable directory merely because the digest is known.
 
+## Retained signer alternative
+
+For the existing service UID 109 and separate reader UID 61109, use the explicit
+[retained-signer input/approval schemas](TASK4_NATIVE_RETAINED_SIGNER_PROFILE_V1.md).
+They preserve the original genesis/service public identity and accept exactly
+three Native exports, without a new ledger private key. Candidate/review/root
+rendering validate that separate shape and 14 selected source pins; they do not
+silently reinterpret the original four-role schema or perform a runtime cutover.
+
 ## Required public inputs
 
 The separate [role-local key preparation workflow](TASK4_NATIVE_ROLE_KEYS_V1.md)

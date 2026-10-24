@@ -114,6 +114,18 @@ blanket OUTPUT rule, active firewall change, credential write or privileged
 account creation is performed. The report is concrete configuration review
 input, not evidence that an execution service can reach only approved hosts.
 
+## Retained service and separate reader profile
+
+The explicit [retained-signer profile](TASK4_NATIVE_RETAINED_SIGNER_PROFILE_V1.md)
+preserves the existing UID 109 service identity and genesis, uses UID 61109
+only for read-only diagnostics, and joins issuer/Custody/runtime exports without
+requiring a new ledger key. It uses a separate approval schema and three extra
+source pins (14 selected files in total). There is no automatic profile fallback
+or service reconfiguration. For that profile, `account_matches_reader_uid` is the
+read-account check; `account_matches_ledger_uid` refers to service UID 109 and is
+false when the reader runs. The retained service is explicitly outside the
+checker's desired GET-only egress plan. All runtime/permission flags remain false.
+
 ## Validation and operator handoff
 
 The separate [public approval preparation workflow](TASK4_NATIVE_GITHUB_APPROVAL_PREPARATION_V1.md)

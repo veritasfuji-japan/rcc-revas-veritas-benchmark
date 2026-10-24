@@ -1225,6 +1225,22 @@ jobs:
           assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
           print('NATIVE_FOUR_UID_CREATE_ONCE_KEYS_TWELVE_PRIVATE_READ_DENIALS_PUBLIC_JOIN_ONLY_NO_EXECUTION')
           PYCODE
+      - name: Verify retained signer UID and separate read-only Native profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_native_retained_signer_profile_v1.py \
+            --junitxml=results/task4-native-retained-signer-profile-junit.xml
+          python - <<'PYCODE'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-native-retained-signer-profile-junit.xml').getroot()
+          cases=list(root.iter('testcase'))
+          assert len(cases)==65
+          assert any(x.get('name')=='test_actual_reader_uid_checks_retained_profile_and_service_uid_cannot_read_its_config' for x in cases)
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          print('RETAINED_SIGNER_109_READER_61109_THREE_NATIVE_KEYS_GET_ONLY_NO_PRIVATE_KEY_NO_RUNTIME_CUTOVER')
+          PYCODE
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
         run: |

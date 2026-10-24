@@ -22,6 +22,7 @@ from scripts import task4_receipt_key_custody_v1 as custody
 from scripts.task4_external_ledger_mtls_v1 import SERVER_NAME
 
 INPUT = 'task4.native-github-public-preparation.v1'
+RETAINED_INPUT = 'task4.native-retained-signer-public-preparation.v1'
 CANDIDATE = 'task4.native-github-approval-candidate.v1'
 REVIEW = 'task4.native-github-approval-review.v1'
 ORIGIN = 'OPERATOR_VM_PUBLIC_INPUTS_FOR_REVIEW'
@@ -141,6 +142,9 @@ def tls_plan(public_certificates, authority_publics):
 
 
 def approval_from(public):
+    if type(public) is dict and public.get('schema') == RETAINED_INPUT:
+        from scripts import task4_native_retained_signer_profile_v1 as retained
+        return retained.approval_from(public)
     exact(public, 'schema scope origin execution_source genesis native_manifest issuer_public_hex '
           'service_public_hex source_sha256 roles public_certificates')
     need(public['schema'] == INPUT and public['scope'] == readiness.SCOPE
