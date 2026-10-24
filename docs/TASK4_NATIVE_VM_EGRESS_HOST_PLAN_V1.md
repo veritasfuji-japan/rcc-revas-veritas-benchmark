@@ -164,7 +164,9 @@ only, and performs actual kernel checks of the exact candidate bytes:
 - A duplicate create fails and the existing kernel table state stays identical;
   the transaction does not append rules or overwrite the table.
 - Inverse check does not delete; the exact inverse removes the candidate table
-  and leaves the fresh namespace empty. Parent namespace identity is unchanged.
+  while a separately created canary table remains byte-equivalent in kernel
+  JSON. The test then removes its own canary before namespace teardown. Parent
+  namespace identity is unchanged.
 
 The successful isolated transaction JSON is retained in the actual test case's
 JUnit property. This kernel test is not host policy deployment or another VM

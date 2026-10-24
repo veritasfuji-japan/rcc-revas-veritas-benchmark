@@ -121,8 +121,13 @@ def tables():
 def state():
     return json.loads(e.execute([b['nft'],'--json','--numeric','list','table','inet',table]))
 assert tables()==[]
+canary=table+'_canary'
+e.execute([b['nft'],'create','table','inet',canary])
+def canary_state():
+    return json.loads(e.execute([b['nft'],'--json','--numeric','list','table','inet',canary]))
+canary_before=canary_state()
 e.execute([b['nft'],'--check','--file','-'],apply)
-assert tables()==[]
+assert {x['name'] for x in tables()}=={canary} and canary_state()==canary_before
 e.guard(parent_pid,before,b)
 e.execute([b['nft'],'--file','-'],apply)
 first=state()
@@ -155,16 +160,20 @@ duplicate=subprocess.run([b['nft'],'--file','-'],input=apply,capture_output=True
     env={'PATH':'/usr/sbin:/usr/bin:/sbin:/bin','LANG':'C.UTF-8'})
 assert duplicate.returncode!=0
 assert state()==first
-assert len(tables())==1
+assert {x['name'] for x in tables()}=={canary,table} and canary_state()==canary_before
 e.execute([b['nft'],'--check','--file','-'],rollback)
 assert state()==first
 e.guard(parent_pid,before,b)
 e.execute([b['nft'],'--file','-'],rollback)
+assert {x['name'] for x in tables()}=={canary} and canary_state()==canary_before
+e.guard(parent_pid,before,b)
+e.execute([b['nft'],'delete','table','inet',canary])
 assert tables()==[]
 assert e.namespace(parent_pid)==before and e.namespace()!=before
 print(json.dumps(dict(scope='ISOLATED_NAMESPACE_CANDIDATE_TRANSACTION_ONLY',
     candidate_check_did_not_apply=True,duplicate_create_failed=True,duplicate_state_unchanged=True,
     exact_five_uid_kernel_rules=True,inverse_check_did_not_delete=True,inverse_removed_only_candidate=True,
+    unrelated_canary_unchanged=True,
     parent_namespace_unchanged=True,host_rules_applied=False,execution_permission_issued=False),sort_keys=True))
 '''
     replacements = dict(SOURCE=repr(source), PARENT_PID=str(os.getpid()), PARENT_NS=repr(before),

@@ -112,7 +112,8 @@ jobs:
           assert len(props)==1
           proof=json.loads(props[0].get('value'))
           assert proof['duplicate_create_failed'] and proof['duplicate_state_unchanged']
-          assert proof['inverse_removed_only_candidate'] and not proof['host_rules_applied']
+          assert proof['inverse_removed_only_candidate'] and proof['unrelated_canary_unchanged']
+          assert not proof['host_rules_applied']
           print('OPERATOR_VM_EVIDENCE_SHA_MATCH_CANDIDATE_CREATE_COLLISION_ROLLBACK_ISOLATED_ONLY_NO_HOST_APPLY')
           PYCODE
       - name: Verify original SDK capped wires and same-run AEAD before parser
