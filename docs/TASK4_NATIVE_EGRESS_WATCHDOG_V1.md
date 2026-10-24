@@ -68,8 +68,8 @@ permission to create or replace rules.
 
 ## Validation and scope
 
-Thirty tests run in the mandatory root CI job with **zero skips** required:
-25 portable ownership/shape/nonce/scope checks plus five real kernel scenarios.
+Thirty-three tests run in the mandatory root CI job with **zero skips** required:
+28 portable ownership/shape/nonce/scope checks plus five real kernel scenarios.
 Each kernel scenario creates a separate namespace, preserves an unrelated
 canary table and checks that the parent namespace remains unchanged:
 

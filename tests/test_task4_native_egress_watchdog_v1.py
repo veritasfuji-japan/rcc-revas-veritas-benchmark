@@ -170,3 +170,31 @@ print(json.dumps(dict(scenario=SCENARIO,report=report,unrelated_canary_unchanged
     proof = json.loads(result.stdout)
     assert proof['unrelated_canary_unchanged'] and w.e.namespace()==before
     record_property('watchdog_rehearsal_json',json.dumps(proof,sort_keys=True,separators=(',',':')))
+
+
+@pytest.mark.parametrize('scenario', ['changed_handle', 'inspection_failure', 'absent'])
+def test_inverse_never_deletes_after_identity_change_or_unknown_inspection(monkeypatch, scenario):
+    calls = []
+    monkeypatch.setattr(w, 'guard', lambda *args: None)
+    def execute(argv, data=None):
+        calls.append(argv)
+        return b''
+    monkeypatch.setattr(w.e, 'execute', execute)
+    reads = iter([document(), document()])
+    count = 0
+    def state(_):
+        nonlocal count
+        count += 1
+        if scenario == 'absent': return None
+        if count == 2 and scenario == 'inspection_failure': raise OSError('injected')
+        d = next(reads)
+        if count == 2: d['nftables'][0]['table']['handle'] = 99
+        return d
+    monkeypatch.setattr(w, 'state', state)
+    if scenario == 'absent':
+        assert w.inverse({'nft':'/nft'},TOKEN,123,{}) == 'ABSENT'
+        assert not calls
+    else:
+        with pytest.raises((ValueError,OSError)):
+            w.inverse({'nft':'/nft'},TOKEN,123,{})
+        assert calls == [['/nft','--check','--file','-']]

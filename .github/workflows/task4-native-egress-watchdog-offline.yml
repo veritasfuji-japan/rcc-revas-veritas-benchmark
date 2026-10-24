@@ -34,7 +34,7 @@ jobs:
           python - <<'PYCODE'
           import json,xml.etree.ElementTree as ET
           root=ET.parse('results/task4-native-egress-watchdog-junit.xml').getroot()
-          assert len(list(root.iter('testcase')))==30
+          assert len(list(root.iter('testcase')))==33
           assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
           props=[p for p in root.iter('property') if p.get('name')=='watchdog_rehearsal_json']
           proofs=[json.loads(p.get('value')) for p in props]
