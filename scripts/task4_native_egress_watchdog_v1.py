@@ -151,12 +151,14 @@ def watchdog(token, parent_pid, parent_namespace, seconds, ready_fd, result_fd):
         os.close(ready_fd)
         while time.monotonic() < deadline:
             time.sleep(min(0.05, max(0, deadline - time.monotonic())))
+    except Exception:
+        # Creation may already have committed. Inspect once for safe cleanup;
+        # never re-enter the inverse after an ownership/inspection refusal.
+        pass
+    try:
         outcome = inverse(binaries, token, parent_pid, parent_namespace)
     except Exception:
-        try:
-            outcome = inverse(binaries, token, parent_pid, parent_namespace)
-        except Exception:
-            outcome = 'OWNERSHIP_OR_INSPECTION_STOP_NO_DELETE'
+        outcome = 'OWNERSHIP_OR_INSPECTION_STOP_NO_DELETE'
     report = dict(schema=PROFILE, scope=SCOPE, outcome=outcome,
                   watchdog_pid=os.getpid(), watchdog_session=os.getsid(0),
                   controller_pid=controller_pid, observed_parent_pid=os.getppid(),

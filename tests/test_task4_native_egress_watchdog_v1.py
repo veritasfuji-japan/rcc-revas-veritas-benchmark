@@ -198,3 +198,24 @@ def test_inverse_never_deletes_after_identity_change_or_unknown_inspection(monke
         with pytest.raises((ValueError,OSError)):
             w.inverse({'nft':'/nft'},TOKEN,123,{})
         assert calls == [['/nft','--check','--file','-']]
+
+
+def test_worker_does_not_retry_a_refused_inverse(monkeypatch):
+    monkeypatch.setattr(w.e, 'tools', lambda: {'nft':'/nft'})
+    monkeypatch.setattr(w, 'guard', lambda *args: None)
+    monkeypatch.setattr(w, 'state', lambda *args: None)
+    monkeypatch.setattr(w, 'shape', lambda *args: {})
+    monkeypatch.setattr(w.e, 'execute', lambda *args: b'')
+    times = iter([0, 0, 10])
+    monkeypatch.setattr(w.time, 'monotonic', lambda: next(times))
+    writes = []
+    monkeypatch.setattr(w.os, 'write', lambda fd, raw: writes.append(raw))
+    monkeypatch.setattr(w.os, 'close', lambda fd: None)
+    attempts = []
+    def refused(*args):
+        attempts.append(True)
+        raise ValueError('OWNERSHIP_CHANGED')
+    monkeypatch.setattr(w, 'inverse', refused)
+    w.watchdog(TOKEN,123,{},1,100,101)
+    assert attempts == [True]
+    assert json.loads(writes[-1])['outcome']=='OWNERSHIP_OR_INSPECTION_STOP_NO_DELETE'
