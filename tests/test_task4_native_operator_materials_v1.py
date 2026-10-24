@@ -276,7 +276,7 @@ def test_actual_role_material_keys_and_root_ca_never_cross_private_uid_boundarie
             'sys.modules["scripts"]=importlib.util.module_from_spec(s);'
             'from scripts import task4_native_operator_materials_v1 as t;t.BASE=Path(' + repr(str(state)) + ');')
         def child(role, code, args=()):
-            uid, gid, _ = t.ROLES[role]
+            uid, gid = t.ROLES[role][:2] if role in t.ROLES else ((61109, 61109) if role == 'reader' else (61108, 61108))
             return subprocess.run(['setpriv', '--reuid=' + str(uid), '--regid=' + str(gid), '--clear-groups',
                 '--no-new-privs', '--bounding-set=-all', '--inh-caps=-all', '--ambient-caps=-all',
                 sys.executable, '-I', '-B', '-c', bootstrap + code, *args], cwd='/tmp',
@@ -321,6 +321,16 @@ def test_actual_role_material_keys_and_root_ca_never_cross_private_uid_boundarie
                     '--certificates', str(certificate_file), '--expected-certificates-sha256', t.sha(certificate_file.read_bytes())])
                 assert out.returncode == 0, out.stderr
         assert denied == 25
+        # Public assembler and trusted Native runtime also cannot read any of
+        # the six owners' private material, including the separate CA.
+        for role in ('reader', 'runtime'):
+            for other in t.ROLES:
+                target = state / t.ROLES[other][2] / ('native-materials-v1-' + RUN) / 'private.key'
+                code = '\ntry:\n open(' + repr(str(target)) + ',"rb")\nexcept PermissionError:\n print("DENIED")\nelse:\n raise SystemExit("CROSS_PRIVATE_READ")\n'
+                out = child(role, code)
+                assert out.returncode == 0 and out.stdout.strip() == 'DENIED', out.stderr
+                denied += 1
+        assert denied == 37
         # Root-owned CA files are not a cross-role key distribution mechanism.
         assert (state / t.ROLES['ca'][2]).stat().st_uid == 0
         assert set(t.validate_certificates(certs, m)) == {'ca', *t.TLS_ROLES}

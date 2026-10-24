@@ -155,7 +155,8 @@ substitution, certificate/key/run joins, exact time retention, unchanged genesis
 and service signer, and the existing candidate validator. Socket creation is
 forbidden in the unit fixtures. A mandatory root-capable CI case creates keys
 as their actual UIDs, issues the CA as root, installs four owner-matched leafs,
-and verifies **25 actual PermissionError private-read denials** between the five
-nonroot material owners and the other owners/root CA. It uses temporary homes,
+and verifies **37 actual PermissionError private-read denials**: 25 between the five
+nonroot material owners and the other owners/root CA, plus 12 from reader and
+runtime UIDs to all six material owners. It uses temporary homes,
 not the VM's fixed `/var/lib` paths, and retains the JUnit evidence. No test uses
 or asserts production deployment or real Provider permission.

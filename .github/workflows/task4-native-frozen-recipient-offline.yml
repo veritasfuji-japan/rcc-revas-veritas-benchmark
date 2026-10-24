@@ -1255,7 +1255,7 @@ jobs:
           assert len(cases)==64
           assert any(x.get('name')=='test_actual_role_material_keys_and_root_ca_never_cross_private_uid_boundaries' for x in cases)
           assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
-          print('NATIVE_CREATE_ONCE_TLS_RECIPIENT_SEPARATE_ROOT_CA_25_PRIVATE_UID_DENIALS_PUBLIC_CANDIDATE_ONLY')
+          print('NATIVE_CREATE_ONCE_TLS_RECIPIENT_SEPARATE_ROOT_CA_37_PRIVATE_UID_DENIALS_PUBLIC_CANDIDATE_ONLY')
           PYCODE
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
