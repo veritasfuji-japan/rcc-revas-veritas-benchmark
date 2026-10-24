@@ -1,0 +1,106 @@
+{
+  "decision": [
+    "REAL_PROVIDER_NO_GO",
+    "UTILITY_UNSCORED",
+    "PRODUCTION_BYPASS_RESISTANCE_NOT_PROVEN"
+  ],
+  "denied_errno_summary": [
+    {
+      "count": 5,
+      "errno": 113,
+      "protocol": "tcp",
+      "version": 4
+    },
+    {
+      "count": 5,
+      "errno": 1,
+      "protocol": "udp",
+      "version": 4
+    },
+    {
+      "count": 5,
+      "errno": 13,
+      "protocol": "tcp",
+      "version": 6
+    },
+    {
+      "count": 5,
+      "errno": 1,
+      "protocol": "udp",
+      "version": 6
+    }
+  ],
+  "kernel_denial_packets": {
+    "61103": 5,
+    "61105": 5,
+    "61106": 5,
+    "61107": 5,
+    "61108": 5
+  },
+  "kernel_release": "6.8.0-147-generic",
+  "limitations": {
+    "credential_loaded": false,
+    "dns_policy_verified": false,
+    "execution_permission_issued": false,
+    "host_rules_applied": false,
+    "indirect_proxy_bypass_resistance_proven": false,
+    "native_execution_performed": false,
+    "operator_host_egress_verified": false,
+    "private_key_loaded": false,
+    "production_bypass_resistance_proven": false,
+    "provider_dispatch": "DENY",
+    "provider_requests": 0,
+    "reader_github_egress_restricted": false,
+    "retained_service_egress_restricted": false,
+    "utility": "UNSCORED"
+  },
+  "namespace_identity": {
+    "isolated": {
+      "device": 4,
+      "inode": 4026532347
+    },
+    "isolated_is_distinct": true,
+    "parent_after": {
+      "device": 4,
+      "inode": 4026531840
+    },
+    "parent_before": {
+      "device": 4,
+      "inode": 4026531840
+    },
+    "parent_unchanged": true
+  },
+  "per_flow_counter_increases_verified": true,
+  "phase_counts": {
+    "after_local_table_removal": 32,
+    "baseline": 32,
+    "denied": 20,
+    "exempt_controls": 12
+  },
+  "provenance": {
+    "canonical_bytes_verified": true,
+    "direct_vm_file_access": false,
+    "full_report_validator_passed": true,
+    "gzip_crc_verified": true,
+    "independent_vm_attestation": false,
+    "precise_observation_timestamp": null,
+    "report_signature_verified": false,
+    "reported_sha256_matched": true,
+    "secrets_included": false,
+    "transport": "OPERATOR_PASTED_GZIP_BASE64_EXPORT"
+  },
+  "recorded_on_jst": "2026-10-25",
+  "report_file": "report.json",
+  "report_sha256": "5450e2639db054f176a3f01c9978513232a661497e365610b995adbd645e7c72",
+  "report_size_bytes": 18453,
+  "schema": "task4.native-vm-egress-evidence.v1",
+  "scope": "OPERATOR_REPORTED_ISOLATED_NETNS_NO_HOST_APPLY_NO_EXECUTION",
+  "source_commit": "384962f289aa0365f4b342750874fa22672e0c56",
+  "source_sha256": "f6865825a1f7435a1821e56f3e2e64db806c4ffad23f402d21cba8b394e48857",
+  "tool_versions": {
+    "ip": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
+    "nft": "nftables v1.0.9 (Old Doc Yak #3)",
+    "setpriv": "setpriv from util-linux 2.39.3",
+    "unshare": "unshare from util-linux 2.39.3"
+  }
+}
