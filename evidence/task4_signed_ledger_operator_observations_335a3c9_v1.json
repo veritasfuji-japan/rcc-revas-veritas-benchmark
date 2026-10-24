@@ -10,9 +10,10 @@
     "independent_signature_verification_performed": true,
     "service_public_key_raw_collected": true,
     "not_a_new_execution": true,
-    "host_file_hashes_provenance": "issuer: decoded bytes independently rehashed against prior inventory; custody: operator-reported hashes only",
-    "signature_verification_scope": "final reconstructed custody view and two distinct original issuer A0 receipts; separate cryptographic execution, not independent human attestation",
-    "original_host_file_collection_scope": "issuer only: four original byte sequences exported as Base64 by the operator, decoded and rehashed separately; no direct host acquisition"
+    "host_file_hashes_provenance": "all eight exported byte sequences independently rehashed against prior operator-reported inventory",
+    "signature_verification_scope": "four distinct original A0 issuer/custody receipts plus one reconstructed final custody view; separate cryptographic execution, not independent human attestation",
+    "original_host_file_collection_scope": "all eight present issuer/custody files exported as Base64 by the operator, decoded and rehashed separately; no direct host acquisition",
+    "verification_records_are_stage_specific": true
   },
   "execution_source": "335a3c939fbef7158159853d2891e112718db085",
   "service_identity": {
@@ -289,9 +290,10 @@
       }
     ],
     "original_file_bytes_collected_roles": [
-      "issuer"
+      "issuer",
+      "custody"
     ],
-    "independent_file_rehash_scope": "all four issuer files only; custody pending"
+    "independent_file_rehash_scope": "all eight present issuer/custody files; absent files remain operator-reported"
   },
   "public_approval_subset": {
     "provenance": "operator-pasted selected public approval fields; no approval-file bytes or peers collected",
@@ -384,6 +386,115 @@
     "attempt_configuration_digests_match": true,
     "private_configuration_bytes_collected": false,
     "custody_original_bytes_collected": false,
+    "no_network_or_mutation_performed": true
+  },
+  "joined_journal_verification": {
+    "issuer_byte_record": "task4_signed_ledger_335a3c9_issuer_journal_bytes_v1.json",
+    "custody_byte_record": "task4_signed_ledger_335a3c9_custody_journal_bytes_v1.json",
+    "schema": "task4.joined-journal-byte-verification.v1",
+    "verification_date_jst": "2026-10-24",
+    "acquisition": "operator-supplied Base64 via chat/text attachment; not direct independent host acquisition",
+    "verification_environment": "assistant execution environment",
+    "file_count": 8,
+    "file_checks": [
+      {
+        "role": "issuer",
+        "operation": "A0",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "afffac6af0f3ee0808fbffe1bf8c1669c90097d851d5f57ffd37be0093c7d082",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "issuer",
+        "operation": "A0",
+        "name": "verified-receipts.json",
+        "size_bytes": 2737,
+        "sha256": "a14f383a82b336e01ab8f2af155b067d0d5b33ea280f2cee6917861fe9889e83",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "issuer",
+        "operation": "A0",
+        "name": "result.json",
+        "size_bytes": 2737,
+        "sha256": "dc1401225d92cdaf14e10ad87cb8f40c3df00ef2dc5ebc300aaf40faf8bc16d3",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "issuer",
+        "operation": "A1",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "b1d8e07e6d04e1958068dd0299434e50358b59da1525465a19fc139aca111a4f",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "custody",
+        "operation": "A0",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "f26b5c3718356f54daca3eb1bf8a48d0e11449b456e72f26c7aab6fb35f41d87",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "custody",
+        "operation": "A0",
+        "name": "verified-receipts.json",
+        "size_bytes": 3084,
+        "sha256": "f7211f01e398176a8684620126fbae15a0e4648cad860a0fa779eaa2a342a769",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "custody",
+        "operation": "A0",
+        "name": "result.json",
+        "size_bytes": 3084,
+        "sha256": "e077a01950eeacb4fbe20df0a8be71d46ad8df699e4faf86fa46d043672d49d3",
+        "matches_prior_inventory": true
+      },
+      {
+        "role": "custody",
+        "operation": "A1",
+        "name": "attempt.json",
+        "size_bytes": 340,
+        "sha256": "719c59631f46aa02bb6a9673e13a9067a95e7378227d2ad1781bdbb5607a4edb",
+        "matches_prior_inventory": true
+      }
+    ],
+    "all_file_lengths_and_hashes_match_prior_inventory": true,
+    "canonical_json_bytes_match": true,
+    "distinct_receipts_verified": 5,
+    "signature_verifications": 9,
+    "issuer_receipt_revisions": [
+      0,
+      1
+    ],
+    "custody_receipt_revisions": [
+      1,
+      2
+    ],
+    "issuer_reserved_snapshot_equals_custody_initial_view": true,
+    "custody_consumed_A0_equals_final_revision4_A0": true,
+    "approval_binding_and_run_id_matched": true,
+    "source_genesis_and_no_go_metadata_matched": true,
+    "result_differences_only_unsigned_callback_count": true,
+    "reported_verified_callback_counts": {
+      "issuer": 0,
+      "custody": 0
+    },
+    "reported_result_callback_counts": {
+      "issuer": 1,
+      "custody": 1
+    },
+    "callback_counts_independently_attested": false,
+    "within_role_configuration_digests_match": true,
+    "cross_role_configuration_digests_differ": true,
+    "private_configuration_bytes_collected": false,
+    "tampered_consume_revision_rejected": true,
+    "A1_success_file_absences": "operator-reported only; not directly observable from exported present-file bytes",
+    "backend_commit_chain_verified": false,
+    "independent_human_or_administrator_attestation": false,
     "no_network_or_mutation_performed": true
   }
 }
