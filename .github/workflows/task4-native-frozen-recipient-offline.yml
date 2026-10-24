@@ -1241,6 +1241,22 @@ jobs:
           assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
           print('RETAINED_SIGNER_109_READER_61109_THREE_NATIVE_KEYS_GET_ONLY_NO_PRIVATE_KEY_NO_RUNTIME_CUTOVER')
           PYCODE
+      - name: Verify role-local Native TLS and archive material preparation without execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_native_operator_materials_v1.py \
+            --junitxml=results/task4-native-operator-materials-junit.xml
+          python - <<'PYCODE'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-native-operator-materials-junit.xml').getroot()
+          cases=list(root.iter('testcase'))
+          assert len(cases)==64
+          assert any(x.get('name')=='test_actual_role_material_keys_and_root_ca_never_cross_private_uid_boundaries' for x in cases)
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          print('NATIVE_CREATE_ONCE_TLS_RECIPIENT_SEPARATE_ROOT_CA_37_PRIVATE_UID_DENIALS_PUBLIC_CANDIDATE_ONLY')
+          PYCODE
       - name: Test manual GitHub ledger protocol offline without enabling remote mutations
         shell: bash
         run: |
