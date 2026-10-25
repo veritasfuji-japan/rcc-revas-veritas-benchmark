@@ -24,6 +24,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends nftables
           mkdir -p results
+      - name: Replay full operator VM systemd evidence without mutations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_vm_systemd_recovery_v1.py \
+            --junitxml=results/task4-native-vm-systemd-recovery-junit.xml
+          python - <<'PYCODE'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-native-vm-systemd-recovery-junit.xml').getroot()
+          assert len(list(root.iter('testcase')))==7
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          print('FULL_OPERATOR_VM_SYSTEMD_RECORD_SHA_CANONICAL_SOURCE_REPLAY_SCOPE_VERIFIED')
+          PYCODE
       - name: Require actual PID 1 manager and isolated kernel recovery without skips
         shell: bash
         run: |

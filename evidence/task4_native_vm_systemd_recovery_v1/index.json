@@ -1,0 +1,131 @@
+{
+  "coverage": {
+    "ci_reference": {
+      "artifact_id": 12573706037,
+      "artifact_zip_sha256": "6c5359b7dc7039a07c2fa4ba4d6cc18360abc232a357c65aeec397fd74fab6af",
+      "foreign_systemd_unit_refusal_exercised": true,
+      "head": "fbd56c8d63cff912d5fa2ea038a1979ab8493084",
+      "pull_request": 548,
+      "run_id": 40125900144,
+      "skips": 0,
+      "systemd_version": "systemd 255 (255.4-1ubuntu8.17)",
+      "tests": 39
+    },
+    "vm_foreign_systemd_unit_refusal_exercised": false,
+    "vm_kernel_release_recorded": false,
+    "vm_scenario_count": 5,
+    "vm_worker_identity_records": 4
+  },
+  "limitations": {
+    "complete_native_actor_coverage_proven": false,
+    "execution_permission_issued": false,
+    "full_runtime_attestation_proven": false,
+    "host_egress_enforcement_proven": false,
+    "native_execution_performed": false,
+    "operator_origin_independently_verified": false,
+    "privileged_concurrent_mutation_safe": false,
+    "production_bypass_resistance_proven": false,
+    "reader_github_only_egress_proven": false,
+    "reboot_recovery_proven": false,
+    "retained_signer_egress_confinement_proven": false
+  },
+  "observations": {
+    "execution_permission_issued": false,
+    "host_rule_contents_attested": false,
+    "host_rules_applied": false,
+    "host_transient_systemd_units_created": true,
+    "parent_table_names_unchanged": true,
+    "private_stage_removed": true,
+    "provider_dispatch": "DENY",
+    "provider_requests": 0,
+    "transient_units_stopped": true,
+    "utility": "UNSCORED"
+  },
+  "operator_source_commit": "a71fbe78abb945cf35b6faff09815b00bd506b5c",
+  "parent_namespace_after": {
+    "device": 4,
+    "inode": 4026531840
+  },
+  "parent_namespace_before": {
+    "device": 4,
+    "inode": 4026531840
+  },
+  "precise_observation_timestamp": null,
+  "provenance": {
+    "canonical_bytes_verified": true,
+    "direct_vm_file_access": false,
+    "exporter_filesystem_checks_operator_reported": true,
+    "exporter_uid_operator_reported": 61109,
+    "frozen_source_report_validator_passed": true,
+    "gzip_crc_verified": true,
+    "independent_vm_attestation": false,
+    "original_file_mode_operator_reported": "0644",
+    "original_file_nlink_operator_reported": 1,
+    "original_file_uid_operator_reported": 0,
+    "original_public_path": "/etc/veritas-native-ledger/systemd-isolated-egress-a71fbe7.json",
+    "report_signature_verified": false,
+    "reported_sha256_matched": true,
+    "transport": "OPERATOR_PASTED_GZIP_BASE64_EXPORT",
+    "trusted_observation_clock_verified": false
+  },
+  "recording_date_jst": "2026-10-25",
+  "report_file": "report.json",
+  "report_sha256": "5d1d85a3ec80125e4613fa98815f8901941ac596462431ab0a7bf60745df0a64",
+  "report_size_bytes": 4997,
+  "scenarios": [
+    {
+      "controller_sigkill_verified": false,
+      "outcome": "REMOVED_EXACT_OWNED_TABLE",
+      "scenario": "deadline",
+      "transient_units_stopped": true,
+      "unrelated_canary_unchanged": true,
+      "worker_pid": 8083
+    },
+    {
+      "controller_sigkill_verified": true,
+      "outcome": "REMOVED_EXACT_OWNED_TABLE",
+      "scenario": "controller_killed",
+      "transient_units_stopped": true,
+      "unrelated_canary_unchanged": true,
+      "worker_pid": 8124
+    },
+    {
+      "controller_sigkill_verified": false,
+      "outcome": "OWNERSHIP_OR_INSPECTION_STOP_NO_DELETE",
+      "scenario": "foreign_marker",
+      "transient_units_stopped": true,
+      "unrelated_canary_unchanged": true,
+      "worker_pid": 8163
+    },
+    {
+      "controller_sigkill_verified": false,
+      "outcome": "OWNERSHIP_OR_INSPECTION_STOP_NO_DELETE",
+      "scenario": "extra_rule",
+      "transient_units_stopped": true,
+      "unrelated_canary_unchanged": true,
+      "worker_pid": 8201
+    },
+    {
+      "controller_sigkill_verified": false,
+      "outcome": "COLLISION_STOP_UNCHANGED",
+      "scenario": "collision",
+      "transient_units_stopped": true,
+      "unrelated_canary_unchanged": true,
+      "worker_pid": null
+    }
+  ],
+  "schema": "task4.native-vm-systemd-recovery-evidence.v1",
+  "scope": "OPERATOR_REPORTED_ISOLATED_SYSTEMD_RECOVERY_EVIDENCE_NO_HOST_NFT_APPLY_NO_EXECUTION",
+  "source_pins": {
+    "task4_native_egress_rehearsal_v1": "f6865825a1f7435a1821e56f3e2e64db806c4ffad23f402d21cba8b394e48857",
+    "task4_native_egress_watchdog_v1": "d777cf8754f131569977b8b2ba63e6b8c29329606983db3d5d69f80cc7c46af5",
+    "task4_native_systemd_egress_v1": "7e7dcf6d62bf4b3c4abc73204587a87b9a2cb2748b6cec3c70dd6232d5878ebb"
+  },
+  "source_sha256": "7e7dcf6d62bf4b3c4abc73204587a87b9a2cb2748b6cec3c70dd6232d5878ebb",
+  "systemd_version": "systemd 255 (255.4-1ubuntu8.18)",
+  "verdicts": [
+    "REAL_PROVIDER_NO_GO",
+    "UTILITY_UNSCORED",
+    "PRODUCTION_BYPASS_RESISTANCE_NOT_PROVEN"
+  ]
+}
