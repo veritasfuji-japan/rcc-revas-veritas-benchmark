@@ -1,0 +1,58 @@
+name: Task4 Systemd Isolated Egress NO-GO
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  actual-systemd-isolated-egress:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Install test dependencies
+        run: |
+          python -m pip install 'pytest==9.1.1'
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends nftables
+          mkdir -p results
+      - name: Require actual PID 1 manager and isolated kernel recovery without skips
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_native_systemd_egress_v1.py \
+            -o junit_family=xunit1 --junitxml=results/task4-native-systemd-egress-junit.xml
+          python - <<'PYCODE'
+          import json,xml.etree.ElementTree as ET
+          root=ET.parse('results/task4-native-systemd-egress-junit.xml').getroot()
+          assert len(list(root.iter('testcase')))==39
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          props=[p for p in root.iter('property') if p.get('name')=='systemd_egress_rehearsal_json']
+          assert len(props)==1
+          proof=json.loads(props[0].get('value'))
+          from scripts.task4_native_systemd_egress_v1 import validate_report
+          validate_report(proof)
+          assert len(proof['scenarios'])==5
+          foreign=[p for p in root.iter('property') if p.get('name')=='systemd_foreign_unit_preserved_json']
+          assert len(foreign)==1
+          f=json.loads(foreign[0].get('value'))
+          assert f['foreign_nonce_description_unchanged'] and f['foreign_timer_remained_active']
+          assert f['harness_removed_only_its_test_units'] and not f['host_rules_applied']
+          print('ACTUAL_SYSTEMD_PID1_NO_NEW_PRIVILEGES_ISOLATED_NETNS_FIVE_RECOVERY_SCENARIOS_NO_HOST_NFT_APPLY')
+          PYCODE
+      - name: Retain actual systemd recovery proof
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: task4-actual-systemd-isolated-egress-proof
+          path: results/
+          if-no-files-found: error
