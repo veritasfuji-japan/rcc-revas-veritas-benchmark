@@ -1,0 +1,72 @@
+name: Task4 Bounded Host Trial NO-GO
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  disposable-initial-host-trial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTEST_ADDOPTS: ''
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Prepare disposable numeric role accounts and test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install 'pytest==9.1.1'
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends nftables
+          for item in backend:61103 issuer:61105 custody:61106 archive:61107 runtime:61108; do
+            role="${item%:*}"
+            uid="${item#*:}"
+            if getent passwd "$uid" || getent group "$uid"; then
+              echo 'Disposable CI role UID/GID collision; no replacement permitted'
+              exit 1
+            fi
+            sudo groupadd --gid "$uid" "veritas-native-$role"
+            sudo useradd --uid "$uid" --gid "$uid" --no-create-home \
+              --home-dir /nonexistent --shell /usr/sbin/nologin "veritas-native-$role"
+          done
+          mkdir -p results
+      - name: Require real initial-host systemd and kernel trials without skips
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo --preserve-env=PYTEST_DISABLE_PLUGIN_AUTOLOAD,PYTEST_ADDOPTS,PYTHONDONTWRITEBYTECODE \
+            "$(command -v python)" -m pytest -q -o addopts= tests/test_task4_native_host_trial_v1.py \
+            -o junit_family=xunit1 --junitxml=results/task4-native-host-trial-junit.xml
+          python - <<'PYCODE'
+          import json,xml.etree.ElementTree as ET
+          from scripts import task4_native_host_trial_v1 as h
+          root=ET.parse('results/task4-native-host-trial-junit.xml').getroot()
+          assert len(list(root.iter('testcase')))==30
+          assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+          props={p.get('name'):json.loads(p.get('value')) for p in root.iter('property')
+                 if p.get('name') in ('initial_host_trial_json','initial_host_killed_controller_json')}
+          assert set(props)=={'initial_host_trial_json','initial_host_killed_controller_json'}
+          report=h.validate_report(props['initial_host_trial_json'])
+          assert report['host_rules_applied'] and report['own_table_removed']
+          killed=props['initial_host_killed_controller_json']
+          assert killed['controller_sigkill_verified'] and killed['own_table_absent']
+          assert killed['foreign_policy_unchanged'] and killed['worker_identity']['parent_pid']==1
+          assert killed['worker_result']['outcome']=='REMOVED_EXACT_OWNED_TABLE'
+          assert killed['worker_result']['namespace']==killed['request']['namespace']
+          assert killed['provider_requests']==0 and not killed['execution_permission_issued']
+          print('DISPOSABLE_INITIAL_HOST_FIVE_UID_DENIAL_COUNTERS_CONTROLS_FULL_FOREIGN_POLICY_AND_CONTROLLER_SIGKILL_VERIFIED')
+          PYCODE
+      - name: Retain bounded initial-host CI proof
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: task4-disposable-initial-host-trial-proof
+          path: results/
+          if-no-files-found: error
