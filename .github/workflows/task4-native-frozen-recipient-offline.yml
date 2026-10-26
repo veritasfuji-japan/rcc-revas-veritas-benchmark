@@ -93,6 +93,31 @@ jobs:
           assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
           print('ISOLATED_NETNS_20_IPV4_IPV6_TCP_UDP_DENIALS_12_EXEMPT_CONTROLS_NO_HOST_APPLY_NO_EXECUTION')
           PYCODE
+      - name: Join actual frozen Native SDK Bind and AEAD over Unix HTTP under all-actor IP rejection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_unix_egress_v1.py \
+            --junitxml=results/task4-native-unix-egress-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_unix_egress_v1 \
+            --run --output results/task4-native-unix-egress \
+            --acknowledge-isolated-native-unix-test
+          python - <<'PYCODE'
+          import json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_unix_egress_v1 as u
+          folder=Path('results/task4-native-unix-egress')
+          r=u.validate(json.loads((folder/'report.json').read_bytes()))
+          assert r['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert r['sources']==u.sources()
+          assert len(r['effects'])==len(r['consumed'])==len(r['native']['records'])==8
+          assert len(r['phases']['denied'])==len(r['phases']['post_native_denied'])==32
+          for file,count in [('results/task4-native-unix-egress-unit-junit.xml',22),(folder/'junit.xml',15)]:
+              t=ET.parse(file).getroot()
+              assert len(list(t.iter('testcase')))==count
+              assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
+          print('ACTUAL_FROZEN_NATIVE_SDK_EIGHT_UNIX_BIND_AEAD_EFFECTS_ALL_EIGHT_UID_IP_COUNTER_DENIALS_NO_HOST_APPLY')
+          PYCODE
       - name: Verify operator VM egress evidence and review-only host nft batch in isolated namespace
         shell: bash
         run: |
