@@ -1,0 +1,133 @@
+{
+  "coverage": {
+    "ci_reference": {
+      "artifact_id": 12584248652,
+      "artifact_zip_sha256": "d7c7cae91b811985ea2e142c8f7719e8a88d57e897d7bfe4b128fe0ede1f7592",
+      "controller_sigkill_exercised": true,
+      "head": "8a8193d8fce2c37afd88218b539062777dd7249f",
+      "job_id": 121056427150,
+      "pull_request": 550,
+      "run_id": 40155668154,
+      "skips": 0,
+      "tests": 30
+    },
+    "denied_uids": {
+      "archive": 61107,
+      "backend": 61103,
+      "custody": 61106,
+      "issuer": 61105,
+      "runtime": 61108
+    },
+    "phase_counts": {
+      "after_removal": 32,
+      "baseline": 32,
+      "denied": 20,
+      "exempt_controls": 12
+    },
+    "positive_control_uids": {
+      "administrator": 0,
+      "reader": 61109,
+      "service": 109
+    },
+    "public_network_connectivity_tested": false,
+    "vm_controller_sigkill_exercised": false,
+    "vm_foreign_marker_or_extra_rule_exercised": false,
+    "vm_kernel_and_systemd_versions_recorded": false,
+    "vm_trial_count": 1
+  },
+  "limitations": {
+    "complete_native_actor_coverage_proven": false,
+    "continuous_host_policy_installed": false,
+    "credential_permissions_verified": false,
+    "dns_policy_verified": false,
+    "execution_permission_issued": false,
+    "full_runtime_attestation_proven": false,
+    "hard_realtime_deadline_guaranteed": false,
+    "native_execution_performed": false,
+    "operator_origin_independently_verified": false,
+    "privileged_concurrent_mutation_safe": false,
+    "production_bypass_resistance_proven": false,
+    "provider_dispatch": "DENY",
+    "provider_requests": 0,
+    "reader_github_egress_restricted": false,
+    "reboot_recovery_proven": false,
+    "retained_service_egress_restricted": false,
+    "service_application_receipt_verified": false,
+    "ssh_session_health_verified": false,
+    "utility": "UNSCORED",
+    "watchdog_or_manager_death_recovery_proven": false
+  },
+  "observations": {
+    "boot_id": "07c54a78-9618-48ea-ac94-a0356ebc2564",
+    "completed_ns": 321194057831988,
+    "completion_after_deadline_ns": 58458425,
+    "deadline_ns": 321193999373563,
+    "existing_service": {
+      "listening_inode": 28517,
+      "pid": 3520,
+      "port": 53751,
+      "signed_application_receipt_verified": false,
+      "start_ticks": 4735517,
+      "tcp_connect": true,
+      "uid": 109
+    },
+    "existing_service_control_count": 3,
+    "foreign_policy_sha256": "1e47755e172a6a44762e36599be900147c8c7300a070f6da91047c8ac0e9a3b7",
+    "foreign_policy_unchanged": true,
+    "host_rules_applied": true,
+    "lease_seconds": 15,
+    "namespace": {
+      "device": 4,
+      "inode": 4026531840
+    },
+    "no_new_privs": true,
+    "outcome": "REMOVED_EXACT_OWNED_TABLE",
+    "own_table_removed": true,
+    "provider_dispatch": "DENY",
+    "provider_requests": 0,
+    "raw_foreign_policy_bytes_retained": false,
+    "utility": "UNSCORED",
+    "worker_exited": true,
+    "worker_parent_pid": 1,
+    "worker_pid": 12182,
+    "worker_uid": 0
+  },
+  "operator_source_commit": "68b7cb258cd9ea69efa7e68cfe3ef7c017372681",
+  "precise_observation_timestamp": null,
+  "provenance": {
+    "canonical_bytes_verified": true,
+    "direct_vm_file_access": false,
+    "durable_record_path_operator_reported": "/etc/veritas-native-ledger/host-trial-68b7cb2.json",
+    "exporter_filesystem_checks_operator_reported": true,
+    "exporter_uid_operator_reported": 0,
+    "frozen_source_report_validator_passed": true,
+    "gzip_crc_verified": true,
+    "independent_vm_attestation": false,
+    "original_audit_path": "/run/veritas-native-host-trial-1jok2f11/report.json",
+    "report_signature_verified": false,
+    "reported_sha256_matched": true,
+    "saved_file_mode_operator_reported": "0600",
+    "saved_file_nlink_operator_reported": 1,
+    "saved_file_uid_operator_reported": 0,
+    "transport": "OPERATOR_PASTED_GZIP_BASE64_EXPORT",
+    "trusted_observation_clock_verified": false
+  },
+  "recording_date_jst": "2026-10-26",
+  "report_file": "report.json",
+  "report_sha256": "e52713763f1c9a9b1573db722bd5078163d7fe0885d32556443f8cc335058fba",
+  "report_size_bytes": 19698,
+  "schema": "task4.native-vm-host-trial-evidence.v1",
+  "scope": "OPERATOR_REPORTED_BOUNDED_INITIAL_HOST_UID_EGRESS_EVIDENCE_NO_NATIVE_EXECUTION",
+  "source_pins": {
+    "task4_native_egress_rehearsal_v1": "f6865825a1f7435a1821e56f3e2e64db806c4ffad23f402d21cba8b394e48857",
+    "task4_native_egress_watchdog_v1": "d777cf8754f131569977b8b2ba63e6b8c29329606983db3d5d69f80cc7c46af5",
+    "task4_native_host_trial_v1": "5b3fb5f66db043b7c6f348fee15712d9e6df21f088ae5e3e8261cbfd945d3f7e",
+    "task4_native_systemd_egress_v1": "7e7dcf6d62bf4b3c4abc73204587a87b9a2cb2748b6cec3c70dd6232d5878ebb"
+  },
+  "source_sha256": "5b3fb5f66db043b7c6f348fee15712d9e6df21f088ae5e3e8261cbfd945d3f7e",
+  "verdicts": [
+    "REAL_PROVIDER_NO_GO",
+    "UTILITY_UNSCORED",
+    "PRODUCTION_BYPASS_RESISTANCE_NOT_PROVEN"
+  ]
+}
