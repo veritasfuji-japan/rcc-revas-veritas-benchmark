@@ -54,6 +54,21 @@ def view_evidence(base):
     return snapshot
 
 
+def lifetime(controller_pid):
+    # Namespace inode numbers may be recycled after a namespace is destroyed.
+    # Pair the isolated supervisor PID with its Linux process start time instead.
+    raw=Path('/proc/self/stat').read_text()
+    ticks=int(raw[raw.rfind(')')+2:].split()[19])
+    return dict(controller_pid=controller_pid,supervisor_pid=os.getpid(),supervisor_start_ticks=ticks)
+
+
+def validate_lifetime(value):
+    need(set(value)=={'controller_pid','supervisor_pid','supervisor_start_ticks'}
+         and all(type(x) is int and x>0 for x in value.values())
+         and value['controller_pid']!=value['supervisor_pid'])
+    return value['supervisor_pid'],value['supervisor_start_ticks']
+
+
 def policy_identity(document):
     u.validate_policy(document);result=copy.deepcopy(document)
     for row in result['nftables']:
@@ -129,7 +144,7 @@ def _supervise(parent_pid,parent_ns,source,head,fault):
                 e.execute([binaries['nft'],'--file','-'],f'delete table inet {TABLE}\n'.encode());installed=False
                 after=u.probe_ip(TARGETS,endpoints,binaries);u.validate_flows(after,TARGETS,False)
             report=dict(schema=PROFILE,scope=SCOPE,audited_commit=head,sources=sources(),external_pins=PINS,
-                namespace=e.namespace(),parent_namespace=parent_ns,loopback_only=True,host_rules_applied=False,
+                namespace=e.namespace(),parent_namespace=parent_ns,isolation_lifetime=lifetime(parent_pid),loopback_only=True,host_rules_applied=False,
                 target_uids=TARGETS,phases=dict(baseline=baseline,denied=denied,root_control=control,post_native_denied=post,after_removal=after),
                 final_kernel_packets={str(k):v for k,v in final.items()},installed_policy_before=before,installed_policy_after=policy,
                 fault=fault,fault_report=fault_report,topology=topology,
@@ -179,6 +194,7 @@ def validate_views(rows,enrollment,model,snapshot,namespace):
 def validate(r):
     need(r['schema']==PROFILE and r['scope']==SCOPE and r['sources']==sources() and r['external_pins']==PINS)
     need(type(r['fault']) is str and r['fault'] in FAULTS)
+    validate_lifetime(r['isolation_lifetime'])
     need(r['namespace']!=r['parent_namespace'] and r['loopback_only'] is True and r['host_rules_applied'] is False
          and r['table_removed'] is True and r['target_uids']==TARGETS and r['limitations']==limits())
     for name in ('baseline','after_removal'):u.validate_flows(r['phases'][name],TARGETS,False)

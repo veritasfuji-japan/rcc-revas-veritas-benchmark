@@ -88,3 +88,19 @@ def test_altered_signed_view_evidence_is_refused(signed_views,fault):
     elif fault=='missing_sign':model['events'].pop(1)
     else:rows[1]=copy.deepcopy(rows[0])
     with pytest.raises(Exception):f.validate_views(rows,a,model,snapshot,namespace)
+
+
+def test_process_lifetime_is_distinct_from_recyclable_namespace_inode():
+    identity=f.lifetime(1)
+    assert f.validate_lifetime(identity)==(identity['supervisor_pid'],identity['supervisor_start_ticks'])
+
+
+@pytest.mark.parametrize('fault',['bool_pid','zero_ticks','same_pid','extra','missing'])
+def test_invalid_supervisor_lifetime_is_refused(fault):
+    identity=dict(controller_pid=10,supervisor_pid=11,supervisor_start_ticks=123)
+    if fault=='bool_pid':identity['supervisor_pid']=True
+    elif fault=='zero_ticks':identity['supervisor_start_ticks']=0
+    elif fault=='same_pid':identity['supervisor_pid']=10
+    elif fault=='extra':identity['namespace_inode']=123
+    else:del identity['supervisor_start_ticks']
+    with pytest.raises(ValueError):f.validate_lifetime(identity)

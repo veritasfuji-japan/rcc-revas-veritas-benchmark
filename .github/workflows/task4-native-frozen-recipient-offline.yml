@@ -170,10 +170,10 @@ jobs:
               t=ET.parse(folder/'junit.xml').getroot()
               assert len(list(t.iter('testcase')))==14
               assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
-          assert reports[0]['namespace']!=reports[1]['namespace']
+          assert f.validate_lifetime(reports[0]['isolation_lifetime'])!=f.validate_lifetime(reports[1]['isolation_lifetime'])
           assert reports[0]['fault_report']['evidence']['enrollment']['binding']['run_id']!=reports[1]['fault_report']['evidence']['enrollment']['binding']['run_id']
           t=ET.parse('results/task4-native-unix-ack-loss-unit-junit.xml').getroot()
-          assert len(list(t.iter('testcase')))==22
+          assert len(list(t.iter('testcase')))==28
           assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
           print('TWO_FRESH_NATIVE_SIGNED_MODEL_ACK_LOSS_CASES_THREE_SIGKILLS_NO_RETRY_NO_EFFECT_ALL_EIGHT_UID_IP_DENIAL')
           PYCODE

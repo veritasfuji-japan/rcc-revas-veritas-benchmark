@@ -57,9 +57,12 @@ rule application. Parent table-name comparison remains a limited negative
 control, not full host policy attestation. Fixed retained anchors are retired
 only after exact owned-enrollment checks; partial/corrupt anchors are not repaired.
 
-The root workflow requires 22 portable tests and 14 joined checks per fault,
+The root workflow requires 28 portable tests and 14 joined checks per fault,
 with zero skips, canonical full reports and source/commit joins. It also requires
-distinct case namespaces and run IDs. Portable tests include actual Ed25519
+distinct supervisor process lifetimes (PID plus Linux start ticks) and run IDs.
+Namespace inode numbers can be recycled after an earlier child exits; equality
+of those historical numbers is not evidence of a shared live namespace. Each
+child must differ from its live parent, and a fresh `unshare --net` is mandatory. Portable tests include actual Ed25519
 signed synthetic view vectors and deliberate changes to signature, nonce,
 command, UID, namespace, snapshot, certificate pin, TLS version and sign event.
 Full model validation is required in the real root proof.
