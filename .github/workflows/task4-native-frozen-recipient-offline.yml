@@ -118,6 +118,31 @@ jobs:
               assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
           print('ACTUAL_FROZEN_NATIVE_SDK_EIGHT_UNIX_BIND_AEAD_EFFECTS_ALL_EIGHT_UID_IP_COUNTER_DENIALS_NO_HOST_APPLY')
           PYCODE
+      - name: Join bounded Native histories Bind raw Unix TLS and signed model under all-actor IP rejection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_bounded_unix_egress_v1.py \
+            --junitxml=results/task4-native-bounded-unix-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_bounded_unix_egress_v1 \
+            --run --output results/task4-native-bounded-unix \
+            --acknowledge-isolated-bounded-unix-test
+          python - <<'PYCODE'
+          import json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_bounded_unix_egress_v1 as m
+          folder=Path('results/task4-native-bounded-unix')
+          r=m.validate(json.loads((folder/'report.json').read_bytes()))
+          assert r['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert len(r['native']['evidence']['native']['records'])==8
+          assert r['integration']['evidence']['post_replay']['revision']==16
+          assert len(r['phases']['denied'])==len(r['phases']['post_native_denied'])==32
+          for file,count in [('results/task4-native-bounded-unix-unit-junit.xml',16),(folder/'junit.xml',18)]:
+              t=ET.parse(file).getroot()
+              assert len(list(t.iter('testcase')))==count
+              assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
+          print('ACTUAL_BOUNDED_NATIVE_CHANGING_HISTORY_BIND_RAW_UNIX_TLS_SIGNED_MODEL_EIGHT_UID_IP_DENIAL_NO_HOST_NO_PROVIDER')
+          PYCODE
       - name: Verify operator VM egress evidence and review-only host nft batch in isolated namespace
         shell: bash
         run: |
