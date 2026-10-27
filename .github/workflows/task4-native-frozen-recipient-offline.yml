@@ -143,6 +143,40 @@ jobs:
               assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
           print('ACTUAL_BOUNDED_NATIVE_CHANGING_HISTORY_BIND_RAW_UNIX_TLS_SIGNED_MODEL_EIGHT_UID_IP_DENIAL_NO_HOST_NO_PROVIDER')
           PYCODE
+      - name: Stop uncertain Native signed-model mutations without retry under actor IP denial
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_bounded_unix_ack_loss_v1.py \
+            --junitxml=results/task4-native-unix-ack-loss-unit-junit.xml
+          for fault in api-reserve-ack-lost tls-consume-ack-lost; do
+            sudo -n "$(command -v python)" -m scripts.task4_native_bounded_unix_ack_loss_v1 \
+              --run --fault "$fault" --output "results/task4-native-unix-ack-loss/$fault" \
+              --acknowledge-isolated-native-ack-loss-test
+          done
+          python - <<'PYCODE'
+          import json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_bounded_unix_ack_loss_v1 as f
+          head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          reports=[]
+          for fault,revision in [('api-reserve-ack-lost',1),('tls-consume-ack-lost',2)]:
+              folder=Path('results/task4-native-unix-ack-loss')/fault
+              r=f.validate(json.loads((folder/'report.json').read_bytes()))
+              assert r['audited_commit']==head and r['fault']==fault
+              assert r['fault_report']['evidence']['after']['revision']==revision
+              assert r['effects']==r['status_transcript']==[]
+              reports.append(r)
+              t=ET.parse(folder/'junit.xml').getroot()
+              assert len(list(t.iter('testcase')))==14
+              assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
+          assert f.validate_lifetime(reports[0]['isolation_lifetime'])!=f.validate_lifetime(reports[1]['isolation_lifetime'])
+          assert reports[0]['fault_report']['evidence']['enrollment']['binding']['run_id']!=reports[1]['fault_report']['evidence']['enrollment']['binding']['run_id']
+          t=ET.parse('results/task4-native-unix-ack-loss-unit-junit.xml').getroot()
+          assert len(list(t.iter('testcase')))==28
+          assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
+          print('TWO_FRESH_NATIVE_SIGNED_MODEL_ACK_LOSS_CASES_THREE_SIGKILLS_NO_RETRY_NO_EFFECT_ALL_EIGHT_UID_IP_DENIAL')
+          PYCODE
       - name: Verify operator VM egress evidence and review-only host nft batch in isolated namespace
         shell: bash
         run: |
