@@ -54,7 +54,7 @@ mandatory. Seven wrong backend peers are refused before TLS/HTTP. Existing
 normal and both ledger acknowledgement-loss cases, plus #555's backend-alive
 response-loss trial, remain unchanged and mandatory in the workflow.
 
-41 portable checks and 18 joined actual root checks must pass with zero skips;
+44 portable checks and 18 joined actual root checks must pass with zero skips;
 the workflow validates the complete report and tested commit. Selected source
 pins include the frozen response-loss, acknowledgement-loss and normal profiles
 and their dependencies. These are not full runtime attestation.

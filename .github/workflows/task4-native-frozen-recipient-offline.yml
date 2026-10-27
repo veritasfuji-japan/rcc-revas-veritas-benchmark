@@ -234,7 +234,7 @@ jobs:
           assert e['recovered'][0]['observed_bytes']==0
           assert e['journals']['custody']['verified-receipts.json'] is not None
           assert e['journals']['custody']['effect-returned.json'] is None
-          for file,count in [('results/task4-native-backend-restart-unit-junit.xml',41),(folder/'junit.xml',18)]:
+          for file,count in [('results/task4-native-backend-restart-unit-junit.xml',44),(folder/'junit.xml',18)]:
               t=ET.parse(file).getroot()
               assert len(list(t.iter('testcase')))==count
               assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))

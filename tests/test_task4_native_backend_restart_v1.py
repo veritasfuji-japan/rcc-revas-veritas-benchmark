@@ -197,3 +197,15 @@ def test_inspection_refuses_unpinned_shape_without_repair(retained_backend,fault
     before=file.read_bytes()
     with pytest.raises(ValueError):z.inspect_backend(base)
     assert file.read_bytes()==before
+
+
+@pytest.mark.parametrize('container',[tuple,list])
+def test_backend_join_accepts_sqlite_tuples_and_exact_json_arrays(retained_backend,container):
+    base,q=retained_backend;record=z.inspect_backend(base)
+    assert z.validate_backend_effect_join(record,[container(row) for row in record['rows']],q)
+
+
+def test_backend_join_still_rejects_changed_field_after_container_normalization(retained_backend):
+    base,q=retained_backend;record=z.inspect_backend(base)
+    changed=list(record['rows'][0]);changed[3]='0'*64
+    with pytest.raises(ValueError):z.validate_backend_effect_join(record,[tuple(changed)],q)

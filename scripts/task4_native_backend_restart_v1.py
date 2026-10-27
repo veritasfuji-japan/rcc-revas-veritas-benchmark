@@ -192,6 +192,15 @@ def validate_backend_record(record,request_sha):
     return True
 
 
+
+def validate_backend_effect_join(record,effects,request_sha):
+    validate_backend_record(record,request_sha)
+    # SQLite returns tuples in-process; canonical JSON reports contain arrays.
+    # Normalize only the row container, preserving every field and row count.
+    need(record['rows']==[list(row) for row in effects])
+    return True
+
+
 def inspect_backend(base):
     identity=backend_identity(base)
     fd=os.open(base/'backend/effects.sqlite3',os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC)
@@ -356,9 +365,8 @@ def validate_execution(v,namespace):
     need(all(v['pids_before'][name]!=v['pids_after'][name] and v['exit_codes'][name]==-9 for name in ('ledger','issuer','custody','backend'))
          and v['backend_pid_before']==v['pids_before']['backend'] and v['backend_pid_after']==v['pids_after']['backend'])
     need(v['backend_record_before']==v['backend_record_after']==v['backend_pin']['record'])
-    validate_backend_record(v['backend_record_after'],q)
-    need(v['backend_pin']==dict(run_id=manifest['execution']['run_id'],request_sha256=q,record=v['backend_record_after'])
-         and v['backend_record_after']['rows']==rows['effects'])
+    validate_backend_effect_join(v['backend_record_after'],rows['effects'],q)
+    need(v['backend_pin']==dict(run_id=manifest['execution']['run_id'],request_sha256=q,record=v['backend_record_after']))
     need(v['backend_reopen']==[dict(pid=v['backend_pid_after'],uid=n.BACKEND,namespace=namespace,
         record=v['backend_record_after'],open_mode='ro',dispatch_supported=False)])
     for name in ('reconcile_before','reconcile_after'):
