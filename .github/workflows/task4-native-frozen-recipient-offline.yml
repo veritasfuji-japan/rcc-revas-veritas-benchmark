@@ -240,6 +240,45 @@ jobs:
               assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
           print('ACTUAL_BACKEND_SIGKILL_SAME_PINNED_SQLITE_ONE_EFFECT_READONLY_REOPEN_NO_RETRY_NO_PROVIDER')
           PYCODE
+      - name: Seal exact header and body prefixes and refuse retries after four role restarts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_partial_response_v1.py \
+            --junitxml=results/task4-native-partial-response-unit-junit.xml
+          for fault in headers-cut body-cut; do
+            sudo -n "$(command -v python)" -m scripts.task4_native_partial_response_v1 \
+              --run --fault "$fault" --output "results/task4-native-partial-response/$fault" \
+              --acknowledge-isolated-partial-response-test
+          done
+          python - <<'PYCODE'
+          import json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_partial_response_v1 as z
+          reports=[]
+          for fault in z.MODES:
+              folder=Path('results/task4-native-partial-response')/fault
+              r=z.validate(json.loads((folder/'report.json').read_bytes()))
+              assert r['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+              assert r['fault']==fault
+              e=r['execution'];loss=e['loss_after'][0]
+              assert 0<loss['response_bytes_sent']<loss['produced_bytes']
+              assert e['recovered'][0]['observed_bytes']==loss['response_bytes_sent']
+              assert e['recovered'][0]['raw_sha256']==loss['transmitted_sha256']
+              assert len(e['rows_after']['effects'])==1 and e['after']['revision']==2
+              assert all(code==-9 for code in e['exit_codes'].values())
+              assert e['backend_record_before']==e['backend_record_after']
+              t=ET.parse(folder/'junit.xml').getroot()
+              assert len(list(t.iter('testcase')))==19
+              assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
+              reports.append(r)
+          assert z.f.validate_lifetime(reports[0]['isolation_lifetime'])!=z.f.validate_lifetime(reports[1]['isolation_lifetime'])
+          assert reports[0]['execution']['manifest']['execution']['run_id']!=reports[1]['execution']['manifest']['execution']['run_id']
+          t=ET.parse('results/task4-native-partial-response-unit-junit.xml').getroot()
+          assert len(list(t.iter('testcase')))==56
+          assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
+          print('TWO_ACTUAL_PARTIAL_WIRES_EXACT_AEAD_RECOVERY_FOUR_SIGKILLS_ONE_EFFECT_NO_RETRY_NO_NATIVE_RESPONSE_NO_PROVIDER')
+          PYCODE
       - name: Verify operator VM egress evidence and review-only host nft batch in isolated namespace
         shell: bash
         run: |
