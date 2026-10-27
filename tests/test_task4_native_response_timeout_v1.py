@@ -267,8 +267,10 @@ def capture_join():
     capture=dict(uid=z.n.CUSTODY,namespace=namespace,started_ns=1000000000,finished_ns=1800000000,
         socket_timeout_seconds=0.7,channel_open_before_close=True,raw_sha256=z.e.sha(prefix),observed_bytes=len(prefix),
         capture_completion='timeout',phase='ORIGINAL_CAPTURE_RETURNED')
-    loss=dict(hold_started_ns=1100000000,client_eof_ns=1900000000)
-    return capture,loss,prefix,namespace
+    loss=dict(hold_started_ns=1100000000,client_terminal_ns=1900000000,client_close_result='EOF')
+    closed=dict(uid=z.n.CUSTODY,namespace=namespace,started_ns=1810000000,finished_ns=1820000000,
+        socket_closed=True,connection_socket_cleared=True,phase='ORIGINAL_CONNECTION_CLOSED')
+    return capture,loss,closed,prefix,namespace
 
 
 def test_capture_timeout_precedes_peer_eof_without_closing_client_socket(capture_join):
@@ -277,14 +279,46 @@ def test_capture_timeout_precedes_peer_eof_without_closing_client_socket(capture
 
 @pytest.mark.parametrize('fault',['eof','closed','wrong_timeout','too_fast','early_peer_close','wrong_namespace','wrong_uid','wrong_hash','wrong_length'])
 def test_incorrect_timeout_or_open_stream_evidence_is_refused(capture_join,fault):
-    capture,loss,prefix,namespace=copy.deepcopy(capture_join)
+    capture,loss,closed,prefix,namespace=copy.deepcopy(capture_join)
     if fault=='eof':capture['capture_completion']='eof'
     elif fault=='closed':capture['channel_open_before_close']=False
     elif fault=='wrong_timeout':capture['socket_timeout_seconds']=5
     elif fault=='too_fast':capture['finished_ns']=capture['started_ns']+1
-    elif fault=='early_peer_close':loss['client_eof_ns']=capture['finished_ns']-1
+    elif fault=='early_peer_close':loss['client_terminal_ns']=capture['finished_ns']-1
     elif fault=='wrong_namespace':capture['namespace']['inode']+=1;namespace=dict(device=4,inode=123)
     elif fault=='wrong_uid':capture['uid']=0
     elif fault=='wrong_hash':capture['raw_sha256']='0'*64
     else:capture['observed_bytes']+=1
-    with pytest.raises(ValueError):z.validate_capture_join(capture,loss,prefix,namespace)
+    with pytest.raises(ValueError):z.validate_capture_join(capture,loss,closed,prefix,namespace)
+
+
+@pytest.mark.parametrize('terminal',['EOF','BrokenPipeError','ConnectionResetError','SSLEOFError'])
+def test_actual_peer_close_results_remain_distinct_and_join_client_close(capture_join,terminal):
+    capture,loss,closed,prefix,namespace=copy.deepcopy(capture_join)
+    loss['client_close_result']=terminal
+    assert z.validate_capture_join(capture,loss,closed,prefix,namespace)
+    assert loss['client_close_result']==terminal
+
+
+@pytest.mark.parametrize('fault',['not_closed','not_cleared','close_before_capture','unknown_error'])
+def test_backend_read_error_alone_cannot_prove_client_close(capture_join,fault):
+    capture,loss,closed,prefix,namespace=copy.deepcopy(capture_join)
+    if fault=='not_closed':closed['socket_closed']=False
+    elif fault=='not_cleared':closed['connection_socket_cleared']=False
+    elif fault=='close_before_capture':closed['started_ns']=capture['finished_ns']-1
+    else:loss['client_close_result']='TimeoutError'
+    with pytest.raises(ValueError):z.validate_capture_join(capture,loss,closed,prefix,namespace)
+
+
+def test_close_observer_calls_original_close_and_records_actual_descriptor_state(monkeypatch,tmp_path):
+    import socket
+    rows=[];reader,writer=socket.socketpair()
+    class Connection:
+        sock=reader
+        def close(self):self.sock.close();self.sock=None
+    conn=Connection();monkeypatch.setattr(z.u,'append',lambda path,row:rows.append(row))
+    try:
+        z.close_evidence(tmp_path,conn,conn.close)
+        assert reader.fileno()==-1 and conn.sock is None
+        assert len(rows)==1 and rows[0]['socket_closed'] is rows[0]['connection_socket_cleared'] is True
+    finally:reader.close();writer.close()

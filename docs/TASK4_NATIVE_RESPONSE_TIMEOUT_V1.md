@@ -10,10 +10,14 @@ early server EOF, replacement timeout exception or rewritten framing is used.
 The original Custody capture runs with its unchanged socket timeout of 0.7
 seconds. An observer records its actual completion classification, bytes,
 monotonic start/end, configured timeout and the still-open socket descriptor
-before the original transport closes the connection. The backend records when
-it began holding the stream and when it actually received EOF from that
-client. Validation requires capture completion = timeout and capture end
-strictly between those backend observations, in the same isolated namespace.
+before the original transport closes the connection. A second observer delegates
+to the original HTTP connection close method and records the actual closed
+descriptor and cleared socket. The backend records its hold start and actual
+terminal read result: EOF, BrokenPipeError, ConnectionResetError or SSLEOFError.
+Those results remain distinct; none is relabeled as EOF. Validation requires
+capture completion = timeout, an actual client close after capture, and a
+backend terminal result after that close began, in the same namespace. A TLS
+error alone is not accepted as proof of client closure.
 A lower-bound duration check guards against fabricated immediate timeout;
 this is not a real-time scheduling or exact deadline guarantee.
 
@@ -66,7 +70,7 @@ readback joins remain required. Each case has a distinct supervisor lifetime
 and run ID; reuse of a destroyed namespace's inode is allowed.
 
 The mandatory workflow preserves every prior normal, ledger ACK-loss,
-zero-response-loss, retained-backend and EOF-prefix trial. It adds 68 portable
+zero-response-loss, retained-backend and EOF-prefix trial. It adds 77 portable
 checks and 20 joined actual root checks per case with zero skips, complete
 canonical report validation and tested-commit provenance. Source pins include
 the frozen partial-response profile and its predecessors, not full runtime
@@ -79,7 +83,7 @@ same live kernel/filesystem. It does not cover all offsets, slow-drip streams,
 late response release, writable backend continuation, OS/VM reboot or power
 loss, real Provider completion loss, remote GitHub or independent storage
 administration. Backend waiting has a bounded failure timeout; if the expected
-client close is not observed, the proof fails instead of inferring success.
+client close and corresponding backend terminal observation are not verified, the proof fails instead of inferring success.
 No operator VM file, token, service UID 109, expired approval or host lease is
 loaded or changed. There is no deployment or live execution command.
 

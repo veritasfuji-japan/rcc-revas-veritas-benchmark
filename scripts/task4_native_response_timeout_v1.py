@@ -8,6 +8,7 @@ import copy
 import json
 import hmac
 import http.client
+import ssl
 from http.server import BaseHTTPRequestHandler
 import os
 from pathlib import Path
@@ -82,13 +83,16 @@ def hold_committed_response(base,wire,channel):
     prefix=timeout_prefix(wire,fault);started=time.monotonic_ns()
     if prefix:channel.sendall(prefix)
     channel.settimeout(5)
-    peer=channel.recv(1)  # No EOF is sent by this server before the client closes.
-    closed=time.monotonic_ns();need(peer==b'')
+    try:
+        peer=channel.recv(1);need(peer==b'');terminal='EOF'
+    except (BrokenPipeError,ConnectionResetError,ssl.SSLEOFError) as error:
+        terminal=type(error).__name__  # Preserve the actual TLS/socket result, never relabel as EOF.
+    closed=time.monotonic_ns()
     u.append(base/'backend/response-loss.jsonl',dict(operation=op,request_sha256=q,response_sha256=response,
         backend_receipt_sha256=receipt,produced_wire_sha256=e.sha(wire),produced_bytes=len(wire),
         response_bytes_sent=len(prefix),transmitted_sha256=e.sha(prefix),transmitted_b64=n.encode(prefix),
         generated_wire_b64=n.encode(wire),fault=fault,uid=os.geteuid(),namespace=e.namespace(),
-        hold_started_ns=started,client_eof_ns=closed,phase='DURABLE_EFFECT_HOLD_OPEN_UNTIL_CLIENT_CLOSE'))
+        hold_started_ns=started,client_terminal_ns=closed,client_close_result=terminal,phase='DURABLE_EFFECT_HOLD_OPEN_UNTIL_CLIENT_CLOSE'))
 
 
 def capture_evidence(base,channel,capture):
@@ -101,25 +105,43 @@ def capture_evidence(base,channel,capture):
     return wire,completion
 
 
-def validate_capture_join(capture,loss,prefix,namespace):
-    for row,keys in ((capture,('started_ns','finished_ns')),(loss,('hold_started_ns','client_eof_ns'))):
+def close_evidence(base,connection,close):
+    channel=connection.sock;started=time.monotonic_ns()
+    result=close();finished=time.monotonic_ns()
+    u.append(base/'custody/close-events.jsonl',dict(uid=os.geteuid(),namespace=e.namespace(),
+        started_ns=started,finished_ns=finished,socket_closed=channel is not None and channel.fileno()==-1,
+        connection_socket_cleared=connection.sock is None,phase='ORIGINAL_CONNECTION_CLOSED'))
+    return result
+
+
+def validate_capture_join(capture,loss,closed,prefix,namespace):
+    for row,keys in ((capture,('started_ns','finished_ns')),(closed,('started_ns','finished_ns')),
+                     (loss,('hold_started_ns','client_terminal_ns'))):
         need(all(type(row[k]) is int and row[k]>0 for k in keys))
     need(capture['finished_ns']-capture['started_ns']>=500000000
-         and loss['hold_started_ns']<capture['finished_ns']<loss['client_eof_ns'])
+         and loss['hold_started_ns']<capture['finished_ns']<closed['started_ns']<=closed['finished_ns']
+         and closed['started_ns']<loss['client_terminal_ns']
+         and loss['client_close_result'] in ('EOF','BrokenPipeError','ConnectionResetError','SSLEOFError'))
     need(capture==dict(uid=n.CUSTODY,namespace=namespace,started_ns=capture['started_ns'],finished_ns=capture['finished_ns'],
         socket_timeout_seconds=0.7,channel_open_before_close=True,raw_sha256=e.sha(prefix),observed_bytes=len(prefix),
         capture_completion='timeout',phase='ORIGINAL_CAPTURE_RETURNED'))
+    need(closed==dict(uid=n.CUSTODY,namespace=namespace,started_ns=closed['started_ns'],finished_ns=closed['finished_ns'],
+        socket_closed=True,connection_socket_cleared=True,phase='ORIGINAL_CONNECTION_CLOSED'))
     return True
 
 
 def observed_dispatch(base,packet,request,key):
-    """Observe original capture; the existing completion gate must stop parsing."""
-    original_capture=ingress.raw.capture;original_parse=ingress.raw.parse_wire
+    """Observe original capture/close; the existing gate must stop parsing."""
+    original_capture=ingress.raw.capture;original_parse=ingress.raw.parse_wire;original_connection=m.connection
     def capture(channel):return capture_evidence(base,channel,original_capture)
+    def connection(base):
+        conn=original_connection(base);close=conn.close
+        conn.close=lambda:close_evidence(base,conn,close)
+        return conn
     def parse(wire,completion):
         u.append(base/'custody/parser-events.jsonl',dict(phase='UNEXPECTED_PARSER_CALLED'))
         return original_parse(wire,completion)
-    with patch.object(ingress.raw,'capture',capture),patch.object(ingress.raw,'parse_wire',parse):
+    with patch.object(ingress.raw,'capture',capture),patch.object(ingress.raw,'parse_wire',parse),patch.object(m,'connection',connection):
         return m.dispatch(base,packet,request,key)
 
 
@@ -344,7 +366,8 @@ def exercise(base,worker,spawn):
         posts_before=posts_before,posts_after=u.read_lines(base/'backend/raw-posts.jsonl'),
         loss_before=loss_before,loss_after=u.read_lines(base/'backend/response-loss.jsonl'),
         parser_events=u.read_lines(base/'custody/parser-events.jsonl'),
-        capture_events=u.read_lines(base/'custody/capture-events.jsonl'),model=model,
+        capture_events=u.read_lines(base/'custody/capture-events.jsonl'),
+        close_events=u.read_lines(base/'custody/close-events.jsonl'),model=model,
         model_posts_before=sum(x[0]=='api' and x[1]=='POST' for x in model_before['events']),
         pids_before=pids_before,pids_after={name:p.pid for name,p in services.items()},exit_codes=exits,
         backend_pid_before=backend_pid,backend_pid_after=backend.pid,
@@ -441,7 +464,7 @@ def validate_execution(v,namespace):
         produced_wire_sha256=post['wire_sha256'],produced_bytes=post['wire_bytes'],response_bytes_sent=len(prefix),
         transmitted_sha256=e.sha(prefix),transmitted_b64=n.encode(prefix),generated_wire_b64=n.encode(generated),
         fault=fault,uid=n.BACKEND,namespace=namespace,hold_started_ns=loss['hold_started_ns'],
-        client_eof_ns=loss['client_eof_ns'],phase='DURABLE_EFFECT_HOLD_OPEN_UNTIL_CLIENT_CLOSE'))
+        client_terminal_ns=loss['client_terminal_ns'],client_close_result=loss['client_close_result'],phase='DURABLE_EFFECT_HOLD_OPEN_UNTIL_CLIENT_CLOSE'))
     events=v['events_after'];phases=['CONSUMED','BIND_RECEIPT','API_PEER_VERIFIED','API_POST_ATTEMPTED',
         'RAW_OBSERVED','SEALED_FSYNCED','BIND_RECEIPT']
     need([x['phase'] for x in events]==phases and all(x['uid']==n.CUSTODY for x in events))
@@ -449,8 +472,8 @@ def validate_execution(v,namespace):
     for index,outcome,allowed in expected:
         need(events[index]['receipt']['final_outcome']==outcome and events[index]['allowed'] is allowed and events[index]['apply_calls']==0)
     need(events[4]['raw_sha256']==e.sha(prefix) and events[4]['observed_bytes']==len(prefix) and events[4]['capture_completion']=='timeout')
-    need(v['parser_events']==[] and len(v['capture_events'])==1)
-    validate_capture_join(v['capture_events'][0],loss,prefix,namespace)
+    need(v['parser_events']==[] and len(v['capture_events'])==len(v['close_events'])==1)
+    validate_capture_join(v['capture_events'][0],loss,v['close_events'][0],prefix,namespace)
     archive=events[5]['archive'];need(archive['raw_sha256']==e.sha(prefix) and archive['observed_bytes']==len(prefix) and archive['local_fsync_completed'] is True
         and archive['run_id']==manifest['execution']['run_id'] and archive['request_sha256']==q
         and archive['recipient_sha256']==manifest['execution']['raw_recipient_sha256'])
@@ -637,7 +660,7 @@ def run(output,fault=None,acknowledge=False):
     need(e.execute([binaries['nft'],'--json','--numeric','list','tables'])==parent_tables)
     output.mkdir(parents=True)
     (output/'report.json').write_bytes(n.canonical(report))
-    checks=('actual_first_sdk_request_stops_on_capture_timeout', 'one_durable_backend_effect_no_duplicate', 'no_native_response_scorer_or_continuation', 'consume_before_bind_and_post', 'bind_failure_does_not_mean_no_effect', 'exact_timeout_bytes_sealed_without_parsing', 'original_capture_timeout_before_client_close', 'server_stream_held_until_timed_out_client_closes', 'fresh_archive_owner_recovers_exact_observed_bytes', 'signed_reserve_consume_receipts_and_model_readback', 'four_sigkills_reopen_same_unknown_state', 'backend_same_inode_hash_schema_and_effect', 'backend_reopens_readonly_without_dispatch', 'pending_issuer_no_reissue', 'custody_replay_refused_without_network_post', 'readonly_backend_reconciliation_no_permission', 'same_live_policy_all_actor_counter_denials', 'seven_wrong_backend_uids_refused', 'no_host_policy_apply', 'no_provider_operator_or_remote_github')
+    checks=('actual_first_sdk_request_stops_on_capture_timeout', 'one_durable_backend_effect_no_duplicate', 'no_native_response_scorer_or_continuation', 'consume_before_bind_and_post', 'bind_failure_does_not_mean_no_effect', 'exact_timeout_bytes_sealed_without_parsing', 'original_capture_timeout_before_actual_client_close', 'server_stream_held_until_timed_out_client_closes', 'fresh_archive_owner_recovers_exact_observed_bytes', 'signed_reserve_consume_receipts_and_model_readback', 'four_sigkills_reopen_same_unknown_state', 'backend_same_inode_hash_schema_and_effect', 'backend_reopens_readonly_without_dispatch', 'pending_issuer_no_reissue', 'custody_replay_refused_without_network_post', 'readonly_backend_reconciliation_no_permission', 'same_live_policy_all_actor_counter_denials', 'seven_wrong_backend_uids_refused', 'no_host_policy_apply', 'no_provider_operator_or_remote_github')
     suite=ET.Element('testsuite',name='Native response timeout '+fault,tests=str(len(checks)),failures='0',errors='0',skipped='0')
     for name in checks:ET.SubElement(suite,'testcase',classname='native_response_timeout',name=name)
     ET.ElementTree(suite).write(output/'junit.xml',encoding='utf-8',xml_declaration=True)

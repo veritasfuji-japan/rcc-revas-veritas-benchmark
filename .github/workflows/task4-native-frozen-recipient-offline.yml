@@ -302,7 +302,9 @@ jobs:
               assert r['fault']==fault
               e=r['execution'];loss=e['loss_after'][0];capture=e['capture_events'][0]
               assert capture['capture_completion']=='timeout' and e['parser_events']==[]
-              assert loss['hold_started_ns']<capture['finished_ns']<loss['client_eof_ns']
+              assert loss['hold_started_ns']<capture['finished_ns']<e['close_events'][0]['started_ns']<loss['client_terminal_ns']
+              assert e['close_events'][0]['socket_closed'] is True
+              assert e['close_events'][0]['connection_socket_cleared'] is True
               assert capture['channel_open_before_close'] is True
               assert e['recovered'][0]['capture_completion']=='timeout'
               assert e['recovered'][0]['observed_bytes']==loss['response_bytes_sent']
@@ -317,7 +319,7 @@ jobs:
           assert len({z.f.validate_lifetime(r['isolation_lifetime']) for r in reports})==3
           assert len({r['execution']['manifest']['execution']['run_id'] for r in reports})==3
           t=ET.parse('results/task4-native-response-timeout-unit-junit.xml').getroot()
-          assert len(list(t.iter('testcase')))==68
+          assert len(list(t.iter('testcase')))==77
           assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
           print('THREE_ACTUAL_OPEN_TLS_CAPTURE_TIMEOUTS_EXACT_AEAD_NO_PARSER_FOUR_SIGKILLS_ONE_EFFECT_NO_RETRY_NO_PROVIDER')
           PYCODE
