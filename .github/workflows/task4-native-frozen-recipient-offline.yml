@@ -323,6 +323,48 @@ jobs:
           assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
           print('THREE_ACTUAL_OPEN_TLS_CAPTURE_TIMEOUTS_EXACT_AEAD_NO_PARSER_FOUR_SIGKILLS_ONE_EFFECT_NO_RETRY_NO_PROVIDER')
           PYCODE
+      - name: Stop actual Native slow-drip TLS at one fixed total receive deadline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_total_deadline_v1.py \
+            --junitxml=results/task4-native-total-deadline-unit-junit.xml
+          for fault in headers-drip body-drip; do
+            sudo -n "$(command -v python)" -m scripts.task4_native_total_deadline_v1 \
+              --run --fault "$fault" --output "results/task4-native-total-deadline/$fault" \
+              --acknowledge-isolated-total-deadline-test
+          done
+          python - <<'PYCODE'
+          import json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_total_deadline_v1 as z
+          reports=[]
+          for fault in z.MODES:
+              folder=Path('results/task4-native-total-deadline')/fault
+              r=z.validate(json.loads((folder/'report.json').read_bytes()))
+              assert r['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+              assert r['fault']==fault
+              e=r['execution'];capture=e['capture_events'][0]['collection']
+              assert capture['stop_reason']=='total-deadline' and capture['capture_completion']=='timeout'
+              assert capture['deadline_ns']==capture['started_ns']+z.TOTAL_NS
+              assert len([x for x in capture['reads'] if x['outcome']=='bytes'])>=3
+              assert e['fast_control']['collection']['stop_reason']=='eof'
+              assert e['fast_control']['snapshot']==dict(effect_count=0,operation_receipt=None)
+              assert e['parser_events']==[] and e['close_events'][0]['socket_closed'] is True
+              assert e['recovered'][0]['observed_bytes']==capture['observed_bytes']
+              assert len(e['rows_after']['effects'])==1 and e['after']['revision']==2
+              assert all(code==-9 for code in e['exit_codes'].values())
+              t=ET.parse(folder/'junit.xml').getroot()
+              assert len(list(t.iter('testcase')))==21
+              assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
+              reports.append(r)
+          assert len({z.f.validate_lifetime(r['isolation_lifetime']) for r in reports})==2
+          assert len({r['execution']['manifest']['execution']['run_id'] for r in reports})==2
+          t=ET.parse('results/task4-native-total-deadline-unit-junit.xml').getroot()
+          assert len(list(t.iter('testcase')))==64
+          assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
+          print('TWO_ACTUAL_NATIVE_SLOW_DRIPS_ONE_FIXED_DEADLINE_FAST_EOF_CONTROL_EXACT_AEAD_FOUR_RESTARTS_NO_RETRY_NO_PROVIDER')
+          PYCODE
       - name: Verify operator VM egress evidence and review-only host nft batch in isolated namespace
         shell: bash
         run: |
