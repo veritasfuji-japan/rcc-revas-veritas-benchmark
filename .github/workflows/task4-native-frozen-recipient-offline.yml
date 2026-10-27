@@ -396,6 +396,45 @@ jobs:
               assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
           print('EIGHT_ACTUAL_NATIVE_FIXED_DEADLINE_EOF_ARCHIVE_PARSE_CONTINUE_SIXTEEN_SIGNED_MUTATIONS_NO_PROVIDER')
           PYCODE
+      - name: Reject invalid complete Native responses received within the fixed deadline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_deadline_invalid_v1.py \
+            --junitxml=results/task4-native-deadline-invalid-unit-junit.xml
+          for fault in malformed-json missing-id; do
+            sudo -n "$(command -v python)" -m scripts.task4_native_deadline_invalid_v1 \
+              --run --fault "$fault" --output "results/task4-native-deadline-invalid/$fault" \
+              --acknowledge-isolated-deadline-invalid-test
+          done
+          python - <<'PYCODE'
+          import json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_deadline_invalid_v1 as z
+          reports=[]
+          for fault in z.MODES:
+              folder=Path('results/task4-native-deadline-invalid')/fault
+              r=z.validate(json.loads((folder/'report.json').read_bytes()))
+              assert r['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+              v=r['execution'];c=v['trace'][0]['collection']
+              assert c['capture_completion']==c['stop_reason']=='eof'
+              assert c['finished_ns']<c['deadline_ns']==c['started_ns']+z.deadline.TOTAL_NS
+              assert v['initial']['model_responses_returned']==v['initial']['scorer_calls']==0
+              assert [x['phase'] for x in v['trace']]==['CAPTURE','CLOSE','SEALED','PARSER_REFUSED']
+              assert v['recovered'][0]['raw_sha256']==c['raw_sha256']
+              assert len(v['rows_after']['effects'])==1 and v['after']['revision']==2
+              assert all(x==-9 for x in v['exit_codes'].values())
+              root=ET.parse(folder/'junit.xml').getroot()
+              assert len(list(root.iter('testcase')))==21
+              assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
+              reports.append(r)
+          assert len({z.f.validate_lifetime(r['isolation_lifetime']) for r in reports})==2
+          assert len({r['execution']['manifest']['execution']['run_id'] for r in reports})==2
+          root=ET.parse('results/task4-native-deadline-invalid-unit-junit.xml').getroot()
+          assert len(list(root.iter('testcase')))==94
+          assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
+          print('TWO_ACTUAL_NATIVE_INVALID_EOF_WITHIN_FIXED_DEADLINE_ORIGINAL_PARSER_REFUSAL_EXACT_AEAD_FOUR_RESTARTS_NO_RETRY_NO_PROVIDER')
+          PYCODE
       - name: Verify operator VM egress evidence and review-only host nft batch in isolated namespace
         shell: bash
         run: |
