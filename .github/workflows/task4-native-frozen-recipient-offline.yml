@@ -365,6 +365,37 @@ jobs:
           assert not any(list(t.iter(tag)) for tag in ('failure','error','skipped'))
           print('TWO_ACTUAL_NATIVE_SLOW_DRIPS_ONE_FIXED_DEADLINE_FAST_EOF_CONTROL_EXACT_AEAD_FOUR_RESTARTS_NO_RETRY_NO_PROVIDER')
           PYCODE
+      - name: Complete eight actual Native steps through the fixed total response deadline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_deadline_normal_v1.py \
+            --junitxml=results/task4-native-deadline-normal-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_deadline_normal_v1 \
+            --run --output results/task4-native-deadline-normal \
+            --acknowledge-isolated-deadline-normal-test
+          python - <<'PYCODE'
+          import json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_deadline_normal_v1 as z
+          folder=Path('results/task4-native-deadline-normal')
+          r=z.validate(json.loads((folder/'report.json').read_bytes()))
+          assert r['audited_commit']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          e=r['normal']['native']['evidence']
+          assert len(e['native']['records'])==len(e['effects'])==len(e['recovered'])==8
+          assert e['native']['scorer_calls']==2 and e['replay_denials']==16
+          assert len(r['trace'])==32
+          for x in r['trace']:
+              if x['phase']=='CAPTURE':
+                  c=x['collection']
+                  assert c['stop_reason']==c['capture_completion']=='eof'
+                  assert c['finished_ns']<c['deadline_ns']==c['started_ns']+z.deadline.TOTAL_NS
+          for file,count in [('results/task4-native-deadline-normal-unit-junit.xml',40),(folder/'junit.xml',16)]:
+              root=ET.parse(file).getroot()
+              assert len(list(root.iter('testcase')))==count
+              assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
+          print('EIGHT_ACTUAL_NATIVE_FIXED_DEADLINE_EOF_ARCHIVE_PARSE_CONTINUE_SIXTEEN_SIGNED_MUTATIONS_NO_PROVIDER')
+          PYCODE
       - name: Verify operator VM egress evidence and review-only host nft batch in isolated namespace
         shell: bash
         run: |
