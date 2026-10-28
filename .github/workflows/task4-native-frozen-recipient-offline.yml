@@ -572,6 +572,54 @@ jobs:
               assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
           print('STRICT_FRAMING_AND_ID_GUARDS_EIGHT_NORMAL_STEPS_FOUR_FRAMING_REFUSALS_EXACT_AEAD_FOUR_RESTARTS_NO_RETRY_NO_PROVIDER')
           PYCODE
+      - name: Complete near-limit Native responses and refuse raw size overflow before parsing
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_size_boundary_v1.py \
+            --junitxml=results/task4-native-size-boundary-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_size_boundary_normal_v1 \
+            --run --output results/task4-native-size-boundary/normal \
+            --acknowledge-isolated-size-boundary-normal-test
+          for fault in one-byte-over large-over; do
+            sudo -n "$(command -v python)" -m scripts.task4_native_size_overflow_v1 \
+              --run --fault "$fault" --output "results/task4-native-size-boundary/$fault" \
+              --acknowledge-isolated-size-overflow-test
+          done
+          python - <<'PYCODE'
+          import json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_size_overflow_v1 as z
+          from scripts import task4_native_size_boundary_normal_v1 as normal
+          head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          folder=Path('results/task4-native-size-boundary')
+          p=normal.validate(json.loads((folder/'normal/report.json').read_bytes()))
+          assert p['audited_commit']==head and len(p['normal']['native']['evidence']['native']['records'])==8
+          assert [x['collection']['observed_bytes'] for x in p['trace'] if x['phase']=='CAPTURE']==[z.size.LIMIT-1,z.size.LIMIT]*4
+          reports=[]
+          for fault in z.MODES:
+              r=z.validate(json.loads((folder/fault/'report.json').read_bytes()))
+              assert r['audited_commit']==head
+              v=r['execution'];c=v['trace'][0]['collection']
+              assert c['capture_completion']=='limit' and c['stop_reason']=='byte-limit' and c['observed_bytes']==z.size.LIMIT+1
+              assert [x['phase'] for x in v['trace']]==['CAPTURE','CLOSE','SEALED']
+              assert v['parser_events']==[]
+              assert not any(x['phase'] in ('HTTP_PARSE_STARTED','BODY_RELEASED_TO_BIND') for x in v['events_after'])
+              assert v['initial']['model_responses_returned']==v['initial']['scorer_calls']==0
+              assert len(v['rows_after']['effects'])==1 and v['after']['revision']==2
+              assert all(x==-9 for x in v['exit_codes'].values())
+              assert v['recovered'][0]['observed_bytes']==z.size.LIMIT+1 and v['recovered'][0]['capture_completion']=='limit'
+              reports.append(r)
+          assert len({z.f.validate_lifetime(r['isolation_lifetime']) for r in reports})==2
+          assert len({r['execution']['manifest']['execution']['run_id'] for r in reports})==2
+          files=[('results/task4-native-size-boundary-unit-junit.xml',119),(folder/'normal/junit.xml',20)]
+          files.extend((folder/fault/'junit.xml',24) for fault in z.MODES)
+          for file,count in files:
+              root=ET.parse(file).getroot()
+              assert len(list(root.iter('testcase')))==count
+              assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
+          print('RAW_SIZE_BOUNDARY_EIGHT_ACTUAL_NATIVE_STEPS_TWO_OVERFLOWS_EXACT_SENTINEL_AEAD_FOUR_RESTARTS_NO_PARSE_NO_RETRY_NO_PROVIDER')
+          PYCODE
       - name: Verify operator VM egress evidence and review-only host nft batch in isolated namespace
         shell: bash
         run: |
