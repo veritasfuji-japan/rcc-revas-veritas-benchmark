@@ -77,7 +77,7 @@ def fixture(base):
 
 
 def observed_dispatch(base,packet,request,key):
-    """The original sealer raises before HTTP parsing or model response delivery."""
+    """Observe original storage return without inferring Native delivery."""
     fixture(base);n.kernel.role_identity(n.CUSTODY)
     op=packet['arm']+str(packet['ordinal']);raw=ingress.raw
     capture,seal,parse,connection=raw.capture,raw.seal,raw.parse_wire,m.connection
@@ -161,7 +161,7 @@ def validate_rows(rows,request_sha,fault):
 
 
 def custody_reopen(base):
-    """Reopen exactly one uncertain retained row, never initialize or reset it."""
+    """Reopen the exact selected retained row, never initialize or reset it."""
     fixture(base);a=signed.admit(base,'custody')
     retained_gate=journal(base,a,'custody')
     request_sha=retained_gate['intent.json']['request_sha256']
@@ -626,9 +626,9 @@ def _supervise(parent_pid,parent_ns,source,head,fault):
 
 
 def limits():
-    return dict(m.limitations(),archive_failure_before_parser_tested=True,actual_custody_sigkill_after_storage_before_native_ack_tested=True,completed_handler_not_native_ack=True,exception_unwind_or_cleanup_claimed=False,fixed_total_deadline_collector_used=True,real_provider_completion_loss_tested=False,
+    return dict(m.limitations(),storage_success_before_ack_loss_tested=True,actual_custody_sigkill_after_storage_before_native_ack_tested=True,completed_handler_not_native_ack=True,exception_unwind_or_cleanup_claimed=False,fixed_total_deadline_collector_used=True,real_provider_completion_loss_tested=False,
         backend_restart_tested=True,backend_retained_read_only=True,backend_continuation_supported=False,
-        power_loss_or_vm_reboot_tested=False,independent_storage_attestation=False,uncertain_custody_reopen_only=True,repair_or_retry_permission_issued=False)
+        power_loss_or_vm_reboot_tested=False,independent_storage_attestation=False,retained_selected_state_reopen_only=True,repair_or_retry_permission_issued=False)
 
 
 def validate(r):
@@ -707,7 +707,7 @@ def run(output,fault=None,acknowledge=False):
     need(e.execute([binaries['nft'],'--json','--numeric','list','tables'])==parent_tables)
     output.mkdir(parents=True)
     (output/'report.json').write_bytes(n.canonical(report))
-    checks=('actual_sigkill_after_seal_or_handler_return_before_native_ack','actual_exit_minus_nine_before_controller_kills_other_roles','complete_valid_response_received_before_archive_failure','original_seal_success_not_native_acknowledgement','no_native_response_despite_internal_completion','one_durable_backend_effect_no_duplicate','consume_before_bind_and_post','bind_completed_only_before_reply_case_no_fabricated_failure','closed_connection_before_archive_attempt','original_descriptor_pinned_archive_snapshot','file_fsync_and_decryptable_ciphertext_not_permission','same_archive_bytes_and_inode_after_four_sigkills','fresh_owner_decrypts_full_ciphertext_without_permission','signed_reserve_consume_receipts_and_model_readback','four_sigkills_reopen_same_unknown_state','backend_same_inode_hash_schema_and_effect','backend_reopens_readonly_without_dispatch','pending_issuer_no_reissue','custody_replay_refused_without_network_post','readonly_backend_reconciliation_no_permission','same_live_policy_all_actor_counter_denials','seven_wrong_backend_uids_refused','no_host_policy_apply','no_provider_operator_or_remote_github')
+    checks=('actual_sigkill_after_seal_or_handler_return_before_native_ack','actual_exit_minus_nine_before_controller_kills_other_roles','complete_valid_response_received_before_archive_failure','original_seal_success_not_native_acknowledgement','no_native_response_despite_internal_completion','one_durable_backend_effect_no_duplicate','consume_before_bind_and_post','bind_completed_only_before_reply_case_no_fabricated_failure','closed_connection_before_archive_attempt','original_descriptor_pinned_archive_snapshot','file_fsync_and_decryptable_ciphertext_not_permission','same_archive_bytes_and_inode_after_four_sigkills','fresh_owner_decrypts_full_ciphertext_without_permission','signed_reserve_consume_receipts_and_model_readback','four_sigkills_reopen_same_selected_state_issuer_pending','backend_same_inode_hash_schema_and_effect','backend_reopens_readonly_without_dispatch','pending_issuer_no_reissue','custody_replay_refused_without_network_post','readonly_backend_reconciliation_no_permission','same_live_policy_all_actor_counter_denials','seven_wrong_backend_uids_refused','no_host_policy_apply','no_provider_operator_or_remote_github')
     suite=ET.Element('testsuite',name='Native archive failure '+fault,tests=str(len(checks)),failures='0',errors='0',skipped='0')
     for name in checks:ET.SubElement(suite,'testcase',classname='native_archive_failure',name=name)
     ET.ElementTree(suite).write(output/'junit.xml',encoding='utf-8',xml_declaration=True)
