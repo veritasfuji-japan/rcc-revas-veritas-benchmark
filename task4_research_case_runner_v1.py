@@ -158,10 +158,10 @@ class Task4ResearchCaseRunner:
             if set(msg) != {"role", "content", "tool_calls"} or msg["role"] != "assistant":
                 raise _Stop("MALFORMED_ASSISTANT_MESSAGE")
             # Native typed calls are converted ONLY for hashing; never repaired.
-            step.update(response_sha256=digest(jsonable(msg)),
-                        finish_reason=turn.finish_reason, state="RESPONSE_OBSERVED")
+            step.update(response_sha256=digest(jsonable(msg)), state="RESPONSE_OBSERVED")
             if type(turn.finish_reason) is not str:
                 raise _Stop("MALFORMED_FINISH_REASON")
+            step["finish_reason"] = turn.finish_reason
             if turn.finish_reason not in ("stop", "tool_calls"):
                 raise _Stop("NONTERMINAL_COMPLETION_REASON")
             content = msg["content"]

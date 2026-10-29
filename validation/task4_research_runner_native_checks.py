@@ -213,6 +213,17 @@ def test_generation_unknown_does_not_retry_or_expose_error(harness):
         runner.run_arm("A", generate)
 
 
+@pytest.mark.parametrize("reason", [None, b"stop"])
+def test_malformed_finish_reason_still_produces_a_serializable_incomplete_record(harness, reason):
+    _, build, _ = harness
+    def generate(request):
+        return LocalModelTurn({"role": "assistant", "content": [
+            {"type": "text", "content": "Unverified end"}], "tool_calls": None}, reason)
+    record = build().run_arm("B", generate)
+    assert record.payload()["stop_reason"] == "MALFORMED_FINISH_REASON"
+    assert score_local_arm(record)["status"] == "UNSCORED_INCOMPLETE"
+
+
 def test_request_mutation_and_fake_origin_cannot_promote_score(harness):
     _, build, _ = harness
     cb, _ = scripted(["stop"])

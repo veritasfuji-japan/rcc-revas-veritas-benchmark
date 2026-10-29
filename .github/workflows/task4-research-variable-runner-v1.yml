@@ -84,7 +84,7 @@ jobs:
           import xml.etree.ElementTree as ET
           r = ET.parse('results/task4-research-native-junit.xml').getroot()
           suites = [r] if r.tag == 'testsuite' else list(r.findall('testsuite'))
-          assert suites and sum(int(s.get('tests', '0')) for s in suites) >= 62
+          assert suites and sum(int(s.get('tests', '0')) for s in suites) >= 64
           assert all(int(s.get(k, '0')) == 0 for s in suites for k in ('failures', 'errors', 'skipped'))
           Path('results/task4-research-scope.txt').write_text(
               'LOCAL_SCRIPTED_CALLBACKS_ONLY\nREAL_PROVIDER_NO_GO\nUTILITY_UNSCORED\n')
