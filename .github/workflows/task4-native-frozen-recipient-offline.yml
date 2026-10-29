@@ -822,6 +822,64 @@ jobs:
               assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
           print('ACTUAL_NATIVE_CLOSE_FAILURES_FILE_FSYNC_DESCRIPTOR_RELEASE_NO_SEAL_ACK_NO_PARSE_FOUR_RESTARTS_NO_RETRY_NO_PROVIDER')
           PYCODE
+      - name: Kill actual Custody during original archive storage and refuse continuation after reopen
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -o addopts= tests/test_task4_native_archive_crash_v1.py \
+            --junitxml=results/task4-native-archive-crash-unit-junit.xml
+          sudo -n "$(command -v python)" -m scripts.task4_native_archive_crash_normal_v1 \
+            --run --output results/task4-native-archive-crash/normal \
+            --acknowledge-isolated-archive-crash-normal-test
+          for fault in after-create after-file-fsync after-directory-fsync; do
+            sudo -n "$(command -v python)" -m scripts.task4_native_archive_crash_v1 \
+              --run --crash-point "$fault" --output "results/task4-native-archive-crash/$fault" \
+              --acknowledge-isolated-archive-crash-test
+          done
+          python - <<'PYCODE'
+          import json,subprocess,xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts import task4_native_archive_crash_v1 as z
+          from scripts import task4_native_archive_crash_normal_v1 as normal
+          head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          folder=Path('results/task4-native-archive-crash')
+          p=normal.validate(json.loads((folder/'normal/report.json').read_bytes()))
+          assert p['audited_commit']==head and len(p['normal']['native']['evidence']['native']['records'])==8
+          assert len(p['archive_audit'])==120 and sum(x['phase']=='DIRECTORY_FSYNC_DONE' for x in p['archive_audit'])==8
+          reports=[]
+          for fault in z.MODES:
+              r=z.validate(json.loads((folder/fault/'report.json').read_bytes()))
+              assert r['audited_commit']==head
+              v=r['execution'];c=v['trace'][0]['collection']
+              assert c['capture_completion']==c['stop_reason']=='eof'
+              assert [x['phase'] for x in v['trace']]==['CAPTURE','CLOSE'] and v['parser_events']==[]
+              assert not any(x['phase'] in ('SEALED_FSYNCED','HTTP_PARSE_STARTED','BODY_RELEASED_TO_BIND') for x in v['events_after'])
+              assert v['initial']['model_responses_returned']==v['initial']['scorer_calls']==0
+              assert len(v['rows_after']['effects'])==1 and v['after']['revision']==2 and all(x==-9 for x in v['exit_codes'].values())
+              assert v['archive_before']==v['archive_after']
+              assert v['archive_after']['exists'] is True
+              assert not any(x['phase'] in ('SEAL_RETURN','SEAL_EXCEPTION','CLOSE_CLEANUP_DONE') for x in v['archive_audit'])
+              assert len(v['recovered'])==(0 if fault=='after-create' else 1)
+              assert v['owner_recovery']['error_class']==('JSONDecodeError' if fault=='after-create' else None)
+              assert v['owner_recovery']['unchanged'] is True and v['owner_recovery']['permission_issued'] is False
+              assert sum(x['phase']=='FILE_FSYNC_DONE' for x in v['archive_audit'])==(0 if fault=='after-create' else 1)
+              assert sum(x['phase']=='DIRECTORY_FSYNC_DONE' for x in v['archive_audit'])==(1 if fault=='after-directory-fsync' else 0)
+              assert v['archive_audit'][-1]['phase']=='CRASH_INTENT'
+              assert v['custody_crash']['exit_code']==-9 and v['custody_crash']['controller_kill_sent'] is False
+              assert v['custody_crash']['pid']==v['archive_audit'][-1]['pid']==v['pids_before']['custody']
+              assert v['initial']['stop_reason']=='BOUNDED_FRAME' and v['native_ipc'][0]['observed_bytes']==0
+              assert not any(x['phase']=='BIND_RECEIPT' and x['receipt']['final_outcome']=='APPLY_FAILED' for x in v['events_after'])
+              reports.append(r)
+          assert len({z.f.validate_lifetime(r['isolation_lifetime']) for r in reports})==3
+          assert len({r['execution']['manifest']['execution']['run_id'] for r in reports})==3
+          files=[('results/task4-native-archive-crash-unit-junit.xml',149),(folder/'normal/junit.xml',21)]
+          files.extend((folder/fault/'junit.xml',24) for fault in z.MODES)
+          for file,count in files:
+              root=ET.parse(file).getroot()
+              assert len(list(root.iter('testcase')))==count
+              assert not any(list(root.iter(tag)) for tag in ('failure','error','skipped'))
+          print('ACTUAL_NATIVE_ARCHIVE_THREE_SIGKILL_BOUNDARIES_NO_UNWIND_NO_SEAL_ACK_EMPTY_IPC_FOUR_REOPENS_NO_RETRY_NO_PROVIDER')
+          PYCODE
       - name: Verify operator VM egress evidence and review-only host nft batch in isolated namespace
         shell: bash
         run: |
