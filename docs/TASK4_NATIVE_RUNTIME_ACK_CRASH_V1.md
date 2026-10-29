@@ -1,5 +1,11 @@
 # Runtime crash after complete Native reply v1
 
+For the bounded phase decision through #573, evidence identities and separate
+Utility/research workstreams, see the
+[selected fault phase checkpoint](TASK4_NATIVE_SELECTED_FAULT_PHASE_CHECKPOINT_V1.md).
+This link preserves the historical scope and acceptance statements below.
+
+
 REAL_PROVIDER_NO_GO / UTILITY_UNSCORED /
 PRODUCTION_BYPASS_RESISTANCE_NOT_PROVEN.
 
