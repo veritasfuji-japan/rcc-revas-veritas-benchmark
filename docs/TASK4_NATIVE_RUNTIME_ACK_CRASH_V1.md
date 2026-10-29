@@ -21,7 +21,8 @@ Custody signatures and their evidence joins are verified by the report validator
 ## Original call path and observations
 
 The observer delegates the original SDK adapter, original bounded Native driver,
-original b.rpc and original n.frame. It records SDK_CALL_ENTER, actual receive
+original b.rpc and original n.frame. Replay/refusal replies delegate unchanged and
+are not counted as successful model replies. It records SDK_CALL_ENTER, actual receive
 sizes/bytes/hash and FRAME_RETURNED. In the second case it additionally observes
 RPC_RETURNED and the actual socket object's closed fileno. It emits its own
 RUNTIME_CRASH_INTENT and actually SIGKILLs the Runtime PID. There is no fabricated

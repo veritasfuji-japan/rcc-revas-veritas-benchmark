@@ -41,6 +41,7 @@ def receive(original,base,packet,name,fault,emit):
             def recv(self,limit):
                 part=conn.recv(limit);parts.append(part);return part
         reply=frame(Reader())  # Actual original newline framing and JSON parsing.
+        if type(reply) is not dict or reply.get('decision')!='ARCHIVED_NATIVE_RESPONSE':return reply
         wire=b''.join(parts)
         emit(event('FRAME_RETURNED',reply=reply,wire_b64=n.encode(wire),observed_bytes=len(wire),observed_sha256=e.sha(wire),
             read_sizes=[len(p) for p in parts],read_outcomes=['bytes' if p else 'eof' for p in parts],socket_open=conn.fileno()>=0))
@@ -48,6 +49,7 @@ def receive(original,base,packet,name,fault,emit):
         return reply
     with patch.object(n,'frame',observed):result=original(base,packet,name)
     need(len(connections)==1)
+    if type(result) is not dict or result.get('decision')!='ARCHIVED_NATIVE_RESPONSE':return result
     emit(event('RPC_RETURNED',reply=result,socket_closed=connections[0].fileno()==-1))
     if fault=='after-rpc-return':halt(fault,emit)
     return result

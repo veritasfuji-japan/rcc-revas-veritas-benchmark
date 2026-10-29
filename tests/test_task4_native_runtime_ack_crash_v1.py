@@ -121,3 +121,18 @@ def test_disposable_only_sources_and_unchanged_receive_limits():
     assert z.sources()['archive_fixture']==normal.sources()['archive_fixture']==f.source_sha256()
     assert z.deadline.TOTAL_NS==2_000_000_000 and z.deadline.MAX_READS==256 and z.ingress.raw.LIMIT==32768
     assert 'DISPOSABLE_UID_COLLISION_NO_REPAIR' in Path(z.__file__).read_text()
+
+
+@pytest.mark.parametrize('decision',['REPLAY_DENIED','DENIED_OR_UNKNOWN_NO_RETRY'])
+def test_native_refusal_frame_delegates_without_success_events_or_sigkill(decision):
+    events=[];reply=dict(decision=decision);wire=f.n.canonical(reply)+b'\n'
+    class Conn:
+        closed=False
+        def recv(self,count):return wire
+        def fileno(self):return -1 if self.closed else 42
+    conn=Conn()
+    def original(*args):
+        try:return f.n.frame(conn)
+        finally:conn.closed=True
+    assert f.receive(original,Path('/unused'),{},'native','after-frame-return',events.append)==reply
+    assert conn.closed is True and events==[]

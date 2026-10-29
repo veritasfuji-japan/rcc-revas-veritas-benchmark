@@ -117,7 +117,7 @@ jobs:
               reports.append(r)
           assert len({z.f.validate_lifetime(r['isolation_lifetime']) for r in reports})==2
           assert len({r['execution']['manifest']['execution']['run_id'] for r in reports})==2
-          files=[('results/task4-native-runtime-ack-crash-unit-junit.xml',74),(folder/'normal/junit.xml',21)]
+          files=[('results/task4-native-runtime-ack-crash-unit-junit.xml',76),(folder/'normal/junit.xml',21)]
           files.extend((folder/fault/'junit.xml',24) for fault in z.MODES)
           for file,count in files:
               root=ET.parse(file).getroot()
