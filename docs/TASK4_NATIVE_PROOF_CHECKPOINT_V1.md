@@ -1,5 +1,11 @@
 # Task4 Native proof checkpoint and remaining gates
 
+For the bounded phase decision through #573, evidence identities and separate
+Utility/research workstreams, see the
+[selected fault phase checkpoint](TASK4_NATIVE_SELECTED_FAULT_PHASE_CHECKPOINT_V1.md).
+This link preserves the historical scope and acceptance statements below.
+
+
 Historical #505 checkpoint. For later #507–#510 helper/TLS/durable-issuer progress
 and the remaining live-research acceptance gates, see the
 [Provider research restart gap audit](TASK4_PROVIDER_RESEARCH_RESTART_GAP_AUDIT_V1.md).
