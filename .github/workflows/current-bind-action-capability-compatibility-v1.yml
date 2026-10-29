@@ -72,8 +72,34 @@ jobs:
           openssl x509 -req -days 1 -in /tmp/veritas-action-capability/server.csr -CA /tmp/veritas-action-capability/ca.crt -CAkey /tmp/veritas-action-capability/ca.key -CAcreateserial -out /tmp/veritas-action-capability/server.crt -extfile /tmp/veritas-action-capability/ext.cnf
           echo "127.0.0.1 sandbox.example.invalid" | sudo tee -a /etc/hosts
           cd veritas_os_source
-          sudo -E env PYTHONPATH="$PWD" "$(which python)" scripts/run_native_v2_sandbox_service.py --host 0.0.0.0 --port 443 --cert /tmp/veritas-action-capability/server.crt --key /tmp/veritas-action-capability/server.key >/tmp/veritas-action-capability/service.log 2>&1 &
+          # sudo-rs may ignore -E; pass only the service's required settings.
+          sudo env PYTHONPATH="$PWD" \
+            VERITAS_SANDBOX_DATABASE_URL="$VERITAS_SANDBOX_DATABASE_URL" \
+            VERITAS_SANDBOX_WRITER_TOKEN="$VERITAS_SANDBOX_WRITER_TOKEN" \
+            VERITAS_SANDBOX_READER_TOKEN="$VERITAS_SANDBOX_READER_TOKEN" \
+            "$(which python)" scripts/run_native_v2_sandbox_service.py --host 0.0.0.0 --port 443 --cert /tmp/veritas-action-capability/server.crt --key /tmp/veritas-action-capability/server.key >/tmp/veritas-action-capability/service.log 2>&1 &
           echo $! >/tmp/veritas-action-capability/service.pid
+      - name: Wait for TLS sandbox startup
+        run: |
+          python - <<'PY'
+          import socket
+          import ssl
+          import time
+          from pathlib import Path
+
+          context = ssl.create_default_context(cafile="/tmp/veritas-action-capability/ca.crt")
+          deadline = time.monotonic() + 45
+          while True:
+              try:
+                  with socket.create_connection(("127.0.0.1", 443), timeout=1) as connection:
+                      with context.wrap_socket(connection, server_hostname="sandbox.example.invalid"):
+                          break
+              except OSError:
+                  if time.monotonic() >= deadline:
+                      print(Path("/tmp/veritas-action-capability/service.log").read_text())
+                      raise
+                  time.sleep(0.25)
+          PY
       - name: Run exact integration
         working-directory: veritas_os_source
         env:
