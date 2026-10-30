@@ -5,7 +5,9 @@ on:
       - "task4_research_*.py"
       - "tests/test_task4_research_experiment_profile_v1.py"
       - "validation/task4_research_runner_native_checks.py"
+      - "validation/task4_research_archive_native_checks.py"
       - "docs/TASK4_RESEARCH_VARIABLE_RUNNER_V1.md"
+      - "docs/TASK4_RESEARCH_ARCHIVE_BRIDGE_V1.md"
       - ".github/workflows/task4-research-variable-runner-v1.yml"
       - "task4_trusted_execution_date_profile_v1.py"
       - "task4_trusted_execution_date_runner_integration_v1.py"
@@ -74,6 +76,7 @@ jobs:
           python -m pytest -q -o addopts= \
             tests/test_task4_research_experiment_profile_v1.py \
             validation/task4_research_runner_native_checks.py \
+            validation/task4_research_archive_native_checks.py \
             tests/test_task4_trusted_execution_date_profile_v1.py \
             tests/test_task4_trusted_execution_date_runner_integration_v1.py \
             --junitxml=results/task4-research-native-junit.xml
@@ -84,7 +87,7 @@ jobs:
           import xml.etree.ElementTree as ET
           r = ET.parse('results/task4-research-native-junit.xml').getroot()
           suites = [r] if r.tag == 'testsuite' else list(r.findall('testsuite'))
-          assert suites and sum(int(s.get('tests', '0')) for s in suites) >= 64
+          assert suites and sum(int(s.get('tests', '0')) for s in suites) >= 87
           assert all(int(s.get(k, '0')) == 0 for s in suites for k in ('failures', 'errors', 'skipped'))
           Path('results/task4-research-scope.txt').write_text(
               'LOCAL_SCRIPTED_CALLBACKS_ONLY\nREAL_PROVIDER_NO_GO\nUTILITY_UNSCORED\n')
