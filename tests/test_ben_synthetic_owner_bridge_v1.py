@@ -95,7 +95,7 @@ def test_fabricated_committed_receipt_is_not_accepted():
 def test_owner_and_issuer_same_enrolled_key_refused_even_with_valid_signatures():
     approval, packet = fixtures()
     packet["grant"]["signature"] = OWNER.sign(
-        b"CI_GRANT_V2\\0" + mock.canonical(packet["grant"]["statement"])).hex()
+        b"CI_GRANT_V2\0" + mock.canonical(packet["grant"]["statement"])).hex()
     with pytest.raises(ValueError, match="OWNER_ISSUER_KEY_REUSE"):
         check(approval, packet, issuer_key=OWNER.public_key().public_bytes_raw())
 
