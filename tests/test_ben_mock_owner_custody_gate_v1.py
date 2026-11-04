@@ -17,11 +17,15 @@ def prepare(tmp_path):
     trust.mkdir()
     statement = {'scope': owner.OWNER_SCOPE, 'operation_id': mock.OP,
                  'request_sha256': mock.digest(mock.REQUEST),
-                 'prestate_sha256': mock.digest(STATE)}
+                 'prestate_sha256': mock.digest(STATE),
+                 'valid_from_tick': 50, 'valid_until_tick': 150}
     approval = {'statement': statement, 'signature':
                 OWNER.sign(owner.OWNER_DOMAIN + mock.canonical(statement)).hex()}
     (trust / 'owner-public-key').write_bytes(OWNER.public_key().public_bytes_raw())
     (trust / 'owner-approval.json').write_bytes(mock.canonical(approval))
+    (trust / 'owner-current-validity.json').write_bytes(mock.canonical({
+        'schema': owner.VALIDITY_SCHEMA, 'clock_tick': 100,
+        'revoked_statement_hashes': []}))
     packet = {'request': copy.deepcopy(mock.REQUEST)}
     return packet, approval
 
@@ -107,3 +111,81 @@ def test_backend_status_hmac_is_nonce_bound():
     second = mock.tag(key, b'CI_BACKEND_STATUS_REPLY_V1\0',
                       {'nonce': 'b' * 32, 'operation_id': mock.OP, 'state': STATE})
     assert first != second
+
+
+@pytest.mark.parametrize("tick", [49, 150, 151, 0])
+def test_signed_owner_interval_rejects_not_yet_valid_or_expired(tmp_path, tick):
+    packet, _ = prepare(tmp_path)
+    policy = {'schema': owner.VALIDITY_SCHEMA, 'clock_tick': tick,
+              'revoked_statement_hashes': []}
+    (tmp_path / 'trust/owner-current-validity.json').write_bytes(mock.canonical(policy))
+    with pytest.raises(ValueError, match='OWNER_APPROVAL_NOT_CURRENT'):
+        verify(tmp_path, packet)
+
+
+def test_runtime_revocation_rejects_formerly_valid_signature(tmp_path):
+    packet, approval = prepare(tmp_path)
+    assert verify(tmp_path, packet) == mock.digest(approval['statement'])
+    (tmp_path / 'trust/owner-current-validity.json').write_bytes(mock.canonical({
+        'schema': owner.VALIDITY_SCHEMA, 'clock_tick': 100,
+        'revoked_statement_hashes': [mock.digest(approval['statement'])]}))
+    with pytest.raises(ValueError, match='OWNER_APPROVAL_REVOKED'):
+        verify(tmp_path, packet)
+
+
+@pytest.mark.parametrize('lower,upper', [(50, 50), (100, 20), (True, 150),
+                                         (50, False), (-1, 150), (50, 1000001)])
+def test_malformed_signed_interval_fails_closed(tmp_path, lower, upper):
+    packet, approval = prepare(tmp_path)
+    approval['statement']['valid_from_tick'] = lower
+    approval['statement']['valid_until_tick'] = upper
+    (tmp_path / 'trust/owner-approval.json').write_bytes(mock.canonical(approval))
+    with pytest.raises(ValueError, match='OWNER_SIGNED_INTERVAL_INVALID'):
+        verify(tmp_path, packet)
+
+
+@pytest.mark.parametrize('state', [
+    {'schema': owner.VALIDITY_SCHEMA, 'clock_tick': True,
+     'revoked_statement_hashes': []},
+    {'schema': owner.VALIDITY_SCHEMA, 'clock_tick': 100,
+     'revoked_statement_hashes': ['not-a-hash']},
+    {'schema': owner.VALIDITY_SCHEMA, 'clock_tick': 100,
+     'revoked_statement_hashes': ['0' * 64, '0' * 64]},
+    {'schema': 'UNTRUSTED', 'clock_tick': 100, 'revoked_statement_hashes': []},
+])
+def test_invalid_root_enrolled_validity_fails_closed(tmp_path, state):
+    packet, _ = prepare(tmp_path)
+    (tmp_path / 'trust/owner-current-validity.json').write_bytes(mock.canonical(state))
+    with pytest.raises(ValueError, match='OWNER_'):
+        verify(tmp_path, packet)
+
+
+def test_missing_current_validity_file_fails_closed(tmp_path):
+    packet, _ = prepare(tmp_path)
+    (tmp_path / 'trust/owner-current-validity.json').unlink()
+    with pytest.raises(FileNotFoundError):
+        verify(tmp_path, packet)
+
+
+def test_duplicate_fields_in_owner_state_fail_closed(tmp_path):
+    packet, _ = prepare(tmp_path)
+    raw = b'{"schema":"ben.synthetic-owner-current-validity.v1",'
+    raw += b'"clock_tick":100,"clock_tick":120,"revoked_statement_hashes":[]}'
+    (tmp_path / 'trust/owner-current-validity.json').write_bytes(raw)
+    with pytest.raises(ValueError, match='OWNER_DUPLICATE_FIELD'):
+        verify(tmp_path, packet)
+
+
+def test_signed_interval_and_revocation_status_are_checked_each_attempt(tmp_path):
+    packet, approval = prepare(tmp_path)
+    assert verify(tmp_path, packet) == mock.digest(approval['statement'])
+    path = tmp_path / 'trust/owner-current-validity.json'
+    path.write_bytes(mock.canonical({
+        'schema': owner.VALIDITY_SCHEMA, 'clock_tick': 150, 'revoked_statement_hashes': []}))
+    with pytest.raises(ValueError, match='OWNER_APPROVAL_NOT_CURRENT'):
+        verify(tmp_path, packet)
+    path.write_bytes(mock.canonical({
+        'schema': owner.VALIDITY_SCHEMA, 'clock_tick': 100,
+        'revoked_statement_hashes': [mock.digest(approval['statement'])]}))
+    with pytest.raises(ValueError, match='OWNER_APPROVAL_REVOKED'):
+        verify(tmp_path, packet)
