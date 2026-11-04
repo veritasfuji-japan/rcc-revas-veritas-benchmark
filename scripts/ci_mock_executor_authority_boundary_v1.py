@@ -615,6 +615,12 @@ def worker(base, mode):
         need(status_query(credential) == {'counter': 0, 'revision': 0, 'effect_count': 0},
              'FORGED_GRANT_CHANGED_BACKEND')
         return {'valid_transport_credential_forged_issuer_denied_at_backend': True}
+    if mode == 'owner-authority-write':
+        try:
+            (base / 'trust/owner-current-validity.json').write_text('FAKE_REVOKE')
+        except PermissionError:
+            return {'agent_cannot_modify_owner_current_validity': True}
+        raise ValueError('UNTRUSTED_ROLE_CHANGED_OWNER_VALIDITY')
     if mode == 'owner-bad':
         packet = json.loads((base / 'public/packet.json').read_bytes())
         result = unix_query(base, packet)
@@ -846,18 +852,22 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                 os.chmod(path, 0o444)
             if with_owner:
                 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-                from scripts.ci_mock_owner_custody_gate_v1 import OWNER_DOMAIN, OWNER_SCOPE
+                from scripts.ci_mock_owner_custody_gate_v1 import OWNER_DOMAIN, OWNER_SCOPE, VALIDITY_SCHEMA
                 owner_key = Ed25519PrivateKey.generate()
                 owner_public = owner_key.public_key().public_bytes_raw()
                 need(owner_public != public_key, 'OWNER_ISSUER_SAME_KEY')
                 owner_stmt = {'scope': OWNER_SCOPE, 'operation_id': OP,
                               'request_sha256': digest(issued['packet']['request']),
                               'prestate_sha256': digest({
-                                  'counter': 0, 'revision': 0, 'effect_count': 0})}
+                                  'counter': 0, 'revision': 0, 'effect_count': 0}),
+                              'valid_from_tick': 50, 'valid_until_tick': 150}
                 owner_approval = {'statement': owner_stmt, 'signature': owner_key.sign(
                     OWNER_DOMAIN + canonical(owner_stmt)).hex()}
                 for rel, raw in [('trust/owner-public-key', owner_public),
-                                 ('trust/owner-approval.json', canonical(owner_approval))]:
+                                 ('trust/owner-approval.json', canonical(owner_approval)),
+                                 ('trust/owner-current-validity.json', canonical({
+                                     'schema': VALIDITY_SCHEMA, 'clock_tick': 100,
+                                     'revoked_statement_hashes': []}))]:
                     path = base / rel
                     path.write_bytes(raw)
                     os.chmod(path, 0o444)
@@ -888,18 +898,42 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
             checks['wrong_peer_uid_denied'] = probe('stranger', uid=STRANGER)['stranger_expected_decision']
             if with_owner:
                 approval_file = base / 'trust/owner-approval.json'
+                validity_file = base / 'trust/owner-current-validity.json'
+                checks.update(probe('owner-authority-write'))
+                def assert_owner_denied_without_effect(label):
+                    need(probe('owner-bad')['owner-bad_expected_decision'],
+                         'OWNER_VALIDITY_NOT_DENIED:' + label)
+                    before = probe('reconcile', uid=CUSTODY, namespace=None)
+                    need(before == {'operation_id': OP, 'effect_count': 0, 'receipt': None},
+                         'OWNER_INVALID_CHANGED_BACKEND:' + label)
+                    with sqlite3.connect(base / 'custody/ledger.sqlite3') as owner_db:
+                        need(owner_db.execute('SELECT count(*) FROM consumed').fetchone()[0] == 0,
+                             'OWNER_INVALID_CONSUMED_PERMIT:' + label)
+                    checks['owner_denial_no_consumption_no_effect:' + label] = True
+
                 approval_file.write_bytes(canonical(dict(
                     owner_approval, signature='0' * 128)))
-                checks['custody_denies_tampered_owner_before_consumption'] = (
-                    probe('owner-bad')['owner-bad_expected_decision'])
-                before = probe('reconcile', uid=CUSTODY, namespace=None)
-                need(before == {'operation_id': OP, 'effect_count': 0, 'receipt': None},
-                     'OWNER_TAMPERED_APPROVAL_CHANGED_BACKEND')
-                with sqlite3.connect(base / 'custody/ledger.sqlite3') as owner_db:
-                    need(owner_db.execute('SELECT count(*) FROM consumed').fetchone()[0] == 0,
-                         'OWNER_TAMPERED_APPROVAL_CONSUMED_PERMIT')
+                assert_owner_denied_without_effect('invalid-signature')
+                checks['custody_denies_tampered_owner_before_consumption'] = True
                 checks['owner_denial_no_consumption_no_effect'] = True
                 approval_file.write_bytes(canonical(owner_approval))
+
+                revoked = {'schema': VALIDITY_SCHEMA, 'clock_tick': 100,
+                           'revoked_statement_hashes': [digest(owner_stmt)]}
+                validity_file.write_bytes(canonical(revoked))
+                assert_owner_denied_without_effect('revoked')
+                checks['root_revocation_denied_before_consumption'] = True
+
+                for label, tick in (('expired', 150), ('not-yet-valid', 49)):
+                    validity_file.write_bytes(canonical({
+                        'schema': VALIDITY_SCHEMA, 'clock_tick': tick,
+                        'revoked_statement_hashes': []}))
+                    assert_owner_denied_without_effect(label)
+                    checks['signed_owner_interval_denied:' + label] = True
+
+                validity_file.write_bytes(canonical({
+                    'schema': VALIDITY_SCHEMA, 'clock_tick': 100,
+                    'revoked_statement_hashes': []}))
             concurrent_evidence = None
             if concurrent:
                 replica_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args
@@ -1114,6 +1148,8 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                       'bind_adapter_source_sha256': hashlib.sha256(bind_source.read_bytes()).hexdigest() if with_bind else None,
                       'exact_historical_helper_invocations_tested': False,
                       'synthetic_owner_gate_enforced_in_custody': with_owner,
+                      'synthetic_owner_revocation_expiry_enforced': with_owner,
+                      'trusted_wall_clock_or_independent_revocation_source': False,
                        'production_bypass_resistance_proven': False, 'utility': 'UNSCORED',
                       'provider_dispatch': 'DENY', 'trusted_ci_root_and_kernel': True}
             (output / 'report.json').write_text(json.dumps(report, sort_keys=True, indent=2) + '\n')
