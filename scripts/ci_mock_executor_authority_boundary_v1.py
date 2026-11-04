@@ -250,12 +250,25 @@ def durable_snapshot(base):
     return result
 
 
-def sink(base, fault=None, restart=False):
+def sink(base, fault=None, restart=False, owner_backend_atomic=False, owner_backend_drift=None):
     role_identity(BACKEND)
     os.umask(0o077)
     key = (base / 'backend/credential').read_bytes()
     public_key = (base / 'trust/issuer-public-key').read_bytes()
     db = backend_store(base / 'backend/state.sqlite3', restart)
+    need(owner_backend_drift in {None, 'revoked', 'expired'}, 'EXACT_BACKEND_OWNER_MODE')
+    need(not owner_backend_atomic or (not restart and fault is None),
+         'BACKEND_OWNER_NORMAL_TEST_ONLY')
+    need(owner_backend_drift is None or owner_backend_atomic,
+         'BACKEND_OWNER_DRIFT_REQUIRES_POLICY')
+    if owner_backend_atomic:
+        sys.path.insert(0, str(base))
+        from ci_mock_owner_backend_atomic_v1 import initialize, check_inside_transaction
+        owner_public_key = (base / 'trust/owner-public-key').read_bytes()
+        seed_approval = parse((base / 'trust/owner-approval.json').read_bytes())
+        need(type(seed_approval) is dict and type(seed_approval.get('statement')) is dict,
+             'BACKEND_OWNER_SEED_APPROVAL')
+        initialize(db, digest(seed_approval['statement']), need)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
@@ -309,14 +322,29 @@ def sink(base, fault=None, restart=False):
                 length = int(self.headers.get('Content-Length', '0'))
                 need(self.path == '/effect' and 0 < length <= LIMIT, 'EXACT_EFFECT_ENDPOINT')
                 packet = parse(self.rfile.read(length))
-                need(type(packet) is dict and set(packet) == {'operation_id', 'request', 'grant'}
+                expected_fields = ({'operation_id', 'request', 'grant', 'owner_approval'}
+                                   if owner_backend_atomic
+                                   else {'operation_id', 'request', 'grant'})
+                need(type(packet) is dict and set(packet) == expected_fields
                      and packet['operation_id'] == OP and exact_request(packet['request']),
                      'EXACT_BACKEND_OPERATION')
                 need(hmac.compare_digest(tag(key, b'CI_SINK_V1\0', packet),
                                          self.headers.get('X-Mock-Auth', '')), 'MOCK_CREDENTIAL')
                 validate({'request': packet['request'], 'grant': packet['grant']}, public_key)
                 body = {'operation_id': OP, 'request': packet['request']}
+                if owner_backend_drift:
+                    # A deterministic root test changes *this backend database*
+                    # after Custody's last check and before we take the write lock.
+                    (base / 'backend/owner-atomic-arrived').write_text(owner_backend_drift)
+                    deadline = time.monotonic() + 6
+                    while not (base / 'public/owner-atomic-release').exists():
+                        need(time.monotonic() < deadline, 'BACKEND_ATOMIC_RELEASE_TIMEOUT')
+                        time.sleep(0.01)
                 db.execute('BEGIN IMMEDIATE')
+                if owner_backend_atomic:
+                    check_inside_transaction(
+                        db, packet['owner_approval'], owner_public_key,
+                        public_key, packet['request'], canonical, digest, need, OP)
                 before = db.execute('SELECT counter FROM state').fetchone()[0]
                 need(before == 0, 'BACKEND_REPLAY')
                 receipt = digest(body)
@@ -400,7 +428,7 @@ def race_begin(db, base):
         time.sleep(0.01)
 
 
-def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, replica=False, with_owner=False, owner_dispatch_drift=None):
+def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, replica=False, with_owner=False, owner_dispatch_drift=None, owner_backend_atomic=False):
     """Trusted Bind/effect authority; caller cannot select a no-Bind mode."""
     role_identity(CUSTODY)
     need(with_bind, 'CUSTODY_REQUIRES_REAL_BIND')
@@ -410,6 +438,7 @@ def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, 
          'EXACT_OWNER_DISPATCH_FAULT')
     need(owner_dispatch_drift is None or (with_owner and not restart and not replica),
          'DISPATCH_FAULT_ONLY_FRESH_OWNER_CUSTODY')
+    need(not owner_backend_atomic or with_owner, 'BACKEND_OWNER_REQUIRES_CUSTODY_OWNER')
     need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
     need(not replica or concurrent, 'REPLICA_REQUIRES_CONCURRENCY_PROOF')
     need(not concurrent or (not restart and fault in {None, 'before-post'}), 'EXACT_CONCURRENCY_MODE')
@@ -475,6 +504,9 @@ def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, 
                         os._exit(FAULTS[fault])  # Durable consumption, no network dispatch.
                     body = {'operation_id': OP, 'request': packet['request']}
                     envelope = dict(body, grant=packet['grant'])
+                    if owner_backend_atomic:
+                        envelope['owner_approval'] = parse(
+                            (base / 'trust/owner-approval.json').read_bytes())
                     def post():
                         if with_owner:
                             if owner_dispatch_drift:
@@ -724,7 +756,7 @@ def role_command(program, uid, args, namespace=None):
         sys.executable, '-I', str(program)] + args
 
 
-def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=False, concurrent=False, with_owner=False, owner_dispatch_drift=None):
+def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=False, concurrent=False, with_owner=False, owner_dispatch_drift=None, owner_backend_atomic=False, owner_backend_drift=None):
     need(with_bind, 'REAL_BIND_CUSTODY_MODE_REQUIRED')
     need(not with_owner or (with_bind and fault is None and not concurrent and not restart_backend),
          'SYNTHETIC_OWNER_SINGLE_NORMAL_RUN_ONLY')
@@ -732,6 +764,12 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
          'EXACT_OWNER_DISPATCH_FAULT')
     need(owner_dispatch_drift is None or with_owner,
          'DISPATCH_FAULT_REQUIRES_OWNER_ENFORCEMENT')
+    need(not owner_backend_atomic or (with_owner and owner_dispatch_drift is None),
+         'BACKEND_ATOMIC_REQUIRES_OWNER_ONLY')
+    need(owner_backend_drift in {None, 'revoked', 'expired'},
+         'EXACT_BACKEND_ATOMIC_DRIFT')
+    need(owner_backend_drift is None or owner_backend_atomic,
+         'BACKEND_ATOMIC_DRIFT_REQUIRES_MODE')
     need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
     need(not restart_backend or fault in FAULTS, 'BACKEND_RESTART_REQUIRES_FAULT_CASE')
     need(not concurrent or (fault in {None, 'before-post'} and not restart_backend), 'EXACT_CONCURRENCY_MODE')
@@ -796,6 +834,11 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                 owner_source = Path(__file__).with_name('ci_mock_owner_custody_gate_v1.py')
                 shutil.copyfile(owner_source, base / owner_source.name)
                 os.chmod(base / owner_source.name, 0o444)
+            if owner_backend_atomic:
+                backend_owner_source = Path(__file__).with_name(
+                    'ci_mock_owner_backend_atomic_v1.py')
+                shutil.copyfile(backend_owner_source, base / backend_owner_source.name)
+                os.chmod(base / backend_owner_source.name, 0o444)
             for path in [base / bind_source.name, *(base / 'veritas_os').rglob('*')]:
                 need(not path.is_symlink(), 'NO_SYMLINK_IN_BIND_SOURCE')
                 os.chmod(path, 0o555 if path.is_dir() else 0o444)
@@ -906,11 +949,16 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
             checks['issuer_credential_reads_denied_and_loopback_only'] = issued[
                 'issuer_credential_reads_denied_and_loopback_only']
             fault_args = ['--fault', fault] if fault else []
-            sink_proc = spawn(BACKEND, ['--sink', str(base)] + fault_args,
+            sink_args = (['--owner-backend-atomic'] if owner_backend_atomic else [])
+            if owner_backend_drift:
+                sink_args += ['--owner-backend-drift', owner_backend_drift]
+            sink_proc = spawn(BACKEND, ['--sink', str(base)] + fault_args + sink_args,
                               sink_ns, base / 'backend/ready', 'ready')
             bind_args = (['--with-veritas-bind'] if with_bind else []) + (['--with-synthetic-owner'] if with_owner else [])
             if owner_dispatch_drift:
                 bind_args += ['--owner-dispatch-drift', owner_dispatch_drift]
+            if owner_backend_atomic:
+                bind_args += ['--owner-backend-atomic']
             custody_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args + fault_args
                                  + (['--concurrent-proof'] if concurrent else []),
                                  None, base / 'custody/ready', 'ready')
