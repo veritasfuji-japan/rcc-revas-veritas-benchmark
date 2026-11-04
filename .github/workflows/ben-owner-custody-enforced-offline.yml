@@ -1,0 +1,71 @@
+name: Ben Synthetic Owner Gate In Mock Custody Offline
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  trusted-mock-custody-owner-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      TASK1_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Install pinned offline mock dependencies
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '${{ github.event.pull_request.head.sha }}'
+          python -m pip install 'cryptography==50.0.0' 'pydantic==2.11.10' 'numpy==1.26.4' 'pytest==9.1.1' 'PyYAML==6.0.3'
+          python -m pytest -q -o addopts= tests/test_ben_mock_owner_custody_gate_v1.py
+          PYTHONPATH=_pins/veritas python -c 'from veritas_os.policy.bind_core import execute_bind_adjudication'
+      - name: Enforce Owner approval in isolated mock Custody, no provider
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          sudo -n "$(command -v python)" -m scripts.ci_mock_executor_authority_boundary_v1 \
+            --run --with-veritas-bind --with-synthetic-owner \
+            --veritas-root _pins/veritas --output results/ben-owner-custody
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          r=json.loads(Path('results/ben-owner-custody/report.json').read_text())
+          assert r['audited_commit']=='${{ github.event.pull_request.head.sha }}'
+          assert r['source_sha256']==hashlib.sha256(
+              Path('scripts/ci_mock_executor_authority_boundary_v1.py').read_bytes()).hexdigest()
+          assert r['synthetic_owner_gate_enforced_in_custody'] is True
+          assert r['checks']['custody_denies_tampered_owner_before_consumption'] is True
+          assert r['checks']['owner_denial_no_consumption_no_effect'] is True
+          assert len(r['checks']) >= 44 and all(x is True for x in r['checks'].values())
+          assert r['real_veritas_bind_integrated'] is True
+          assert r['mock_effect_count']==1 and r['backend_denial_count']==3
+          assert r['custody_ledger_state']=='MOCK_OBSERVED'
+          assert r['real_provider_calls']==r['real_bank_effects']==0
+          assert r['provider_dispatch']=='DENY' and r['utility']=='UNSCORED'
+          assert r['production_bypass_resistance_proven'] is False
+          evidence=json.loads(Path('results/ben-owner-custody/bind-evidence.json').read_text())
+          assert evidence['authenticated_effect_posts']==1
+          assert [(x['outcome'],x['apply_calls']) for x in evidence['records']] == [
+              ('BLOCKED',0),('BLOCKED',0),('BLOCKED',0),('COMMITTED',1)]
+          assert evidence['backend_receipt_sha256']==r['receipt_sha256']
+          print('BEN_OWNER_MOCK_CUSTODY_ENFORCEMENT_NO_PROVIDER_PASS')
+          PY

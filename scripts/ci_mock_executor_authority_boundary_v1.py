@@ -158,6 +158,34 @@ def status_query(credential):
         conn.close()
 
 
+
+def attested_backend_status(credential):
+    """Nonce-bound mock backend HMAC; not independent remote attestation."""
+    nonce = secrets.token_hex(16)
+    conn = http.client.HTTPConnection(HOST, PORT, timeout=2)
+    try:
+        conn.request('GET', '/attested-status/' + nonce, headers={
+            'X-Mock-Auth': tag(credential, b'CI_BACKEND_STATUS_QUERY_V1\0', {'nonce': nonce})})
+        response = conn.getresponse()
+        need(response.status == 200, 'ATTESTED_BACKEND_STATUS_REQUIRED')
+        packet = parse(response.read(LIMIT + 1))
+    finally:
+        conn.close()
+    need(type(packet) is dict and set(packet) == {'payload', 'mac'},
+         'BACKEND_STATUS_REPLY_SHAPE')
+    payload = packet['payload']
+    need(type(payload) is dict and set(payload) == {'nonce', 'operation_id', 'state'}
+         and payload['nonce'] == nonce and payload['operation_id'] == OP,
+         'BACKEND_STATUS_NONCE_OR_OPERATION')
+    need(type(packet['mac']) is str and hmac.compare_digest(
+        tag(credential, b'CI_BACKEND_STATUS_REPLY_V1\0', payload), packet['mac']),
+        'BACKEND_STATUS_REPLY_AUTHENTICATION')
+    state = payload['state']
+    need(type(state) is dict and set(state) == {'counter', 'revision', 'effect_count'}
+         and all(type(state[k]) is int for k in state), 'BACKEND_STATUS_SHAPE')
+    return state
+
+
 def reconciliation_query(credential):
     conn = http.client.HTTPConnection(HOST, PORT, timeout=2)
     try:
@@ -234,6 +262,28 @@ def sink(base, fault=None, restart=False):
             pass
 
         def do_GET(self):
+            if self.path.startswith('/attested-status/'):
+                nonce = self.path[len('/attested-status/'):]
+                valid = (len(nonce) == 32
+                         and all(c in '0123456789abcdef' for c in nonce)
+                         and hmac.compare_digest(tag(
+                             key, b'CI_BACKEND_STATUS_QUERY_V1\0', {'nonce': nonce}),
+                             self.headers.get('X-Mock-Auth', '')))
+                if valid:
+                    counter = db.execute('SELECT counter FROM state').fetchone()[0]
+                    payload = {'nonce': nonce, 'operation_id': OP, 'state': {
+                        'counter': counter, 'revision': counter,
+                        'effect_count': db.execute('SELECT count(*) FROM spent').fetchone()[0]}}
+                    result = {'payload': payload, 'mac': tag(
+                        key, b'CI_BACKEND_STATUS_REPLY_V1\0', payload)}
+                else:
+                    result = {'decision': 'DENIED'}
+                raw = canonical(result)
+                self.send_response(200 if valid else 403)
+                self.send_header('Content-Length', str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+                return
             expected = (tag(key, b'CI_STATUS_V1\0', {'op': 'status'}) if self.path == '/status'
                         else tag(key, b'CI_RECONCILE_V1\0', {'operation_id': OP}))
             valid = self.path in {'/status', '/reconcile'} and hmac.compare_digest(
@@ -350,10 +400,12 @@ def race_begin(db, base):
         time.sleep(0.01)
 
 
-def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, replica=False):
+def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, replica=False, with_owner=False):
     """Trusted Bind/effect authority; caller cannot select a no-Bind mode."""
     role_identity(CUSTODY)
     need(with_bind, 'CUSTODY_REQUIRES_REAL_BIND')
+    need(not with_owner or (with_bind and not concurrent and fault is None),
+         'SYNTHETIC_OWNER_NORMAL_MODE_ONLY')
     need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
     need(not replica or concurrent, 'REPLICA_REQUIRES_CONCURRENCY_PROOF')
     need(not concurrent or (not restart and fault in {None, 'before-post'}), 'EXACT_CONCURRENCY_MODE')
@@ -391,6 +443,14 @@ def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, 
                 packet = frame_read(conn)
                 need(peer_uid == EXECUTOR, 'KERNEL_CUSTODY_PEER_DENIED')
                 validate(packet, verifier)
+                if with_owner and db.execute(
+                        'SELECT 1 FROM consumed WHERE operation_id=?', (OP,)).fetchone() is None:
+                    state = attested_backend_status(credential)
+                    need(state == {'counter': 0, 'revision': 0, 'effect_count': 0},
+                         'OWNER_BACKEND_PRESTATE_DRIFT')
+                    sys.path.insert(0, str(base))
+                    from ci_mock_owner_custody_gate_v1 import enforce
+                    enforce(base, packet, verifier, state, canonical, digest, need, OP)
                 if race_pending:
                     race_pending = False
                     race_begin(db, base)
@@ -555,6 +615,12 @@ def worker(base, mode):
         need(status_query(credential) == {'counter': 0, 'revision': 0, 'effect_count': 0},
              'FORGED_GRANT_CHANGED_BACKEND')
         return {'valid_transport_credential_forged_issuer_denied_at_backend': True}
+    if mode == 'owner-bad':
+        packet = json.loads((base / 'public/packet.json').read_bytes())
+        result = unix_query(base, packet)
+        need(result.get('decision') == 'DENIED_OR_UNKNOWN_NO_RETRY',
+             'OWNER_TAMPERED_APPROVAL_WAS_ACCEPTED')
+        return {'owner-bad_expected_decision': True}
     if mode == 'probe':
         observations = {}
         for rel in ('custody/credential', 'custody/ledger.sqlite3',
@@ -624,8 +690,10 @@ def role_command(program, uid, args, namespace=None):
         sys.executable, '-I', str(program)] + args
 
 
-def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=False, concurrent=False):
+def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=False, concurrent=False, with_owner=False):
     need(with_bind, 'REAL_BIND_CUSTODY_MODE_REQUIRED')
+    need(not with_owner or (with_bind and fault is None and not concurrent and not restart_backend),
+         'SYNTHETIC_OWNER_SINGLE_NORMAL_RUN_ONLY')
     need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
     need(not restart_backend or fault in FAULTS, 'BACKEND_RESTART_REQUIRES_FAULT_CASE')
     need(not concurrent or (fault in {None, 'before-post'} and not restart_backend), 'EXACT_CONCURRENCY_MODE')
@@ -686,6 +754,10 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                         dest.parent.mkdir(parents=True, exist_ok=True)
                         dest.write_bytes(source.extractfile(member).read())
             shutil.copyfile(bind_source, base / bind_source.name)
+            if with_owner:
+                owner_source = Path(__file__).with_name('ci_mock_owner_custody_gate_v1.py')
+                shutil.copyfile(owner_source, base / owner_source.name)
+                os.chmod(base / owner_source.name, 0o444)
             for path in [base / bind_source.name, *(base / 'veritas_os').rglob('*')]:
                 need(not path.is_symlink(), 'NO_SYMLINK_IN_BIND_SOURCE')
                 os.chmod(path, 0o555 if path.is_dir() else 0o444)
@@ -772,12 +844,29 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                 path = base / rel
                 path.write_bytes(raw)
                 os.chmod(path, 0o444)
+            if with_owner:
+                from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+                from scripts.ci_mock_owner_custody_gate_v1 import OWNER_DOMAIN, OWNER_SCOPE
+                owner_key = Ed25519PrivateKey.generate()
+                owner_public = owner_key.public_key().public_bytes_raw()
+                need(owner_public != public_key, 'OWNER_ISSUER_SAME_KEY')
+                owner_stmt = {'scope': OWNER_SCOPE, 'operation_id': OP,
+                              'request_sha256': digest(issued['packet']['request']),
+                              'prestate_sha256': digest({
+                                  'counter': 0, 'revision': 0, 'effect_count': 0})}
+                owner_approval = {'statement': owner_stmt, 'signature': owner_key.sign(
+                    OWNER_DOMAIN + canonical(owner_stmt)).hex()}
+                for rel, raw in [('trust/owner-public-key', owner_public),
+                                 ('trust/owner-approval.json', canonical(owner_approval))]:
+                    path = base / rel
+                    path.write_bytes(raw)
+                    os.chmod(path, 0o444)
             checks['issuer_credential_reads_denied_and_loopback_only'] = issued[
                 'issuer_credential_reads_denied_and_loopback_only']
             fault_args = ['--fault', fault] if fault else []
             sink_proc = spawn(BACKEND, ['--sink', str(base)] + fault_args,
                               sink_ns, base / 'backend/ready', 'ready')
-            bind_args = ['--with-veritas-bind'] if with_bind else []
+            bind_args = (['--with-veritas-bind'] if with_bind else []) + (['--with-synthetic-owner'] if with_owner else [])
             custody_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args + fault_args
                                  + (['--concurrent-proof'] if concurrent else []),
                                  None, base / 'custody/ready', 'ready')
@@ -797,6 +886,20 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
             for mode in ('tamper', 'unsigned', 'forward'):
                 checks[mode + '_denied'] = probe(mode)[mode + '_expected_decision']
             checks['wrong_peer_uid_denied'] = probe('stranger', uid=STRANGER)['stranger_expected_decision']
+            if with_owner:
+                approval_file = base / 'trust/owner-approval.json'
+                approval_file.write_bytes(canonical(dict(
+                    owner_approval, signature='0' * 128)))
+                checks['custody_denies_tampered_owner_before_consumption'] = (
+                    probe('owner-bad')['owner-bad_expected_decision'])
+                before = probe('reconcile', uid=CUSTODY, namespace=None)
+                need(before == {'operation_id': OP, 'effect_count': 0, 'receipt': None},
+                     'OWNER_TAMPERED_APPROVAL_CHANGED_BACKEND')
+                with sqlite3.connect(base / 'custody/ledger.sqlite3') as owner_db:
+                    need(owner_db.execute('SELECT count(*) FROM consumed').fetchone()[0] == 0,
+                         'OWNER_TAMPERED_APPROVAL_CONSUMED_PERMIT')
+                checks['owner_denial_no_consumption_no_effect'] = True
+                approval_file.write_bytes(canonical(owner_approval))
             concurrent_evidence = None
             if concurrent:
                 replica_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args
@@ -1010,7 +1113,8 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                       'bind_evidence_sha256': digest(bind_evidence) if bind_evidence else None,
                       'bind_adapter_source_sha256': hashlib.sha256(bind_source.read_bytes()).hexdigest() if with_bind else None,
                       'exact_historical_helper_invocations_tested': False,
-                      'production_bypass_resistance_proven': False, 'utility': 'UNSCORED',
+                      'synthetic_owner_gate_enforced_in_custody': with_owner,
+                       'production_bypass_resistance_proven': False, 'utility': 'UNSCORED',
                       'provider_dispatch': 'DENY', 'trusted_ci_root_and_kernel': True}
             (output / 'report.json').write_text(json.dumps(report, sort_keys=True, indent=2) + '\n')
             suite = ET.Element('testsuite', name='CI mock authority', tests=str(len(checks)),
@@ -1050,6 +1154,7 @@ def main():
     parser.add_argument('--restart', action='store_true')
     parser.add_argument('--output', type=Path)
     parser.add_argument('--with-veritas-bind', action='store_true')
+    parser.add_argument('--with-synthetic-owner', action='store_true')
     parser.add_argument('--veritas-root', type=Path)
     parser.add_argument('--fault', choices=sorted(FAULTS))
     parser.add_argument('--restart-backend', action='store_true')
@@ -1059,7 +1164,7 @@ def main():
     if args.run:
         need(args.output is not None, 'OUTPUT_REQUIRED')
         run(args.output, args.with_veritas_bind, args.veritas_root, args.fault, args.restart_backend,
-            args.concurrent_proof)
+            args.concurrent_proof, args.with_synthetic_owner)
     elif args.sink:
         sink(args.sink, args.fault, args.restart)
     elif args.issue:
@@ -1068,7 +1173,7 @@ def main():
         executor(args.executor)
     elif args.custody:
         custody(args.custody, args.restart, args.with_veritas_bind, args.fault,
-                args.concurrent_proof, args.replica)
+                args.concurrent_proof, args.replica, args.with_synthetic_owner)
     else:
         print(json.dumps(worker(Path(args.worker[0]), args.worker[1]), sort_keys=True))
 
