@@ -1091,6 +1091,86 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                 ET.ElementTree(suite).write(output / 'junit.xml',
                                            encoding='utf-8', xml_declaration=True)
                 return
+
+            if owner_backend_drift:
+                # Backend has accepted the HTTP request, after the Custody
+                # pre-dispatch recheck; no backend write transaction exists yet.
+                client = subprocess.Popen(role_command(program, AGENT,
+                    ['--worker', str(base), 'owner-dispatch-denied'], agent_ns),
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    env={'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LANG': 'C.UTF-8'})
+                processes.append(client)
+                gate = base / 'backend/owner-atomic-arrived'
+                deadline = time.monotonic() + 3
+                while not gate.is_file():
+                    need(time.monotonic() < deadline and client.poll() is None,
+                         'OWNER_BACKEND_EFFECT_GATE_NOT_REACHED')
+                    time.sleep(0.01)
+                need(gate.read_text() == owner_backend_drift, 'OWNER_ATOMIC_GATE_MODE')
+                with sqlite3.connect(base / 'backend/state.sqlite3', isolation_level=None) as guard:
+                    guard.execute('BEGIN IMMEDIATE')
+                    changed = guard.execute(
+                        'UPDATE owner_policy SET clock_tick=?,revoked=?,epoch=epoch+1'
+                        ' WHERE id=1 AND epoch=0',
+                        (150 if owner_backend_drift == 'expired' else 100,
+                         1 if owner_backend_drift == 'revoked' else 0))
+                    need(changed.rowcount == 1, 'BACKEND_POLICY_EPOCH_EXPECTED')
+                    guard.commit()
+                (base / 'public/owner-atomic-release').write_text('release')
+                stdout, stderr = client.communicate(timeout=6)
+                need(client.returncode == 0, 'OWNER_ATOMIC_CLIENT:' + stderr.decode()[-500:])
+                result = json.loads(stdout)
+                need(result == {'decision': 'DENIED_OR_UNKNOWN_NO_RETRY',
+                                'owner_dispatch_recheck_denied': True},
+                     'BACKEND_ATOMIC_OWNER_POLICY_WAS_NOT_ENFORCED')
+                state = probe('reconcile', uid=CUSTODY, namespace=None)
+                need(state == {'operation_id': OP, 'effect_count': 0, 'receipt': None},
+                     'BACKEND_ATOMIC_OWNER_DENIAL_EFFECT')
+                with sqlite3.connect(base / 'backend/state.sqlite3') as reader:
+                    policy = reader.execute('SELECT clock_tick,revoked,epoch,statement_digest'
+                                            ' FROM owner_policy WHERE id=1').fetchone()
+                    counter = reader.execute('SELECT counter FROM state WHERE id=1').fetchone()[0]
+                    spent = reader.execute('SELECT operation_id,receipt FROM spent').fetchall()
+                need(policy == (150 if owner_backend_drift == 'expired' else 100,
+                                1 if owner_backend_drift == 'revoked' else 0,
+                                1, digest(owner_stmt)) and counter == 0 and spent == [],
+                     'BACKEND_POLICY_EFFECT_COHERENCE')
+                with sqlite3.connect(base / 'custody/ledger.sqlite3') as reader:
+                    consumed = reader.execute(
+                        'SELECT operation_id,state,receipt FROM consumed').fetchall()
+                need(consumed == [(OP, 'CONSUMED_UNKNOWN', None)],
+                     'BACKEND_ATOMIC_DENIAL_REQUIRES_UNKNOWN_CONSUMPTION')
+                checks['backend_owner_policy_change_after_custody_preflight'] = True
+                checks['backend_owner_policy_rechecked_with_effect_transaction'] = True
+                checks['backend_zero_effect_after_policy_drift:' + owner_backend_drift] = True
+                checks['backend_denial_does_not_release_consumption'] = True
+                checks['backend_denial_replay_denied'] = probe('replay')['replay_expected_decision']
+                need(all(v is True for v in checks.values()), 'ALL_BACKEND_ATOMIC_CHECKS')
+                report = {
+                    'schema': 'ci.mock-owner.backend-atomic-effect.v1',
+                    'audited_commit': head,
+                    'source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                    'scenario': owner_backend_drift,
+                    'checks': checks,
+                    'owner_policy_epoch': policy[2],
+                    'atomicity_scope': 'SAME_MOCK_BACKEND_SQLITE_WRITE_TRANSACTION',
+                    'backend_effect_count': counter, 'backend_spent_rows': len(spent),
+                    'custody_consumption': consumed[0][1],
+                    'provider_dispatch': 'DENY', 'external_provider_calls': 0,
+                    'automatic_retry_performed': False,
+                    'independent_owner_trust_root_proven': False,
+                    'trusted_wall_clock_proven': False,
+                    'cross_service_atomicity_proven': False,
+                    'production_bypass_resistance_proven': False,
+                }
+                (output / 'report.json').write_text(json.dumps(report, sort_keys=True, indent=2) + '\n')
+                suite = ET.Element('testsuite', name='Backend owner atomic test',
+                                   tests=str(len(checks)), failures='0', errors='0', skipped='0')
+                for name in sorted(checks):
+                    ET.SubElement(suite, 'testcase', classname='mock_backend_atomic', name=name)
+                ET.ElementTree(suite).write(output / 'junit.xml',
+                                           encoding='utf-8', xml_declaration=True)
+                return
             concurrent_evidence = None
             if concurrent:
                 replica_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args
@@ -1305,6 +1385,7 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                       'bind_adapter_source_sha256': hashlib.sha256(bind_source.read_bytes()).hexdigest() if with_bind else None,
                       'exact_historical_helper_invocations_tested': False,
                       'synthetic_owner_gate_enforced_in_custody': with_owner,
+                      'synthetic_owner_backend_transaction_gate': owner_backend_atomic,
                       'synthetic_owner_revocation_expiry_enforced': with_owner,
                       'trusted_wall_clock_or_independent_revocation_source': False,
                        'production_bypass_resistance_proven': False, 'utility': 'UNSCORED',
@@ -1349,6 +1430,8 @@ def main():
     parser.add_argument('--with-veritas-bind', action='store_true')
     parser.add_argument('--with-synthetic-owner', action='store_true')
     parser.add_argument('--owner-dispatch-drift', choices=['revoked', 'expired'])
+    parser.add_argument('--owner-backend-atomic', action='store_true')
+    parser.add_argument('--owner-backend-drift', choices=['revoked', 'expired'])
     parser.add_argument('--veritas-root', type=Path)
     parser.add_argument('--fault', choices=sorted(FAULTS))
     parser.add_argument('--restart-backend', action='store_true')
@@ -1358,9 +1441,10 @@ def main():
     if args.run:
         need(args.output is not None, 'OUTPUT_REQUIRED')
         run(args.output, args.with_veritas_bind, args.veritas_root, args.fault, args.restart_backend,
-            args.concurrent_proof, args.with_synthetic_owner, args.owner_dispatch_drift)
+            args.concurrent_proof, args.with_synthetic_owner, args.owner_dispatch_drift,
+            args.owner_backend_atomic, args.owner_backend_drift)
     elif args.sink:
-        sink(args.sink, args.fault, args.restart)
+        sink(args.sink, args.fault, args.restart, args.owner_backend_atomic, args.owner_backend_drift)
     elif args.issue:
         print(json.dumps(issue(args.issue), sort_keys=True))
     elif args.executor:
@@ -1368,7 +1452,7 @@ def main():
     elif args.custody:
         custody(args.custody, args.restart, args.with_veritas_bind, args.fault,
                 args.concurrent_proof, args.replica, args.with_synthetic_owner,
-                args.owner_dispatch_drift)
+                args.owner_dispatch_drift, args.owner_backend_atomic)
     else:
         print(json.dumps(worker(Path(args.worker[0]), args.worker[1]), sort_keys=True))
 
