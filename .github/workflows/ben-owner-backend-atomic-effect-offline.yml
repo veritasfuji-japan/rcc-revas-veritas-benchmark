@@ -1,0 +1,91 @@
+name: Ben Mock Backend Atomic Owner Policy Effect Offline
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  mock-backend-owner-atomic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      TASK1_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Atomic mock backend negatives and isolated role-separated executions
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '${{ github.event.pull_request.head.sha }}'
+          python -m pip install 'cryptography==50.0.0' 'pydantic==2.11.10' 'numpy==1.26.4' 'pytest==9.1.1' 'PyYAML==6.0.3'
+          python -m pytest -q -o addopts= tests/test_ben_owner_backend_atomic_v1.py
+          PYTHONPATH=_pins/veritas python -c 'from veritas_os.policy.bind_core import execute_bind_adjudication'
+          mkdir -p results
+          sudo -n "$(command -v python)" -m scripts.ci_mock_executor_authority_boundary_v1 \
+            --run --with-veritas-bind --with-synthetic-owner --owner-backend-atomic \
+            --veritas-root _pins/veritas --output results/backend-owner-valid
+          for mode in revoked expired; do
+            sudo -n "$(command -v python)" -m scripts.ci_mock_executor_authority_boundary_v1 \
+              --run --with-veritas-bind --with-synthetic-owner --owner-backend-atomic \
+              --owner-backend-drift "$mode" --veritas-root _pins/veritas \
+              --output "results/backend-owner-$mode"
+          done
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          src=Path('scripts/ci_mock_executor_authority_boundary_v1.py')
+          source_digest=hashlib.sha256(src.read_bytes()).hexdigest()
+          normal=json.loads(Path('results/backend-owner-valid/report.json').read_text())
+          assert normal['audited_commit']=='${{ github.event.pull_request.head.sha }}'
+          assert normal['source_sha256']==source_digest
+          assert normal['synthetic_owner_backend_transaction_gate'] is True
+          assert normal['real_veritas_bind_integrated'] is True
+          assert normal['mock_effect_count']==1
+          assert normal['custody_ledger_state']=='MOCK_OBSERVED'
+          assert normal['real_provider_calls']==normal['real_bank_effects']==0
+          assert normal['provider_dispatch']=='DENY' and normal['utility']=='UNSCORED'
+          assert all(v is True for v in normal['checks'].values())
+          for mode in ('revoked','expired'):
+              r=json.loads(Path(f'results/backend-owner-{mode}/report.json').read_text())
+              assert r['schema']=='ci.mock-owner.backend-atomic-effect.v1'
+              assert r['audited_commit']=='${{ github.event.pull_request.head.sha }}'
+              assert r['source_sha256']==source_digest
+              assert r['scenario']==mode
+              assert r['atomicity_scope']=='SAME_MOCK_BACKEND_SQLITE_WRITE_TRANSACTION'
+              assert r['owner_policy_epoch']==1
+              assert r['backend_effect_count']==0 and r['backend_spent_rows']==0
+              assert r['custody_consumption']=='CONSUMED_UNKNOWN'
+              assert r['checks']['backend_owner_policy_change_after_custody_preflight']
+              assert r['checks']['backend_owner_policy_rechecked_with_effect_transaction']
+              assert r['checks']['backend_zero_effect_after_policy_drift:'+mode]
+              assert r['checks']['backend_denial_does_not_release_consumption']
+              assert r['checks']['backend_denial_replay_denied']
+              assert all(v is True for v in r['checks'].values())
+              assert r['external_provider_calls']==0
+              assert r['provider_dispatch']=='DENY'
+              assert r['automatic_retry_performed'] is False
+              assert r['independent_owner_trust_root_proven'] is False
+              assert r['trusted_wall_clock_proven'] is False
+              assert r['cross_service_atomicity_proven'] is False
+              assert r['production_bypass_resistance_proven'] is False
+              print('MOCK_BACKEND_ATOMIC_OWNER_'+mode.upper()+'_ZERO_EFFECT_PASS')
+          print('BEN_MOCK_BACKEND_ATOMIC_OWNER_NO_PROVIDER_PASS')
+          PY
