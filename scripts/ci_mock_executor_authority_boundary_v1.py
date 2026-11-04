@@ -1300,6 +1300,7 @@ def main():
     parser.add_argument('--output', type=Path)
     parser.add_argument('--with-veritas-bind', action='store_true')
     parser.add_argument('--with-synthetic-owner', action='store_true')
+    parser.add_argument('--owner-dispatch-drift', choices=['revoked', 'expired'])
     parser.add_argument('--veritas-root', type=Path)
     parser.add_argument('--fault', choices=sorted(FAULTS))
     parser.add_argument('--restart-backend', action='store_true')
@@ -1309,7 +1310,7 @@ def main():
     if args.run:
         need(args.output is not None, 'OUTPUT_REQUIRED')
         run(args.output, args.with_veritas_bind, args.veritas_root, args.fault, args.restart_backend,
-            args.concurrent_proof, args.with_synthetic_owner)
+            args.concurrent_proof, args.with_synthetic_owner, args.owner_dispatch_drift)
     elif args.sink:
         sink(args.sink, args.fault, args.restart)
     elif args.issue:
@@ -1318,7 +1319,8 @@ def main():
         executor(args.executor)
     elif args.custody:
         custody(args.custody, args.restart, args.with_veritas_bind, args.fault,
-                args.concurrent_proof, args.replica, args.with_synthetic_owner)
+                args.concurrent_proof, args.replica, args.with_synthetic_owner,
+                args.owner_dispatch_drift)
     else:
         print(json.dumps(worker(Path(args.worker[0]), args.worker[1]), sort_keys=True))
 
