@@ -55,6 +55,14 @@ jobs:
           assert r['synthetic_owner_gate_enforced_in_custody'] is True
           assert r['checks']['custody_denies_tampered_owner_before_consumption'] is True
           assert r['checks']['owner_denial_no_consumption_no_effect'] is True
+          assert r['synthetic_owner_revocation_expiry_enforced'] is True
+          assert r['trusted_wall_clock_or_independent_revocation_source'] is False
+          for label in ('revoked', 'expired', 'not-yet-valid'):
+              assert r['checks']['owner_denial_no_consumption_no_effect:' + label] is True
+          assert r['checks']['root_revocation_denied_before_consumption'] is True
+          assert r['checks']['signed_owner_interval_denied:expired'] is True
+          assert r['checks']['signed_owner_interval_denied:not-yet-valid'] is True
+          assert r['checks']['agent_cannot_modify_owner_current_validity'] is True
           assert len(r['checks']) >= 44 and all(x is True for x in r['checks'].values())
           assert r['real_veritas_bind_integrated'] is True
           assert r['mock_effect_count']==1 and r['backend_denial_count']==3
