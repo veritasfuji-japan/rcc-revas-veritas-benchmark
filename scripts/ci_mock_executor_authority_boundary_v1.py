@@ -968,6 +968,81 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                 validity_file.write_bytes(canonical({
                     'schema': VALIDITY_SCHEMA, 'clock_tick': 100,
                     'revoked_statement_hashes': []}))
+            if owner_dispatch_drift:
+                # One deterministic mutation after the signed grant passed
+                # initial Custody approval and the durable row was consumed,
+                # while the pinned real Bind adapter is paused inside apply.
+                client = subprocess.Popen(role_command(program, AGENT,
+                    ['--worker', str(base), 'owner-dispatch-denied'], agent_ns),
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    env={'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LANG': 'C.UTF-8'})
+                processes.append(client)
+                marker = base / 'custody/owner-dispatch-arrived'
+                deadline = time.monotonic() + 3
+                while not marker.is_file():
+                    need(time.monotonic() < deadline and client.poll() is None,
+                         'OWNER_BIND_APPLY_GATE_NOT_REACHED')
+                    time.sleep(0.01)
+                need(marker.read_text() == owner_dispatch_drift,
+                     'EXACT_DISPATCH_FAULT_GATE')
+                if owner_dispatch_drift == 'revoked':
+                    new_validity = {'schema': VALIDITY_SCHEMA, 'clock_tick': 100,
+                                    'revoked_statement_hashes': [digest(owner_stmt)]}
+                else:
+                    new_validity = {'schema': VALIDITY_SCHEMA, 'clock_tick': 150,
+                                    'revoked_statement_hashes': []}
+                validity_file.write_bytes(canonical(new_validity))
+                (base / 'public/owner-dispatch-release').write_text('release')
+                stdout, stderr = client.communicate(timeout=6)
+                need(client.returncode == 0,
+                     'OWNER_DISPATCH_CLIENT_FAILED:' + stderr.decode()[-400:])
+                outcome = json.loads(stdout)
+                need(outcome == {'decision': 'DENIED_OR_UNKNOWN_NO_RETRY',
+                                 'owner_dispatch_recheck_denied': True},
+                     'OWNER_DISPATCH_WAS_NOT_REJECTED')
+                after = probe('reconcile', uid=CUSTODY, namespace=None)
+                need(after == {'operation_id': OP, 'effect_count': 0, 'receipt': None},
+                     'OWNER_DISPATCH_DENIAL_HAS_BACKEND_EFFECT')
+                with sqlite3.connect(base / 'custody/ledger.sqlite3') as consumed:
+                    rows = consumed.execute(
+                        'SELECT operation_id,state,receipt FROM consumed').fetchall()
+                need(rows == [(OP, 'CONSUMED_UNKNOWN', None)],
+                     'DENIAL_MUST_PRESERVE_DURABLE_UNKNOWN_CONSUMPTION')
+                checks['owner_post_admission_recheck_denied:' + owner_dispatch_drift] = True
+                checks['zero_effect_after_owner_dispatch_denial'] = True
+                checks['consumed_unknown_not_released_after_denial'] = True
+                checks['same_run_owner_dispatch_replay_denied'] = (
+                    probe('replay')['replay_expected_decision'])
+                report = {
+                    'schema': 'ci.mock-owner.dispatch-recheck.v1',
+                    'audited_commit': head,
+                    'source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                    'scenario': owner_dispatch_drift,
+                    'checks': checks,
+                    'revalidation_boundary': 'INSIDE_PINNED_BIND_APPLY_BEFORE_MOCK_HTTP',
+                    'backend_effect_count': after['effect_count'],
+                    'owner_consumption': rows[0][1],
+                    'external_provider_calls': 0,
+                    'real_bank_effects': 0,
+                    'provider_dispatch': 'DENY',
+                    'automatic_retry_performed': False,
+                    'trusted_wall_clock': False,
+                    'atomic_revocation_and_effect_proven': False,
+                    'production_bypass_resistance_proven': False,
+                }
+                need(all(value is True for value in checks.values()),
+                     'ALL_OWNER_DISPATCH_DENIAL_CHECKS_REQUIRED')
+                (output / 'report.json').write_text(
+                    json.dumps(report, sort_keys=True, indent=2) + '\n')
+                suite = ET.Element('testsuite', name='Owner dispatch recheck',
+                                   tests=str(len(checks)),
+                                   failures='0', errors='0', skipped='0')
+                for name in sorted(checks):
+                    ET.SubElement(suite, 'testcase',
+                                  classname='isolated_mock_owner_dispatch', name=name)
+                ET.ElementTree(suite).write(output / 'junit.xml',
+                                           encoding='utf-8', xml_declaration=True)
+                return
             concurrent_evidence = None
             if concurrent:
                 replica_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args
