@@ -189,3 +189,28 @@ def test_signed_interval_and_revocation_status_are_checked_each_attempt(tmp_path
         'revoked_statement_hashes': [mock.digest(approval['statement'])]}))
     with pytest.raises(ValueError, match='OWNER_APPROVAL_REVOKED'):
         verify(tmp_path, packet)
+
+
+@pytest.mark.parametrize("drift", ["revoked", "expired"])
+def test_dispatch_drift_requires_explicit_owner_enforcement(tmp_path, drift):
+    path = tmp_path / "new-output"
+    with pytest.raises(ValueError, match="DISPATCH_FAULT_REQUIRES_OWNER_ENFORCEMENT"):
+        mock.run(path, with_bind=True, owner_dispatch_drift=drift)
+    assert not path.exists()
+
+
+def test_dispatch_drift_rejects_unsupported_label_before_provisioning(tmp_path):
+    path = tmp_path / "new-output"
+    with pytest.raises(ValueError, match="EXACT_OWNER_DISPATCH_FAULT"):
+        mock.run(path, with_bind=True, with_owner=True,
+                 owner_dispatch_drift="uncontrolled")
+    assert not path.exists()
+
+
+@pytest.mark.parametrize("drift", ["revoked", "expired"])
+def test_owner_dispatch_drift_does_not_enable_crash_or_concurrency(tmp_path, drift):
+    path = tmp_path / "new-output"
+    with pytest.raises(ValueError, match="SYNTHETIC_OWNER_SINGLE_NORMAL_RUN_ONLY"):
+        mock.run(path, with_bind=True, with_owner=True,
+                 owner_dispatch_drift=drift, concurrent=True)
+    assert not path.exists()
