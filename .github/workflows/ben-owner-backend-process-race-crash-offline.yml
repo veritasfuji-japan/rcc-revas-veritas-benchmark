@@ -1,0 +1,56 @@
+name: Ben Mock Owner Backend Process Race Crash Offline
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  owner-backend-process-race-crash:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      TASK1_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Verify exact commit, four process races and crash recovery
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '${{ github.event.pull_request.head.sha }}'
+          python -m pip install 'cryptography==50.0.0' 'pytest==9.1.1'
+          mkdir -p results/owner-backend-process-v1
+          python -m pytest -q -s -o addopts= \
+            --junitxml=results/owner-backend-process-v1/junit.xml \
+            tests/test_ben_owner_backend_process_race_crash_v1.py
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          src=Path('tests/test_ben_owner_backend_process_race_crash_v1.py')
+          assert src.is_file()
+          root=ET.parse('results/owner-backend-process-v1/junit.xml').getroot()
+          cases=list(root.iter('testcase'))
+          assert len(cases)==4, [x.attrib.get('name') for x in cases]
+          expected={
+              'test_two_real_processes_revocation_wins_before_effect_write_lock',
+              'test_two_real_processes_effect_wins_then_policy_serializes',
+              'test_real_process_crash_before_commit_rolls_back_then_revoke',
+              'test_real_process_crash_after_commit_preserves_receipt_and_blocks_replay',
+          }
+          assert {x.attrib.get('name') for x in cases}==expected
+          assert not list(root.iter('failure')) and not list(root.iter('error'))
+          assert not list(root.iter('skipped'))
+          print('FOUR_REAL_OS_PROCESS_SQLITE_OWNER_RACE_CRASH_CASES_PASS')
+          print('REAL_PROVIDER_NO_GO_UTILITY_UNSCORED')
+          PY
