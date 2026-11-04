@@ -1,0 +1,73 @@
+name: Ben Owner Dispatch Recheck Against Revocation Offline
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  isolated-owner-dispatch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ''
+      TASK4_OPENAI_API_KEY: ''
+      TASK1_OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      OPENAI_BASE_URL: ''
+      GITHUB_TOKEN: ''
+      GH_TOKEN: ''
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: veritasfuji-japan/veritas_os
+          ref: a1d66aef02262cf8a913295270c3aafd159c6adb
+          path: _pins/veritas
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11.16'
+      - name: Run isolated and unit negative tests
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '${{ github.event.pull_request.head.sha }}'
+          python -m pip install 'cryptography==50.0.0' 'pydantic==2.11.10' 'numpy==1.26.4' 'pytest==9.1.1' 'PyYAML==6.0.3'
+          python -m pytest -q -o addopts= tests/test_ben_mock_owner_custody_gate_v1.py
+          PYTHONPATH=_pins/veritas python -c 'from veritas_os.policy.bind_core import execute_bind_adjudication'
+          mkdir -p results
+          for mode in revoked expired; do
+            sudo -n "$(command -v python)" -m scripts.ci_mock_executor_authority_boundary_v1 \
+              --run --with-veritas-bind --with-synthetic-owner \
+              --owner-dispatch-drift "$mode" --veritas-root _pins/veritas \
+              --output "results/owner-dispatch-$mode"
+            python - "$mode" <<'PY'
+          import hashlib, json, sys
+          from pathlib import Path
+          mode = sys.argv[1]
+          report = json.loads(Path(f"results/owner-dispatch-{mode}/report.json").read_text())
+          assert report['schema'] == 'ci.mock-owner.dispatch-recheck.v1'
+          assert report['audited_commit'] == '${{ github.event.pull_request.head.sha }}'
+          assert report['source_sha256'] == hashlib.sha256(
+              Path('scripts/ci_mock_executor_authority_boundary_v1.py').read_bytes()).hexdigest()
+          assert report['scenario'] == mode
+          assert report['revalidation_boundary'] == 'INSIDE_PINNED_BIND_APPLY_BEFORE_MOCK_HTTP'
+          assert report['checks']['owner_post_admission_recheck_denied:' + mode]
+          assert report['checks']['zero_effect_after_owner_dispatch_denial']
+          assert report['checks']['consumed_unknown_not_released_after_denial']
+          assert report['checks']['same_run_owner_dispatch_replay_denied']
+          assert all(value is True for value in report['checks'].values())
+          assert report['backend_effect_count'] == 0
+          assert report['owner_consumption'] == 'CONSUMED_UNKNOWN'
+          assert report['external_provider_calls'] == report['real_bank_effects'] == 0
+          assert report['provider_dispatch'] == 'DENY'
+          assert report['automatic_retry_performed'] is False
+          assert report['atomic_revocation_and_effect_proven'] is False
+          assert report['trusted_wall_clock'] is False
+          assert report['production_bypass_resistance_proven'] is False
+          print(f"OWNER_DISPATCH_RECHECK_{mode.upper()}_NO_EFFECT_PASS")
+          PY
+          done

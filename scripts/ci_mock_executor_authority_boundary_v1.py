@@ -400,12 +400,16 @@ def race_begin(db, base):
         time.sleep(0.01)
 
 
-def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, replica=False, with_owner=False):
+def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, replica=False, with_owner=False, owner_dispatch_drift=None):
     """Trusted Bind/effect authority; caller cannot select a no-Bind mode."""
     role_identity(CUSTODY)
     need(with_bind, 'CUSTODY_REQUIRES_REAL_BIND')
     need(not with_owner or (with_bind and not concurrent and fault is None),
          'SYNTHETIC_OWNER_NORMAL_MODE_ONLY')
+    need(owner_dispatch_drift in {None, 'revoked', 'expired'},
+         'EXACT_OWNER_DISPATCH_FAULT')
+    need(owner_dispatch_drift is None or (with_owner and not restart and not replica),
+         'DISPATCH_FAULT_ONLY_FRESH_OWNER_CUSTODY')
     need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
     need(not replica or concurrent, 'REPLICA_REQUIRES_CONCURRENCY_PROOF')
     need(not concurrent or (not restart and fault in {None, 'before-post'}), 'EXACT_CONCURRENCY_MODE')
@@ -472,6 +476,23 @@ def custody(base, restart=False, with_bind=False, fault=None, concurrent=False, 
                     body = {'operation_id': OP, 'request': packet['request']}
                     envelope = dict(body, grant=packet['grant'])
                     def post():
+                        if with_owner:
+                            if owner_dispatch_drift:
+                                # Deterministic test gate *after* Bind has entered apply,
+                                # before the last owner validity and backend check.
+                                (base / 'custody/owner-dispatch-arrived').write_text(
+                                    owner_dispatch_drift)
+                                deadline = time.monotonic() + 8
+                                while not (base / 'public/owner-dispatch-release').exists():
+                                    need(time.monotonic() < deadline,
+                                         'OWNER_DISPATCH_RELEASE_TIMEOUT')
+                                    time.sleep(0.01)
+                            final_state = attested_backend_status(credential)
+                            need(final_state == {'counter': 0, 'revision': 0, 'effect_count': 0},
+                                 'OWNER_DISPATCH_BACKEND_STATE_DRIFT')
+                            from ci_mock_owner_custody_gate_v1 import enforce
+                            enforce(base, packet, verifier, final_state,
+                                    canonical, digest, need, OP)
                         try:
                             return http_query(envelope, tag(credential, b'CI_SINK_V1\0', envelope))
                         except OSError:
@@ -621,6 +642,13 @@ def worker(base, mode):
         except PermissionError:
             return {'agent_cannot_modify_owner_current_validity': True}
         raise ValueError('UNTRUSTED_ROLE_CHANGED_OWNER_VALIDITY')
+    if mode == 'owner-dispatch-denied':
+        packet = json.loads((base / 'public/packet.json').read_bytes())
+        result = unix_query(base, packet)
+        need(result.get('decision') == 'DENIED_OR_UNKNOWN_NO_RETRY',
+             'OWNER_DISPATCH_INVALID_WAS_ALLOWED')
+        return {'decision': result['decision'],
+                'owner_dispatch_recheck_denied': True}
     if mode == 'owner-bad':
         packet = json.loads((base / 'public/packet.json').read_bytes())
         result = unix_query(base, packet)
@@ -696,10 +724,14 @@ def role_command(program, uid, args, namespace=None):
         sys.executable, '-I', str(program)] + args
 
 
-def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=False, concurrent=False, with_owner=False):
+def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=False, concurrent=False, with_owner=False, owner_dispatch_drift=None):
     need(with_bind, 'REAL_BIND_CUSTODY_MODE_REQUIRED')
     need(not with_owner or (with_bind and fault is None and not concurrent and not restart_backend),
          'SYNTHETIC_OWNER_SINGLE_NORMAL_RUN_ONLY')
+    need(owner_dispatch_drift in {None, 'revoked', 'expired'},
+         'EXACT_OWNER_DISPATCH_FAULT')
+    need(owner_dispatch_drift is None or with_owner,
+         'DISPATCH_FAULT_REQUIRES_OWNER_ENFORCEMENT')
     need(fault is None or fault in FAULTS, 'EXACT_TEST_FAULT')
     need(not restart_backend or fault in FAULTS, 'BACKEND_RESTART_REQUIRES_FAULT_CASE')
     need(not concurrent or (fault in {None, 'before-post'} and not restart_backend), 'EXACT_CONCURRENCY_MODE')
@@ -877,6 +909,8 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
             sink_proc = spawn(BACKEND, ['--sink', str(base)] + fault_args,
                               sink_ns, base / 'backend/ready', 'ready')
             bind_args = (['--with-veritas-bind'] if with_bind else []) + (['--with-synthetic-owner'] if with_owner else [])
+            if owner_dispatch_drift:
+                bind_args += ['--owner-dispatch-drift', owner_dispatch_drift]
             custody_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args + fault_args
                                  + (['--concurrent-proof'] if concurrent else []),
                                  None, base / 'custody/ready', 'ready')
@@ -934,6 +968,81 @@ def run(output, with_bind=False, veritas_root=None, fault=None, restart_backend=
                 validity_file.write_bytes(canonical({
                     'schema': VALIDITY_SCHEMA, 'clock_tick': 100,
                     'revoked_statement_hashes': []}))
+            if owner_dispatch_drift:
+                # One deterministic mutation after the signed grant passed
+                # initial Custody approval and the durable row was consumed,
+                # while the pinned real Bind adapter is paused inside apply.
+                client = subprocess.Popen(role_command(program, AGENT,
+                    ['--worker', str(base), 'owner-dispatch-denied'], agent_ns),
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    env={'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LANG': 'C.UTF-8'})
+                processes.append(client)
+                marker = base / 'custody/owner-dispatch-arrived'
+                deadline = time.monotonic() + 3
+                while not marker.is_file():
+                    need(time.monotonic() < deadline and client.poll() is None,
+                         'OWNER_BIND_APPLY_GATE_NOT_REACHED')
+                    time.sleep(0.01)
+                need(marker.read_text() == owner_dispatch_drift,
+                     'EXACT_DISPATCH_FAULT_GATE')
+                if owner_dispatch_drift == 'revoked':
+                    new_validity = {'schema': VALIDITY_SCHEMA, 'clock_tick': 100,
+                                    'revoked_statement_hashes': [digest(owner_stmt)]}
+                else:
+                    new_validity = {'schema': VALIDITY_SCHEMA, 'clock_tick': 150,
+                                    'revoked_statement_hashes': []}
+                validity_file.write_bytes(canonical(new_validity))
+                (base / 'public/owner-dispatch-release').write_text('release')
+                stdout, stderr = client.communicate(timeout=6)
+                need(client.returncode == 0,
+                     'OWNER_DISPATCH_CLIENT_FAILED:' + stderr.decode()[-400:])
+                outcome = json.loads(stdout)
+                need(outcome == {'decision': 'DENIED_OR_UNKNOWN_NO_RETRY',
+                                 'owner_dispatch_recheck_denied': True},
+                     'OWNER_DISPATCH_WAS_NOT_REJECTED')
+                after = probe('reconcile', uid=CUSTODY, namespace=None)
+                need(after == {'operation_id': OP, 'effect_count': 0, 'receipt': None},
+                     'OWNER_DISPATCH_DENIAL_HAS_BACKEND_EFFECT')
+                with sqlite3.connect(base / 'custody/ledger.sqlite3') as consumed:
+                    rows = consumed.execute(
+                        'SELECT operation_id,state,receipt FROM consumed').fetchall()
+                need(rows == [(OP, 'CONSUMED_UNKNOWN', None)],
+                     'DENIAL_MUST_PRESERVE_DURABLE_UNKNOWN_CONSUMPTION')
+                checks['owner_post_admission_recheck_denied:' + owner_dispatch_drift] = True
+                checks['zero_effect_after_owner_dispatch_denial'] = True
+                checks['consumed_unknown_not_released_after_denial'] = True
+                checks['same_run_owner_dispatch_replay_denied'] = (
+                    probe('replay')['replay_expected_decision'])
+                report = {
+                    'schema': 'ci.mock-owner.dispatch-recheck.v1',
+                    'audited_commit': head,
+                    'source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                    'scenario': owner_dispatch_drift,
+                    'checks': checks,
+                    'revalidation_boundary': 'INSIDE_PINNED_BIND_APPLY_BEFORE_MOCK_HTTP',
+                    'backend_effect_count': after['effect_count'],
+                    'owner_consumption': rows[0][1],
+                    'external_provider_calls': 0,
+                    'real_bank_effects': 0,
+                    'provider_dispatch': 'DENY',
+                    'automatic_retry_performed': False,
+                    'trusted_wall_clock': False,
+                    'atomic_revocation_and_effect_proven': False,
+                    'production_bypass_resistance_proven': False,
+                }
+                need(all(value is True for value in checks.values()),
+                     'ALL_OWNER_DISPATCH_DENIAL_CHECKS_REQUIRED')
+                (output / 'report.json').write_text(
+                    json.dumps(report, sort_keys=True, indent=2) + '\n')
+                suite = ET.Element('testsuite', name='Owner dispatch recheck',
+                                   tests=str(len(checks)),
+                                   failures='0', errors='0', skipped='0')
+                for name in sorted(checks):
+                    ET.SubElement(suite, 'testcase',
+                                  classname='isolated_mock_owner_dispatch', name=name)
+                ET.ElementTree(suite).write(output / 'junit.xml',
+                                           encoding='utf-8', xml_declaration=True)
+                return
             concurrent_evidence = None
             if concurrent:
                 replica_proc = spawn(CUSTODY, ['--custody', str(base)] + bind_args
@@ -1191,6 +1300,7 @@ def main():
     parser.add_argument('--output', type=Path)
     parser.add_argument('--with-veritas-bind', action='store_true')
     parser.add_argument('--with-synthetic-owner', action='store_true')
+    parser.add_argument('--owner-dispatch-drift', choices=['revoked', 'expired'])
     parser.add_argument('--veritas-root', type=Path)
     parser.add_argument('--fault', choices=sorted(FAULTS))
     parser.add_argument('--restart-backend', action='store_true')
@@ -1200,7 +1310,7 @@ def main():
     if args.run:
         need(args.output is not None, 'OUTPUT_REQUIRED')
         run(args.output, args.with_veritas_bind, args.veritas_root, args.fault, args.restart_backend,
-            args.concurrent_proof, args.with_synthetic_owner)
+            args.concurrent_proof, args.with_synthetic_owner, args.owner_dispatch_drift)
     elif args.sink:
         sink(args.sink, args.fault, args.restart)
     elif args.issue:
@@ -1209,7 +1319,8 @@ def main():
         executor(args.executor)
     elif args.custody:
         custody(args.custody, args.restart, args.with_veritas_bind, args.fault,
-                args.concurrent_proof, args.replica, args.with_synthetic_owner)
+                args.concurrent_proof, args.replica, args.with_synthetic_owner,
+                args.owner_dispatch_drift)
     else:
         print(json.dumps(worker(Path(args.worker[0]), args.worker[1]), sort_keys=True))
 
