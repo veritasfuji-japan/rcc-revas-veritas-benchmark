@@ -1,0 +1,3 @@
+# Preserve the byte identity of archived CSV exports (UTF-8 BOM and CRLF).
+*.csv -text whitespace=cr-at-eol linguist-generated=true
+EVIDENCE_MANIFEST.json linguist-generated=true
