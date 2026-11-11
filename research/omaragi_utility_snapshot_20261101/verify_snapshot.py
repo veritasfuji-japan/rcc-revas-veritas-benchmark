@@ -9,6 +9,17 @@ import re
 import zipfile
 
 BASE = Path(__file__).resolve().parent
+PRIVATE_IDENTIFIER_DIGESTS = {
+    'da26f902f120d1d9ecb7f95d3faacb25cfc1f453bfb1711e83b78ffa3417e648',
+    '2c738814e1e6ff2f7c92855967f202f2398a4fe14ad62eec2041b8e05334057d',
+}
+
+
+def has_private_identifier(value):
+    candidates = re.findall(rb'(?=(call_[A-Za-z0-9_]{32}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}))', value)
+    return any(hashlib.sha256(candidate).hexdigest() in PRIVATE_IDENTIFIER_DIGESTS for candidate in candidates)
+
+
 CURRENT = 'evidence/current-approved/'
 NANO = CURRENT + 'approved-runs/20261101T200749322799Z-nano-support-v1/'
 MINI = CURRENT + 'approved-runs/20261101T201350394528Z-mini-support-v1/'
@@ -52,13 +63,13 @@ def verify(signatures=False):
             rb'sk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{32,}',
             rb'gh[pousr]_[A-Za-z0-9]{30,}', rb'github_pat_[A-Za-z0-9_]{40,}',
             rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',
-            rb'01a198ab-e853-7fe0-aacc-f651a3afd07b', rb'call_81dfa9b6bbe74eda8f31b61f1e22ee04',
         ]
         for name in names:
             check(not name.startswith('/') and '..' not in PurePosixPath(name).parts, 'Unsafe archive path')
             value = archive.read(name)
             check(len(value) == expected[name]['bytes'] and digest(value) == expected[name]['sha256'], 'Entry identity: ' + name)
             check(not any(re.search(p, value) for p in forbidden), 'Private/credential value pattern: ' + name)
+            check(not has_private_identifier(value), 'Private identifier value: ' + name)
 
         def read(name):
             return json.loads(archive.read(name))

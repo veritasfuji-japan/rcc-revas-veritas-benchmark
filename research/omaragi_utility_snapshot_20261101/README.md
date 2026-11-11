@@ -2,6 +2,8 @@
 
 [日本語](README_JA.md) · [Results](RESULTS.json) · [Publication scope](PUBLICATION_SCOPE.md) · [Evidence manifest](EVIDENCE_MANIFEST.json)
 
+[November 11 follow-up to the maintainer audit](audit-20261111/README.md): exact-commit archive/grant checks, observed outputs, a minimal offline procedure, an explicit scanner-metadata correction, and remaining publication-rights/history limitations. The historical ZIP, manifest, scores and experiments are unchanged.
+
 This contributor snapshot preserves the measured results, implementation and execution records shared for the RCC/REVAS × VERITAS research. It is submitted for maintainer review before the separately proposed Task1 **G vs G+P** experiment. This archive does not run that experiment or change the current RCC dispatch, VERITAS enforcement, Native scorer, original V13 results, policies or authorization records.
 
 ## Measured model runs

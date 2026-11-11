@@ -1,0 +1,294 @@
+{
+  "scope_commit": "4328be1d35d6494458708af6bd85a62d837aa8ca",
+  "archive_entries_reviewed": 3595,
+  "pattern_review": {
+    "openai_api_key_value": {
+      "matching_files": 0,
+      "paths": []
+    },
+    "github_token_value": {
+      "matching_files": 0,
+      "paths": []
+    },
+    "private_signing_key_block": {
+      "matching_files": 0,
+      "paths": []
+    },
+    "long_authorization_header_value": {
+      "matching_files": 0,
+      "paths": []
+    },
+    "email_address_shape": {
+      "matching_files": 0,
+      "paths": []
+    }
+  },
+  "provider_request_records": 1154,
+  "provider_response_records": 1154,
+  "request_top_level_schemas": [
+    {
+      "keys": [
+        "max_completion_tokens",
+        "messages",
+        "model",
+        "reasoning_effort",
+        "tool_choice",
+        "tools"
+      ],
+      "files": 370
+    },
+    {
+      "keys": [
+        "max_completion_tokens",
+        "messages",
+        "model",
+        "temperature",
+        "tool_choice",
+        "tools"
+      ],
+      "files": 784
+    }
+  ],
+  "response_top_level_schemas": [
+    {
+      "keys": [
+        "choices",
+        "created",
+        "id",
+        "model",
+        "object",
+        "service_tier",
+        "system_fingerprint",
+        "usage"
+      ],
+      "files": 1154
+    }
+  ],
+  "local_path_literals": {
+    "unique_count": 9,
+    "raw_values_in_report": false,
+    "role": "historical implementation path literals; underlying files not bundled"
+  },
+  "public_AgentDojo_fixture_sha256": "3f539da1d97779b244cd122afc683dc69d602f338e1b3c42d126cbde33611c8b",
+  "fixture_correspondence": {
+    "records": 1664,
+    "user_account_equals_public_fixture": 1664,
+    "bank_balance_equals_public_fixture": 1664,
+    "bank_iban_equals_public_fixture": 1664,
+    "bank_scheduled_transactions_equals_public_fixture": 1664,
+    "raw_transaction_list_equals_fixture": 0,
+    "last_subject_is_public_injection_vector_marker": 416,
+    "transactions_equal_fixture_after_declared_public_marker_substitution": 416
+  },
+  "public_AgentDojo_injection_vectors_sha256": "4eb98a601c108d9b4d88f5d3f2dbf455f775a718975a0ae2624b4cf0d0f6f819",
+  "fixture_correspondence_limit": "Direct raw transaction equality first failed because enrollment substitutes the final subject with a marker from the public injection_vectors.yaml. The later comparison explicitly accounts for that source-defined marker without modifying any archived record. This still does not independently authenticate all model-generated text or confer third-party rights.",
+  "implementation_sources": [
+    {
+      "relative_module": "agentdojo_constraint_resolver_v0_1.py",
+      "sha256": "99b44833a38114c35c2f33181c3530edac6267ac5a7f3a0ca2bff5846b4c150f",
+      "copies": 4,
+      "source_class": "BYTE_IDENTICAL_UPSTREAM_BENCHMARK"
+    },
+    {
+      "relative_module": "darwin_hinton_feedback_v2.py",
+      "sha256": "2b9a9c768fffd27ada400cfb571a2892413e2f9d00461add350225036fb4a142",
+      "copies": 3,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "date_ablation_native_v1.py",
+      "sha256": "778df4482ba52ba4ac6a4f06844569bb21d9836a0b926bcf42af4e1a9d52399e",
+      "copies": 4,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "governance_feedback_v1.py",
+      "sha256": "92b284e72ae6e4a7fadec4b409061ea877f5a0b5f399fc4a2808f5234bbc9cfc",
+      "copies": 4,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "immutable_effect_anchor_v3.py",
+      "sha256": "6b4c0c97544a44b7975962d1516cbde289633bc7975ddaeb1a6959a0c955d459",
+      "copies": 3,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "matched_engine_adapter_v1.py",
+      "sha256": "9b5033f8217a4be72fed74b49f2a67cc345de97f7d3b711e8fb36828a3df5e34",
+      "copies": 4,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "original_request_authority_lineage_v1.py",
+      "sha256": "f35ae275c848610fd7435c69d69b9a59b45dcdeb1312193e908d5c88988df0de",
+      "copies": 4,
+      "source_class": "BYTE_IDENTICAL_UPSTREAM_BENCHMARK"
+    },
+    {
+      "relative_module": "owner_approved_engine_v1.py",
+      "sha256": "897456bccbf68c8fe02d3b80a6b25032cd96b7ff8cc05e30d00b6109d10ded4a",
+      "copies": 3,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "owner_approved_research_runtime_v1.py",
+      "sha256": "fee163e1eec28dc79f34a9128ee97f56d64b83af60d3179fc40037185681ab0d",
+      "copies": 3,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "research_owner_decision_v1.py",
+      "sha256": "93abb89d2ecaf128f861dd61f12e89216944729a15833d5cd2f1d6c1b83bf412",
+      "copies": 3,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "research_payment_date_v1.py",
+      "sha256": "9a42f815b495f3898853906050df2cec3885024d434c5e55ebf0853cd23d65f3",
+      "copies": 3,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "research_provider_v1.py",
+      "sha256": "859f7582d8311a2f4c0d65d264e48ad2062d01775bf806e1707ab0e5ca8633e3",
+      "copies": 4,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "research_source_planner_v1.py",
+      "sha256": "2971585b29df0ad289db1e309ae30bb0e372390f8121480af94c7e871f5c8e45",
+      "copies": 4,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "scripts/agentdojo_clean_ab_canonical_final_runner_v2_8.py",
+      "sha256": "b04f7b966f5bbeba89b696032a5d1273a03bd997117af997174d30daff486dea",
+      "copies": 4,
+      "source_class": "BYTE_IDENTICAL_UPSTREAM_BENCHMARK"
+    },
+    {
+      "relative_module": "scripts/agentdojo_final_runner_integration_v0_1.py",
+      "sha256": "c9e7390e432647bfa7e45ea9f905cab25d415038871d40db93ffc17dd7f9b8a1",
+      "copies": 4,
+      "source_class": "BYTE_IDENTICAL_UPSTREAM_BENCHMARK"
+    },
+    {
+      "relative_module": "scripts/agentdojo_openai_frozen_adapter_v0_1.py",
+      "sha256": "45fe1e791d1df72f883d1817eb0f5a601427c3d3a51603c49e8ec10da807efad",
+      "copies": 4,
+      "source_class": "BYTE_IDENTICAL_UPSTREAM_BENCHMARK"
+    },
+    {
+      "relative_module": "scripts/run_darwin_hinton_campaign_v2.py",
+      "sha256": "c66b0f91ead6dd2e90305a4af5ad547484df5aa3315960af26d955963c9f56f0",
+      "copies": 3,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "scripts/run_owner_approved_recovery_v1.py",
+      "sha256": "851ed714c9686a46526b2f875d254c9314520123f79038582579393b54d08a73",
+      "copies": 3,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "scripts/run_research_models_v1.py",
+      "sha256": "e29af36cd714da9f514833c79129984e2fed364530f3ee3c54a02b3327abcd23",
+      "copies": 4,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "trusted_proposal_repair_v1.py",
+      "sha256": "420e093f006e7e7fafa64764ea01bc3fbfdd486271a194e3806865269c42e3f7",
+      "copies": 4,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "scripts/audit_owner_approved_recovery_v1.py",
+      "sha256": "a357120f7fa270deec2466c59d9c33671ed03813658d6ff7f4b8bdc4565e88a9",
+      "copies": 1,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "scripts/control_owner_support_v1.py",
+      "sha256": "7b7a1c771d746671fdf29699a706422721897181b6d6f48ce256f97b32842953",
+      "copies": 1,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "scripts/control_recorded_owner_proposals_v1.py",
+      "sha256": "0f2c8e7677a040d100e4b43a91a454129ddedeb5f20e41edf616df10a1fee088",
+      "copies": 1,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "scripts/summarize_owner_approved_recovery_v1.py",
+      "sha256": "4834ea763ecbe96c960cd021492b67adcf280d0b59ef7c08b1f6b3b3cf19cf03",
+      "copies": 1,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "tests/test_owner_approved_research_runtime_v1.py",
+      "sha256": "231f0f3a9e1e1501ec4db4194b08cb3525a66f602b916efdc7261805ac76ca2b",
+      "copies": 1,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "tests/test_research_owner_decision_v1.py",
+      "sha256": "023771cc2c3a7510164a6ea00b0d22eafd33b96b769f9af290e96579d42fc83b",
+      "copies": 1,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "scripts/run_date_ablation_live_v1.py",
+      "sha256": "8544bd83ea7044a2a25cd34f8b794deffc34286ddebd2d85c4e88fa463607dcc",
+      "copies": 1,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    },
+    {
+      "relative_module": "scripts/run_v13_matched_engine_v1.py",
+      "sha256": "161b91e48b987c40cd4c3ff8e2bf2846071e9295db70f0a313a390a3ca2d1ffe",
+      "copies": 1,
+      "source_class": "CONTRIBUTOR_ADDITION_PATH"
+    }
+  ],
+  "unique_implementation_hashes": 28,
+  "byte_identical_pinned_VERITAS_core_source_files_found": 0,
+  "core_copy_check_limit": "Exact whole-file hash comparison only; not proof that no derived expressions exist.",
+  "AgentDojo_license_review": {
+    "source_url": "https://github.com/ethz-spylab/agentdojo/blob/main/LICENSE",
+    "github_blob_sha": "006aed0b22a430c0f3c6a4fb46768d967b8c3dbc",
+    "license": "MIT",
+    "local_frozen_license_equals_current_upstream_license": true,
+    "sha256": "4285a071f2d382338e52b4fb0a186d952984a34d43a33d8872e1a1d8cb43401e"
+  },
+  "VERITAS_core_license": {
+    "label": "Proprietary EULA; do not infer an open redistribution grant",
+    "sha256": "629db81b7b9af198e88626dc09d11358af2ae7202e702faa098632f01acd8ec7",
+    "core_implementation_not_intentionally_bundled": true
+  },
+  "contributor_publication_authority": "Owner explicitly authorized publication/audit updates in the live 2026-11-11 task. This does not confer third-party rights.",
+  "upstream_benchmark_license_review": {
+    "source_commit": "6e6cf796ec302b4a5eddcb06990094f5ec1e2cbe",
+    "license_notice_file_found_in_reviewed_tree": false,
+    "general_redistribution_grant_verified": false,
+    "maintainer_confirmation_required_for_upstream_materials": true
+  },
+  "legacy_verifier_identifier_literal_finding": {
+    "opaque_private_identifier_literals_found": 2,
+    "original_verifier_sha256": "6b1f696a8398f1abb81bd088146c8e417651e31c8ffa7ceb21632e88707de396",
+    "current_verifier_sha256": "da98a0c70b81d181ac9b94eed040c312ca804789a1308d0752524ad328fd4c89",
+    "raw_literals_repeated_in_this_report": false,
+    "current_verifier_still_contains_original_literals": false,
+    "historical_commit_still_contains_them": true
+  },
+  "privately_shared_AEGIS_or_personal_Notes_added_by_audit": false,
+  "conclusion": "TECHNICAL_AND_PATTERN_REVIEW_COMPLETED_WITH_PUBLICATION_RIGHTS_AND_HISTORICAL_METADATA_LIMITATIONS",
+  "unresolved": [
+    "Maintainer confirmation of the publication/reuse basis for upstream benchmark source/documents; no blanket license inferred from public visibility or this owner task.",
+    "Historical identifier literals remain retrievable at the cited original commit; current-helper redaction does not erase Git history. No history rewrite performed.",
+    "Pattern checks and partial synthetic-fixture correspondence do not certify that every generated string is free of personal/confidential content or that every input has independently authenticated provenance."
+  ],
+  "new_third_party_content_authorization_assumed": false,
+  "new_provider_calls": 0
+}

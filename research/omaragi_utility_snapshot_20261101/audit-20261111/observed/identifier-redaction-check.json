@@ -1,0 +1,10 @@
+{
+  "baseline_verifier_sha256": "6b1f696a8398f1abb81bd088146c8e417651e31c8ffa7ceb21632e88707de396",
+  "updated_verifier_sha256": "da98a0c70b81d181ac9b94eed040c312ca804789a1308d0752524ad328fd4c89",
+  "positive_private_identifier_contexts_checked": 10,
+  "negative_contexts_checked": 3,
+  "archived_files_scan_equivalence_checked": 3595,
+  "raw_private_identifiers_in_updated_helper": false,
+  "raw_private_identifiers_in_this_report": false,
+  "historical_commit_erasure_claimed": false
+}

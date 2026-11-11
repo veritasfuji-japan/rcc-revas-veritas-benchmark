@@ -2,6 +2,8 @@
 
 [English](README.md) · [結果一覧](RESULTS.json) · [公開範囲](PUBLICATION_SCOPE.md)
 
+[11月11日の監査対応](audit-20261111/README.md)：指定コミットのZIP・Grant検証、実出力、最小権限のオフライン手順、検査コードの識別子修正、および公開権限・過去メタデータの未解決事項。履歴ZIP・manifest・実験結果は変更していません。
+
 RCC/REVAS × VERITASの共同検証に向けて共有した、OmarAGI側の実装、実行記録、測定結果を保存します。次のTask1 **G vs G+P**実験の前に、既存の証拠を区別して参照するためのPRです。このスナップショットでは新しいモデル実行や採点を行わず、既存のV13成果、RCC dispatch、VERITAS enforcement、Native scorer、権限条件を変更しません。
 
 ## 実モデルで測定した結果

@@ -1,0 +1,16 @@
+{
+  "archive_sha256": "085de648b4fbd53643e20f20bc9ed3ab7dc8634b9307581cf815d5d5dbba8a51",
+  "entry_hashes_verified": 3595,
+  "locked_records_accounted": 1664,
+  "source_file_pins_verified": 66,
+  "same_condition_gains": 23,
+  "same_condition_B_regressions": 0,
+  "prestates_and_effect_counts_checked": true,
+  "grant_signatures_verified": 160,
+  "signature_check_requested": true,
+  "raw_owner_origin_authentication": "NOT_AVAILABLE_IN_PUBLIC_SUBSET",
+  "official_Native_scorer_invoked": false,
+  "provider_calls": 0,
+  "external_independent_reproduction": false,
+  "new_G_vs_GP_run": false
+}

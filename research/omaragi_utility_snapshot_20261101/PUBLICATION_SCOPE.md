@@ -29,3 +29,7 @@ The manifest lists every omitted entry from the already curated private review Z
 Private approval-origin authenticity remains outside the public subset. Cryptographic signature validity is not proof of owner identity, an independent issuer, present authorization, production isolation or actual bank authority. Historical approvals and consumed grants must not be reused.
 
 This PR adds an archival reference. It neither adopts the engine into current production/research execution nor changes the original policy, scorer, V13 artifact, contributor source management, existing IP arrangements or future collaboration membership. A fresh same-condition ablation, live Arm A, held-out evaluation and Task1 G vs G+P remain separate work.
+
+## November 11 audit addendum
+
+The [maintainer-audit follow-up](audit-20261111/README.md) records actual exact-commit checks, publication-source review and limits. Two private identifier literals in the original inspection helper (outside the archive) have been replaced with digest matching in current source; the original commit and all historical evidence are preserved. Maintainer confirmation of upstream benchmark publication/reuse rights and disposition of the historical metadata remain explicit open gates. No unverified third-party source body or private approval original is added by this follow-up.

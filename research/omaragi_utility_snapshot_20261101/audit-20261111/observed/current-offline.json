@@ -1,0 +1,49 @@
+{
+  "audited_original_commit": "4328be1d35d6494458708af6bd85a62d837aa8ca",
+  "verifier_sha256": "da98a0c70b81d181ac9b94eed040c312ca804789a1308d0752524ad328fd4c89",
+  "environment_keys_after_interpreter_startup": [
+    "LC_CTYPE",
+    "__CF_USER_TEXT_ENCODING"
+  ],
+  "secret_environment_keys": [],
+  "python_isolated": true,
+  "site_disabled": true,
+  "bytecode_writes_disabled": true,
+  "read_scope": [
+    "selected snapshot directory",
+    "Python standard library"
+  ],
+  "python_audit_guard": "deny network/process creation/write opens/filesystem mutations",
+  "denied_operation_attempts": [],
+  "read_paths": [
+    "<python-stdlib>",
+    "CASE_COMPARISON.csv",
+    "EVIDENCE_MANIFEST.json",
+    "EXPERIMENT_CONDITIONS.csv",
+    "FEEDBACK_ABLATION_CASES.csv",
+    "RESULTS.json",
+    "SNAPSHOT.zip",
+    "verify_snapshot.py"
+  ],
+  "verification": {
+    "archive_sha256": "085de648b4fbd53643e20f20bc9ed3ab7dc8634b9307581cf815d5d5dbba8a51",
+    "entry_hashes_verified": 3595,
+    "locked_records_accounted": 1664,
+    "source_file_pins_verified": 66,
+    "same_condition_gains": 23,
+    "same_condition_B_regressions": 0,
+    "prestates_and_effect_counts_checked": true,
+    "grant_signatures_verified": 0,
+    "signature_check_requested": false,
+    "raw_owner_origin_authentication": "NOT_AVAILABLE_IN_PUBLIC_SUBSET",
+    "official_Native_scorer_invoked": false,
+    "provider_calls": 0,
+    "external_independent_reproduction": false,
+    "new_G_vs_GP_run": false
+  },
+  "sudo_used": false,
+  "packages_installed": false,
+  "archived_runner_or_Native_scorer_imported": false,
+  "external_independent_reproduction": false,
+  "limitation": "Python audit hook for the pinned inspected program, not an OS sandbox or adversarial isolation proof."
+}
