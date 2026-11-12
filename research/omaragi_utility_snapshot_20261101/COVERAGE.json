@@ -1,0 +1,404 @@
+{
+  "schema": "CONTRIBUTOR_RESEARCH_COVERAGE_V1",
+  "inventory_date": "2026-11-11",
+  "all_joint_experiments_bundled": false,
+  "scope": "Accessible joint correspondence cross-check, preserved contributor run metadata, ZIP entries, existing public Git objects. Not every attachment, alias, or historical workflow archive was inspected.",
+  "no_new_model_calls": true,
+  "no_new_native_scoring": true,
+  "independent_reproduction_claimed": false,
+  "future_Task1_G_vs_GP": "NOT_RUN_BY_THIS_SNAPSHOT_OR_INVENTORY",
+  "archive": {
+    "bytes": 7253100,
+    "entries": 3595,
+    "sha256": "085de648b4fbd53643e20f20bc9ed3ab7dc8634b9307581cf815d5d5dbba8a51",
+    "evidence_manifest_sha256": "f54d7fd9e2795bbfa97eaaf696166c8c192c8049e41d75b5a341e91105cf3603",
+    "entry_prefix_counts": {
+      "evidence/current-approved": 3541,
+      "evidence/historical-matched-reference": 2,
+      "evidence/previous-date-free-round2": 24,
+      "evidence/previous-feedback-ablation": 26,
+      "public-views/approved-runs": 2
+    },
+    "locked_stored_records": 1664,
+    "not_complete_provider_history": true
+  },
+  "development_gaps": {
+    "darwin_hinton_selected_completed_case_arm_records": 1024,
+    "darwin_hinton_raw_coverage": "LOCAL_UNBUNDLED",
+    "nano_D4_completed_case_arm_records": 256,
+    "nano_D4_raw_coverage": "LOCAL_UNBUNDLED",
+    "interrupted_D2_attempts": "LOCAL_UNBUNDLED; not independent complete trials",
+    "historical_C104": "Only manifest and native_scores bundled; full trajectories/provider records not bundled",
+    "early_20_case_FUJI_pilot": "CORRESPONDENCE_REPORTED; matching public raw bundle not established",
+    "feasibility_diagnosis": "LOCAL_UNBUNDLED; exposed source/scorer diagnostic, not new blind Utility"
+  },
+  "located_run_metadata": [
+    {
+      "campaign": "veritas-darwin-hinton-optimization",
+      "run": "20261101T154045092940Z-nano-initial",
+      "model": "gpt-5-nano-2025-08-07",
+      "scores": {
+        "B": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 47,
+          "stored_injection_success_true": 0
+        },
+        "D1": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 49,
+          "stored_injection_success_true": 0
+        },
+        "N": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 72,
+          "stored_injection_success_true": 0
+        }
+      },
+      "manifest_sha256": "d2fa5467e9b9543e66f90fb98dd5d1e78302a5b0c33fabddaf01c6046cb8bd6b",
+      "native_scores_sha256": "b260289acd673407ff1f9dc8bce0652996deba0d382154e5b640da54cdd05120",
+      "raw_files_published_by_this_followup": false,
+      "native_scorer_rerun_by_this_inventory": false,
+      "execution_records_jsonl_sha256": "624be8cd18d57ec7e465ef5537923ad013f91d77604087d9f7bb82d7a6e77b36",
+      "final-lock_json_sha256": "e837af140106ff4eb5e61fc73242c74187516375269d314785e03a4111cdbe2b",
+      "selected_completed_phase": true,
+      "zip_coverage": "LOCAL_UNBUNDLED"
+    },
+    {
+      "campaign": "veritas-darwin-hinton-optimization",
+      "run": "20261101T155315775671Z-nano-d2",
+      "model": "gpt-5-nano-2025-08-07",
+      "scores": {
+        "D2": {
+          "stored_rows": 128,
+          "completed_rows": 1,
+          "status_counts": {
+            "COMPLETED": 1,
+            "ERROR": 127
+          },
+          "stored_utility_true": 0,
+          "stored_injection_success_true": 0
+        }
+      },
+      "manifest_sha256": "8c5783b5a82684789c8c8db4e2a596d17ea2ac05da8d3798034415b46a8ea1e8",
+      "native_scores_sha256": "68509ea6a0a7e76b47c7a908e8bb2a919a3f572f3742bcb6f13852127e174a80",
+      "raw_files_published_by_this_followup": false,
+      "native_scorer_rerun_by_this_inventory": false,
+      "execution_records_jsonl_sha256": "3b3ec83568b2f69919384d37a0a1ed417a6cd4a1565080e70e2647146439298e",
+      "final-lock_json_sha256": "54b2ad938de4fdf786c7b17e9b4f1526dd613a880042ef784af0d956f3e480ba",
+      "selected_completed_phase": false,
+      "zip_coverage": "LOCAL_UNBUNDLED",
+      "warning": "INCOMPLETE_ATTEMPT_NOT_AN_ADDITIONAL_COMPLETE_TRIAL; matching prefixes/cases were reused during recovery"
+    },
+    {
+      "campaign": "veritas-darwin-hinton-optimization",
+      "run": "20261101T161352096564Z-nano-d2",
+      "model": "gpt-5-nano-2025-08-07",
+      "scores": {
+        "D2": {
+          "stored_rows": 128,
+          "completed_rows": 52,
+          "status_counts": {
+            "COMPLETED": 52,
+            "ERROR": 76
+          },
+          "stored_utility_true": 9,
+          "stored_injection_success_true": 0
+        }
+      },
+      "manifest_sha256": "887a038ca9135919337d0eeacf5abf952724e193308b5f795835938a7f7d81a4",
+      "native_scores_sha256": "f421fe3c98cde4d2c68c09639ea2f46f6ee9f494598976c90db891e3673f51c3",
+      "raw_files_published_by_this_followup": false,
+      "native_scorer_rerun_by_this_inventory": false,
+      "execution_records_jsonl_sha256": "87454a7306ed6aa3e455fb02262f2787d02c4f046809db6cd4b31833f98d8271",
+      "final-lock_json_sha256": "4fc460f7a2b0644bfb592e6fe687c0550343919690637559edcbb64f774a94d1",
+      "selected_completed_phase": false,
+      "zip_coverage": "LOCAL_UNBUNDLED",
+      "warning": "INCOMPLETE_ATTEMPT_NOT_AN_ADDITIONAL_COMPLETE_TRIAL; matching prefixes/cases were reused during recovery"
+    },
+    {
+      "campaign": "veritas-darwin-hinton-optimization",
+      "run": "20261101T161745135057Z-nano-d2",
+      "model": "gpt-5-nano-2025-08-07",
+      "scores": {
+        "D2": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 47,
+          "stored_injection_success_true": 0
+        }
+      },
+      "manifest_sha256": "b85ad35000448e980e1a4d2567661bcc34bdf60c141b7d0baa9c9321970d064b",
+      "native_scores_sha256": "982d144de534213936ee888737882ac34301f3c3847ac0297a4538578d30b75d",
+      "raw_files_published_by_this_followup": false,
+      "native_scorer_rerun_by_this_inventory": false,
+      "execution_records_jsonl_sha256": "070a0563200d7209e51d22dec83e60f707c38fb99df2f28f3967fc00796d698b",
+      "final-lock_json_sha256": "c6b20cb6106d8fca18e3a0caa669e3950aa10ed5516173f844d5224c6fb17663",
+      "selected_completed_phase": true,
+      "zip_coverage": "LOCAL_UNBUNDLED"
+    },
+    {
+      "campaign": "veritas-darwin-hinton-optimization",
+      "run": "20261101T162046627741Z-nano-d3",
+      "model": "gpt-5-nano-2025-08-07",
+      "scores": {
+        "D3": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 72,
+          "stored_injection_success_true": 0
+        }
+      },
+      "manifest_sha256": "bda9bb5ef52dcb8b9250d499e8d24f402f6b0c299a6d80e73890af88b54614b3",
+      "native_scores_sha256": "39ed6dd117cfaecbf14e8071444910af2de8d19970387c0641189d7de12a34e1",
+      "raw_files_published_by_this_followup": false,
+      "native_scorer_rerun_by_this_inventory": false,
+      "execution_records_jsonl_sha256": "a3b4314e794d5953280e6ed35fb02e18e2641f8694e6bddaadb2e78ed01c296a",
+      "final-lock_json_sha256": "3c02ea152a5397e57d6de80968216d293c51a158c71ff12ba8cf741a78f19e35",
+      "selected_completed_phase": true,
+      "zip_coverage": "LOCAL_UNBUNDLED"
+    },
+    {
+      "campaign": "veritas-darwin-hinton-optimization",
+      "run": "20261101T162402426684Z-mini-final",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "scores": {
+        "B": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 67,
+          "stored_injection_success_true": 0
+        },
+        "D3": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 72,
+          "stored_injection_success_true": 0
+        },
+        "N": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 72,
+          "stored_injection_success_true": 0
+        }
+      },
+      "manifest_sha256": "2607e695fd09e250d0ec3f84a97251a5a8311f95fa74e98c7235830d74d6ab4a",
+      "native_scores_sha256": "bc11198c30c11db90d90ab4fd1d7dbb08b83bdbf4d73273e6ac55597da7619eb",
+      "raw_files_published_by_this_followup": false,
+      "native_scorer_rerun_by_this_inventory": false,
+      "execution_records_jsonl_sha256": "afafe70756a5eeaa524c02cf698b4686a15658dcf1f7f187b3366b309f8b130d",
+      "final-lock_json_sha256": "5461f550d9ba31e15ba70d00a878fbcca6881859817dade14e535ad31b9eb0fa",
+      "selected_completed_phase": true,
+      "zip_coverage": "LOCAL_UNBUNDLED"
+    },
+    {
+      "campaign": "veritas-runtime-repair-round2",
+      "run": "20261101T170156512351Z-nano-d4",
+      "model": "gpt-5-nano-2025-08-07",
+      "scores": {
+        "D4": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 72,
+          "stored_injection_success_true": 0
+        },
+        "N": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 72,
+          "stored_injection_success_true": 0
+        }
+      },
+      "manifest_sha256": "4cfc3b91cd710200e446aa414b7ec40c19e5ddef005a9e84fee8f147b57040cf",
+      "native_scores_sha256": "504f6274b5872a7a3e8b8efbb64ed421ab5904758241a4cf88b6a53df1ba31bc",
+      "raw_files_published_by_this_followup": false,
+      "native_scorer_rerun_by_this_inventory": false,
+      "execution_records_jsonl_sha256": "38de0677028d8a31bd5494cfb80f9dd2445656e4a3580bb0ab637af3be034553",
+      "final-lock_json_sha256": "f7d4cdf6bd5bee2ea24ce8abae59c930f0818d1415e6c4027773fa3490064a58",
+      "selected_completed_phase": true,
+      "zip_coverage": "LOCAL_UNBUNDLED"
+    },
+    {
+      "campaign": "veritas-runtime-repair-round2",
+      "run": "20261101T172120315038Z-mini-d4",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "scores": {
+        "B": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 64,
+          "stored_injection_success_true": 0
+        },
+        "D4": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 72,
+          "stored_injection_success_true": 0
+        },
+        "N": {
+          "stored_rows": 128,
+          "completed_rows": 128,
+          "status_counts": {
+            "COMPLETED": 128
+          },
+          "stored_utility_true": 72,
+          "stored_injection_success_true": 0
+        }
+      },
+      "manifest_sha256": "8b8311eb6f8984ccd620fcade18ae1bf7d6f79ede9d12e30fa62c83cbbb6050b",
+      "native_scores_sha256": "b6e34a545213214fc10ae75812b16eb3bc5b7499724c001447ba44f6fae15665",
+      "raw_files_published_by_this_followup": false,
+      "native_scorer_rerun_by_this_inventory": false,
+      "execution_records_jsonl_sha256": "e916681b485e6f9b108109a8974aa7f27d6aa2dd216509243c57affe3a66f56e",
+      "final-lock_json_sha256": "5b7a5fa62211cd724f1d409c6a7dc3c8235485baea4f076b32c92e9e09e11a3a",
+      "selected_completed_phase": true,
+      "zip_coverage": "BUNDLED_RECORD_SOURCE_CONTROL_SUBSET"
+    }
+  ],
+  "already_public_upstream_references": [
+    {
+      "upstream_revision": "c4e75f15fff848fc4c67e4dfd15423ee8ac766e9",
+      "path": "contracts/AGENTDOJO_FINAL_128_V13_TERMINAL_DISPOSITION_v1.json",
+      "git_object": "2f2a5dd1a91d4068776e39a064f167cd304767b2",
+      "object_type": "blob",
+      "checked": "EXISTING_OBJECT_IDENTITY; not a new workflow artifact download or Native regrade"
+    },
+    {
+      "upstream_revision": "c4e75f15fff848fc4c67e4dfd15423ee8ac766e9",
+      "path": "contracts/AGENTDOJO_FINAL_CLEAN_AB_RESULT_v0.1.json",
+      "git_object": "04442f519317a8c72e4461456f9bb451f739248e",
+      "object_type": "blob",
+      "checked": "EXISTING_OBJECT_IDENTITY; not a new workflow artifact download or Native regrade"
+    },
+    {
+      "upstream_revision": "c4e75f15fff848fc4c67e4dfd15423ee8ac766e9",
+      "path": "contracts/RCC_REVAS_VERITAS_Field_Contract_v0.2.json",
+      "git_object": "6dfd2f1301171c9aae1e0631b4d24082a6603fa5",
+      "object_type": "blob",
+      "checked": "EXISTING_OBJECT_IDENTITY; not a new workflow artifact download or Native regrade"
+    },
+    {
+      "upstream_revision": "c4e75f15fff848fc4c67e4dfd15423ee8ac766e9",
+      "path": "contracts/SINGLE_CANDIDATE_UNINTERRUPTED_CANONICAL_CHAIN_V1.json",
+      "git_object": "1c8ba395df935c2d4c0d1da1358cd3d874e34575",
+      "object_type": "blob",
+      "checked": "EXISTING_OBJECT_IDENTITY; not a new workflow artifact download or Native regrade"
+    },
+    {
+      "upstream_revision": "c4e75f15fff848fc4c67e4dfd15423ee8ac766e9",
+      "path": "contracts/UTILITY_OPTIMIZATION_V1_BASELINE_DIAGNOSIS.json",
+      "git_object": "33a9fbff4ec5a302a129d91e9fca108132589121",
+      "object_type": "blob",
+      "checked": "EXISTING_OBJECT_IDENTITY; not a new workflow artifact download or Native regrade"
+    },
+    {
+      "upstream_revision": "c4e75f15fff848fc4c67e4dfd15423ee8ac766e9",
+      "path": "docs/PAIRED_CLEAN_TESTBED_v1.2_APPROVAL_REQUIREMENT_SATISFACTION.md",
+      "git_object": "f92bba0ed3ef7ea9303f5195ce62c227834d0928",
+      "object_type": "blob",
+      "checked": "EXISTING_OBJECT_IDENTITY; not a new workflow artifact download or Native regrade"
+    },
+    {
+      "upstream_revision": "c4e75f15fff848fc4c67e4dfd15423ee8ac766e9",
+      "path": "docs/optimization/FINAL128_335_OPTIMIZATION_LEDGER_V1.md",
+      "git_object": "0a03a5471fbb47a1c80d94f1387400438cc6e779",
+      "object_type": "blob",
+      "checked": "EXISTING_OBJECT_IDENTITY; not a new workflow artifact download or Native regrade"
+    },
+    {
+      "upstream_revision": "c4e75f15fff848fc4c67e4dfd15423ee8ac766e9",
+      "path": "research/ben_approval_gate",
+      "git_object": "9b83bd4cb0c62c3831d0a8ac5e4a92ffde0debd6",
+      "object_type": "tree",
+      "checked": "EXISTING_OBJECT_IDENTITY; not a new workflow artifact download or Native regrade"
+    }
+  ],
+  "historical_workflow_references": [
+    {
+      "run_id": "35801658815",
+      "kind": "36-case incomplete dependency-failure attempt"
+    },
+    {
+      "run_id": "35813291352",
+      "kind": "36-case adverse replacement",
+      "artifact_id": "10730323137",
+      "declared_zip_sha256": "3c049cb19d53af5a7b5700c9db0be5297dc3a769bf9495e25d9061c29bcaf580"
+    },
+    {
+      "run_id": "35823854662",
+      "kind": "36-case v1.1 hardening; no new score asserted by this inventory"
+    },
+    {
+      "run_id": "35827320180",
+      "kind": "36-case v1.2",
+      "artifact_id": "10736065790",
+      "declared_zip_sha256": "873ddde355be5a6a909fb6904fd88ea0346ffef176010e4fa7047b774869f7ab"
+    }
+  ],
+  "workflow_artifact_limit": "Public metadata/references located; raw archives not downloaded or independently regraded by this coverage follow-up.",
+  "intentional_exclusions": [
+    "private email originals and unreviewed attachments",
+    "raw owner approval source",
+    "credentials and private signing keys",
+    "personal Notes",
+    "privately shared third-party material"
+  ],
+  "current_condition": {
+    "date_scope_cases": 32,
+    "invoice_scope_cases": 8,
+    "unchanged_refusal_cases": 16,
+    "Mini_B_SUPPORT_utility": 89,
+    "Mini_E_SUPPORT_utility": 112,
+    "Mini_B_injection_success": 0,
+    "Mini_E_injection_success": 0,
+    "same_condition_gains": 23,
+    "same_condition_regressions": 0,
+    "whole_engine_not_isolated_feedback": true,
+    "pure_72_to_112_optimizer_gain_established": false
+  },
+  "publication_gates_still_open": [
+    "maintainer confirmation of upstream material publication/reuse basis",
+    "disposition of old-commit metadata identifiers",
+    "bounded scans are not exhaustive confidentiality certification"
+  ],
+  "raw_missing_materials_must_be_reviewed_before_publication": true,
+  "original_zip_manifest_results_scores_locks_modified": false
+}

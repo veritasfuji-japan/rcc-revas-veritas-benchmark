@@ -1,0 +1,51 @@
+{
+  "observed_outputs": [
+    {
+      "path": "agentdojo-license-review.json",
+      "bytes": 310,
+      "sha256": "074b3017f0689419b409473426d841397968e59b4b85766afde0093cfc56bbf4"
+    },
+    {
+      "path": "baseline-offline.json",
+      "bytes": 1751,
+      "sha256": "54d1629f0a94a66df79f3022ad8a2fcea98b9697c68b66924d9b9b89bb7ecb94"
+    },
+    {
+      "path": "baseline-signatures.json",
+      "bytes": 593,
+      "sha256": "720e1309dff47de60d338c73903f67e85e8b4a8a31eaaa26c27380ef37140edc"
+    },
+    {
+      "path": "commands.json",
+      "bytes": 6487,
+      "sha256": "f3a363a211feec372e86db6e3ed977da8c495ecc31f303ba7fcb803c8d862efe"
+    },
+    {
+      "path": "current-offline.json",
+      "bytes": 1751,
+      "sha256": "d1f7546d3d9ad759045af5f9c447cd01d0159b6ae027fe17037668a4125e818a"
+    },
+    {
+      "path": "github-archive-recheck.json",
+      "bytes": 590,
+      "sha256": "e5f921635fe081b43aa9d4b2243d5a924e3e953e3480e2b1d1cbf85cedac434c"
+    },
+    {
+      "path": "grant-view-comparison.json",
+      "bytes": 2063,
+      "sha256": "c98d39e6ba2adf67274061b84eb0e8cbc116a2a380bdd408c96db8994d08aef9"
+    },
+    {
+      "path": "identifier-redaction-check.json",
+      "bytes": 488,
+      "sha256": "847b6730030a810509758fdf37a0d535d0c6f497ed179c8c5d1185b749087f89"
+    },
+    {
+      "path": "publication-review.json",
+      "bytes": 11672,
+      "sha256": "b4d59340276eb1810d9265184d05dba6e7f162fd7f269a2ce4c8e5177789ed75"
+    }
+  ],
+  "raw_private_source_published": false,
+  "original_experimental_archive_changed": false
+}

@@ -1,0 +1,12 @@
+{
+  "method": "GitHub contents metadata at exact commit, then Git blob base64 download",
+  "repository": "effacermonexistence/rcc-revas-veritas-benchmark",
+  "commit": "4328be1d35d6494458708af6bd85a62d837aa8ca",
+  "archive_path": "research/omaragi_utility_snapshot_20261101/SNAPSHOT.zip",
+  "blob_sha": "8cfe4fbe03c698034798fe1a38194c50fa829299",
+  "bytes": 7253100,
+  "sha256": "085de648b4fbd53643e20f20bc9ed3ab7dc8634b9307581cf815d5d5dbba8a51",
+  "download_equals_local_git_export": true,
+  "network_used_for_acquisition_only": true,
+  "verification_requires_GitHub_credentials": false
+}

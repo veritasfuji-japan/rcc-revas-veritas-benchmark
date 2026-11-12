@@ -1,0 +1,38 @@
+{
+  "comparison": "CONTRIBUTOR_LOCAL_PRIVATE_ORIGINAL_VS_PUBLIC_DERIVATIVE",
+  "views_checked": 2,
+  "signed_grants_compared": 160,
+  "views": [
+    {
+      "public_view": "public-views/approved-runs/20261101T200749322799Z-nano-support-v1/owner-grants.json",
+      "original_file_sha256": "bc8718beddc4ff29d42058d029be08807254d8d5553af21efa8d05a6b4bf4f4a",
+      "public_file_sha256": "93a16448ee010d44fbf570761bc793b40e6db8a594031a4f97b9be47ebb8eb89",
+      "grant_count": 80,
+      "only_removed_top_level_field": "owner_origin",
+      "only_added_top_level_field": "owner_origin_public_reference",
+      "other_fields_byte_equivalent_under_canonical_encoding": true,
+      "signed_payload_canonical_bytes_unchanged": true,
+      "signature_bytes_unchanged": true,
+      "grant_list_sha256_before": "bdba5c8d997b0488681d19a209e54a7e9f524a98ea8773e0b432386d78022b89",
+      "grant_list_sha256_after": "bdba5c8d997b0488681d19a209e54a7e9f524a98ea8773e0b432386d78022b89",
+      "private_owner_origin_included_in_report": false
+    },
+    {
+      "public_view": "public-views/approved-runs/20261101T201350394528Z-mini-support-v1/owner-grants.json",
+      "original_file_sha256": "ec507d454b419ad7b5d7a6f6b815a04703885391aab8c5e07cb8030cace2101b",
+      "public_file_sha256": "6b579bbcfa5c6d9f4c84608de2369cd5320dfb80d407ae9d6b4eb2a3b0c31c1c",
+      "grant_count": 80,
+      "only_removed_top_level_field": "owner_origin",
+      "only_added_top_level_field": "owner_origin_public_reference",
+      "other_fields_byte_equivalent_under_canonical_encoding": true,
+      "signed_payload_canonical_bytes_unchanged": true,
+      "signature_bytes_unchanged": true,
+      "grant_list_sha256_before": "6e926ed379c9abf36e33141226a3c1d4f25d645f1375769a6a0cfe271a42f27d",
+      "grant_list_sha256_after": "6e926ed379c9abf36e33141226a3c1d4f25d645f1375769a6a0cfe271a42f27d",
+      "private_owner_origin_included_in_report": false
+    }
+  ],
+  "externally_independent_owner_authentication": false,
+  "public_reader_can_repeat_without_private_source": false,
+  "provider_calls": 0
+}
