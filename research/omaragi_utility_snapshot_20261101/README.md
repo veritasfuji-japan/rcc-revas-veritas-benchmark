@@ -55,6 +55,7 @@ The control fixtures explicitly use TEST enrollment. They are not additional pro
 
 ## Files and offline inspection
 
+- [COVERAGE.md](COVERAGE.md) and [COVERAGE.json](COVERAGE.json): research-history index, existing public references, unbundled development iterations and explicit gaps. This ZIP is not a complete archive of all joint experiments.
 - `SNAPSHOT.zip`: archived implementation/source snapshots, current provider request/SDK-response/usage records, locked execution JSONL, scores, local audits and separate offline controls. Earlier-run provider payloads and historical-matched full trajectories are not fully bundled.
 - `EVIDENCE_MANIFEST.json`: each entry's size, SHA-256, source identity, omissions and two explicitly transformed public enrollment views.
 - `RESULTS.json`, `EXPERIMENT_CONDITIONS.csv`, `CASE_COMPARISON.csv`, `FEEDBACK_ABLATION_CASES.csv`: condition and case-wise comparisons. Cross-condition references are labeled.
